@@ -98,7 +98,7 @@ public class GrantAuthorization {
             String.class,
             user)
         .stream()
-        .filter(PermissionAvailability::available)
+        .filter(PermissionCatalog::available)
         .toList();
   }
 
@@ -126,7 +126,7 @@ public class GrantAuthorization {
                 + ",permission_code",
             user)) {
       String code = (String) row.get("permission_code");
-      if (PermissionAvailability.available(code))
+      if (PermissionCatalog.available(code))
         result.computeIfAbsent(row.get(column).toString(), unused -> new ArrayList<>()).add(code);
     }
     return result;

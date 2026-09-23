@@ -17,16 +17,31 @@ public class PlatformController {
   }
 
   @GetMapping("/platform/organizations")
-  public ApiResponse<?> organizations() {
-    s.access.requirePermission("organization.member.read");
+  public ApiResponse<?> organizations(@RequestParam(required = false) String purpose) {
+    String permission;
+    if (purpose == null) {
+      s.access.requirePermission("organization.member.read");
+      permission = "organization.member.read";
+    } else if (purpose.equals("roles")) {
+      permission = "role.manage";
+      s.access.requirePermission(permission);
+    } else if (purpose.equals("grants")) {
+      permission = "member.grant.manage";
+      s.access.requirePermission(permission);
+    } else throw new BusinessException(400, "无效的组织目录用途");
     return ApiResponse.ok(
         s.db.queryForList(
             """
             SELECT o.id,o.name,o.parent_id FROM organization o
             JOIN effective_organization_permission p ON p.organization_id=o.id
-            WHERE p.user_id=? AND p.permission_code='organization.member.read' ORDER BY o.id
+            WHERE p.user_id=? AND p.permission_code=? ORDER BY o.id
             """,
-            s.access.userId()));
+            s.access.userId(),
+            permission));
+  }
+
+  public ApiResponse<?> organizations() {
+    return organizations(null);
   }
 
   public record OrganizationInput(@NotBlank @Size(max = 120) String name, Long parentId) {}
