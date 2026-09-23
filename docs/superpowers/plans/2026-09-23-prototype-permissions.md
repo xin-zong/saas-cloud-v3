@@ -158,12 +158,12 @@ revoked grant with existing session -> 403
 
 ### T07：恢复可编辑角色权限页面（P0，依赖 T05）
 
-- [ ] 新建 `platform/platformApi.ts` 定义共享 `PermissionItem`、`BusinessRole`、`MemberGrant` 类型并封装上述接口。
-- [ ] 新建 `RolePermissionsPanel.tsx`，保留原型左侧角色列表、右侧六组矩阵、三列勾选和底部取消/保存。
-- [ ] 实现新增名称/说明弹窗、选中创建角色、无权限初始状态、模块全选/半选、取消恢复和保存反馈。
-- [ ] 已使用角色删除展示原因及成员入口，不做虚假删除成功；切换角色/退出页面有未保存提示。
-- [ ] 不可配置项保留说明和禁用态；前端根据后端目录显示，不复制另一份权限字典。
-- [ ] UI 测试覆盖创建、保存请求体、刷新回显、失败保留草稿、取消恢复及删除冲突。
+- [x] 新建 `platform/platformApi.ts` 定义共享 `PermissionItem`、`BusinessRole`、`MemberGrant` 类型并封装上述接口。
+- [x] 新建 `RolePermissionsPanel.tsx`，保留原型左侧角色列表、右侧六组矩阵、三列勾选和底部取消/保存。
+- [x] 实现新增名称/说明弹窗、选中创建角色、无权限初始状态、模块全选/半选、取消恢复和保存反馈。
+- [x] 已使用角色删除展示原因及成员入口，不做虚假删除成功；切换角色/退出页面有未保存提示。
+- [x] 不可配置项保留说明和禁用态；前端根据后端目录显示，不复制另一份权限字典。
+- [x] UI 测试覆盖创建、保存请求体、刷新回显、失败保留草稿、取消恢复及删除冲突。
 
 ```js
 await page.getByRole('checkbox', { name: '编辑站点', exact: true }).check()
