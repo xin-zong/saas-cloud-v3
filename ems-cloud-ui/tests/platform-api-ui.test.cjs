@@ -10,19 +10,31 @@ async function setup(t, permissions = ['organization.member.read','member.manage
   const errors=[]; page.on('pageerror', e=>errors.push(e.message)); t.after(()=>assert.deepEqual(errors,[]))
   const orgs=[{id:3,name:'华东',parent_id:99,lead_user_id:null},{id:4,name:'子组织',parent_id:3,lead_user_id:9,...(options.nestedRoot?{can_reparent:false}:{}),...(options.hiddenLead?{lead_user_id:null,lead_restricted:true}:{})}]
   const members=[{id:9,account:'real.member',display_name:'真实成员',enabled:true,organization_id:4,management_organization_id:4,email:'member@example.com'},{id:10,account:'free.member',display_name:'待安排成员',enabled:true,organization_id:null,management_organization_id:3,email:null}]
+  if(options.mixedScopes) {
+    orgs.splice(0,orgs.length,{id:3,name:'只读A',parent_id:null},{id:4,name:'档案B',parent_id:null},{id:5,name:'授权C',parent_id:null})
+    members.splice(0,members.length,
+      {id:9,account:'read.a',display_name:'只读成员A',enabled:true,organization_id:3,management_organization_id:3,email:'read-a@example.com'},
+      {id:10,account:'profile.b',display_name:'档案成员B',enabled:true,organization_id:4,management_organization_id:4,email:'profile-b@example.com'},
+      {id:12,account:'grant.c',display_name:'授权成员C',enabled:true,organization_id:5,management_organization_id:5,email:'private-c@example.com'})
+  }
+  const purposeOrganizations = purpose => purpose==='read'?[3]:purpose==='profiles'?[4]:purpose==='grants'?(options.grantProfile?[4,5]:[5]):[4]
   const requests=[]; let failProfile = options.failProfile, releaseSave; const heldSave = new Promise(resolve => { releaseSave = resolve })
   await page.route('http://127.0.0.1:18090/api/**',async route=>{
     const req=route.request(),url=new URL(req.url()),path=url.pathname.slice(4),method=req.method(),body=req.postDataJSON()
     requests.push({path,method,search:url.search,body}); let data=[],status=200,msg='ok'
     if(path==='/auth/me') data={id:'7',name:'管理员',account:'manager',role:'integrator',organization:'华东',stationIds:[],permissions}
-    else if(path==='/members' && method==='GET') data=members
+    else if(path==='/members' && method==='GET') {
+      const purpose=url.searchParams.get('purpose')||'read'
+      data=options.mixedScopes?members.filter(m=>purposeOrganizations(purpose).includes(m.management_organization_id)&&(m.organization_id==null||purposeOrganizations(purpose).includes(m.organization_id))):members
+      if(['grants','organizations'].includes(purpose)) data=data.map(({email,...minimal})=>minimal)
+    }
     else if(path==='/members' && method==='POST') { data={id:11}; members.push({id:11,account:body.account,display_name:body.name,email:body.email,enabled:true,organization_id:body.organizationId,management_organization_id:body.managementOrganizationId??body.organizationId}) }
     else if(/^\/members\/\d+\/organization$/.test(path)) {const m=members.find(m=>m.id===Number(path.split('/')[2])); m.organization_id=body.organizationId; orgs.forEach(o=>{if(o.lead_user_id===m.id&&m.organization_id!==o.id)o.lead_user_id=null}); data=null}
     else if(/^\/members\/\d+$/.test(path)&&method==='PUT'&&failProfile){failProfile=false;status=409;msg='成员范围已变化';data=null}
     else if(/^\/members\/\d+$/.test(path)&&method==='PUT'){if(options.holdSave)await heldSave;const m=members.find(m=>m.id===Number(path.split('/')[2])); Object.assign(m,{display_name:body.name,email:body.email,enabled:body.enabled});data=null}
     else if(/^\/members\/\d+$/.test(path)&&method==='DELETE'){status=409;msg='成员存在业务或授权历史引用，请停用成员';data=null}
     else if(path.endsWith('/grants')) data=[]
-    else if(path==='/platform/organizations'&&method==='GET') data=orgs
+    else if(path==='/platform/organizations'&&method==='GET') data=options.mixedScopes?orgs.filter(o=>purposeOrganizations(url.searchParams.get('purpose')||'read').includes(o.id)):orgs
     else if(path==='/platform/organizations'&&method==='POST'){data={id:5};orgs.push({id:5,name:body.name,parent_id:body.parentId,lead_user_id:body.leadUserId})}
     else if(path.startsWith('/platform/organizations/')&&method==='PUT'){const o=orgs.find(o=>o.id===Number(path.split('/')[3]));Object.assign(o,{name:body.name,...(Object.hasOwn(body,"leadUserId")?{lead_user_id:body.leadUserId,lead_restricted:false}:{}),...(body.parentId==null?{}:{parent_id:body.parentId})});data=null}
     else {status=403;msg=`unexpected ${path}`}
@@ -166,4 +178,53 @@ test('editing organization name preserves a hidden lead unless explicitly cleare
   await page.getByRole('dialog').getByRole('button',{name:'保存',exact:true}).click()
   await page.getByRole('dialog').waitFor({state:'detached'})
   assert.equal(writes(requests)[1].body.leadUserId,null)
+})
+
+
+test('mixed read profile and grant scopes merge members and keep each action purpose-scoped',async t=>{
+  const {page,requests}=await setup(t,['organization.member.read','member.manage.profile','member.grant.manage'],{mixedScopes:true})
+  const a=page.getByRole('row').filter({hasText:'只读成员A'}),b=page.getByRole('row').filter({hasText:'档案成员B'}),c=page.getByRole('row').filter({hasText:'授权成员C'})
+  await b.waitFor();await a.waitFor();await c.waitFor()
+  assert.equal(await a.getByRole('button',{name:'编辑',exact:true}).count(),0)
+  assert.equal(await a.getByRole('button',{name:'删除',exact:true}).count(),0)
+  assert.equal(await b.getByRole('button',{name:'查看权限',exact:true}).count(),0)
+  assert.equal(await c.getByRole('button',{name:'编辑',exact:true}).count(),0)
+  await b.getByRole('button',{name:'编辑',exact:true}).click()
+  assert.equal(await page.locator('input[name=email]').inputValue(),'profile-b@example.com')
+  await page.locator('input[name=email]').fill('updated-b@example.com');await page.getByRole('dialog').getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('dialog').waitFor({state:'detached'})
+  assert.equal(writes(requests)[0].path,'/members/10')
+  await page.getByLabel('筛选所属组织').selectOption('5');await c.waitFor();assert.equal(await a.count(),0);assert.equal(await b.count(),0)
+  await page.getByLabel('筛选所属组织').selectOption('4');await b.waitFor();assert.equal(await c.count(),0)
+  await page.getByLabel('筛选所属组织').selectOption('');await a.getByRole('button',{name:'查看权限',exact:true}).click()
+  await page.getByRole('button',{name:'返回成员列表',exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'分配权限',exact:true}).count(),0)
+  await page.getByRole('button',{name:'返回成员列表',exact:true}).click();await c.getByRole('button',{name:'查看权限',exact:true}).click()
+  await page.getByRole('button',{name:'分配权限',exact:true}).waitFor()
+  for(const purpose of ['','?purpose=profiles','?purpose=grants']) assert(requests.some(r=>r.path==='/members'&&r.search===purpose))
+  assert.equal(await page.getByText('private-c@example.com',{exact:true}).count(),0)
+})
+
+test('created profile-scope member remains visible after reload and opens permitted grant management',async t=>{
+  const {page,requests}=await setup(t,['organization.member.read','member.manage.profile','member.grant.manage'],{mixedScopes:true,grantProfile:true})
+  await page.getByRole('button',{name:'新增成员',exact:true}).click()
+  await page.locator('input[name=name]').fill('新增B成员');await page.locator('input[name=account]').fill('new.b')
+  await page.locator('input[name=password]').fill('long-password-123');await page.locator('input[name=email]').fill('new-b@example.com')
+  await page.locator('select[name=organizationId]').selectOption('4');await page.getByRole('dialog').getByRole('button',{name:'创建',exact:true}).click()
+  await page.getByRole('row').filter({hasText:'新增B成员'}).waitFor()
+  await page.getByRole('row').filter({hasText:'档案成员B'}).getByRole('button',{name:'编辑',exact:true}).click()
+  assert.equal(await page.locator('input[name=email]').inputValue(),'profile-b@example.com')
+  await page.getByRole('button',{name:'取消',exact:true}).click()
+  await page.getByRole('button',{name:'现在分配权限',exact:true}).click();await page.getByRole('button',{name:'分配权限',exact:true}).waitFor()
+  assert(requests.some(r=>r.path==='/members/11/grants'&&r.method==='GET'))
+  assert.equal(writes(requests).length,1)
+})
+
+test('profile and grant scopes without directory-read permission retain both target sets',async t=>{
+  const {page,requests}=await setup(t,['member.manage.profile','member.grant.manage'],{mixedScopes:true})
+  await page.getByRole('row').filter({hasText:'档案成员B'}).waitFor();await page.getByRole('row').filter({hasText:'授权成员C'}).waitFor()
+  assert.equal(await page.getByRole('row').filter({hasText:'只读成员A'}).count(),0)
+  assert.equal(requests.filter(r=>r.path==='/members'&&r.search==='').length,0)
+  assert.equal(await page.getByRole('row').filter({hasText:'档案成员B'}).getByRole('button',{name:'查看权限',exact:true}).count(),0)
+  await page.getByLabel('筛选所属组织').selectOption('5')
+  await page.getByRole('row').filter({hasText:'授权成员C'}).getByRole('button',{name:'查看权限',exact:true}).click()
+  await page.getByRole('button',{name:'分配权限',exact:true}).waitFor()
 })
