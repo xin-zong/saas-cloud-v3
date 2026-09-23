@@ -17,7 +17,7 @@
 - 保持原型布局、样式和关键操作流程；无数据保留结构，不能用演示数据填充业务页面。
 - 暂不实现新站接入流程、EMS 接入、真实策略下发、外部市场交易、真实固件升级。
 - 三个登录身份是演示工作台入口，不等于业务角色全集；真实权限由后端返回。
-- 本轮是计划，不执行数据库迁移、不修改生产权限、不修改业务代码。
+- 用户已要求在上传基线后开始实施；代码在独立分支修改，数据库先做回滚演练，正式切换前停旧服务并重新备份。
 - 原型中尚无实际后端能力的权限项仍保留展示，明确标记暂不可用，不能勾选后声称功能已经实现。
 - 不按本计划自动给线上成员扩大权限；配置能力的初始化与普通成员原授权迁移分开处理。
 
@@ -64,7 +64,7 @@
 
 - 后端现有：`ems-cloud-api/src/main/java/com/enerlution/ems/auth/AccessControl.java`、`AuthService.java`；`business/MemberController.java`、`PlatformController.java`、各业务 Controller。
 - 后端新增：同包 `business/RoleController.java`、`MemberGrantController.java`、`auth/GrantAuthorization.java`，分别负责角色目录、逐条授权、联合授权判定。
-- 数据库：`ems-cloud-api/src/main/resources/db/migration/V6__role_grants.sql`。当前迁移最大 V5，执行前重新确认编号，禁止覆盖已执行迁移。
+- 数据库：`ems-cloud-api/src/main/resources/db/migration/V6__member_grant_schema.sql` 为结构；`V7__migrate_member_grants.sql` 为旧授权迁移。运行库当前仍为 V5，仅做了回滚演练；禁止覆盖已执行迁移。
 - 前端保留原型参考：`ems-cloud-ui/src/components/OrganizationPermissions.tsx`；不可把原型本地 state 的保存直接当成服务器实现。
 - 前端业务组件：修改 `ApiPlatformManagement.tsx`；新增 `platform/RolePermissionsPanel.tsx`、`platform/MemberGrantsPanel.tsx`、`platform/platformApi.ts`，避免继续扩大单文件。
 - 鉴权导航：`ems-cloud-ui/src/auth/apiPermissions.ts`、`AuthContext.tsx`，以及各站点操作入口。
@@ -76,9 +76,9 @@
 
 产出：`ems-cloud-api/docs/permission-catalog.md`，每项记录原型名称、稳定 permission code、模块、作用域、对应接口、页面入口、是否已实现。
 
-- [ ] 逐项记录上述 38 项，不能把“配置角色”“分配授权”“管理成员”继续合并成 `member.manage`。
-- [ ] 对现有 `tariff.manage`、`inspection.manage`、`revenue.review`、市场内部草稿等能力补充扩展行，避免原型清单覆盖时丢失已有能力。
-- [ ] 以 JSON 清单表达目录；用测试断言原型项完整、code 唯一、每个已启用 code 有后端检查入口。
+- [x] 逐项记录上述 38 项，不能把“配置角色”“分配授权”“管理成员”继续合并成 `member.manage`。
+- [x] 对现有 `tariff.manage`、`inspection.manage`、`revenue.review`、市场内部草稿等能力补充扩展行，避免原型清单覆盖时丢失已有能力。
+- [x] 以 JSON 清单表达目录；用测试断言原型项完整、code 唯一、每个已启用 code 有后端检查入口。
 
 ```json
 {"code":"role.manage","name":"配置角色权限","module":"platform","scope":"organization","available":true}
@@ -88,13 +88,13 @@
 
 ### T02：确定授权数据模型并编写迁移（P0，依赖 T01）
 
-- [ ] 先编写真实 PostgreSQL 约束用例：无效角色/成员/站点外键、重复授权站点、结束早于开始、空角色名称、角色使用中删除。
-- [ ] 增加 `member_grant(id,user_id,role_id,valid_from,valid_until,granted_by)` 与 `member_grant_station(grant_id,station_id)`；站点关系采用复合主键，不用 JSON/逗号字符串保存 ID。
-- [ ] 角色增加说明；成员增加原型实际需要的邮箱；组织增加负责人关系。邮箱非账号的重复副本，不预先增加电话/地址等未要求字段。
-- [ ] 角色管理范围必须写入设计：按组织隔离可编辑角色；现有跨组织共用角色在迁移时复制并映射，不能让一个组织修改另一组织成员的权限。
-- [ ] 配置类权限按授权所在角色的管理组织限制，站点类权限必须匹配该条授权的站点集合。不得用“未选站点”代表所有站点。
-- [ ] 用 `valid_until IS NULL` 表示长期；到期判定使用服务端时间，结束时刻不再有效。30/90天为固定天数，1年为日历年，时区统一 Asia/Shanghai 展示、数据库 timestamptz 保存。
-- [ ] 迁移测试由失败转通过，提交本任务的迁移和测试。
+- [x] 先编写真实 PostgreSQL 约束用例：无效角色/成员/站点外键、重复授权站点、结束早于开始、空角色名称、角色使用中删除。
+- [x] 增加 `member_grant(id,user_id,role_id,valid_from,valid_until,granted_by)` 与 `member_grant_station(grant_id,station_id)`；站点关系采用复合主键，不用 JSON/逗号字符串保存 ID。
+- [x] 角色增加说明；成员增加原型实际需要的邮箱；组织增加负责人关系。邮箱非账号的重复副本，不预先增加电话/地址等未要求字段。
+- [x] 角色管理范围必须写入设计：按组织隔离可编辑角色；现有跨组织共用角色在迁移时复制并映射，不能让一个组织修改另一组织成员的权限。
+- [x] 配置类权限按授权所在角色的管理组织限制，站点类权限必须匹配该条授权的站点集合。不得用“未选站点”代表所有站点。
+- [x] 用 `valid_until IS NULL` 表示长期；到期判定使用服务端时间，结束时刻不再有效。30/90天为固定天数，1年为日历年，时区统一 Asia/Shanghai 展示、数据库 timestamptz 保存。
+- [x] 迁移测试由失败转通过，提交本任务的迁移和测试。
 
 ```sql
 CHECK (valid_until IS NULL OR valid_until > valid_from)
@@ -242,4 +242,5 @@ await page.getByRole('button', { name: '取消修改', exact: true }).click()
 - [x] 包含已有数据迁移、跨站越权反例、会话即时生效和使用中角色删除限制。
 - [x] 包含成员邮箱、组织负责人、添加/移出成员及客户权限边界。
 - [x] 包含三身份实际页面对照，未将模拟保存等同于后端完成。
-- [x] 本文件仅为待执行计划，T01—T12均未因编写计划而标记完成。
+- [x] 任务勾选以代码、实际测试和独立审查为依据；T01、T02 已完成，其余按实施结果更新。
+
