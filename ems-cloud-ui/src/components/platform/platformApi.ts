@@ -47,6 +47,14 @@ export type MemberGrant = {
 }
 
 export type PlatformOrganization = { id: number; name: string; parent_id: number | null }
+export type GrantTerm = "permanent" | "30d" | "90d" | "1y"
+export type GrantInput = { roleId: number; stationIds: number[]; term: GrantTerm }
+export type GrantOptions = {
+  roleId: number; grantId: number | null; term: GrantTerm
+  validFrom: string; validUntil: string | null
+  stationSelectionRequired: boolean; canSaveWithoutStations: boolean; canExpand: boolean; reason: string | null
+  stations: { id: number; name: string; selectable: boolean; reason: string | null }[]
+}
 
 const query = (params: Record<string, string | number>) => new URLSearchParams(Object.entries(params).map(([key, value]) => [key, String(value)])).toString()
 
@@ -60,4 +68,8 @@ export const platformApi = {
   saveRolePermissions: (id: number, permissionCodes: string[]) => send<BusinessRole>(`/platform/roles/${id}/permissions`, "PUT", { permissionCodes }),
   deleteRole: (id: number) => send<null>(`/platform/roles/${id}`, "DELETE"),
   memberGrants: (memberId: number, signal?: AbortSignal) => api<MemberGrant[]>(`/members/${memberId}/grants`, { signal }),
+  grantOptions: (memberId: number, roleId: number, term: GrantTerm, grantId?: number, signal?: AbortSignal) => api<GrantOptions>(`/members/${memberId}/grant-options?${query({ roleId, term, ...(grantId == null ? {} : { grantId }) })}`, { signal }),
+  createGrant: (memberId: number, body: GrantInput) => send<MemberGrant>(`/members/${memberId}/grants`, "POST", body),
+  updateGrant: (memberId: number, grantId: number, body: GrantInput) => send<MemberGrant>(`/members/${memberId}/grants/${grantId}`, "PUT", body),
+  revokeGrant: (memberId: number, grantId: number) => send<null>(`/members/${memberId}/grants/${grantId}`, "DELETE"),
 }

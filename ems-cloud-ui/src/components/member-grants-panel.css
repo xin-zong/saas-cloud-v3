@@ -1,0 +1,27 @@
+.member-grants-panel { display: grid; gap: 20px; }
+.member-grants-back { display: inline-flex; gap: 8px; align-items: center; border: 0; background: transparent; color: #64748b; cursor: pointer; }
+.member-grant-title { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; }
+.member-grant-title h2 { margin: 0; }
+.member-grant-organization { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #64748b; }
+.member-grant-organization select { max-width: 180px; border: 1px solid #dce4e2; border-radius: 5px; padding: 6px; background: white; }
+.member-grant-form fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.member-grant-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.member-grant-fields label { display: grid; gap: 9px; color: #475569; font-size: 14px; }
+.member-grant-fields select { width: 100%; height: 40px; border: 1px solid #dce4e2; border-radius: 6px; background: white; padding: 0 12px; color: #334155; }
+.member-grant-description { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 16px; padding: 14px; background: #f0f9f5; border: 1px solid #d8ede1; border-radius: 6px; }
+.member-grant-description p { margin: 5px 0 0; color: #64748b; font-size: 13px; }
+.member-grant-expiry { margin: 14px 0 0; color: #64748b; font-size: 13px; }
+.member-grant-expiry span { display: block; margin-top: 5px; }
+.member-grant-stations h2 small { font-size: 12px; font-weight: 400; margin-left: 10px; color: #64748b; }
+.member-grant-station-list { display: grid; gap: 8px; margin-top: 16px; max-height: 320px; overflow: auto; }
+.member-grant-station-list .orgv2-site-option { min-height: 48px; padding: 12px; border: 1px solid #e5e9e8; border-radius: 5px; }
+.member-grant-actions { display: flex; justify-content: flex-end; gap: 12px; padding-bottom: 10px; }
+.member-grants-table { min-width: 780px; }
+.member-grants-table td:nth-child(2) { max-width: 260px; white-space: normal; }
+.api-platform .member-grant-preview { width: min(1000px, calc(100vw - 48px)); max-height: 86vh; overflow: auto; padding: 24px; }
+.api-platform .member-grant-confirm { padding: 28px; width: min(600px, calc(100vw - 48px)); }
+.member-grant-confirm p { color: #64748b; margin: 15px 0; }
+.member-grant-summary p { color: #64748b; font-size: 14px; margin: 0; }
+@media (max-width: 700px) { .member-grant-fields { grid-template-columns: 1fr; } .member-grant-description { flex-direction: column; align-items: flex-start; } .member-grant-stations .orgv2-heading { gap: 16px; flex-wrap: wrap; } }
+
+.member-grant-stations .orgv2-search { flex: 0 1 300px; width: 300px; }

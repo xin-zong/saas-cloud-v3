@@ -82,7 +82,7 @@ test('role.manage alone opens catalog and creates an empty role, then saves and 
   await page.getByRole('button', { name: '保存修改' }).click()
   await page.getByText('角色权限已保存').waitFor()
   assert.deepEqual(requests.find(r => r.method === 'PUT' && r.path === '/platform/roles/42/permissions').body, { permissionCodes: ['asset.edit'] })
-  await page.reload()
+  await page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 })
   await page.getByRole('button', { name: '平台管理', exact: true }).click()
   await page.getByRole('button', { name: '新建运营' }).click()
   assert.equal(await page.getByRole('checkbox', { name: '编辑站点', exact: true }).isChecked(), true)

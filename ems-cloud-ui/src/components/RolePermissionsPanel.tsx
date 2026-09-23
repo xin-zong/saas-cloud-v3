@@ -37,12 +37,12 @@ export function PermissionMatrix({ catalog, selectedCodes, readOnly = false, onC
         <div className="orgv2-check-grid">{group.items.map(item => {
           const checked = selected.has(item.code)
           const disabled = readOnly || (!checked && (!item.available || !item.configurable))
-          const explanation = !item.available ? item.reason || "暂不可用" : !item.configurable ? (checked ? "可移除，当前不可新增" : item.reason || "当前不可新增") : ""
+          const explanation = !item.available ? item.reason || "暂不可用" : !readOnly && !item.configurable ? (checked ? "可移除，当前不可新增" : item.reason || "当前不可新增") : ""
           return <label key={item.code} className={disabled ? "role-permission-disabled" : ""} title={explanation || undefined}><input type="checkbox" aria-label={item.name} checked={checked} disabled={disabled} onChange={() => onChange?.(checked ? selectedCodes.filter(code => code !== item.code) : [...selectedCodes, item.code])} /><span>{item.name}{explanation && <small>{explanation}</small>}</span></label>
         })}</div>
       </section>
     })}
-    {selectedCodes.filter(code => !known.has(code)).length > 0 && <section className="orgv2-group"><h3>保留的历史权限</h3><div className="orgv2-check-grid">{selectedCodes.filter(code => !known.has(code)).map(code => <label key={code}><input type="checkbox" checked disabled={readOnly} aria-label={code} onChange={() => onChange?.(selectedCodes.filter(value => value !== code))} /><span>{code}<small>目录中已无此项；可移除</small></span></label>)}</div></section>}
+    {selectedCodes.filter(code => !known.has(code)).length > 0 && <section className="orgv2-group"><h3>保留的历史权限</h3><div className="orgv2-check-grid">{selectedCodes.filter(code => !known.has(code)).map(code => <label key={code}><input type="checkbox" checked disabled={readOnly} aria-label={code} onChange={() => onChange?.(selectedCodes.filter(value => value !== code))} /><span>{code}<small>目录中已无此项{!readOnly && "；可移除"}</small></span></label>)}</div></section>}
   </div>
 }
 
