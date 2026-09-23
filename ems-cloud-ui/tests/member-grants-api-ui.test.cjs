@@ -51,6 +51,52 @@ const grantRow = (page, id) => page.locator(`[data-grant-id="${id}"]`)
 const edit = (page, id) => grantRow(page, id).getByRole('button', { name: '编辑' }).click()
 const writes = requests => requests.filter(r => ['POST', 'PUT', 'DELETE'].includes(r.method))
 
+for (const viewport of [{width:1280,height:720},{width:1440,height:900}]) {
+  test(`grant preview is padded, separates explanations and scrolls to final permission at ${viewport.width}`, async t => {
+    const catalog=['asset','operations','maintenance','workorder','analytics','platform'].flatMap(module=>Array.from({length:9},(_,index)=>({...permission,code:`${module}.fixture${index}`,module,name:module==='platform'&&index===8?'平台末项检查':`${module}权限选项${index}`,available:false,reason:'功能暂不可用；此处保留完整权限说明以供成员查看。'})))
+    const {page}=await setup(t,{grants:[grant(101,1,{permissionCodes:[catalog[0].code],rolePermissions:catalog})]})
+    await page.setViewportSize(viewport)
+    await grantRow(page,101).getByRole('button',{name:'查看角色权限',exact:true}).click()
+    const dialog=page.getByRole('dialog')
+    if(process.env.GRANT_SCREENSHOTS){fs.mkdirSync(process.env.GRANT_SCREENSHOTS,{recursive:true});await page.screenshot({path:`${process.env.GRANT_SCREENSHOTS}/mock-preview-top-${viewport.width}.png`})}
+    const geometry=await dialog.evaluate(e=>({padding:parseFloat(getComputedStyle(e).paddingLeft),overflow:getComputedStyle(e).overflowY,scrollHeight:e.scrollHeight,clientHeight:e.clientHeight,scrollWidth:e.scrollWidth,clientWidth:e.clientWidth}))
+    assert.ok(geometry.padding>=20,`Dialog padding ${geometry.padding}`)
+    assert.equal(geometry.overflow,'auto')
+    assert.ok(geometry.scrollHeight>geometry.clientHeight,'Long catalog must have a scrollable body')
+    assert.ok(geometry.scrollWidth<=geometry.clientWidth+1,'Permission dialog must not overflow horizontally')
+    assert.equal(await dialog.locator('.orgv2-check-grid small').first().evaluate(e=>getComputedStyle(e).display),'block')
+    await dialog.hover();await page.mouse.wheel(0,10000)
+    await page.waitForFunction(()=>{const e=document.querySelector('.member-grant-preview');return e.scrollTop+e.clientHeight>=e.scrollHeight-2})
+    const final=dialog.getByRole('checkbox',{name:'平台末项检查',exact:true})
+    const position=await final.evaluate(e=>{const r=e.getBoundingClientRect(),d=e.closest('[role=dialog]').getBoundingClientRect();return {top:r.top,bottom:r.bottom,dialogTop:d.top,dialogBottom:d.bottom}})
+    assert.ok(position.top>=position.dialogTop&&position.bottom<=position.dialogBottom,'Final platform permission must be visible after wheel scrolling')
+    if(process.env.GRANT_SCREENSHOTS)await page.screenshot({path:`${process.env.GRANT_SCREENSHOTS}/mock-preview-bottom-${viewport.width}.png`})
+    await page.keyboard.press('Escape')
+    assert.equal(await page.getByRole('dialog').count(),0)
+  })
+
+  test(`grant confirmation dialogs keep padded content and reachable actions at ${viewport.width}`, async t=>{
+    const {page}=await setup(t)
+    await page.setViewportSize(viewport)
+    async function check(name){
+      const dialog=page.getByRole('dialog')
+      const geometry=await dialog.evaluate(e=>{const r=e.getBoundingClientRect();return {padding:parseFloat(getComputedStyle(e).paddingLeft),top:r.top,bottom:r.bottom,width:e.clientWidth,scrollWidth:e.scrollWidth}})
+      assert.ok(geometry.padding>=20,`${name} padding ${geometry.padding}`)
+      assert.ok(geometry.top>=0&&geometry.bottom<=viewport.height)
+      assert.ok(geometry.scrollWidth<=geometry.width+1)
+      for(const button of await dialog.getByRole('button').all()){
+        const r=await button.boundingBox();assert.ok(r.y>=geometry.top&&r.y+r.height<=geometry.bottom,'Confirmation action must fit in dialog')
+      }
+      if(process.env.GRANT_SCREENSHOTS){fs.mkdirSync(process.env.GRANT_SCREENSHOTS,{recursive:true});await page.screenshot({path:`${process.env.GRANT_SCREENSHOTS}/mock-${name}-${viewport.width}.png`})}
+      await page.keyboard.press('Escape')
+    }
+    await grantRow(page,101).getByRole('button',{name:'撤销',exact:true}).click();await check('revoke')
+    await edit(page,101);await page.getByLabel('授权期限').selectOption('90d')
+    await page.getByRole('button',{name:'保存授权',exact:true}).click();await check('term')
+    await page.getByRole('button',{name:'返回成员权限',exact:true}).click();await check('leave')
+  })
+}
+
 test('individual grant IDs survive edit, refresh and revoking only one same-role grant', async t => {
   const { page, requests, open } = await setup(t)
   await edit(page, 101); await page.getByLabel('二号站', { exact: true }).check()

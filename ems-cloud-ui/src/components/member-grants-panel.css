@@ -18,8 +18,8 @@
 .member-grant-actions { display: flex; justify-content: flex-end; gap: 12px; padding-bottom: 10px; }
 .member-grants-table { min-width: 780px; }
 .member-grants-table td:nth-child(2) { max-width: 260px; white-space: normal; }
-.api-platform .member-grant-preview { width: min(1000px, calc(100vw - 48px)); max-height: 86vh; overflow: auto; padding: 24px; }
-.api-platform .member-grant-confirm { padding: 28px; width: min(600px, calc(100vw - 48px)); }
+.api-platform .member-grants-panel .member-grant-preview { width: min(1000px, calc(100vw - 48px)); max-height: 86vh; overflow: auto; padding: 24px; }
+.api-platform .member-grants-panel .member-grant-confirm { padding: 28px; width: min(600px, calc(100vw - 48px)); overflow: auto; }
 .member-grant-confirm p { color: #64748b; margin: 15px 0; }
 .member-grant-summary p { color: #64748b; font-size: 14px; margin: 0; }
 @media (max-width: 700px) { .member-grant-fields { grid-template-columns: 1fr; } .member-grant-description { flex-direction: column; align-items: flex-start; } .member-grant-stations .orgv2-heading { gap: 16px; flex-wrap: wrap; } }

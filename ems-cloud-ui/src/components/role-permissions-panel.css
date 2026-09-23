@@ -4,13 +4,13 @@
 .role-permissions-panel .orgv2-role-list > button { display: flex; justify-content: space-between; gap: 8px; }
 .role-permissions-panel .orgv2-role-list > button small { color: #71877a; font-size: 11px; white-space: nowrap; }
 .role-permissions-panel .orgv2-role-matrix { min-height: 440px; }
-.role-permissions-panel .orgv2-role-groups { display: grid; gap: 2px; }
-.role-permissions-panel .orgv2-check-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.role-permissions-panel .orgv2-check-grid label { align-items: flex-start; padding: 4px 0; }
-.role-permissions-panel .orgv2-check-grid label span { min-width: 0; }
-.role-permissions-panel .orgv2-check-grid label small { display: block; color: #7a8980; font-size: 11px; line-height: 1.4; }
-.role-permissions-panel .role-permission-disabled { color: #78867e; cursor: not-allowed; }
-.role-permissions-panel .orgv2-group h3 { margin: 0; font-size: 13px; }
+:is(.role-permissions-panel, .member-grant-preview) .orgv2-role-groups { display: grid; gap: 2px; }
+:is(.role-permissions-panel, .member-grant-preview) .orgv2-check-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+:is(.role-permissions-panel, .member-grant-preview) .orgv2-check-grid label { align-items: flex-start; padding: 4px 0; }
+:is(.role-permissions-panel, .member-grant-preview) .orgv2-check-grid label span { min-width: 0; }
+:is(.role-permissions-panel, .member-grant-preview) .orgv2-check-grid label small { display: block; color: #7a8980; font-size: 11px; line-height: 1.4; }
+:is(.role-permissions-panel, .member-grant-preview) .role-permission-disabled { color: #78867e; cursor: not-allowed; }
+:is(.role-permissions-panel, .member-grant-preview) .orgv2-group h3 { margin: 0; font-size: 13px; }
 .api-platform .role-permissions-panel .orgv2-modal { width: min(620px, 100%); padding: 20px; overflow: auto; }
 .api-platform .role-permissions-panel .orgv2-modal form { display: block; max-height: none; }
 .api-platform .role-permissions-panel .orgv2-modal-footer { margin-top: 18px; padding: 0; border-top: 0; background: transparent; }
@@ -19,4 +19,4 @@
 .role-organization-picker { display: flex; align-items: center; gap: 10px; width: fit-content; color: var(--ui-muted); font-size: 13px; }
 .role-organization-picker select { min-height: 36px; padding: 0 10px; border: 1px solid var(--ui-border); border-radius: var(--ui-radius); background: white; color: var(--ui-text); font: inherit; }
 @media (max-width: 900px) { .role-permissions-panel .orgv2-split { grid-template-columns: 1fr; } .role-permissions-panel .orgv2-role-list { position: static; min-height: auto; } }
-@media (max-width: 640px) { .role-permissions-panel .orgv2-check-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { :is(.role-permissions-panel, .member-grant-preview) .orgv2-check-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
