@@ -20,3 +20,7 @@
 /ems-cloud-ui/dist/
 /ems-cloud-ui/build/
 /前端静态原型/*.zip
+/ems-cloud-ui/.figma/centers/
+/ems-cloud-ui/.figma/roles/
+/ems-cloud-ui/.figma/stage-one/
+/ems-cloud-ui/.figma/operations-redesign/
