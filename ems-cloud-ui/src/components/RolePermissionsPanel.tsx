@@ -59,6 +59,7 @@ const RolePermissionsPanel = forwardRef<RolePermissionsHandle, { onOpenMembers?:
   const [dialog, setDialog] = useState<"create" | "delete" | "in-use" | "leave" | null>(null)
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [directoryReady, setDirectoryReady] = useState(false)
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
   const pendingAction = useRef<(() => void) | null>(null)
@@ -75,12 +76,14 @@ const RolePermissionsPanel = forwardRef<RolePermissionsHandle, { onOpenMembers?:
   }, [])
 
   useEffect(() => {
-    if (organizationId == null) { setLoading(false); return }
+    if (organizationId == null) { setDirectoryReady(false); setLoading(false); return }
     const controller = new AbortController()
-    setLoading(true); setError("")
+    setLoading(true); setDirectoryReady(false); setError("")
+    setCatalog([]); setRoles([]); setSelectedRoleId(null); setDraft([])
     Promise.all([platformApi.permissions(organizationId, controller.signal), platformApi.roles(organizationId, "manage", controller.signal)]).then(([items, rows]) => {
       if (controller.signal.aborted) return
       setCatalog(items); setRoles(rows)
+      setDirectoryReady(true)
       const next = rows.find(role => role.id === selectedRoleId) ?? rows[0]
       setSelectedRoleId(next?.id ?? null); setDraft([...(next?.permissionCodes ?? [])])
     }).catch(e => { if (!controller.signal.aborted) setError(errorText(e)) }).finally(() => { if (!controller.signal.aborted) setLoading(false) })
@@ -95,6 +98,7 @@ const RolePermissionsPanel = forwardRef<RolePermissionsHandle, { onOpenMembers?:
   }, [dirty])
 
   function askLeave(action: () => void): Promise<boolean> {
+    if (busy) return Promise.resolve(false)
     if (!dirty) { action(); return Promise.resolve(true) }
     setDialog("leave")
     pendingAction.current = action
@@ -121,7 +125,7 @@ const RolePermissionsPanel = forwardRef<RolePermissionsHandle, { onOpenMembers?:
   }
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (organizationId == null || busy) return
+    if (organizationId == null || !directoryReady || busy) return
     const form = new FormData(event.currentTarget)
     const name = String(form.get("name") ?? "").trim()
     const description = String(form.get("description") ?? "").trim()
@@ -143,9 +147,9 @@ const RolePermissionsPanel = forwardRef<RolePermissionsHandle, { onOpenMembers?:
   }
   if (loading) return <p className="orgv2-panel" role="status">正在加载角色权限…</p>
   return <div className="role-permissions-panel">
-    {organizations.length > 1 && <label className="role-organization-picker">管理组织 <select value={organizationId ?? ""} onChange={event => { const next = Number(event.target.value); void askLeave(() => setOrganizationId(next)) }}>{organizations.map(org => <option key={org.id} value={org.id}>{org.name}</option>)}</select></label>}
+    {organizations.length > 1 && <label className="role-organization-picker">管理组织 <select value={organizationId ?? ""} disabled={busy} onChange={event => { const next = Number(event.target.value); void askLeave(() => setOrganizationId(next)) }}>{organizations.map(org => <option key={org.id} value={org.id}>{org.name}</option>)}</select></label>}
     {error && <p role="alert" className="api-inline-error">{error}</p>}
-    <div className="orgv2-split"><aside className="orgv2-panel orgv2-role-list"><div className="orgv2-heading"><h2>业务角色</h2><div className="orgv2-icon-actions"><button type="button" aria-label="新增角色" title="新增角色" onClick={() => { void askLeave(() => { setError(""); setDialog("create") }) }}><Plus size={17} /></button><button type="button" aria-label="删除当前角色" title="删除当前角色" disabled={!selectedRole} onClick={() => { if (!selectedRole) return; void askLeave(() => { setError(""); setDialog(selectedRole.canDelete ? "delete" : "in-use") }) }}><Trash2 size={16} /></button></div></div><p className="orgv2-subtext">共 {roles.length} 个角色</p>{roles.map(role => <button key={role.id} type="button" className={role.id === selectedRoleId ? "is-active" : ""} onClick={() => { void askLeave(() => { setSelectedRoleId(role.id); setDraft([...role.permissionCodes]); setError("") }) }}>{role.name}<small>{role.memberCount} 位成员</small></button>)}{!roles.length && <p className="orgv2-empty">暂无业务角色</p>}</aside>
+    <div className="orgv2-split"><aside className="orgv2-panel orgv2-role-list"><div className="orgv2-heading"><h2>业务角色</h2><div className="orgv2-icon-actions"><button type="button" aria-label="新增角色" title="新增角色" disabled={busy || !directoryReady} onClick={() => { void askLeave(() => { setError(""); setDialog("create") }) }}><Plus size={17} /></button><button type="button" aria-label="删除当前角色" title="删除当前角色" disabled={!selectedRole || busy} onClick={() => { if (!selectedRole) return; void askLeave(() => { setError(""); setDialog(selectedRole.canDelete ? "delete" : "in-use") }) }}><Trash2 size={16} /></button></div></div><p className="orgv2-subtext">共 {roles.length} 个角色</p>{roles.map(role => <button key={role.id} type="button" disabled={busy} className={role.id === selectedRoleId ? "is-active" : ""} onClick={() => { void askLeave(() => { setSelectedRoleId(role.id); setDraft([...role.permissionCodes]); setError("") }) }}>{role.name}<small>{role.memberCount} 位成员</small></button>)}{!roles.length && <p className="orgv2-empty">暂无业务角色</p>}</aside>
       <section className="orgv2-panel orgv2-role-matrix"><div className="orgv2-heading"><div><h2>{selectedRole?.name ?? "业务角色"}</h2>{selectedRole?.description && <p className="orgv2-subtext">{selectedRole.description}</p>}</div>{selectedRole && <span className="platform-status is-normal">{draft.length} 项权限</span>}</div>{selectedRole ? <><PermissionMatrix catalog={catalog} selectedCodes={draft} onChange={setDraft} readOnly={!selectedRole.canEdit || busy} />{!selectedRole.canEdit && <p className="api-context-note">{selectedRole.reason || "当前角色不可编辑"}</p>}<div className="orgv2-role-footer"><button type="button" className="orgv2-outline" disabled={!dirty || busy} onClick={() => { setDraft([...selectedRole.permissionCodes]); setError("") }}>取消修改</button><button type="button" className="orgv2-primary" disabled={!dirty || busy || !selectedRole.canEdit} onClick={() => { void save() }}>{busy ? "正在保存…" : "保存修改"}</button></div></> : <p className="orgv2-empty">选择或新建角色后配置权限</p>}</section>
     </div>
     {notice && <div role="status" className="orgv2-notice">{notice}<button type="button" aria-label="关闭提示" onClick={() => setNotice("")}><X size={14} /></button></div>}

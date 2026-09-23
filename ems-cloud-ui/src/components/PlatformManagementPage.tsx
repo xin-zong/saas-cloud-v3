@@ -4002,7 +4002,7 @@ function DemoPlatformManagementPage({
   )
 }
 
-export default function PlatformManagementPage(props: { stations?: Station[]; allowedTabs?: readonly PlatformTab[] }) {
-  if (!DEMO_MODE) return <ApiPlatformManagement stations={props.stations ?? []} allowedTabs={props.allowedTabs ?? TABS} />
+export default function PlatformManagementPage(props: { stations?: Station[]; allowedTabs?: readonly PlatformTab[]; registerLeaveGuard?: (guard: null | (() => Promise<boolean>)) => void }) {
+  if (!DEMO_MODE) return <ApiPlatformManagement stations={props.stations ?? []} allowedTabs={props.allowedTabs ?? TABS} registerLeaveGuard={props.registerLeaveGuard} />
   return <DemoPlatformManagementPage {...props} />
 }

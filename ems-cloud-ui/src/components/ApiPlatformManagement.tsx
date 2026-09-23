@@ -19,7 +19,7 @@ type Audit = { id: number; actor_id: number | null; action: string; occurred_at:
 type OrgView = "成员管理" | "组织管理" | "角色权限"
 const errorText = (error: unknown) => error instanceof Error ? error.message : "请求失败"
 
-export default function ApiPlatformManagement({ stations, allowedTabs }: { stations: Station[]; allowedTabs: readonly Tab[] }) {
+export default function ApiPlatformManagement({ stations, allowedTabs, registerLeaveGuard }: { stations: Station[]; allowedTabs: readonly Tab[]; registerLeaveGuard?: (guard: null | (() => Promise<boolean>)) => void }) {
   const { user } = useAuth()
   const [tab, setTab] = useState<Tab>(allowedTabs[0] ?? "组织权限")
   const canMembers = !!user?.permissions.some(p => ["organization.member.read", "member.manage.profile", "member.grant.manage"].includes(p))
@@ -28,6 +28,11 @@ export default function ApiPlatformManagement({ stations, allowedTabs }: { stati
   const availableViews: OrgView[] = [canMembers && "成员管理", canOrganizations && "组织管理", canRoles && "角色权限"].filter((value): value is OrgView => !!value)
   const [view, setView] = useState<OrgView>(() => canMembers ? "成员管理" : canOrganizations ? "组织管理" : "角色权限")
   const rolePanelRef = useRef<RolePermissionsHandle>(null)
+  useEffect(() => {
+    if (tab !== "组织权限" || view !== "角色权限" || !registerLeaveGuard) return
+    registerLeaveGuard(() => rolePanelRef.current?.requestLeave() ?? Promise.resolve(true))
+    return () => registerLeaveGuard(null)
+  }, [tab, view, registerLeaveGuard])
   const [members, setMembers] = useState<Member[]>([])
   const [orgs, setOrgs] = useState<Organization[]>([])
   const [roles, setRoles] = useState<Role[]>([])

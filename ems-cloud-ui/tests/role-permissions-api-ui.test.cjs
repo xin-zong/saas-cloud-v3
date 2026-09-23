@@ -15,7 +15,7 @@ const catalog = [
   entry('pending.feature', '执行固件升级', 'maintenance', { available: false, configurable: false, origin: 'prototype', reason: '后端能力尚未接入' }),
 ]
 
-async function setup(t, initialRoles = [{ id: 41, code: 'ops', name: '运营角色', description: '运营', organizationId: 3, permissionCodes: ['asset.read'], memberCount: 1, canEdit: true, canDelete: false, canAssign: true, reason: null }], userPermissions = ['role.manage']) {
+async function setup(t, initialRoles = [{ id: 41, code: 'ops', name: '运营角色', description: '运营', organizationId: 3, permissionCodes: ['asset.read'], memberCount: 1, canEdit: true, canDelete: false, canAssign: true, reason: null }], userPermissions = ['role.manage'], options = {}) {
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   t.after(() => browser.close())
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } })
@@ -25,6 +25,9 @@ async function setup(t, initialRoles = [{ id: 41, code: 'ops', name: '运营角�
   const requests = []
   const roles = initialRoles
   let failSave = false
+  let releaseSave
+  let saveStarted
+  const pendingSave = new Promise(resolve => { saveStarted = resolve })
   await page.route('http://127.0.0.1:18090/api/**', async route => {
     const req = route.request()
     const url = new URL(req.url())
@@ -34,14 +37,21 @@ async function setup(t, initialRoles = [{ id: 41, code: 'ops', name: '运营角�
     let status = 200
     let msg = 'ok'
     if (path === '/auth/me') data = { id: '7', name: '管理员', account: 'manager', role: 'integrator', organization: '华东', stationIds: [], permissions: userPermissions }
-    else if (path === '/platform/organizations' && url.searchParams.get('purpose') === 'roles') data = [{ id: 3, name: '华东', parent_id: null }]
-    else if (path === '/platform/permissions' && url.searchParams.get('organizationId') === '3') data = catalog
-    else if (path === '/platform/roles' && req.method() === 'GET' && url.searchParams.get('organizationId') === '3') data = roles
+    else if (path === '/platform/organizations' && url.searchParams.get('purpose') === 'roles') data = options.organizations || [{ id: 3, name: '华东', parent_id: null }]
+    else if (path === '/platform/permissions') {
+      if (Number(url.searchParams.get('organizationId')) === options.failOrganizationId) { status = 500; msg = '组织目录暂不可用' }
+      else data = catalog
+    }
+    else if (path === '/platform/roles' && req.method() === 'GET') {
+      if (Number(url.searchParams.get('organizationId')) === options.failOrganizationId) { status = 500; msg = '组织目录暂不可用' }
+      else data = roles.filter(role => role.organizationId === Number(url.searchParams.get('organizationId')))
+    }
     else if (path === '/platform/roles' && req.method() === 'POST') {
       const body = req.postDataJSON()
       data = { id: 42, code: 'generated-42', name: body.name, description: body.description, organizationId: 3, permissionCodes: [], memberCount: 0, canEdit: true, canDelete: true, canAssign: true, reason: null }
       roles.push(data)
     } else if (path.match(/^\/platform\/roles\/\d+\/permissions$/) && req.method() === 'PUT') {
+      if (options.pauseSave) { saveStarted(); await new Promise(resolve => { releaseSave = resolve }) }
       if (failSave) { status = 409; msg = '权限范围已变化' }
       else { data = roles.find(r => path.includes(`/${r.id}/`)); data.permissionCodes = req.postDataJSON().permissionCodes }
     } else if (path === '/platform/roles/41' && req.method() === 'DELETE') { status = 409; msg = '仍有 1 位成员使用该角色' }
@@ -52,7 +62,7 @@ async function setup(t, initialRoles = [{ id: 41, code: 'ops', name: '运营角�
   await page.goto(process.env.PREVIEW_URL || 'http://127.0.0.1:8445', { waitUntil: 'domcontentloaded', timeout: 60000 })
   await page.getByRole('button', { name: '平台管理', exact: true }).click()
   await page.getByRole('tab', { name: '角色权限' }).waitFor()
-  return { page, roles, requests, setFailSave: value => { failSave = value } }
+  return { page, roles, requests, pendingSave, releaseSave: () => releaseSave?.(), setFailSave: value => { failSave = value } }
 }
 
 test('role.manage alone opens catalog and creates an empty role, then saves and reloads selections', async t => {
@@ -134,4 +144,49 @@ test('saved permission outside current upper bound can be removed without allowi
   await page.getByRole('button', { name: '保存修改' }).click()
   await page.getByText('角色权限已保存').waitFor()
   assert.deepEqual(requests.find(r => r.method === 'PUT' && r.path === '/platform/roles/41/permissions').body, { permissionCodes: ['asset.read'] })
+})
+
+test('main sidebar asks before leaving a dirty role and cancel keeps the draft', async t => {
+  const { page, requests } = await setup(t)
+  await page.getByRole('checkbox', { name: '编辑站点', exact: true }).check()
+  await page.getByRole('button', { name: '设置', exact: true }).click()
+  await page.getByRole('heading', { name: '未保存的修改' }).waitFor()
+  await page.getByRole('button', { name: '继续编辑' }).click()
+  assert.equal(await page.getByRole('checkbox', { name: '编辑站点', exact: true }).isChecked(), true)
+  await page.getByRole('button', { name: '设置', exact: true }).click()
+  await page.getByRole('button', { name: '放弃修改' }).click()
+  await page.getByRole('checkbox', { name: '编辑站点', exact: true }).waitFor({ state: 'detached' })
+  assert.equal(requests.filter(request => request.method === 'PUT').length, 0)
+  await page.getByRole('button', { name: '平台管理', exact: true }).click()
+  assert.equal(await page.getByRole('checkbox', { name: '编辑站点', exact: true }).isChecked(), false)
+})
+
+test('pending permission save blocks role and organization context changes until its response', async t => {
+  const otherRole = { id: 43, code: 'audit', name: '审计角色', description: '审计', organizationId: 3, permissionCodes: [], memberCount: 0, canEdit: true, canDelete: true, canAssign: true, reason: null }
+  const { page, pendingSave, releaseSave } = await setup(t, [
+    { id: 41, code: 'ops', name: '运营角色', description: '运营', organizationId: 3, permissionCodes: ['asset.read'], memberCount: 1, canEdit: true, canDelete: false, canAssign: true, reason: null },
+    otherRole,
+  ], ['role.manage'], { organizations: [{ id: 3, name: '华东', parent_id: null }, { id: 4, name: '华南', parent_id: null }], pauseSave: true })
+  await page.getByRole('checkbox', { name: '编辑站点', exact: true }).check()
+  await page.getByRole('button', { name: '保存修改' }).click()
+  await pendingSave
+  assert.equal(await page.getByRole('button', { name: '审计角色' }).isDisabled(), true)
+  assert.equal(await page.getByLabel('管理组织').isDisabled(), true)
+  await page.getByRole('button', { name: '设置', exact: true }).click()
+  assert.equal(await page.getByRole('checkbox', { name: '编辑站点', exact: true }).isChecked(), true)
+  releaseSave()
+  await page.getByText('角色权限已保存').waitFor()
+  await page.getByRole('button', { name: '审计角色' }).click()
+  assert.equal(await page.getByRole('checkbox', { name: '编辑站点', exact: true }).isChecked(), false)
+})
+
+test('failed organization load hides prior organization roles and prevents stale edits', async t => {
+  const { page, requests } = await setup(t, undefined, ['role.manage'], { organizations: [{ id: 3, name: '华东', parent_id: null }, { id: 4, name: '华南', parent_id: null }], failOrganizationId: 4 })
+  await page.getByRole('checkbox', { name: '编辑站点', exact: true }).waitFor()
+  await page.getByLabel('管理组织').selectOption('4')
+  await page.getByText('组织目录暂不可用').waitFor()
+  assert.equal(await page.getByRole('button', { name: '运营角色' }).count(), 0)
+  assert.equal(await page.getByRole('checkbox', { name: '编辑站点', exact: true }).count(), 0)
+  assert.equal(await page.getByRole('button', { name: '新增角色' }).isDisabled(), true)
+  assert.equal(requests.filter(request => request.method === 'PUT').length, 0)
 })

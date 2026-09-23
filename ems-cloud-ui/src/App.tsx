@@ -345,6 +345,9 @@ export default function App() {
 
 function AuthenticatedApp({ user }: { user: AuthUser }) {
   const { logout } = useAuth()
+  const platformLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
+  const sidebarTransitionPending = useRef(false)
+  const registerPlatformLeaveGuard = useCallback((guard: null | (() => Promise<boolean>)) => { platformLeaveGuard.current = guard }, [])
 
   const roleConfig = useMemo(
     () => (DEMO_MODE ? ROLE_CONFIG[user.role] : apiRoleConfig(user)),
@@ -865,11 +868,15 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
           onCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           navItems={visibleNavItems}
           activeNav={activeNav}
-          onNavChange={(nav) => {
-            if (nav === "工单与审批") setWorkOrderFocus(null)
-
-            setActiveNav(nav as NavLabel)
-          }}
+          onNavChange={(nav) => { void (async () => {
+            if (sidebarTransitionPending.current) return
+            sidebarTransitionPending.current = true
+            try {
+              if (activeNav === "平台管理" && nav !== activeNav && platformLeaveGuard.current && !(await platformLeaveGuard.current())) return
+              if (nav === "工单与审批") setWorkOrderFocus(null)
+              setActiveNav(nav as NavLabel)
+            } finally { sidebarTransitionPending.current = false }
+          })() }}
           user={user}
           onLogout={logout}
         />
@@ -1025,6 +1032,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
           <PlatformManagementPage
             stations={scopedStations}
             allowedTabs={roleConfig.platformTabs}
+            registerLeaveGuard={registerPlatformLeaveGuard}
           />
         )}
         {activeNav === "设置" && (
