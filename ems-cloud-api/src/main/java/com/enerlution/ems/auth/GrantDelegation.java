@@ -59,13 +59,23 @@ SELECT EXISTS(SELECT 1 FROM active_member_grant g JOIN member_grant_station gs O
         db.queryForObject(
             """
 WITH RECURSIVE branch(id) AS (SELECT id FROM organization WHERE id=?
-  UNION SELECT o.id FROM organization o JOIN branch b ON o.parent_id=b.id)
-SELECT EXISTS(SELECT 1 FROM effective_station_permission p JOIN station s ON s.id=p.station_id
-  JOIN branch b ON b.id=s.organization_id WHERE p.user_id=? AND p.permission_code=?)
+  UNION SELECT o.id FROM organization o JOIN branch b ON o.parent_id=b.id),
+source_branch(grant_id,organization_id) AS (
+  SELECT g.id,r.organization_id FROM active_member_grant g JOIN app_role r ON r.id=g.role_id
+  WHERE g.user_id=? AND r.organization_id IS NOT NULL
+  UNION SELECT b.grant_id,o.id FROM source_branch b JOIN organization o ON o.parent_id=b.organization_id
+)
+SELECT EXISTS(SELECT 1 FROM active_member_grant g JOIN role_permission rp ON rp.role_id=g.role_id
+  JOIN member_grant_station gs ON gs.grant_id=g.id JOIN station s ON s.id=gs.station_id
+  JOIN branch b ON b.id=s.organization_id WHERE g.user_id=? AND rp.permission_code=?
+    AND (?<>'customer.manage' OR EXISTS(SELECT 1 FROM source_branch source
+      WHERE source.grant_id=g.id AND source.organization_id=s.organization_id)))
 """,
             Boolean.class,
             organization,
             access.userId(),
+            access.userId(),
+            code,
             code));
   }
 
@@ -128,7 +138,10 @@ WITH RECURSIVE branch(grant_id,organization_id) AS (
   WHERE g.user_id=? AND rp.permission_code=?
     AND (NOT ? OR g.valid_until IS NULL OR (?::timestamptz IS NOT NULL AND g.valid_until>=?::timestamptz))
     AND ((?::bigint IS NULL AND EXISTS(SELECT 1 FROM branch b WHERE b.grant_id=g.id AND b.organization_id=?))
-      OR (?::bigint IS NOT NULL AND EXISTS(SELECT 1 FROM member_grant_station gs WHERE gs.grant_id=g.id AND gs.station_id=?))))
+      OR (?::bigint IS NOT NULL AND EXISTS(SELECT 1 FROM member_grant_station gs JOIN station s ON s.id=gs.station_id
+        WHERE gs.grant_id=g.id AND gs.station_id=?
+          AND (?<>'customer.manage' OR EXISTS(SELECT 1 FROM branch b
+            WHERE b.grant_id=g.id AND b.organization_id=s.organization_id))))))
 """,
             Boolean.class,
             access.userId(),
@@ -140,7 +153,8 @@ WITH RECURSIVE branch(grant_id,organization_id) AS (
             station,
             organization,
             station,
-            station));
+            station,
+            code));
   }
 
   private static void deny() {

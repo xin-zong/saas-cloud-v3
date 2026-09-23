@@ -298,6 +298,93 @@ ems_permission_tests.app_role,ems_permission_tests.permission,ems_permission_tes
   }
 
   @Test
+  void customerDelegationRejectsAuthoritySplitAcrossSourceBranches() throws Exception {
+    customerDelegationFixture();
+    request("PUT", "/api/platform/customers/141", "{\"name\":\"Denied\"}", 403);
+    // Ordinary station permission semantics remain independent of the source role's owner.
+    assertTrue(actorDelegation().configurable(102, "alarm.handle"));
+    request(
+        "PUT",
+        "/api/platform/roles/112/permissions",
+        "{\"permissionCodes\":[\"asset.read\",\"alarm.handle\"]}",
+        200);
+    assertAll(
+        () -> assertFalse(actorDelegation().configurable(102, "customer.manage")),
+        () ->
+            assertEquals(
+                403,
+                assertThrows(
+                        com.enerlution.ems.common.BusinessException.class,
+                        () ->
+                            actorDelegation()
+                                .requireDelegation(
+                                    102,
+                                    108,
+                                    List.of(131L),
+                                    List.of("customer.manage"),
+                                    null,
+                                    "role.manage"))
+                    .status()),
+        () ->
+            request(
+                "PUT",
+                "/api/platform/roles/112/permissions",
+                "{\"permissionCodes\":[\"asset.read\",\"alarm.handle\",\"customer.manage\"]}",
+                403));
+    assertEquals(
+        0,
+        db.queryForObject(
+            "SELECT count(*) FROM role_permission WHERE role_id=112 AND"
+                + " permission_code='customer.manage'",
+            Integer.class));
+    assertEquals(
+        "Customer", db.queryForObject("SELECT name FROM customer WHERE id=141", String.class));
+  }
+
+  @Test
+  void customerDelegationAllowsSameSourceBranchWhilePreservingSourceExpiry() throws Exception {
+    customerDelegationFixture();
+    db.update("UPDATE app_role SET organization_id=101 WHERE id=113");
+    db.update("UPDATE member_grant SET valid_until=now()+interval '1 hour' WHERE id=123");
+    assertTrue(actorDelegation().configurable(102, "customer.manage"));
+    request("PUT", "/api/platform/customers/141", "{\"name\":\"Actor edited\"}", 200);
+    request(
+        "PUT",
+        "/api/platform/roles/112/permissions",
+        "{\"permissionCodes\":[\"asset.read\",\"customer.manage\"]}",
+        403);
+    db.update("UPDATE member_grant SET valid_until=now()+interval '30 minutes' WHERE id=122");
+    request(
+        "PUT",
+        "/api/platform/roles/112/permissions",
+        "{\"permissionCodes\":[\"asset.read\",\"customer.manage\"]}",
+        200);
+    identity(108);
+    request("PUT", "/api/platform/customers/141", "{\"name\":\"Recipient edited\"}", 200);
+    assertEquals(
+        "Recipient edited",
+        db.queryForObject("SELECT name FROM customer WHERE id=141", String.class));
+  }
+
+  private void customerDelegationFixture() {
+    db.execute(
+        """
+INSERT INTO customer(id,name) VALUES(141,'Customer');
+UPDATE station SET customer_id=141 WHERE id=131;
+INSERT INTO app_role(id,code,name,organization_id) VALUES(113,'customer-source','Customer source',103);
+INSERT INTO role_permission VALUES(113,'customer.manage'),(113,'alarm.handle');
+INSERT INTO member_grant(id,user_id,role_id,valid_from) VALUES(123,107,113,now()-interval '1 day');
+INSERT INTO member_grant_station VALUES(123,131);
+""");
+  }
+
+  private GrantDelegation actorDelegation() {
+    SessionTokens tokens = mock(SessionTokens.class);
+    when(tokens.userId()).thenReturn(107L);
+    return new GrantDelegation(db, new AccessControl(db, tokens));
+  }
+
+  @Test
   void migrationSeedsRoleManagementWithoutAssigningAnyExistingRole() throws Exception {
     db.update("DELETE FROM role_permission WHERE permission_code='role.manage'");
     db.update("DELETE FROM permission WHERE code='role.manage'");
