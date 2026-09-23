@@ -31,8 +31,7 @@ public class MarketController {
   @PostMapping("/market-drafts")
   @Transactional
   public ApiResponse<?> draft(@Valid @RequestBody Draft n) {
-    s.access.requirePermission("market.manage");
-    s.access.requireStation(n.stationId());
+    s.access.requireStationPermission(n.stationId(), "market.manage");
     if (!n.endsAt().isAfter(n.startsAt())
         || Duration.between(n.startsAt(), n.endsAt()).compareTo(Duration.ofDays(1)) > 0)
       throw new BusinessException(400, "服务时段无效");
@@ -99,7 +98,7 @@ public class MarketController {
         s.db.queryForList(
             "SELECT station_id FROM market_allocation WHERE service_id=?", Long.class, id);
     if (stations.isEmpty()) throw new BusinessException(404, "服务无关联站点");
-    stations.forEach(s.access::requireStation);
+    stations.forEach(station -> s.access.requireStationPermission(station, "market.manage"));
     if (!service.get("status").equals("draft")) throw new BusinessException(409, "仅可取消内部草稿");
     s.db.update("UPDATE market_service SET status='withdrawn' WHERE id=?", id);
     s.audit("market.cancel", "service=" + id);

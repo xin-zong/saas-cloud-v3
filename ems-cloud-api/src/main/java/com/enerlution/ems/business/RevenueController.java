@@ -24,8 +24,7 @@ public class RevenueController {
       @RequestParam LocalDate to,
       @RequestParam(defaultValue = "100") int limit,
       @RequestParam(defaultValue = "0") int offset) {
-    s.access.requirePermission("revenue.read");
-    s.access.requireStation(id);
+    s.access.requireStationPermission(id, "revenue.read");
     if (to.isBefore(from) || from.plusYears(2).isBefore(to))
       throw new BusinessException(400, "查询范围应在两年内");
     var rows =
@@ -70,9 +69,8 @@ public class RevenueController {
   @PostMapping("/settlements/{id}/reviews")
   @Transactional
   public ApiResponse<?> review(@PathVariable long id, @Valid @RequestBody Review n) {
-    s.access.requirePermission("revenue.review");
     var r = s.one("SELECT station_id FROM settlement_record WHERE id=?", id);
-    s.access.requireStation(s.number(r, "station_id"));
+    s.access.requireStationPermission(s.number(r, "station_id"), "revenue.review");
     s.db.update(
         "INSERT INTO settlement_review(record_id,author_id,note) VALUES(?,?,?)",
         id,
@@ -87,8 +85,7 @@ public class RevenueController {
       @PathVariable long id,
       @RequestParam(defaultValue = "100") int limit,
       @RequestParam(defaultValue = "0") int offset) {
-    s.access.requirePermission("market.read");
-    s.access.requireStation(id);
+    s.access.requireStationPermission(id, "market.read");
     return ApiResponse.ok(
         s.db.queryForList(
             "SELECT m.*,a.capacity_kw,a.estimated_revenue,ma.name AS area_name FROM market_service"
@@ -102,8 +99,7 @@ public class RevenueController {
 
   @GetMapping("/stations/{id}/qualifications")
   public ApiResponse<?> qualifications(@PathVariable long id) {
-    s.access.requirePermission("market.read");
-    s.access.requireStation(id);
+    s.access.requireStationPermission(id, "market.read");
     return ApiResponse.ok(
         s.db.queryForList(
             "SELECT q.*,a.name AS area_name FROM market_qualification q JOIN market_area a ON"

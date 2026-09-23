@@ -6,61 +6,58 @@ import static org.mockito.Mockito.*;
 
 import com.enerlution.ems.auth.AccessControl;
 import com.enerlution.ems.common.BusinessException;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 class PlatformScopeTest {
   @Test
-  void memberEditRejectsParentAndSiblingOrganizations() {
-    for (long targetOrg : new long[] {1L, 11L}) {
+  void memberEditRequiresBothAdministrativeOwnerAndCurrentMembership() {
+    for (long deniedOrg : new long[] {1, 11}) {
       JdbcTemplate db = mock(JdbcTemplate.class);
       AccessControl access = mock(AccessControl.class);
       when(access.userId()).thenReturn(7L);
-      when(db.queryForList(
-              eq("SELECT organization_id FROM app_user WHERE id=? FOR UPDATE"), eq(9L)))
-          .thenReturn(List.of(Map.of("organization_id", targetOrg)));
-      when(db.queryForList(eq("SELECT organization_id FROM app_user WHERE id=?"), eq(7L)))
-          .thenReturn(List.of(Map.of("organization_id", 10L)));
-      when(db.queryForObject(
-              contains("WITH RECURSIVE branch"), eq(Boolean.class), eq(10L), eq(targetOrg)))
-          .thenReturn(false);
+      when(db.queryForList(contains("FROM app_user"), eq(9L)))
+          .thenReturn(List.of(Map.of("organization_id", 11L, "management_organization_id", 1L)));
+      doThrow(new BusinessException(403, "denied"))
+          .when(access)
+          .requireOrganizationPermission(deniedOrg, "member.manage.profile");
       MemberController controller =
           new MemberController(new DomainSupport(db, access), mock(BCryptPasswordEncoder.class));
-
-      BusinessException error =
+      assertEquals(
+          403,
           assertThrows(
-              BusinessException.class,
-              () -> controller.edit(9L, new MemberController.Edit("No change", true, 10L)));
-
-      assertEquals(403, error.status());
-      verify(db, never()).update(startsWith("UPDATE app_user"), any(), any(), any(), any());
+                  BusinessException.class,
+                  () -> controller.edit(9, new MemberController.Edit("No change", true, null)))
+              .status());
+      verify(db, never()).update(startsWith("UPDATE app_user"), any(Object[].class));
     }
   }
 
   @Test
-  void creatingMemberInSiblingOrganizationIsRejectedBeforeInsert() {
+  void bulkLegacyGrantWritesAreRetired() {
     JdbcTemplate db = mock(JdbcTemplate.class);
     AccessControl access = mock(AccessControl.class);
-    when(access.userId()).thenReturn(7L);
-    when(db.queryForList(eq("SELECT organization_id FROM app_user WHERE id=?"), eq(7L)))
-        .thenReturn(List.of(Map.of("organization_id", 10L)));
-    when(db.queryForObject(contains("WITH RECURSIVE branch"), eq(Boolean.class), eq(10L), eq(11L)))
-        .thenReturn(false);
     MemberController controller =
         new MemberController(new DomainSupport(db, access), mock(BCryptPasswordEncoder.class));
-
-    BusinessException error =
+    assertEquals(
+        410,
         assertThrows(
-            BusinessException.class,
-            () ->
-                controller.create(
-                    new MemberController.Create(
-                        "sibling", "Sibling", "long-password", List.of(2L), List.of(), 11L)));
-
-    assertEquals(403, error.status());
-    verify(db, never()).update(startsWith("INSERT INTO app_user"), any(), any(), any(), any());
+                BusinessException.class,
+                () ->
+                    controller.create(
+                        new MemberController.Create(
+                            "name", "Name", "password", List.of(1L), List.of(2L), 1L)))
+            .status());
+    assertEquals(
+        410,
+        assertThrows(
+                BusinessException.class,
+                () ->
+                    controller.updateGrants(
+                        1, new MemberController.Grants(List.of(1L), List.of(2L))))
+            .status());
+    verifyNoInteractions(db);
   }
 }

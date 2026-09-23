@@ -42,13 +42,12 @@ public class TelemetryController {
       @RequestParam OffsetDateTime from,
       @RequestParam OffsetDateTime to,
       @RequestParam(defaultValue = "15") int minutes) {
-    s.access.requirePermission("telemetry.read");
     var point =
         s.one(
             "SELECT d.station_id FROM measurement_point p JOIN device d ON d.id=p.device_id WHERE"
                 + " p.id=?",
             id);
-    s.access.requireStation(s.number(point, "station_id"));
+    s.access.requireStationPermission(s.number(point, "station_id"), "telemetry.read");
     if (!Set.of(1, 5, 15, 30, 60).contains(minutes)
         || !to.isAfter(from)
         || Duration.between(from, to).compareTo(Duration.ofDays(31)) > 0)

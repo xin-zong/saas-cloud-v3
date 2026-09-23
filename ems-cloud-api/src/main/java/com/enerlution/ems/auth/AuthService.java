@@ -21,7 +21,20 @@ public class AuthService {
       String role,
       String organization,
       List<String> stationIds,
-      List<String> permissions) {}
+      List<String> permissions,
+      Map<String, List<String>> stationPermissions,
+      Map<String, List<String>> organizationPermissions) {
+    public AuthUser(
+        String id,
+        String name,
+        String account,
+        String role,
+        String organization,
+        List<String> stationIds,
+        List<String> permissions) {
+      this(id, name, account, role, organization, stationIds, permissions, Map.of(), Map.of());
+    }
+  }
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
   public record LoginResult(boolean requiresMfa, String challengeId, String token, AuthUser user) {}
@@ -177,33 +190,38 @@ public class AuthService {
             id);
     if (users.isEmpty()) throw new BusinessException(401, "Authentication required");
     List<String> roles =
-        jdbc.queryForList(
-            "select r.code from user_role ur join app_role r on r.id=ur.role_id where ur.user_id=?"
-                + " order by r.id",
-            String.class,
+        jdbc.query(
+            "select distinct r.code,r.id from active_member_grant g join app_role r on"
+                + " r.id=g.role_id where g.user_id=? order by r.id",
+            (rs, n) -> rs.getString("code"),
             id);
     String role =
         roles.stream()
-            .filter(r -> Set.of("owner", "operator", "integrator").contains(r))
+            .map(AuthService::workspaceRole)
+            .filter(Objects::nonNull)
             .findFirst()
             .orElse("operator");
-    List<String> stations =
-        jdbc
-            .queryForList(
-                "select station_id from user_station where user_id=? order by station_id",
-                Long.class,
-                id)
-            .stream()
-            .map(String::valueOf)
-            .toList();
-    List<String> permissions =
-        jdbc.queryForList(
-            "select distinct rp.permission_code from user_role ur join role_permission rp on"
-                + " rp.role_id=ur.role_id where ur.user_id=? order by rp.permission_code",
-            String.class,
-            id);
+    GrantAuthorization grants = new GrantAuthorization(jdbc, sessions);
+    Map<String, List<String>> stationPermissions = grants.capabilities(id, false);
+    Map<String, List<String>> organizationPermissions = grants.capabilities(id, true);
     String[] user = users.getFirst();
-    return new AuthUser(Long.toString(id), user[1], user[0], role, user[2], stations, permissions);
+    return new AuthUser(
+        Long.toString(id),
+        user[1],
+        user[0],
+        role,
+        user[2],
+        List.copyOf(stationPermissions.keySet()),
+        grants.permissions(id),
+        stationPermissions,
+        organizationPermissions);
+  }
+
+  static String workspaceRole(String code) {
+    if (Set.of("owner", "operator", "integrator").contains(code)) return code;
+    if (code.matches("(owner|operator|integrator)__o(?:[0-9]+|null)__r[0-9]+"))
+      return code.substring(0, code.indexOf("__"));
+    return null;
   }
 
   private void requireEnabled(long id) {

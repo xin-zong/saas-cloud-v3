@@ -1,0 +1,36 @@
+# Grant authorization and API capabilities
+
+## Public service and DTO contract
+
+`AccessControl` remains the Spring component and its `(JdbcTemplate, SessionTokens)` constructor remains compatible. It extends `GrantAuthorization`, so either type can be injected. Methods read the current database state on every call:
+
+- `long userId()` checks enabled account and rejects disabled accounts with 401 (logging out the current token).
+- `boolean hasPermission(String)` / `void requirePermission(String)` check the active union. These are entry/menu checks, never a substitute for a resource scope check.
+- `void requireStationPermission(long stationId, String permission)`; `List<Long> stationIds(String permission)` enforce same-grant permission + explicit station. No no-argument station check remains.
+- `boolean hasStationPermission(long userId, long stationId, String permission)` validates another user's active capability (assignee checks); it does not impersonate that user.
+- `void requireOrganizationPermission(long organizationId, String permission)`; `List<Long> organizationIds(String permission)` use the active grant's role-owner organization and descendants, not recipient membership. NULL role owner has no organization scope. Empty station selections never mean every station.
+- `List<String> permissions()`, `Map<String,List<String>> stationPermissions()`, `Map<String,List<String>> organizationPermissions()` expose currently active, catalog-available capabilities. Lists are sorted; station/org map keys are string IDs. Unavailable independent health/linking/coarse codes are not advertised.
+
+`AuthService.AuthUser` JSON: existing `id,name,account,role,organization,stationIds,permissions` plus `stationPermissions:{"101":["asset.read",...]}` and `organizationPermissions:{"1":["organization.manage",...]}`. `stationIds` is the available station-capability map's keys. Every `/auth/me` rebuilds maps from DB. Three demo workspace labels are recognized only from exact original code or `(owner|operator|integrator)__o(number|null)__r(number)`; this parsing never affects authorization.
+
+V8 creates `active_member_grant`, `effective_station_permission(user_id,station_id,permission_code)`, `effective_organization_permission(user_id,organization_id,permission_code)`, and `effective_permission(user_id,permission_code)`. Activity uses enabled account + inclusive `valid_from` + exclusive `valid_until`, evaluated using `statement_timestamp()`. No session authorization cache, mutable last-permission state or parallel legacy writes. All governance writes must use advisory xact lock 78291001 before reading mutable authorization. `audit.read` remains actor-only at the endpoint, including active NULL-owner legacy accounts; it never means organization-wide audit events.
+
+## Controller cutover
+
+All main Java references to `user_role`, `user_station`, `requireStation`, `workorder.manage` and `member.manage` have been removed. Resource actions resolve station from persisted alarm/workorder/plan/settlement/market records. Asset lists and workorder lists query permission-specific relations; reports independently require export and their data-kind capability on the same station. Asset edit preserves its old implicit `asset.read` conjunction on the same station, checked before mutation; read can come from another grant for that same station. Do not automatically add role permissions for this dependency.
+
+Workorder creation, assignment editing, and transition/notes use `workorder.create`, `workorder.edit`, `workorder.handle`. Workorder assignees require their own active `workorder.handle` on the target station; inspection assignees require `inspection.manage`. Existing strategy, market, tariff, telemetry, settlement and inspection operations retain exact legacy codes. Independent device-health, alarm-to-workorder, dispatch, invitation and report-generation actions remain unavailable when there is no distinct enforcing endpoint.
+
+Approval listing grants independent station visibility through `approval.read`. V8 maps existing `approval.review` to it only for new-model roles (owned roles or grant-referenced roles), never frozen original roles. Submitters get no blanket read alias: their own records remain visible only with a current effective station permission at the record station. Other people's records require station `approval.read`.
+
+`GET /platform/customers` requires `customer.read` independently of asset.read, returning existing id/name plus visible `station_count`, `can_edit`, and `stations:[{id,name,code}]`. Summaries do not include technical fields/telemetry. `can_edit` and PUT both require every customer station to match a customer.manage grant whose own role-owner branch contains that station's organization. The grant ID is retained throughout that hybrid query, preventing cross-grant branch/station mixing. A partially visible customer may be readable but not editable.
+
+Org/member/role read endpoints use organization.member.read within authorized organization branches. Profile editing requires member.manage.profile on both administrative owner and non-null current membership; it cannot silently move membership. Role definitions read endpoints are scope-limited. T09 replaces these compatibility endpoints with the complete workflow.
+
+## Cutover boundaries
+
+Apply V6/V7/V8 only as part of the coordinated backend/client cutover after stopping the old API. Original role/user link tables remain historical snapshots; runtime code does not query or write them. The standalone migration procedure is in [permission-grant-migration.md](permission-grant-migration.md).
+
+The legacy combined `POST /members` and Cartesian-product `PUT /members/{id}/grants` now return 410. The complete independent member, role and grant workflows are subsequent tasks; this intermediate backend must not be deployed alone. Current profile editing accepts `{name,enabled,organizationId?}` but rejects a changed membership; full lifecycle governance and membership operations are implemented separately.
+
+Optional real PostgreSQL tests: run `GrantAuthorizationPostgresTest` with `EMS_TEST_SCHEMA=ems_permission_tests` and private `EMS_TEST_DB_URL/EMS_TEST_DB_USER/EMS_TEST_DB_PASSWORD`. Tests hard-check database `ems_cloud_v2_proto`, set a schema-only search_path, create fixtures inside one transaction and always roll back. A database administrator must provision this isolated schema first; tests must never be pointed at public or granted permission to alter production objects.

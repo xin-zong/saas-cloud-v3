@@ -240,7 +240,17 @@
     "page": "运维中心",
     "origin": "prototype",
     "available": false,
-    "bindings": []
+    "bindings": [
+      {
+        "status": "shared-candidate",
+        "controller": "AssetController",
+        "method": "Get",
+        "sharedWithCurrentCode": "asset.read",
+        "enforcesCode": false,
+        "path": "/stations/{id}/devices",
+        "representsPrototypeOperation": false
+      }
+    ]
   },
   {
     "code": "alarm.handle",
@@ -267,7 +277,17 @@
     "page": "运维中心",
     "origin": "prototype",
     "available": false,
-    "bindings": []
+    "bindings": [
+      {
+        "status": "shared-candidate",
+        "controller": "MaintenanceController",
+        "method": "Post",
+        "sharedWithCurrentCode": "workorder.create",
+        "enforcesCode": false,
+        "path": "/work-orders",
+        "representsPrototypeOperation": false
+      }
+    ]
   },
   {
     "code": "firmware.upload",
@@ -313,13 +333,14 @@
     "scope": "station",
     "page": "工单与审批",
     "origin": "prototype",
-    "available": false,
+    "available": true,
     "bindings": [
       {
-        "status": "planned",
+        "status": "current",
         "controller": "MaintenanceController",
         "method": "Post",
-        "path": "/work-orders"
+        "path": "/work-orders",
+        "enforcesCode": true
       }
     ],
     "legacyBinding": "workorder.manage"
@@ -331,13 +352,14 @@
     "scope": "station",
     "page": "工单与审批",
     "origin": "prototype",
-    "available": false,
+    "available": true,
     "bindings": [
       {
-        "status": "planned",
+        "status": "current",
         "controller": "MaintenanceController",
         "method": "Put",
-        "path": "/work-orders/{id}/assignee"
+        "path": "/work-orders/{id}/assignee",
+        "enforcesCode": true
       }
     ],
     "legacyBinding": "workorder.manage"
@@ -349,13 +371,14 @@
     "scope": "station",
     "page": "工单与审批",
     "origin": "prototype",
-    "available": false,
+    "available": true,
     "bindings": [
       {
-        "status": "planned",
+        "status": "current",
         "controller": "MaintenanceController",
         "method": "Post",
-        "path": "/work-orders/{id}/transition"
+        "path": "/work-orders/{id}/transition",
+        "enforcesCode": true
       }
     ],
     "legacyBinding": "workorder.manage"
@@ -367,13 +390,14 @@
     "scope": "station",
     "page": "工单与审批",
     "origin": "prototype",
-    "available": false,
+    "available": true,
     "bindings": [
       {
-        "status": "planned",
+        "status": "current",
         "controller": "OperationsController",
         "method": "Get",
-        "path": "/approvals"
+        "path": "/approvals",
+        "enforcesCode": true
       }
     ]
   },
@@ -458,13 +482,14 @@
     "scope": "station",
     "page": "平台管理",
     "origin": "prototype",
-    "available": false,
+    "available": true,
     "bindings": [
       {
-        "status": "planned",
+        "status": "current",
         "controller": "PlatformController",
         "method": "Get",
-        "path": "/platform/customers"
+        "path": "/platform/customers",
+        "enforcesCode": true
       }
     ],
     "legacyBinding": "asset.read",
@@ -477,13 +502,14 @@
     "scope": "station",
     "page": "平台管理",
     "origin": "prototype",
-    "available": false,
+    "available": true,
     "bindings": [
       {
-        "status": "planned",
+        "status": "current",
         "controller": "PlatformController",
         "method": "Put",
-        "path": "/platform/customers/{id}"
+        "path": "/platform/customers/{id}",
+        "enforcesCode": true
       }
     ],
     "legacyBinding": "asset.edit + member.manage",
@@ -496,13 +522,14 @@
     "scope": "organization",
     "page": "平台管理",
     "origin": "prototype",
-    "available": false,
+    "available": true,
     "bindings": [
       {
-        "status": "planned",
+        "status": "current",
         "controller": "PlatformController",
         "method": "Get",
-        "path": "/platform/organizations"
+        "path": "/platform/organizations",
+        "enforcesCode": true
       }
     ],
     "legacyBinding": "member.manage"
@@ -514,13 +541,14 @@
     "scope": "organization",
     "page": "平台管理",
     "origin": "prototype",
-    "available": false,
+    "available": true,
     "bindings": [
       {
-        "status": "planned",
+        "status": "current",
         "controller": "PlatformController",
         "method": "Put",
-        "path": "/platform/organizations/{id}"
+        "path": "/platform/organizations/{id}",
+        "enforcesCode": true
       }
     ],
     "legacyBinding": "member.manage"
@@ -532,13 +560,14 @@
     "scope": "organization",
     "page": "平台管理",
     "origin": "prototype",
-    "available": false,
+    "available": true,
     "bindings": [
       {
-        "status": "planned",
+        "status": "current",
         "controller": "MemberController",
         "method": "Put",
-        "path": "/members/{id}"
+        "path": "/members/{id}",
+        "enforcesCode": true
       }
     ],
     "legacyBinding": "member.manage"
@@ -705,15 +734,17 @@
     "scope": "station",
     "page": "现有功能扩展",
     "origin": "existing-extension",
-    "available": true,
+    "available": false,
     "bindings": [
       {
-        "status": "current",
+        "status": "planned",
         "controller": "MaintenanceController",
         "method": "Post",
-        "path": "/work-orders"
+        "path": "/work-orders",
+        "enforcesCode": false
       }
-    ]
+    ],
+    "notes": "历史粗粒度代码，仅保留迁移基线；当前接口使用拆分后的独立权限。"
   },
   {
     "code": "member.manage",
@@ -722,14 +753,16 @@
     "scope": "organization",
     "page": "现有功能扩展",
     "origin": "existing-extension",
-    "available": true,
+    "available": false,
     "bindings": [
       {
-        "status": "current",
+        "status": "planned",
         "controller": "MemberController",
         "method": "Put",
-        "path": "/members/{id}"
+        "path": "/members/{id}",
+        "enforcesCode": false
       }
-    ]
+    ],
+    "notes": "历史粗粒度代码，仅保留迁移基线；当前接口使用拆分后的独立权限。"
   }
 ]

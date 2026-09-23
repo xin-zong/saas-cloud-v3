@@ -49,7 +49,10 @@ class AuthBehaviorTest {
         .thenReturn(true, false);
     AccessControl access = new AccessControl(jdbc, sessions);
     assertEquals(
-        403, assertThrows(BusinessException.class, () -> access.requireStation(9)).status());
+        403,
+        assertThrows(
+                BusinessException.class, () -> access.requireStationPermission(9, "asset.read"))
+            .status());
   }
 
   @Test

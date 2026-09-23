@@ -20,8 +20,7 @@ public class OperationsController {
 
   @GetMapping("/stations/{id}/plans")
   public ApiResponse<?> plans(@PathVariable long id, @RequestParam LocalDate date) {
-    s.access.requirePermission("strategy.read");
-    s.access.requireStation(id);
+    s.access.requireStationPermission(id, "strategy.read");
     var rows =
         s.db.queryForList(
             "SELECT * FROM operating_plan WHERE station_id=? AND service_date=? ORDER BY version"
@@ -45,8 +44,7 @@ public class OperationsController {
   @PostMapping("/plans")
   @Transactional
   public ApiResponse<?> createPlan(@Valid @RequestBody Plan n) {
-    s.access.requirePermission("strategy.manage");
-    s.access.requireStation(n.stationId());
+    s.access.requireStationPermission(n.stationId(), "strategy.manage");
     var station = s.one("SELECT rated_power_kw FROM station WHERE id=? FOR UPDATE", n.stationId());
     BusinessRules.periods(n.periods(), (BigDecimal) station.get("rated_power_kw"));
     Integer version =
@@ -82,9 +80,8 @@ public class OperationsController {
   @PostMapping("/plans/{id}/submit")
   @Transactional
   public ApiResponse<?> submit(@PathVariable long id) {
-    s.access.requirePermission("strategy.manage");
     var plan = s.one("SELECT * FROM operating_plan WHERE id=? FOR UPDATE", id);
-    s.access.requireStation(s.number(plan, "station_id"));
+    s.access.requireStationPermission(s.number(plan, "station_id"), "strategy.manage");
     if (!plan.get("status").equals("draft")) throw new BusinessException(409, "只有草稿可提交");
     s.db.update("UPDATE operating_plan SET status='submitted' WHERE id=?", id);
     Long approval =
@@ -110,13 +107,11 @@ public class OperationsController {
                 + " work_order w ON w.id=a.work_order_id JOIN station st ON"
                 + " st.id=coalesce(p.station_id,w.station_id) JOIN app_user submitter ON"
                 + " submitter.id=a.submitter_id LEFT JOIN app_user reviewer ON"
-                + " reviewer.id=a.reviewer_id WHERE (a.submitter_id=? OR EXISTS(SELECT 1 FROM"
-                + " user_role ur JOIN role_permission rp ON rp.role_id=ur.role_id WHERE"
-                + " ur.user_id=? AND rp.permission_code='approval.review')) AND EXISTS(SELECT 1"
-                + " FROM user_station us WHERE us.user_id=? AND"
-                + " us.station_id=coalesce(p.station_id,w.station_id)) ORDER BY a.id DESC LIMIT"
-                + " ? OFFSET ?",
-            user,
+                + " reviewer.id=a.reviewer_id WHERE EXISTS(SELECT 1 FROM"
+                + " effective_station_permission pscope WHERE pscope.user_id=? AND"
+                + " pscope.station_id=st.id AND (pscope.permission_code='approval.read' OR"
+                + " a.submitter_id=?))"
+                + " ORDER BY a.id DESC LIMIT ? OFFSET ?",
             user,
             user,
             s.limit(limit),
@@ -130,16 +125,15 @@ public class OperationsController {
   @PostMapping("/approvals/{id}/decision")
   @Transactional
   public ApiResponse<?> decision(@PathVariable long id, @Valid @RequestBody Decision n) {
-    s.access.requirePermission("approval.review");
     var a = s.one("SELECT * FROM approval WHERE id=? FOR UPDATE", id);
-    if (!a.get("status").equals("pending")) throw new BusinessException(409, "审批已经结束");
-    if (s.number(a, "submitter_id") == s.access.userId())
-      throw new BusinessException(403, "不能审批自己的申请");
     Map<String, Object> target =
         a.get("plan_id") != null
             ? s.one("SELECT * FROM operating_plan WHERE id=? FOR UPDATE", a.get("plan_id"))
             : s.one("SELECT * FROM work_order WHERE id=? FOR UPDATE", a.get("work_order_id"));
-    s.access.requireStation(s.number(target, "station_id"));
+    s.access.requireStationPermission(s.number(target, "station_id"), "approval.review");
+    if (!a.get("status").equals("pending")) throw new BusinessException(409, "审批已经结束");
+    if (s.number(a, "submitter_id") == s.access.userId())
+      throw new BusinessException(403, "不能审批自己的申请");
     if (a.get("plan_id") != null) {
       if (!target.get("status").equals("submitted")) throw new BusinessException(409, "计划状态已变化");
       s.db.update("UPDATE operating_plan SET status=? WHERE id=?", n.decision(), a.get("plan_id"));
@@ -156,8 +150,7 @@ public class OperationsController {
 
   @GetMapping("/stations/{id}/tariffs")
   public ApiResponse<?> tariffs(@PathVariable long id) {
-    s.access.requirePermission("tariff.manage");
-    s.access.requireStation(id);
+    s.access.requireStationPermission(id, "tariff.manage");
     var rows =
         s.db.queryForList(
             "SELECT st.*,t.name,t.currency FROM station_tariff st JOIN tariff t ON"
@@ -189,8 +182,7 @@ public class OperationsController {
   @PostMapping("/tariffs")
   @Transactional
   public ApiResponse<?> tariff(@Valid @RequestBody Tariff n) {
-    s.access.requirePermission("tariff.manage");
-    s.access.requireStation(n.stationId());
+    s.access.requireStationPermission(n.stationId(), "tariff.manage");
     if (!n.validUntil().isAfter(n.validFrom())) throw new BusinessException(400, "有效期无效");
     int end = 0;
     for (var p :

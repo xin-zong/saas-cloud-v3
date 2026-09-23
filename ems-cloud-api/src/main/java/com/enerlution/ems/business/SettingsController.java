@@ -47,35 +47,38 @@ public class SettingsController {
 
   @GetMapping("/members")
   public ApiResponse<?> members() {
-    s.access.requirePermission("member.manage");
+    s.access.requirePermission("organization.member.read");
     return ApiResponse.ok(
         s.db.queryForList(
             """
-WITH RECURSIVE branch AS (
-  SELECT o.id FROM organization o JOIN app_user actor ON actor.organization_id=o.id WHERE actor.id=?
-  UNION ALL SELECT child.id FROM organization child JOIN branch parent ON child.parent_id=parent.id
-) SELECT u.id,u.account,u.display_name,u.enabled,u.organization_id
-  FROM app_user u JOIN branch b ON b.id=u.organization_id ORDER BY u.id
-""",
+SELECT u.id,u.account,u.display_name,u.email,u.enabled,u.organization_id,u.management_organization_id
+FROM app_user u JOIN effective_organization_permission p ON p.organization_id=u.management_organization_id
+WHERE p.user_id=? AND p.permission_code='organization.member.read'
+ AND (u.organization_id IS NULL OR EXISTS(SELECT 1 FROM effective_organization_permission m
+  WHERE m.user_id=p.user_id AND m.organization_id=u.organization_id AND m.permission_code='organization.member.read'))
+ORDER BY u.id""",
             s.access.userId()));
   }
 
   @GetMapping("/organizations")
   public ApiResponse<?> organizations() {
-    s.access.requirePermission("member.manage");
+    s.access.requirePermission("organization.member.read");
     return ApiResponse.ok(
         s.db.queryForList(
-            "SELECT o.* FROM organization o JOIN app_user u ON u.organization_id=o.id WHERE u.id=?",
+            "SELECT o.* FROM organization o JOIN effective_organization_permission p ON"
+                + " p.organization_id=o.id WHERE p.user_id=? AND"
+                + " p.permission_code='organization.member.read' ORDER BY o.id",
             s.access.userId()));
   }
 
   @GetMapping("/roles")
   public ApiResponse<?> roles() {
-    s.access.requirePermission("member.manage");
+    s.access.requirePermission("organization.member.read");
     return ApiResponse.ok(
         s.db.queryForList(
-            "SELECT r.id,r.code,r.name FROM app_role r JOIN user_role ur ON ur.role_id=r.id WHERE"
-                + " ur.user_id=? ORDER BY r.id",
+            "SELECT r.id,r.code,r.name FROM app_role r JOIN effective_organization_permission ur ON"
+                + " ur.organization_id=r.organization_id WHERE ur.user_id=? AND"
+                + " ur.permission_code='organization.member.read' ORDER BY r.id",
             s.access.userId()));
   }
 

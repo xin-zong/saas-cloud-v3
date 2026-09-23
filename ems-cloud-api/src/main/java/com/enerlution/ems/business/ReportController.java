@@ -22,13 +22,12 @@ public class ReportController {
       @PathVariable String kind,
       @RequestParam LocalDate from,
       @RequestParam LocalDate to) {
-    s.access.requirePermission("report.export");
-    s.access.requireStation(id);
+    s.access.requireStationPermission(id, "report.export");
     if (to.isBefore(from) || to.isAfter(from.plusYears(1)))
       throw new BusinessException(400, "报告日期范围无效");
     List<Map<String, Object>> rows;
     if (kind.equals("revenue")) {
-      s.access.requirePermission("revenue.read");
+      s.access.requireStationPermission(id, "revenue.read");
       rows =
           s.db.queryForList(
               "SELECT r.reference,r.recognition_date,c.currency,r.status,l.category,l.amount FROM"
@@ -41,7 +40,7 @@ public class ReportController {
               to,
               LocalDate.now(ZoneId.of("Asia/Shanghai")));
     } else if (kind.equals("health")) {
-      s.access.requirePermission("asset.read");
+      s.access.requireStationPermission(id, "asset.read");
       rows =
           s.db.queryForList(
               "SELECT d.code,d.name,o.observed_at,o.communication_status,o.health_score FROM device"
@@ -53,7 +52,7 @@ public class ReportController {
               from,
               to);
     } else if (kind.equals("operations")) {
-      s.access.requirePermission("strategy.read");
+      s.access.requireStationPermission(id, "strategy.read");
       rows =
           s.db.queryForList(
               "SELECT"

@@ -20,11 +20,11 @@ public class AssetController {
   @GetMapping("/stations")
   public ApiResponse<?> stations(
       @RequestParam(defaultValue = "100") int limit, @RequestParam(defaultValue = "0") int offset) {
-    s.access.requirePermission("asset.read");
     return ApiResponse.ok(
         s.db.queryForList(
-            "SELECT s.* FROM station s JOIN user_station us ON us.station_id=s.id WHERE"
-                + " us.user_id=? ORDER BY s.id LIMIT ? OFFSET ?",
+            "SELECT s.* FROM station s JOIN effective_station_permission us ON us.station_id=s.id"
+                + " WHERE us.user_id=? AND us.permission_code='asset.read' ORDER BY s.id LIMIT ?"
+                + " OFFSET ?",
             s.access.userId(),
             s.limit(limit),
             s.offset(offset)));
@@ -32,8 +32,7 @@ public class AssetController {
 
   @GetMapping("/stations/{id}")
   public ApiResponse<?> station(@PathVariable long id) {
-    s.access.requirePermission("asset.read");
-    s.access.requireStation(id);
+    s.access.requireStationPermission(id, "asset.read");
     return ApiResponse.ok(s.one("SELECT * FROM station WHERE id=?", id));
   }
 
@@ -49,8 +48,8 @@ public class AssetController {
   @PutMapping("/stations/{id}")
   @Transactional
   public ApiResponse<?> edit(@PathVariable long id, @Valid @RequestBody Edit e) {
-    s.access.requirePermission("asset.edit");
-    s.access.requireStation(id);
+    s.access.requireStationPermission(id, "asset.edit");
+    s.access.requireStationPermission(id, "asset.read");
     s.one("SELECT id FROM station WHERE id=? FOR UPDATE", id);
     if (Boolean.TRUE.equals(
         s.db.queryForObject(
@@ -85,13 +84,12 @@ public class AssetController {
         e.latitude(),
         id);
     s.audit("station.edit", "station=" + id);
-    return station(id);
+    return ApiResponse.ok(s.one("SELECT * FROM station WHERE id=?", id));
   }
 
   @GetMapping("/stations/{id}/devices")
   public ApiResponse<?> devices(@PathVariable long id) {
-    s.access.requirePermission("asset.read");
-    s.access.requireStation(id);
+    s.access.requireStationPermission(id, "asset.read");
     return ApiResponse.ok(
         s.db.queryForList(
             "SELECT d.*,m.name AS model_name,m.category,o.observed_at,CASE WHEN o.observed_at>now()"
@@ -106,8 +104,7 @@ public class AssetController {
 
   @GetMapping("/stations/{id}/points")
   public ApiResponse<?> points(@PathVariable long id) {
-    s.access.requirePermission("telemetry.read");
-    s.access.requireStation(id);
+    s.access.requireStationPermission(id, "telemetry.read");
     return ApiResponse.ok(
         s.db.queryForList(
             "SELECT p.*,k.name,k.unit FROM measurement_point p JOIN device d ON d.id=p.device_id"
@@ -118,8 +115,7 @@ public class AssetController {
 
   @GetMapping("/stations/{id}/topology")
   public ApiResponse<?> topology(@PathVariable long id) {
-    s.access.requirePermission("asset.read");
-    s.access.requireStation(id);
+    s.access.requireStationPermission(id, "asset.read");
     return ApiResponse.ok(
         s.db.queryForList(
             "SELECT t.* FROM topology_connection t JOIN device a ON a.id=t.source_device_id JOIN"

@@ -4,7 +4,7 @@
 
 `available=true` 仅表示代码已用**相同 code**在至少一个列出的当前接口上执行权限检查；这不保证前端对应按钮、完整业务流程或未来逐条授权已经实现。`current` 的接口和检查均已存在；`planned` 标出需新增独立检查的明确目标接口；`shared-candidate` 仅标出语义可能重叠的现有接口，尚未决定新 code 的检查点，不得把它解释成替换旧 code、增加 OR 检查或增加 AND 检查的实施指令。没有绑定的项不在本期可执行范围内，不应开放选择或显示成已实现。特别是站点接入、真实策略下发、外部邀约和真实固件升级尚未实现。
 
-> 当前 `AccessControl.requirePermission` 和 `requireStation` 分开判定。目录中的站点作用域是目标模型，不代表现有接口已按同一条授权同时检查权限与站点。T04 将完成联合判定；配置界面在此之前不得将未来 code 当成已授权能力。
+> T04 已切换到 `requireStationPermission(stationId, code)` 与有效授权查询，权限和站点必须来自同一条当前有效授权。组织作用域来自授权角色的管理组织及子树，不随成员当前组织移动。完整服务和客户端契约见 [联合鉴权说明](permission-grant-authorization.md)。
 
 ## 原型权限（38）
 
@@ -19,34 +19,34 @@
 | asset / 资产与站点 | 编辑运行策略 | `strategy.manage` | station | 可用 | `current: POST /plans` |
 | asset / 资产与站点 | 下发运行策略 | `strategy.dispatch` | station | 暂不可用 | 无（范围外或待定义） |
 | operations / 运营中心 | 查看运营总览 | `operations.read` | station | 暂不可用 | 无（范围外或待定义） |
-| operations / 运营中心 | 查看收益核算 | `settlement.read` | station | 暂不可用 | `shared-candidate: GET /stations/{id}/settlements`<br>现有检查：`revenue.read` |
-| operations / 运营中心 | 查看计划调度 | `dispatch.read` | station | 暂不可用 | `shared-candidate: GET /stations/{id}/plans`<br>现有检查：`strategy.read` |
-| operations / 运营中心 | 制定调度计划 | `dispatch.manage` | station | 暂不可用 | `shared-candidate: POST /plans`<br>现有检查：`strategy.manage` |
-| operations / 运营中心 | 查看响应邀约 | `invitation.read` | station | 暂不可用 | `shared-candidate: GET /stations/{id}/market-services`（市场服务，并非邀约接口）<br>现有检查：`market.read` |
+| operations / 运营中心 | 查看收益核算 | `settlement.read` | station | 暂不可用 | `shared-candidate: GET /stations/{id}/settlements` |
+| operations / 运营中心 | 查看计划调度 | `dispatch.read` | station | 暂不可用 | `shared-candidate: GET /stations/{id}/plans` |
+| operations / 运营中心 | 制定调度计划 | `dispatch.manage` | station | 暂不可用 | `shared-candidate: POST /plans` |
+| operations / 运营中心 | 查看响应邀约 | `invitation.read` | station | 暂不可用 | `shared-candidate: GET /stations/{id}/market-services` |
 | operations / 运营中心 | 接受响应邀约 | `invitation.accept` | station | 暂不可用 | 无（范围外或待定义） |
 | maintenance / 运维中心 | 查看告警 | `alarm.read` | station | 可用 | `current: GET /stations/{id}/alarms` |
-| maintenance / 运维中心 | 查看设备健康 | `device.health.read` | station | 暂不可用 | 无（范围外或待定义） |
+| maintenance / 运维中心 | 查看设备健康 | `device.health.read` | station | 暂不可用 | `shared-candidate: GET /stations/{id}/devices` |
 | maintenance / 运维中心 | 处理告警 | `alarm.handle` | station | 可用 | `current: POST /alarms/{id}/acknowledge` |
-| maintenance / 运维中心 | 转为运维工单 | `alarm.to.workorder` | station | 暂不可用 | 无（范围外或待定义） |
+| maintenance / 运维中心 | 转为运维工单 | `alarm.to.workorder` | station | 暂不可用 | `shared-candidate: POST /work-orders` |
 | maintenance / 运维中心 | 上传目标固件 | `firmware.upload` | station | 暂不可用 | 无（范围外或待定义） |
 | maintenance / 运维中心 | 执行固件升级 | `firmware.upgrade` | station | 暂不可用 | 无（范围外或待定义） |
 | workorder / 工单与审批 | 查看工单 | `workorder.read` | station | 可用 | `current: GET /work-orders` |
-| workorder / 工单与审批 | 新建工单 | `workorder.create` | station | 暂不可用 | `planned: POST /work-orders`<br>现有检查：`workorder.manage` |
-| workorder / 工单与审批 | 编辑工单 | `workorder.edit` | station | 暂不可用 | `planned: PUT /work-orders/{id}/assignee`<br>现有检查：`workorder.manage` |
-| workorder / 工单与审批 | 处理工单 | `workorder.handle` | station | 暂不可用 | `planned: POST /work-orders/{id}/transition`<br>现有检查：`workorder.manage` |
-| workorder / 工单与审批 | 查看审批 | `approval.read` | station | 暂不可用 | `planned: GET /approvals` |
+| workorder / 工单与审批 | 新建工单 | `workorder.create` | station | 可用 | `current: POST /work-orders` |
+| workorder / 工单与审批 | 编辑工单 | `workorder.edit` | station | 可用 | `current: PUT /work-orders/{id}/assignee` |
+| workorder / 工单与审批 | 处理工单 | `workorder.handle` | station | 可用 | `current: POST /work-orders/{id}/transition` |
+| workorder / 工单与审批 | 查看审批 | `approval.read` | station | 可用 | `current: GET /approvals` |
 | workorder / 工单与审批 | 审批申请 | `approval.review` | station | 可用 | `current: POST /approvals/{id}/decision` |
 | analytics / 分析与报告 | 实时数据分析 | `analytics.realtime.read` | station | 暂不可用 | 无（范围外或待定义） |
-| analytics / 分析与报告 | 历史趋势分析 | `analytics.history.read` | station | 暂不可用 | `shared-candidate: GET /points/{id}/history`<br>现有检查：`telemetry.read` |
+| analytics / 分析与报告 | 历史趋势分析 | `analytics.history.read` | station | 暂不可用 | `shared-candidate: GET /points/{id}/history` |
 | analytics / 分析与报告 | 生成报告 | `report.generate` | station | 暂不可用 | 无（范围外或待定义） |
 | analytics / 分析与报告 | 下载数据 | `report.export` | station | 可用 | `current: GET /stations/{id}/reports/{kind}` |
-| platform / 平台管理 | 查看客户 | `customer.read` | station | 暂不可用 | `planned: GET /platform/customers`<br>现有检查：`asset.read` |
-| platform / 平台管理 | 管理客户 | `customer.manage` | station | 暂不可用 | `planned: PUT /platform/customers/{id}`<br>现有检查：`asset.edit + member.manage` |
-| platform / 平台管理 | 查看组织与成员 | `organization.member.read` | organization | 暂不可用 | `planned: GET /platform/organizations`<br>现有检查：`member.manage` |
-| platform / 平台管理 | 管理组织 | `organization.manage` | organization | 暂不可用 | `planned: PUT /platform/organizations/{id}`<br>现有检查：`member.manage` |
-| platform / 平台管理 | 管理成员 | `member.manage.profile` | organization | 暂不可用 | `planned: PUT /members/{id}`<br>现有检查：`member.manage` |
-| platform / 平台管理 | 配置角色权限 | `role.manage` | organization | 暂不可用 | `planned: PUT /platform/roles/{id}/permissions`<br>现有检查：`member.manage (read-only role-permissions endpoint)` |
-| platform / 平台管理 | 分配成员权限 | `member.grant.manage` | organization | 暂不可用 | `planned: POST /members/{memberId}/grants`<br>现有检查：`member.manage (coarse PUT /members/{id}/grants)` |
+| platform / 平台管理 | 查看客户 | `customer.read` | station | 可用 | `current: GET /platform/customers` |
+| platform / 平台管理 | 管理客户 | `customer.manage` | station | 可用 | `current: PUT /platform/customers/{id}` |
+| platform / 平台管理 | 查看组织与成员 | `organization.member.read` | organization | 可用 | `current: GET /platform/organizations` |
+| platform / 平台管理 | 管理组织 | `organization.manage` | organization | 可用 | `current: PUT /platform/organizations/{id}` |
+| platform / 平台管理 | 管理成员 | `member.manage.profile` | organization | 可用 | `current: PUT /members/{id}` |
+| platform / 平台管理 | 配置角色权限 | `role.manage` | organization | 暂不可用 | `planned: PUT /platform/roles/{id}/permissions` |
+| platform / 平台管理 | 分配成员权限 | `member.grant.manage` | organization | 暂不可用 | `planned: POST /members/{memberId}/grants` |
 | platform / 平台管理 | 查看安全审计 | `audit.read` | organization | 可用 | `current: GET /audit` |
 
 ## 现有扩展（8）
@@ -59,19 +59,17 @@
 | operations / 现有功能扩展 | 查看市场服务与资质 | `market.read` | station | 可用 | `current: GET /stations/{id}/market-services` |
 | operations / 现有功能扩展 | 管理内部市场草稿 | `market.manage` | station | 可用 | `current: POST /market-drafts` |
 | operations / 现有功能扩展 | 复核收益结算 | `revenue.review` | station | 可用 | `current: POST /settlements/{id}/reviews` |
-| workorder / 现有功能扩展 | 旧版工单合并管理 | `workorder.manage` | station | 可用 | `current: POST /work-orders` |
-| platform / 现有功能扩展 | 旧版组织成员合并管理 | `member.manage` | organization | 可用 | `current: PUT /members/{id}` |
+| workorder / 现有功能扩展 | 旧版工单合并管理 | `workorder.manage` | station | 暂不可用 | `planned: POST /work-orders` |
+| platform / 现有功能扩展 | 旧版组织成员合并管理 | `member.manage` | organization | 暂不可用 | `planned: PUT /members/{id}` |
 
-## 粗粒度旧权限的显式拆分
+## T04 已实施的显式拆分
 
-`workorder.manage` 目前检查 `POST /work-orders`、`PUT /work-orders/{id}/assignee`、`POST /work-orders/{id}/transition`、`POST /work-orders/{id}/notes`。目标分别是 `workorder.create`、`workorder.edit`、`workorder.handle`（状态转换和处理备注）。旧 code 在切换前继续作为现有扩展保留，不可同时把它解释成三个新 code 的授权。
+`workorder.manage` 已由 `workorder.create`（新建）、`workorder.edit`（更改负责人）、`workorder.handle`（状态转换和处理备注）替代。`member.manage` 已由 `organization.member.read`、`organization.manage`、`member.manage.profile` 分别用于对应读写操作。旧 code 仅保留历史迁移基线，不可在新角色中配置；没有 OR 别名回退。逐条授权与角色配置由 T05/T06 接入后再启用 `member.grant.manage`、`role.manage`。
 
-`member.manage` 目前检查组织读写、成员创建/编辑、旧版 `PUT /members/{id}/grants`、角色权限只读接口，以及设置中的成员/组织/角色列表。目标拆成 `organization.member.read`（读取组织与成员）、`organization.manage`（组织写操作）、`member.manage.profile`（成员资料写操作）、`role.manage`（角色及权限配置）和 `member.grant.manage`（逐条分配/撤销）。`GET /platform/role-permissions` 现在只读，不能被当成“配置角色权限”已实现。客户读写另拆 `customer.read` 和 `customer.manage`；现有读接口检查 `asset.read`，写接口同时检查 `asset.edit` 与 `member.manage`。
+客户读写检查独立的 `customer.read`、`customer.manage`。读取只汇总当前读权限可见的站点，并附加 `{id,name,code}` 摘要。编辑必须覆盖客户全部站点，每站的 customer.manage 授权自身角色管理组织分支还必须包含该站所属组织；不能跨不同授权拼接站点和组织条件。`can_edit` 使用与写接口相同的判断。
 
-客户为跨站聚合资源，不能只按组织授权。`customer.read` 的当前查询只汇总操作者 `user_station` 可见站点，并不限制组织分支；新 code 必须保留站点可见性过滤。`customer.manage` 的现有写操作在两个 code 检查之外，要求该客户的**所有**站点都属于操作者站点范围，且每站均在操作者组织分支内；目标 `scopeRule` 记录了这一联合条件，不能用单纯组织权限放宽，也不能仅凭一个可见站点编辑整个客户。
+V7 按旧有效能力显式拆分，`customer.manage` 仅从旧 `asset.edit` 与 `member.manage` 的组合迁移，角色名不参与鉴权。V8 仅为新模型中的原审批角色补齐 `approval.read`，保留原始角色权限快照。提交人只要保有记录所属站点的有效权限，仍可看自己的历史申请；其他记录必须有该站 `approval.read`。
 
-迁移映射必须按**现有有效权限组合**对照，而非按 `owner` / `operator` / `integrator` 角色名推断；自定义角色和 `super_admin` 也要纳入 T03 基线。`workorder.manage` 的旧有效操作对应上述三项新 code，`member.manage` 的旧有效操作对应组织、成员资料和旧版授权写操作；历史上没有角色写接口，不能仅凭它自动授予 `role.manage`。旧版成员授权能力到 `member.grant.manage` 的迁移还需与逐条授权的目标成员、站点、有效期范围一并校验。`customer.manage` 旧能力要求 `asset.edit` **且** `member.manage` 同时有效；仅有其中之一的用户不得取得新 code。目录本身不执行迁移或增加任何授权，具体数据对照留给 T03。
+资产编辑保持既有返回内容要求：同一目标站需要 `asset.edit` 与 `asset.read`，可以来自该站的不同有效授权。报表同样同时检查目标站的 `report.export` 与数据种类权限（revenue.read / asset.read / strategy.read）。
 
-`approval.read` 的当前列表依靠 SQL 过滤而无独立 `requirePermission`，故仍标为 planned；`approval.review` 有明确检查。`report.export` 绑定现有报告下载接口；原型的“生成报告”另列 `report.generate`，现有接口不等于生成任务。`market.manage` 只代表内部草稿，不是外部市场交易。
-
-`settlement.read` 与 `revenue.read`、`dispatch.read/manage` 与 `strategy.read/manage`、`analytics.history.read` 与 `telemetry.read` 目前共享各自接口；`invitation.read` 指向的市场服务列表并不是邀约列表。这五项只是候选对应关系，均保持不可用，须先定义各自独立的业务语义和真实入口。现有历史数据接口仍以 `telemetry.read` 控制，原型“历史趋势分析”不能据此直接换成新 code。T04 只接入已经明确的操作拆分，不根据这些候选关系改变旧接口的许可条件。目录中的 planned 路由是其余目标检查位置；T01 未改动控制器或数据库。可用项的测试会核对当前路由上确实出现相同 code 的后端检查；无接口项必须保持 `available=false`。
+独立设备健康与告警转工单目前仍不可用：现有设备接口由 `asset.read` 控制，工单新建可附带 alarmId 并由 `workorder.create` 控制。`settlement.read`、`dispatch.read/manage`、`invitation.read`、`analytics.history.read` 等候选关系没有改变旧接口许可条件。策略、市场、电价、遥测、结算复核及巡检仍使用真实已实现的扩展 code。
