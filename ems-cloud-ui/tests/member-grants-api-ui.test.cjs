@@ -15,12 +15,25 @@ async function setup(t, options = {}) {
   const roles = options.roles || [role, { ...role, id: 42, name: '组织管理员', permissionCodes: ['organization.member.read'] }]
   let releaseSave, startedSave, failOptions = false
   const pendingSave = new Promise(resolve => { startedSave = resolve })
+  let currentUser = { id: '7', name: '授权管理员', account: 'manager', role: 'integrator', organization: '华东', stationIds: [], permissions: options.readOnly ? ['organization.member.read'] : ['member.grant.manage', 'audit.read'], organizationPermissions: {3:['member.grant.manage']} }
+  let directoryGate, directoryStarted, omitTarget = false, refreshVersion = 4
+  const refreshDirectory = async (loseTarget = false) => {
+    omitTarget = loseTarget
+    currentUser = {...currentUser, organizationPermissions: {[refreshVersion++]: ['member.grant.manage'], ...(loseTarget ? {} : {3:['member.grant.manage']})}}
+    let release, started
+    directoryGate = new Promise(resolve => {release = resolve})
+    const reached = new Promise(resolve => {started = resolve})
+    directoryStarted = started
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')))
+    await reached
+    return () => {directoryGate = null; release()}
+  }
   await page.route('http://127.0.0.1:18090/api/**', async route => {
     const req = route.request(), url = new URL(req.url()), path = url.pathname.slice(4), method = req.method(), body = req.postDataJSON()
     requests.push({ path, method, search: url.search, body })
     let data = [], status = 200, msg = 'ok'
-    if (path === '/auth/me') data = { id: '7', name: '授权管理员', account: 'manager', role: 'integrator', organization: '华东', stationIds: [], permissions: options.readOnly ? ['organization.member.read'] : ['member.grant.manage', 'audit.read'] }
-    else if (path === '/members') data = [{ id: 8, account: 'alice', display_name: '张三', enabled: true, organization_id: 3, management_organization_id: 3 }, { id: 9, account: 'bob', display_name: '李四', enabled: true, organization_id: 3, management_organization_id: 3 }]
+    if (path === '/auth/me') data = currentUser
+    else if (path === '/members') { if (directoryGate) { directoryStarted(); await directoryGate } data = [{ id: 8, account: 'alice', display_name: '张三', enabled: true, organization_id: 3, management_organization_id: 3 }, { id: 9, account: 'bob', display_name: '李四', enabled: true, organization_id: 3, management_organization_id: 3 }].filter(member => !omitTarget || member.id !== 8) }
     else if (path === '/platform/organizations') data = [{ id: 3, name: '华东', parent_id: null }, { id: 4, name: '华南', parent_id: null }]
     else if (path === '/platform/roles') { if (url.searchParams.get('organizationId') === '4') { status = 500; msg = '角色目录加载失败' } else data = roles }
     else if (path === '/platform/permissions') data = [{ ...permission, configurable: false }, { ...permission, code: 'organization.member.read', name: '查看组织成员', scope: 'organization', module: 'platform', configurable: false }]
@@ -45,11 +58,58 @@ async function setup(t, options = {}) {
   })
   const open = async () => { await page.getByRole('button', { name: '平台管理', exact: true }).click(); await page.getByRole('row').filter({ hasText: '张三' }).getByRole('button', { name: '查看权限' }).click() }
   await page.goto(process.env.PREVIEW_URL || 'http://127.0.0.1:8445', { waitUntil: 'domcontentloaded', timeout: 60000 }); await open()
-  return { page, requests, grants, open, pendingSave, releaseSave: () => releaseSave?.(), setFailOptions: value => { failOptions = value } }
+  return { page, requests, grants, open, pendingSave, refreshDirectory, releaseSave: () => releaseSave?.(), setFailOptions: value => { failOptions = value } }
 }
 const grantRow = (page, id) => page.locator(`[data-grant-id="${id}"]`)
 const edit = (page, id) => grantRow(page, id).getByRole('button', { name: '编辑' }).click()
 const writes = requests => requests.filter(r => ['POST', 'PUT', 'DELETE'].includes(r.method))
+
+test('parent directory refresh retains an authorized grant draft and blocks saves until settled', {timeout:30000}, async t => {
+  const {page,requests,refreshDirectory} = await setup(t)
+  await edit(page,101); await page.getByLabel('二号站',{exact:true}).check()
+  const release = await refreshDirectory(); t.after(release)
+  assert.equal(await page.getByLabel('业务角色').count(),1,'Parent refresh must not unmount the editor')
+  assert.equal(await page.getByRole('button',{name:'保存授权',exact:true}).isDisabled(),true)
+  release()
+  await page.waitForFunction(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='保存授权');return b&&!b.disabled})
+  assert.equal(await page.getByLabel('二号站',{exact:true}).isChecked(),true)
+  await page.getByRole('button',{name:'返回成员权限',exact:true}).click()
+  await page.getByRole('heading',{name:'未保存的修改'}).waitFor()
+  await page.getByRole('button',{name:'继续编辑',exact:true}).click()
+  assert.equal(writes(requests).length,0)
+})
+
+test('parent directory refresh exposes lost target access and cannot save the old draft', {timeout:30000}, async t => {
+  const {page,requests,refreshDirectory} = await setup(t)
+  await edit(page,101); await page.getByLabel('二号站',{exact:true}).check()
+  const release = await refreshDirectory(true); t.after(release)
+  assert.equal(await page.getByLabel('业务角色').count(),1,'Keep draft while authority is being resolved')
+  release()
+  await page.getByText('当前成员已不在可查看授权的范围内，请返回成员列表。',{exact:true}).waitFor()
+  assert.equal(await page.getByRole('button',{name:'保存授权',exact:true}).count(),0)
+  assert.equal(await page.locator('[data-grant-id]').count(),0)
+  await page.getByRole('button',{name:'返回成员列表',exact:true}).click()
+  assert.equal(await page.getByRole('row').filter({hasText:'张三'}).count(),0)
+  assert.equal(writes(requests).length,0)
+})
+
+test('parent directory refresh keeps the pending grant request in its original member context', {timeout:30000}, async t => {
+  const {page,requests,refreshDirectory,pendingSave,releaseSave} = await setup(t,{pauseSave:true})
+  t.after(releaseSave)
+  await edit(page,101); await page.getByLabel('二号站',{exact:true}).check()
+  await page.getByRole('button',{name:'保存授权',exact:true}).click(); await pendingSave
+  const release = await refreshDirectory(true); t.after(release)
+  assert.equal(await page.getByLabel('业务角色').count(),1,'Pending editor must not be unmounted by refresh')
+  release()
+  await page.getByText('正在加载…',{exact:true}).waitFor({state:'detached'})
+  assert.equal(await page.getByLabel('业务角色').count(),1)
+  assert.equal(await page.getByRole('button',{name:'返回成员权限',exact:true}).isDisabled(),true)
+  await page.getByRole('button',{name:'安全审计',exact:true}).click()
+  assert.equal(await page.getByLabel('业务角色').count(),1)
+  releaseSave()
+  await page.getByText('当前成员已不在可查看授权的范围内，请返回成员列表。',{exact:true}).waitFor()
+  assert.deepEqual(writes(requests).map(r=>[r.method,r.path]),[['PUT','/members/8/grants/101']])
+})
 
 for (const viewport of [{width:1280,height:720},{width:1440,height:900}]) {
   test(`grant preview is padded, separates explanations and scrolls to final permission at ${viewport.width}`, async t => {

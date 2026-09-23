@@ -14,7 +14,7 @@ const time = (value: string | null) => value ? new Date(value).toLocaleString("z
 const stationText = (grant: MemberGrant) => grant.stations.map(station => station.name).join("、") || "组织管理范围"
 const statusText: Record<string, string> = { active: "有效", expired: "已过期", scheduled: "未生效", disabled: "成员已停用" }
 
-const MemberGrantsPanel = forwardRef<RolePermissionsHandle, { member: Member; organizationName: string; canManage: boolean; selfSelected: boolean; onClose: () => void }>(function MemberGrantsPanel({ member, organizationName, canManage, selfSelected, onClose }, ref) {
+const MemberGrantsPanel = forwardRef<RolePermissionsHandle, { member: Member; organizationName: string; canManage: boolean; accessState: "refreshing" | "ready" | "denied"; selfSelected: boolean; onClose: () => void }>(function MemberGrantsPanel({ member, organizationName, canManage, accessState, selfSelected, onClose }, ref) {
   const {user} = useAuth()
   const currentCapabilityScope = JSON.stringify([user?.stationPermissions, user?.organizationPermissions])
   const [capabilityScope, setCapabilityScope] = useState(currentCapabilityScope)
@@ -82,10 +82,22 @@ const MemberGrantsPanel = forwardRef<RolePermissionsHandle, { member: Member; or
   const original = draft?.grant
   const dirty = !!draft && (original ? draft.roleId !== original.roleId || draft.term !== original.term || draft.stationIds.length !== original.stationIds.length || draft.stationIds.some(id => !original.stationIds.includes(id)) : draft.roleId !== null || draft.stationIds.length > 0 || draft.term !== "permanent")
   const changedTerm = !!original && draft?.term !== original.term
-  const canWrite = grantsReady && canManage && !selfSelected
+  const canWrite = accessState === "ready" && capabilityScope === currentCapabilityScope && grantsReady && canManage && !selfSelected
   const optionsMatch = !!options && options.roleId === draft?.roleId && options.term === draft?.term && options.grantId === (original?.id ?? null)
   const validSelection = !!draft && !!options && (options.stationSelectionRequired ? draft.stationIds.length > 0 : draft.stationIds.length > 0 || options.canSaveWithoutStations) && draft.stationIds.every(id => options.stations.some(station => station.id === id && station.selectable))
   const canSave = grantsReady && canWrite && !!draft && !!draft.roleId && supportedTerm(draft.term) && directoryReady && optionsMatch && validSelection && !optionsLoading
+
+  useEffect(() => {
+    // Keep an in-flight write attached to its original member until its result arrives.
+    if (busy || accessState === "refreshing") return
+    if (accessState === "denied" || !canManage) {
+      setDraft(null); setRevoke(null); setConfirmTerm(false); setPreview(null)
+      if (accessState === "denied") { setGrants([]); setGrantsReady(false) }
+      else if (draft || revoke) setNotice("权限范围已变化，当前成员授权已不可编辑。")
+      setLeave(false); leaveAction.current = null
+      leaveResolve.current?.(false); leaveResolve.current = null
+    }
+  }, [accessState, canManage, busy])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -202,6 +214,11 @@ const MemberGrantsPanel = forwardRef<RolePermissionsHandle, { member: Member; or
     finally { pending.current = false; setBusy(false) }
   }
 
+  if (accessState === "denied" && !busy) return <section className="member-grants-panel" aria-label="成员权限详情">
+    <button className="member-grants-back" onClick={onClose}><ArrowLeft size={16} />返回成员列表</button>
+    <p role="alert" className="api-inline-error">当前成员已不在可查看授权的范围内，请返回成员列表。</p>
+  </section>
+
   return <section ref={panelRef} className="member-grants-panel" aria-label="成员权限详情">
     <div className="member-grants-heading"><button className="member-grants-back" disabled={busy} onClick={() => { void requestLeave(draft ? () => setDraft(null) : onClose) }}><ArrowLeft size={16} />{draft ? "返回成员权限" : "返回成员列表"}</button></div>
     {error && <p role="alert" className="api-inline-error">{error}</p>}
@@ -238,7 +255,7 @@ const MemberGrantsPanel = forwardRef<RolePermissionsHandle, { member: Member; or
       <h2 id="grant-confirm-title">{confirmTerm ? "确认重新起算授权期限" : leave ? "未保存的修改" : "撤销这条授权？"}</h2>
       {confirmTerm ? <p>期限将从保存时重新起算。预计截止时间：{time(options?.validUntil ?? null)}（北京时间），最终时间以服务器保存结果为准。</p> : leave ? <p>当前成员授权有未保存的修改。</p> : <><p>{revoke?.roleName}</p><p>{revoke && stationText(revoke)}</p><p>仅撤销这条授权，其他授权保持不变。</p></>}
       {error && <p role="alert" className="api-inline-error">{error}</p>}
-      <div className="orgv2-modal-footer">{confirmTerm ? <><button className="orgv2-outline" disabled={busy} onClick={() => setConfirmTerm(false)}>继续编辑</button><button className="orgv2-primary" disabled={busy || !canSave} onClick={() => { void save().then(ok => { if (ok && leaveResolve.current) finishLeave(true) }) }}>确认并保存</button></> : leave ? <><button className="orgv2-outline" disabled={busy} onClick={() => finishLeave(false)}>继续编辑</button><button className="orgv2-outline" disabled={busy} onClick={() => finishLeave(true)}>放弃修改</button><button className="orgv2-primary" disabled={busy || !canSave} onClick={requestSave}>保存并离开</button></> : <><button className="orgv2-outline" disabled={busy} onClick={() => setRevoke(null)}>取消</button><button className="orgv2-danger" disabled={busy} onClick={() => { void remove() }}>确认撤销</button></>}</div>
+      <div className="orgv2-modal-footer">{confirmTerm ? <><button className="orgv2-outline" disabled={busy} onClick={() => setConfirmTerm(false)}>继续编辑</button><button className="orgv2-primary" disabled={busy || !canSave} onClick={() => { void save().then(ok => { if (ok && leaveResolve.current) finishLeave(true) }) }}>确认并保存</button></> : leave ? <><button className="orgv2-outline" disabled={busy} onClick={() => finishLeave(false)}>继续编辑</button><button className="orgv2-outline" disabled={busy} onClick={() => finishLeave(true)}>放弃修改</button><button className="orgv2-primary" disabled={busy || !canSave} onClick={requestSave}>保存并离开</button></> : <><button className="orgv2-outline" disabled={busy} onClick={() => setRevoke(null)}>取消</button><button className="orgv2-danger" disabled={busy || !canWrite} onClick={() => { void remove() }}>确认撤销</button></>}</div>
     </div></div>}
   </section>
 })

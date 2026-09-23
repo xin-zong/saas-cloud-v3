@@ -77,11 +77,7 @@ ORDER BY u.id""",
   public ApiResponse<?> organizations() {
     s.access.requirePermission("organization.member.read");
     return ApiResponse.ok(
-        s.db.queryForList(
-            "SELECT o.* FROM organization o JOIN effective_organization_permission p ON"
-                + " p.organization_id=o.id WHERE p.user_id=? AND"
-                + " p.permission_code='organization.member.read' ORDER BY o.id",
-            s.access.userId()));
+        new OrganizationWorkflows(s).directory("organization.member.read", true, false));
   }
 
   @GetMapping("/roles")

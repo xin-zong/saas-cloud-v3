@@ -18,6 +18,46 @@ final class OrganizationWorkflows {
     delegation = new GrantDelegation(s.db, s.access);
   }
 
+  /** Explicit scoped metadata projection shared by both organization directories. */
+  List<Map<String, Object>> directory(String permission, boolean leads, boolean reparent) {
+    var rows =
+        s.db.queryForList(
+            """
+            SELECT o.id,o.name,o.parent_id,CASE WHEN ? THEN o.lead_user_id END AS lead_user_id
+            FROM organization o JOIN effective_organization_permission p ON p.organization_id=o.id
+            WHERE p.user_id=? AND p.permission_code=? ORDER BY o.id
+            """,
+            leads,
+            s.access.userId(),
+            permission);
+    Set<Long> visible = new HashSet<>();
+    for (var row : rows) visible.add(s.number(row, "id"));
+    for (var row : rows) {
+      row.put("lead_name", null);
+      row.put("lead_restricted", false);
+      row.put(
+          "can_reparent",
+          reparent && !isManagementRoot(s.number(row, "id"), (Long) row.get("parent_id")));
+      if (row.get("lead_user_id") != null) {
+        var lead =
+            s.one(
+                "SELECT display_name,organization_id,management_organization_id FROM app_user WHERE"
+                    + " id=?",
+                row.get("lead_user_id"));
+        boolean visibleLead =
+            visible.contains(lead.get("management_organization_id"))
+                && lead.get("organization_id") != null
+                && visible.contains(lead.get("organization_id"));
+        if (visibleLead) row.put("lead_name", lead.get("display_name"));
+        else {
+          row.put("lead_user_id", null);
+          row.put("lead_restricted", true);
+        }
+      }
+    }
+    return rows;
+  }
+
   long create(String name, Long parent, Long lead) {
     governance.lock();
     if (parent == null) throw new BusinessException(400, "请选择上级组织");

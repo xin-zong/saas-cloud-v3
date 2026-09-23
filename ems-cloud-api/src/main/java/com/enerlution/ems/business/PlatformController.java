@@ -36,45 +36,9 @@ public class PlatformController {
       permission = "organization.manage";
       s.access.requirePermission(permission);
     } else throw new BusinessException(400, "无效的组织目录用途");
-    boolean leads = purpose == null || "organizations".equals(purpose);
-    var rows =
-        s.db.queryForList(
-            """
-            SELECT o.id,o.name,o.parent_id,CASE WHEN ? THEN o.lead_user_id END AS lead_user_id
-            FROM organization o JOIN effective_organization_permission p ON p.organization_id=o.id
-            WHERE p.user_id=? AND p.permission_code=? ORDER BY o.id
-            """,
-            leads,
-            s.access.userId(),
-            permission);
-    Set<Long> visible = new HashSet<>();
-    for (var row : rows) visible.add(s.number(row, "id"));
-    for (var row : rows) {
-      row.put("lead_name", null);
-      row.put("lead_restricted", false);
-      row.put(
-          "can_reparent",
-          "organizations".equals(purpose)
-              && !new OrganizationWorkflows(s)
-                  .isManagementRoot(s.number(row, "id"), (Long) row.get("parent_id")));
-      if (row.get("lead_user_id") != null) {
-        var lead =
-            s.one(
-                "SELECT display_name,organization_id,management_organization_id FROM app_user WHERE"
-                    + " id=?",
-                row.get("lead_user_id"));
-        boolean visibleLead =
-            visible.contains(lead.get("management_organization_id"))
-                && lead.get("organization_id") != null
-                && visible.contains(lead.get("organization_id"));
-        if (visibleLead) row.put("lead_name", lead.get("display_name"));
-        else {
-          row.put("lead_user_id", null);
-          row.put("lead_restricted", true);
-        }
-      }
-    }
-    return ApiResponse.ok(rows);
+    return ApiResponse.ok(new OrganizationWorkflows(s).directory(
+        permission, purpose == null || "organizations".equals(purpose),
+        "organizations".equals(purpose)));
   }
 
   public ApiResponse<?> organizations() {

@@ -113,6 +113,33 @@ class MemberOrganizationPostgresTest {
   }
 
   @Test
+  void compatibilityDirectoryUsesSameScopedLeadProjection() throws Exception {
+    db.update("UPDATE organization SET lead_user_id=108 WHERE id=101");
+    db.update("UPDATE organization SET lead_user_id=109 WHERE id=102");
+    // Both owner and membership must be visible; either alone is insufficient.
+    db.update("UPDATE app_user SET organization_id=102 WHERE id=109");
+    for (String path : new String[] {"/api/platform/organizations", "/api/organizations"}) {
+      var rows = request("GET", path, null, 200);
+      assertEquals(3, rows.size(), path);
+      assertEquals(101, rows.get(0).path("id").asLong());
+      assertEquals("Root", rows.get(0).path("name").asText());
+      assertTrue(rows.get(1).path("lead_user_id").isNull(), path);
+      assertTrue(rows.get(1).path("lead_name").isNull(), path);
+      assertTrue(rows.get(1).path("lead_restricted").asBoolean(), path);
+      assertEquals(108, rows.get(0).path("lead_user_id").asLong(), path);
+      assertEquals("Target", rows.get(0).path("lead_name").asText(), path);
+      assertFalse(rows.get(0).path("lead_restricted").asBoolean(), path);
+      assertEquals(101, rows.get(1).path("parent_id").asLong(), path);
+    }
+    db.update("UPDATE app_user SET management_organization_id=102,organization_id=104 WHERE id=109");
+    for (String path : new String[] {"/api/platform/organizations", "/api/organizations"}) {
+      var child = request("GET", path, null, 200).get(1);
+      assertTrue(child.path("lead_user_id").isNull(), path);
+      assertTrue(child.path("lead_restricted").asBoolean(), path);
+    }
+  }
+
+  @Test
   void directoryMarksNestedManagementRootAndRedactsUnmanageableLead() throws Exception {
     db.update(
         "INSERT INTO app_role(id,code,name,organization_id) VALUES(118,'nested','Nested',102)");

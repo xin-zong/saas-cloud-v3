@@ -52,6 +52,7 @@ export default forwardRef<RolePermissionsHandle, {
   const [members, setMembers] = useState<Member[]>([]),
     [choices, setChoices] = useState<Member[]>([])
   const [memberAccess, setMemberAccess] = useState(emptyAccess)
+  const [directoryUser, setDirectoryUser] = useState<typeof user>(null)
   const [orgs, setOrgs] = useState<Organization[]>([]),
     [profileOrgs, setProfileOrgs] = useState<Organization[]>([]),
     [managedOrgs, setManagedOrgs] = useState<Organization[]>([])
@@ -162,7 +163,10 @@ export default forwardRef<RolePermissionsHandle, {
         setChoices([])
       }
     } finally {
-      if (!signal?.aborted) setLoading(false)
+      if (!signal?.aborted) {
+        setDirectoryUser(user)
+        setLoading(false)
+      }
     }
   }
   useEffect(() => {
@@ -477,7 +481,7 @@ export default forwardRef<RolePermissionsHandle, {
           正在加载…
         </p>
       )}
-      {!loading &&
+      {(!loading || grantMember) &&
         view === "成员管理" &&
         (grantMember ? (
           <MemberGrantsPanel
@@ -485,6 +489,9 @@ export default forwardRef<RolePermissionsHandle, {
             member={grantMember}
             organizationName={orgPath(grantMember.organization_id)}
             canManage={memberAccess.grants.has(grantMember.id)}
+            accessState={loading || directoryUser !== user ? "refreshing" : !error &&
+              ((canRead && memberAccess.read.has(grantMember.id)) ||
+               (canGrants && memberAccess.grants.has(grantMember.id))) ? "ready" : "denied"}
             selfSelected={String(grantMember.id) === String(user?.id)}
             onClose={() => setGrantMember(null)}
           />
