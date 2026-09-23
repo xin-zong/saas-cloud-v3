@@ -37,7 +37,7 @@
 | workorder / 工单与审批 | 查看审批 | `approval.read` | station | 暂不可用 | `planned: GET /approvals` |
 | workorder / 工单与审批 | 审批申请 | `approval.review` | station | 可用 | `current: POST /approvals/{id}/decision` |
 | analytics / 分析与报告 | 实时数据分析 | `analytics.realtime.read` | station | 暂不可用 | 无（范围外或待定义） |
-| analytics / 分析与报告 | 历史趋势分析 | `analytics.history.read` | station | 暂不可用 | `planned: GET /points/{id}/history`<br>现有检查：`telemetry.read` |
+| analytics / 分析与报告 | 历史趋势分析 | `analytics.history.read` | station | 暂不可用 | `shared-candidate: GET /points/{id}/history`<br>现有检查：`telemetry.read` |
 | analytics / 分析与报告 | 生成报告 | `report.generate` | station | 暂不可用 | 无（范围外或待定义） |
 | analytics / 分析与报告 | 下载数据 | `report.export` | station | 可用 | `current: GET /stations/{id}/reports/{kind}` |
 | platform / 平台管理 | 查看客户 | `customer.read` | station | 暂不可用 | `planned: GET /platform/customers`<br>现有检查：`asset.read` |
@@ -74,4 +74,4 @@
 
 `approval.read` 的当前列表依靠 SQL 过滤而无独立 `requirePermission`，故仍标为 planned；`approval.review` 有明确检查。`report.export` 绑定现有报告下载接口；原型的“生成报告”另列 `report.generate`，现有接口不等于生成任务。`market.manage` 只代表内部草稿，不是外部市场交易。
 
-`settlement.read` 与 `revenue.read`、`dispatch.read/manage` 与 `strategy.read/manage` 目前共享各自接口；`invitation.read` 指向的市场服务列表并不是邀约列表。这四项只是候选对应关系，均保持不可用，须先定义各自独立的业务语义和真实入口。T04 只接入已经明确的操作拆分，不根据这些候选关系改变旧接口的许可条件。目录中的 planned 路由是其余目标检查位置；T01 未改动控制器或数据库。可用项的测试会核对当前路由上确实出现相同 code 的后端检查；无接口项必须保持 `available=false`。
+`settlement.read` 与 `revenue.read`、`dispatch.read/manage` 与 `strategy.read/manage`、`analytics.history.read` 与 `telemetry.read` 目前共享各自接口；`invitation.read` 指向的市场服务列表并不是邀约列表。这五项只是候选对应关系，均保持不可用，须先定义各自独立的业务语义和真实入口。现有历史数据接口仍以 `telemetry.read` 控制，原型“历史趋势分析”不能据此直接换成新 code。T04 只接入已经明确的操作拆分，不根据这些候选关系改变旧接口的许可条件。目录中的 planned 路由是其余目标检查位置；T01 未改动控制器或数据库。可用项的测试会核对当前路由上确实出现相同 code 的后端检查；无接口项必须保持 `available=false`。

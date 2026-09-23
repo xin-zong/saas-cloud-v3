@@ -102,7 +102,7 @@ class PermissionCatalogTest {
   @Test
   void overlappingOperationsAreCandidatesNotCommittedPermissionReplacements() throws Exception {
     JsonNode entries = mapper.readTree(Files.readString(catalog));
-    for (String code : Set.of("settlement.read", "dispatch.read", "dispatch.manage", "invitation.read")) {
+    for (String code : Set.of("settlement.read", "dispatch.read", "dispatch.manage", "invitation.read", "analytics.history.read")) {
       JsonNode entry = find(entries, code);
       assertFalse(entry.path("available").asBoolean(), code);
       assertEquals(1, entry.path("bindings").size(), code);

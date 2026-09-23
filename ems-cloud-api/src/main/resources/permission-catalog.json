@@ -414,10 +414,12 @@
     "available": false,
     "bindings": [
       {
-        "status": "planned",
+        "status": "shared-candidate",
         "controller": "TelemetryController",
         "method": "Get",
-        "path": "/points/{id}/history"
+        "path": "/points/{id}/history",
+        "enforcesCode": false,
+        "sharedWithCurrentCode": "telemetry.read"
       }
     ],
     "legacyBinding": "telemetry.read"
