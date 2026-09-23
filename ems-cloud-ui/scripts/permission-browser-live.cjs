@@ -6,14 +6,14 @@ const path = require('node:path')
 const { chromium } = require('playwright')
 
 async function main() {
-  assert.equal(process.env.EMS_PERMISSION_LIVE, 'permission-t12', 'Explicit T12 opt-in required')
+  assert.equal(process.env.EMS_PERMISSION_LIVE, 'permission-t12r2', 'Explicit T12 opt-in required')
   const password = process.env.EMS_PERMISSION_TEST_PASSWORD
   assert.ok(password && password.length >= 12 && password.length <= 72, 'Private fixture password required')
   const fixture = JSON.parse(fs.readFileSync(process.env.EMS_PERMISSION_FIXTURE || path.resolve(__dirname, '../../ems-cloud-api/database/tests/permission_browser_fixture.json'), 'utf8'))
-  assert.equal(fixture.namespace, 'permission-t12')
-  assert.equal(fixture.actorId, 982001)
-  assert.equal(fixture.organizationId, 982001)
-  assert.deepEqual(fixture.stationIds, [982001, 982002])
+  assert.equal(fixture.namespace, 'permission-t12r2')
+  assert.equal(fixture.actorId, 983001)
+  assert.equal(fixture.organizationId, 983001)
+  assert.deepEqual(fixture.stationIds, [983001, 983002])
   const ui = process.env.PREVIEW_URL || 'http://127.0.0.1:8443'
   const api = (process.env.EMS_TEST_API || 'http://127.0.0.1:18090/api').replace(/\/$/, '')
   for (const address of [ui, api]) {
@@ -43,9 +43,10 @@ async function main() {
     return result.data
   }
   async function actionResponse(page, method, endpoint, action, expected = 200) {
-    const waiting = page.waitForResponse(response => response.url() === api + endpoint && response.request().method() === method)
-    await action()
-    const response = await waiting
+    const [response] = await Promise.all([
+      page.waitForResponse(response => response.url() === api + endpoint && response.request().method() === method),
+      action(),
+    ])
     assert.equal(response.status(), expected, `${method} ${endpoint} UI response`)
     return (await response.json()).data
   }
@@ -87,12 +88,12 @@ async function main() {
     const stations = await request(actor, 'GET', '/stations')
     assert.equal(stations.length, 2)
     for (const station of stations) {
-      assert.ok(fixture.stationIds.includes(station.id) && station.code.startsWith('permission-t12-'))
+      assert.ok(fixture.stationIds.includes(station.id) && station.code.startsWith('permission-t12r2-'))
       assert.equal(Number(station.organization_id), fixture.organizationId)
     }
     const initialMembers = await request(actor, 'GET', '/members?purpose=profiles')
     assert.deepEqual(initialMembers.map(member => member.id), [fixture.actorId], 'Fresh isolated fixture required')
-    check('Actor isolated to organization982001 and its two fixed stations; no preexisting target')
+    check('Actor isolated to organization983001 and its two fixed stations; no preexisting target')
 
     setStage('UI creates two roles and saves actual permission matrices')
     await actor.getByRole('button', { name: '平台管理', exact: true }).click()
@@ -110,23 +111,29 @@ async function main() {
       if (index === 0) await actor.getByRole('checkbox', { name: '编辑站点', exact: true }).check()
       const saved = await actionResponse(actor, 'PUT', `/platform/roles/${role.id}/permissions`, () => actor.getByRole('button', { name: '保存修改', exact: true }).click())
       assert.deepEqual(saved.permissionCodes.sort(), index === 0 ? ['asset.edit', 'asset.read'] : ['asset.read'])
+      // Client writes await capability refresh after the HTTP response. A clean,
+      // idle save button proves that the UI has completed that whole transition.
+      const saveButton = actor.getByRole('button', { name: '保存修改', exact: true })
+      await saveButton.waitFor()
+      assert.equal(await saveButton.isDisabled(), true, 'Role save must settle cleanly before navigation')
     }
     await screenshots(actor, 'role-matrix')
     check('Two empty roles created through UI, then real permission matrices saved')
 
     await actor.getByRole('tab', { name: '组织管理', exact: true }).click()
-    await actor.getByText('permission-t12-isolated', { exact: true }).first().waitFor()
+    await actor.getByText('permission-t12r2-isolated', { exact: true }).first().waitFor()
     await screenshots(actor, 'organization-tree')
     setStage('UI creates target member')
     await actor.getByRole('tab', { name: '成员管理', exact: true }).click()
     await actor.getByRole('button', { name: '新增成员', exact: true }).click()
-    await actor.locator('input[name=name]').fill('permission-t12-目标成员-用于长名称与跨站点独立授权验收的只读观察和编辑角色成员')
+    await actor.locator('input[name=name]').fill('permission-t12r2-目标成员-用于长名称与跨站点独立授权验收的只读观察和编辑角色成员')
     await actor.locator('input[name=account]').fill(fixture.targetAccount)
     await actor.locator('input[name=password]').fill(password)
     await actor.locator('select[name=organizationId]').selectOption(String(fixture.organizationId))
     const member = await actionResponse(actor, 'POST', '/members', () => actor.getByRole('dialog').getByRole('button', { name: '创建', exact: true }).click())
     assert.ok(member.id > 0 && member.id !== fixture.actorId)
     ledger.targetId = member.id; writeLedger()
+    await actor.getByRole('dialog').waitFor({ state: 'detached' })
     const memberRow = actor.getByRole('row').filter({ hasText: fixture.targetAccount })
     await memberRow.waitFor()
     await screenshots(actor, 'member-long-name')
@@ -152,6 +159,7 @@ async function main() {
       assert.equal(grant.term, index === 0 ? '30d' : '90d')
       ledger.grantIds.push(grant.id); writeLedger()
       await actor.locator(`[data-grant-id="${grant.id}"]`).waitFor()
+      await actor.getByRole('button', { name: '保存授权', exact: true }).waitFor({ state: 'detached' })
     }
     await screenshots(actor, 'two-independent-grants')
     check('Target created through member UI; A edit and B read-only grants have separate roles and terms')
@@ -169,18 +177,21 @@ async function main() {
     const stationBody = { name: fixture.stationNames[1], ratedPowerKw: 10, capacityKwh: 20, region: '', address: '' }
     await request(target, 'PUT', `/stations/${fixture.stationIds[1]}`, stationBody, 403)
     await target.getByRole('button', { name: `编辑${fixture.stationNames[0]}`, exact: true }).click()
-    await target.getByPlaceholder('请输入详细地址', { exact: true }).fill('permission-t12-browser-verified')
+    await target.getByPlaceholder('请输入详细地址', { exact: true }).fill('permission-t12r2-browser-verified')
     await actionResponse(target, 'PUT', `/stations/${fixture.stationIds[0]}`, () => target.getByRole('button', { name: '保存到服务器', exact: true }).click())
+    await target.getByRole('button', { name: `编辑${fixture.stationNames[0]}`, exact: true }).waitFor()
     const savedStations = await request(target, 'GET', '/stations')
-    assert.equal(savedStations.find(station => station.id === fixture.stationIds[0]).address, 'permission-t12-browser-verified')
+    assert.equal(savedStations.find(station => station.id === fixture.stationIds[0]).address, 'permission-t12r2-browser-verified')
     check('Target UI saves A station; B has no edit action and actual server PUT returns403')
 
     setStage('same target session loses A authority after actor revokes grant')
     await target.getByRole('button', { name: `编辑${fixture.stationNames[0]}`, exact: true }).click()
-    await target.getByPlaceholder('请输入详细地址', { exact: true }).fill('permission-t12-must-not-save')
+    await target.getByPlaceholder('请输入详细地址', { exact: true }).fill('permission-t12r2-must-not-save')
     await actor.locator(`[data-grant-id="${ledger.grantIds[0]}"]`).getByRole('button', { name: '撤销', exact: true }).click()
     await screenshots(actor, 'revoke-confirm')
     await actionResponse(actor, 'DELETE', `/members/${member.id}/grants/${ledger.grantIds[0]}`, () => actor.getByRole('button', { name: '确认撤销', exact: true }).click())
+    await actor.locator(`[data-grant-id="${ledger.grantIds[0]}"]`).waitFor({ state: 'detached' })
+    await actor.getByRole('dialog').waitFor({ state: 'detached' })
     await actionResponse(target, 'PUT', `/stations/${fixture.stationIds[0]}`, () => target.getByRole('button', { name: '保存到服务器', exact: true }).click(), 403)
     // Keep the same live browser/session: explicit focus refresh, never reload or re-login.
     const refreshed = target.waitForResponse(response => response.url() === api + '/auth/me')
@@ -195,7 +206,7 @@ async function main() {
     assert.equal(await target.getByRole('button', { name: `编辑${fixture.stationNames[0]}`, exact: true }).count(), 0)
     assert.equal(await target.getByRole('button', { name: `编辑${fixture.stationNames[1]}`, exact: true }).count(), 0)
     const actorStations = await request(actor, 'GET', '/stations')
-    assert.equal(actorStations.find(station => station.id === fixture.stationIds[0]).address, 'permission-t12-browser-verified')
+    assert.equal(actorStations.find(station => station.id === fixture.stationIds[0]).address, 'permission-t12r2-browser-verified')
     assert.equal((await request(actor, 'GET', `/members/${member.id}/grants`)).length, 1)
     await screenshots(target, 'target-revoked-same-session')
     check('A revoke causes immediate403 on held edit form; same-session refresh removes held editor and A edit action, B read remains, rejected address not persisted')

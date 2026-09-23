@@ -1,10 +1,12 @@
 # T12 opt-in real browser acceptance
 
-Run only against reviewed local branch services after the root operator provisions the reviewed `ems-cloud-api/database/tests/permission_browser_fixture.sql` with `psql -X`. This is not part of test discovery. It makes real writes in the isolated `permission-t12` organization and must never run against ordinary accounts or mock routes.
+Current attempt is `permission-t12r2` (983001/983002). The original `permission-t12` 982xxx attempt was retired after a runner navigation timeout; its two roles and audit remain as history. Never reactivate or reuse it. Role saves now wait for the clean idle UI state after capability refresh, and subsequent mutations wait for their completed dialog/list transition before continuing.
+
+Run only against reviewed local branch services after the root operator provisions the reviewed `ems-cloud-api/database/tests/permission_browser_fixture.sql` with `psql -X`. This is not part of test discovery. It makes real writes in the isolated `permission-t12r2` organization and must never run against ordinary accounts or mock routes.
 
 From `ems-cloud-ui`, run `node scripts/permission-browser-live.cjs` with private environment variables:
 
-- `EMS_PERMISSION_LIVE=permission-t12` (mandatory explicit opt-in).
+- `EMS_PERMISSION_LIVE=permission-t12r2` (mandatory explicit opt-in).
 - `EMS_PERMISSION_TEST_PASSWORD` (mandatory private generated fixture password, 12–72 characters). Provisioning separately consumes only `EMS_PERMISSION_TEST_PASSWORD_HASH` through psql `\getenv`.
 - `EMS_PERMISSION_FIXTURE` (optional path to checked-in `permission_browser_fixture.json`).
 - `PREVIEW_URL` (default `http://127.0.0.1:8443`).
