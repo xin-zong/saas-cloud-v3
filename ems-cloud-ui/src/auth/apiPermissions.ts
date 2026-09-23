@@ -60,7 +60,7 @@ export function apiRoleConfig(user: AuthUser): RoleConfig {
   }
   if (config.analysisTabs.length) config.nav.push("分析与报告")
   if (has("asset.read")) config.platformTabs.push("客户管理")
-  if (has("member.manage")) config.platformTabs.push("组织权限")
+  if (has("organization.member.read", "organization.manage", "member.manage.profile", "role.manage", "member.grant.manage")) config.platformTabs.push("组织权限")
   if (has("audit.read")) config.platformTabs.push("安全审计")
   if (config.platformTabs.length) config.nav.push("平台管理")
   config.nav.push("设置")

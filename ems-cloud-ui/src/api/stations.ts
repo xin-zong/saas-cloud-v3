@@ -11,6 +11,7 @@ import type { SettlementRecord } from "../data/stationSettlement"
 import type { StationDevice } from "../data/stationDevices"
 
 export async function loadStations(user: AuthUser, signal?: AbortSignal) {
+  if (!user.permissions.includes("asset.read")) return []
   const records = await allRows("/stations", signal)
 
   const orders = user.permissions.includes("workorder.read")
