@@ -136,12 +136,12 @@ revoked grant with existing session -> 403
 
 ### T05：实现角色管理接口（P0，依赖 T04）
 
-- [ ] 新增目录及角色接口：`GET /platform/permissions`、`GET/POST /platform/roles`、`PUT/DELETE /platform/roles/{id}`、`PUT /platform/roles/{id}/permissions`。
-- [ ] 新建角色 `{name,description}` 初始权限为空；保存权限 `{permissionCodes:[...]}` 全量替换，事务内验证未知 code、管理范围和可配置上限。
-- [ ] 名称 trim 后非空且组织内唯一；已使用角色删除返回 409，包括已到期但仍保留的授权引用。
-- [ ] 角色定义变更检查所有受影响成员：管理者不能通过修改共享角色间接扩大范围外人员的权限。
-- [ ] 防止删除/撤销最后一个有效治理入口；并发变更在相同管理范围内串行校验，避免两个管理员同时移除彼此。
-- [ ] 保存角色及权限差异审计；权限管理测试通过后提交。
+- [x] 新增目录及角色接口：`GET /platform/permissions`、`GET/POST /platform/roles`、`PUT/DELETE /platform/roles/{id}`、`PUT /platform/roles/{id}/permissions`。
+- [x] 新建角色 `{name,description}` 初始权限为空；保存权限 `{permissionCodes:[...]}` 全量替换，事务内验证未知 code、管理范围和可配置上限。
+- [x] 名称 trim 后非空且组织内唯一；已使用角色删除返回 409，包括已到期但仍保留的授权引用。
+- [x] 角色定义变更检查所有受影响成员：管理者不能通过修改共享角色间接扩大范围外人员的权限。
+- [x] 防止删除/撤销最后一个有效治理入口；并发变更在相同管理范围内串行校验，避免两个管理员同时移除彼此。
+- [x] 保存角色及权限差异审计；权限管理测试通过后提交。
 
 验收：不是只有“列出自己持有角色”的 `/roles` 接口；可管理目录与可分配目录要按范围明确区分。
 
