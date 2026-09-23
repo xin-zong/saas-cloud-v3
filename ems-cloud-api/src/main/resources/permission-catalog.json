@@ -1,0 +1,722 @@
+[
+  {
+    "code": "asset.read",
+    "name": "查看站点与设备",
+    "module": "asset",
+    "scope": "station",
+    "page": "资产与站点",
+    "origin": "prototype",
+    "available": true,
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "AssetController",
+        "method": "Get",
+        "path": "/stations/{id}"
+      }
+    ]
+  },
+  {
+    "code": "asset.create",
+    "name": "新建站点",
+    "module": "asset",
+    "scope": "organization",
+    "page": "资产与站点",
+    "origin": "prototype",
+    "available": false,
+    "bindings": []
+  },
+  {
+    "code": "asset.edit",
+    "name": "编辑站点",
+    "module": "asset",
+    "scope": "station",
+    "page": "资产与站点",
+    "origin": "prototype",
+    "available": true,
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "AssetController",
+        "method": "Put",
+        "path": "/stations/{id}"
+      }
+    ]
+  },
+  {
+    "code": "asset.delete",
+    "name": "删除站点",
+    "module": "asset",
+    "scope": "station",
+    "page": "资产与站点",
+    "origin": "prototype",
+    "available": false,
+    "bindings": []
+  },
+  {
+    "code": "revenue.read",
+    "name": "查看运营收益",
+    "module": "asset",
+    "scope": "station",
+    "page": "资产与站点",
+    "origin": "prototype",
+    "available": true,
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "RevenueController",
+        "method": "Get",
+        "path": "/stations/{id}/settlements"
+      }
+    ]
+  },
+  {
+    "code": "strategy.read",
+    "name": "查看运行策略",
+    "module": "asset",
+    "scope": "station",
+    "page": "资产与站点",
+    "origin": "prototype",
+    "available": true,
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "OperationsController",
+        "method": "Get",
+        "path": "/stations/{id}/plans"
+      }
+    ]
+  },
+  {
+    "code": "strategy.manage",
+    "name": "编辑运行策略",
+    "module": "asset",
+    "scope": "station",
+    "page": "资产与站点",
+    "origin": "prototype",
+    "available": true,
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "OperationsController",
+        "method": "Post",
+        "path": "/plans"
+      }
+    ]
+  },
+  {
+    "code": "strategy.dispatch",
+    "name": "下发运行策略",
+    "module": "asset",
+    "scope": "station",
+    "page": "资产与站点",
+    "origin": "prototype",
+    "available": false,
+    "bindings": []
+  },
+  {
+    "code": "operations.read",
+    "name": "查看运营总览",
+    "module": "operations",
+    "scope": "station",
+    "page": "运营中心",
+    "origin": "prototype",
+    "available": false,
+    "bindings": []
+  },
+  {
+    "code": "settlement.read",
+    "name": "查看收益核算",
+    "module": "operations",
+    "scope": "station",
+    "page": "运营中心",
+    "origin": "prototype",
+    "available": false,
+    "bindings": [
+      {
+        "status": "planned",
+        "controller": "RevenueController",
+        "method": "Get",
+        "path": "/stations/{id}/settlements"
+      }
+    ],
+    "legacyBinding": "revenue.read"
+  },
+  {
+    "code": "dispatch.read",
+    "name": "查看计划调度",
+    "module": "operations",
+    "scope": "station",
+    "page": "运营中心",
+    "origin": "prototype",
+    "available": false,
+    "bindings": [
+      {
+        "status": "planned",
+        "controller": "OperationsController",
+        "method": "Get",
+        "path": "/stations/{id}/plans"
+      }
+    ],
+    "legacyBinding": "strategy.read"
+  },
+  {
+    "code": "dispatch.manage",
+    "name": "制定调度计划",
+    "module": "operations",
+    "scope": "station",
+    "page": "运营中心",
+    "origin": "prototype",
+    "available": false,
+    "bindings": [
+      {
+        "status": "planned",
+        "controller": "OperationsController",
+        "method": "Post",
+        "path": "/plans"
+      }
+    ],
+    "legacyBinding": "strategy.manage"
+  },
+  {
+    "code": "invitation.read",
+    "name": "查看响应邀约",
+    "module": "operations",
+    "scope": "station",
+    "page": "运营中心",
+    "origin": "prototype",
+    "available": false,
+    "bindings": [
+      {
+        "status": "planned",
+        "controller": "RevenueController",
+        "method": "Get",
+        "path": "/stations/{id}/market-services"
+      }
+    ],
+    "legacyBinding": "market.read"
+  },
+  {
+    "code": "invitation.accept",
+    "name": "接受响应邀约",
+    "module": "operations",
+    "scope": "station",
+    "page": "运营中心",
+    "origin": "prototype",
+    "available": false,
+    "bindings": []
+  },
+  {
+    "code": "alarm.read",
+    "name": "查看告警",
+    "module": "maintenance",
+    "scope": "station",
+    "page": "运维中心",
+    "origin": "prototype",
+    "available": true,
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "MaintenanceController",
+        "method": "Get",
+        "path": "/stations/{id}/alarms"
+      }
+    ]
+  },
+  {
+    "code": "device.health.read",
+    "name": "查看设备健康",
+    "module": "maintenance",
+    "scope": "station",
+    "page": "运维中心",
+    "origin": "prototype",
+    "available": false,
+    "bindings": []
+  },
+  {
+    "code": "alarm.handle",
+    "name": "处理告警",
+    "module": "maintenance",
+    "scope": "station",
+    "page": "运维中心",
+    "origin": "prototype",
+    "available": true,
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "MaintenanceController",
+        "method": "Post",
+        "path": "/alarms/{id}/acknowledge"
+      }
+    ]
+  },
+  {
+    "code": "alarm.to.workorder",
+    "name": "转为运维工单",
+    "module": "maintenance",
+    "scope": "station",
+    "page": "运维中心",
+    "origin": "prototype",
+    "available": false,
+    "bindings": []
+  },
+  {
+    "code": "firmware.upload",
+    "name": "上传目标固件",
+    "module": "maintenance",
+    "scope": "station",
+    "page": "运维中心",
+    "origin": "prototype",
+    "available": false,
+    "bindings": []
+  },
+  {
+    "code": "firmware.upgrade",
+    "name": "执行固件升级",
+    "module": "maintenance",
+    "scope": "station",
+    "page": "运维中心",
+    "origin": "prototype",
+    "available": false,
+    "bindings": []
+  },
+  {
+    "code": "workorder.read",
+    "name": "查看工单",
+    "module": "workorder",
+    "scope": "station",
+    "page": "工单与审批",
+    "origin": "prototype",
+    "available": true,
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "MaintenanceController",
+        "method": "Get",
+        "path": "/work-orders"
+      }
+    ]
+  },
+  {
+    "code": "workorder.create",
+    "name": "新建工单",
+    "module": "workorder",
+    "scope": "station",
+    "page": "工单与审批",
+    "origin": "prototype",
+    "available": false,
+    "bindings": [
+      {
+        "status": "planned",
+        "controller": "MaintenanceController",
+        "method": "Post",
+        "path": "/work-orders"
+      }
+    ],
+    "legacyBinding": "workorder.manage"
+  },
+  {
+    "code": "workorder.edit",
+    "name": "编辑工单",
+    "module": "workorder",
+    "scope": "station",
+    "page": "工单与审批",
+    "origin": "prototype",
+    "available": false,
+    "bindings": [
+      {
+        "status": "planned",
+        "controller": "MaintenanceController",
+        "method": "Put",
+        "path": "/work-orders/{id}/assignee"
+      }
+    ],
+    "legacyBinding": "workorder.manage"
+  },
+  {
+    "code": "workorder.handle",
+    "name": "处理工单",
+    "module": "workorder",
+    "scope": "station",
+    "page": "工单与审批",
+    "origin": "prototype",
+    "available": false,
+    "bindings": [
+      {
+        "status": "planned",
+        "controller": "MaintenanceController",
+        "method": "Post",
+        "path": "/work-orders/{id}/transition"
+      }
+    ],
+    "legacyBinding": "workorder.manage"
+  },
+  {
+    "code": "approval.read",
+    "name": "查看审批",
+    "module": "workorder",
+    "scope": "station",
+    "page": "工单与审批",
+    "origin": "prototype",
+    "available": false,
+    "bindings": [
+      {
+        "status": "planned",
+        "controller": "OperationsController",
+        "method": "Get",
+        "path": "/approvals"
+      }
+    ]
+  },
+  {
+    "code": "approval.review",
+    "name": "审批申请",
+    "module": "workorder",
+    "scope": "station",
+    "page": "工单与审批",
+    "origin": "prototype",
+    "available": true,
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "OperationsController",
+        "method": "Post",
+        "path": "/approvals/{id}/decision"
+      }
+    ]
+  },
+  {
+    "code": "analytics.realtime.read",
+    "name": "实时数据分析",
+    "module": "analytics",
+    "scope": "station",
+    "page": "分析与报告",
+    "origin": "prototype",
+    "available": false,
+    "bindings": []
+  },
+  {
+    "code": "analytics.history.read",
+    "name": "历史趋势分析",
+    "module": "analytics",
+    "scope": "station",
+    "page": "分析与报告",
+    "origin": "prototype",
+    "available": false,
+    "bindings": [
+      {
+        "status": "planned",
+        "controller": "TelemetryController",
+        "method": "Get",
+        "path": "/points/{id}/history"
+      }
+    ],
+    "legacyBinding": "telemetry.read"
+  },
+  {
+    "code": "report.generate",
+    "name": "生成报告",
+    "module": "analytics",
+    "scope": "station",
+    "page": "分析与报告",
+    "origin": "prototype",
+    "available": false,
+    "bindings": []
+  },
+  {
+    "code": "report.export",
+    "name": "下载数据",
+    "module": "analytics",
+    "scope": "station",
+    "page": "分析与报告",
+    "origin": "prototype",
+    "available": true,
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "ReportController",
+        "method": "Get",
+        "path": "/stations/{id}/reports/{kind}"
+      }
+    ]
+  },
+  {
+    "code": "customer.read",
+    "name": "查看客户",
+    "module": "platform",
+    "scope": "organization",
+    "page": "平台管理",
+    "origin": "prototype",
+    "available": false,
+    "bindings": [
+      {
+        "status": "planned",
+        "controller": "PlatformController",
+        "method": "Get",
+        "path": "/platform/customers"
+      }
+    ],
+    "legacyBinding": "asset.read"
+  },
+  {
+    "code": "customer.manage",
+    "name": "管理客户",
+    "module": "platform",
+    "scope": "organization",
+    "page": "平台管理",
+    "origin": "prototype",
+    "available": false,
+    "bindings": [
+      {
+        "status": "planned",
+        "controller": "PlatformController",
+        "method": "Put",
+        "path": "/platform/customers/{id}"
+      }
+    ],
+    "legacyBinding": "asset.edit + member.manage"
+  },
+  {
+    "code": "organization.member.read",
+    "name": "查看组织与成员",
+    "module": "platform",
+    "scope": "organization",
+    "page": "平台管理",
+    "origin": "prototype",
+    "available": false,
+    "bindings": [
+      {
+        "status": "planned",
+        "controller": "PlatformController",
+        "method": "Get",
+        "path": "/platform/organizations"
+      }
+    ],
+    "legacyBinding": "member.manage"
+  },
+  {
+    "code": "organization.manage",
+    "name": "管理组织",
+    "module": "platform",
+    "scope": "organization",
+    "page": "平台管理",
+    "origin": "prototype",
+    "available": false,
+    "bindings": [
+      {
+        "status": "planned",
+        "controller": "PlatformController",
+        "method": "Put",
+        "path": "/platform/organizations/{id}"
+      }
+    ],
+    "legacyBinding": "member.manage"
+  },
+  {
+    "code": "member.manage.profile",
+    "name": "管理成员",
+    "module": "platform",
+    "scope": "organization",
+    "page": "平台管理",
+    "origin": "prototype",
+    "available": false,
+    "bindings": [
+      {
+        "status": "planned",
+        "controller": "MemberController",
+        "method": "Put",
+        "path": "/members/{id}"
+      }
+    ],
+    "legacyBinding": "member.manage"
+  },
+  {
+    "code": "role.manage",
+    "name": "配置角色权限",
+    "module": "platform",
+    "scope": "organization",
+    "page": "平台管理",
+    "origin": "prototype",
+    "available": false,
+    "bindings": [
+      {
+        "status": "planned",
+        "controller": "RoleController",
+        "method": "Put",
+        "path": "/platform/roles/{id}/permissions"
+      }
+    ],
+    "legacyBinding": "member.manage (read-only role-permissions endpoint)"
+  },
+  {
+    "code": "member.grant.manage",
+    "name": "分配成员权限",
+    "module": "platform",
+    "scope": "organization",
+    "page": "平台管理",
+    "origin": "prototype",
+    "available": false,
+    "bindings": [
+      {
+        "status": "planned",
+        "controller": "MemberGrantController",
+        "method": "Post",
+        "path": "/members/{memberId}/grants"
+      }
+    ],
+    "legacyBinding": "member.manage (coarse PUT /members/{id}/grants)"
+  },
+  {
+    "code": "audit.read",
+    "name": "查看安全审计",
+    "module": "platform",
+    "scope": "organization",
+    "page": "平台管理",
+    "origin": "prototype",
+    "available": true,
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "SettingsController",
+        "method": "Get",
+        "path": "/audit"
+      }
+    ]
+  },
+  {
+    "code": "telemetry.read",
+    "name": "查看遥测点与历史",
+    "module": "asset",
+    "scope": "station",
+    "page": "现有功能扩展",
+    "origin": "existing-extension",
+    "available": true,
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "TelemetryController",
+        "method": "Get",
+        "path": "/points/{id}/history"
+      }
+    ]
+  },
+  {
+    "code": "inspection.manage",
+    "name": "巡检管理",
+    "module": "maintenance",
+    "scope": "station",
+    "page": "现有功能扩展",
+    "origin": "existing-extension",
+    "available": true,
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "MaintenanceController",
+        "method": "Post",
+        "path": "/inspections"
+      }
+    ]
+  },
+  {
+    "code": "tariff.manage",
+    "name": "电价管理",
+    "module": "operations",
+    "scope": "station",
+    "page": "现有功能扩展",
+    "origin": "existing-extension",
+    "available": true,
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "OperationsController",
+        "method": "Post",
+        "path": "/tariffs"
+      }
+    ]
+  },
+  {
+    "code": "market.read",
+    "name": "查看市场服务与资质",
+    "module": "operations",
+    "scope": "station",
+    "page": "现有功能扩展",
+    "origin": "existing-extension",
+    "available": true,
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "RevenueController",
+        "method": "Get",
+        "path": "/stations/{id}/market-services"
+      }
+    ]
+  },
+  {
+    "code": "market.manage",
+    "name": "管理内部市场草稿",
+    "module": "operations",
+    "scope": "station",
+    "page": "现有功能扩展",
+    "origin": "existing-extension",
+    "available": true,
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "MarketController",
+        "method": "Post",
+        "path": "/market-drafts"
+      }
+    ]
+  },
+  {
+    "code": "revenue.review",
+    "name": "复核收益结算",
+    "module": "operations",
+    "scope": "station",
+    "page": "现有功能扩展",
+    "origin": "existing-extension",
+    "available": true,
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "RevenueController",
+        "method": "Post",
+        "path": "/settlements/{id}/reviews"
+      }
+    ]
+  },
+  {
+    "code": "workorder.manage",
+    "name": "旧版工单合并管理",
+    "module": "workorder",
+    "scope": "station",
+    "page": "现有功能扩展",
+    "origin": "existing-extension",
+    "available": true,
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "MaintenanceController",
+        "method": "Post",
+        "path": "/work-orders"
+      }
+    ]
+  },
+  {
+    "code": "member.manage",
+    "name": "旧版组织成员合并管理",
+    "module": "platform",
+    "scope": "organization",
+    "page": "现有功能扩展",
+    "origin": "existing-extension",
+    "available": true,
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "MemberController",
+        "method": "Put",
+        "path": "/members/{id}"
+      }
+    ]
+  }
+]
