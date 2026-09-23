@@ -117,12 +117,12 @@ CHECK (valid_until IS NULL OR valid_until > valid_from)
 
 ### T04：实现联合鉴权与即时生效（P0，依赖 T03）
 
-- [ ] 先写核心反例：用户在 A 站有编辑角色，在 B 站有只读角色；编辑 A 成功，编辑 B 必须 403。
-- [ ] `GrantAuthorization` 提供 `requireStationPermission(long stationId, String permission)` 与 `stationIds(String permission)`；同一条有效授权同时匹配角色权限和站点。
-- [ ] 管理接口使用组织范围检查；批量查询、报表导出、总览聚合全部用指定权限的站点集合过滤。
-- [ ] 修改角色权限、停用成员、授权到期或撤销后，现有登录会话的下一次请求立即重新判定，不依赖重新登录。
-- [ ] 逐个替换业务 Controller 内分离的 `requirePermission` + `requireStation`；对工单、审批、结算等资源先从数据库解析所属站点，不能信任请求提交的站点 ID。
-- [ ] 拆分工单新建/编辑/处理、组织/成员/角色/授权等操作权限；未迁移的粗粒度判断不能残留绕过通道。
+- [x] 先写核心反例：用户在 A 站有编辑角色，在 B 站有只读角色；编辑 A 成功，编辑 B 必须 403。
+- [x] `GrantAuthorization` 提供 `requireStationPermission(long stationId, String permission)` 与 `stationIds(String permission)`；同一条有效授权同时匹配角色权限和站点。
+- [x] 管理接口使用组织范围检查；批量查询、报表导出、总览聚合全部用指定权限的站点集合过滤。
+- [x] 修改角色权限、停用成员、授权到期或撤销后，现有登录会话的下一次请求立即重新判定，不依赖重新登录。
+- [x] 逐个替换业务 Controller 内分离的 `requirePermission` + `requireStation`；对工单、审批、结算等资源先从数据库解析所属站点，不能信任请求提交的站点 ID。
+- [x] 拆分工单新建/编辑/处理、组织/成员/角色/授权等操作权限；未迁移的粗粒度判断不能残留绕过通道。
 
 ```text
 grant(u, editor, [A], valid) + grant(u, reader, [B], valid)
