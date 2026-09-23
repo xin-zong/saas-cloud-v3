@@ -6,7 +6,7 @@
 
 **Architecture:** PostgreSQL 存储角色、操作权限、成员授权和有效期，后端统一鉴权；React 页面呈现相同授权模型。角色的操作权限与授权的站点范围必须在同一条授权关系内联合判断，不能对全部角色和全部站点分别求并集后放行。
 
-**Tech Stack:** 现有 Java 21 / Spring Boot / JDBC / Flyway / PostgreSQL、React / TypeScript / Vite。此项不新增框架，不改变 ClickHouse 遥测结构。
+**Tech Stack:** 现有 Java 21 / Spring Boot / JDBC / PostgreSQL、React / TypeScript / Vite。迁移沿用 `database/apply.sql` 和 `schema_migration`，不启用 Flyway。此项不新增框架，不改变 ClickHouse 遥测结构。
 
 **Spec:** 本文“原型依据与范围”为本计划的需求基线，依据用户本次要求和对静态原型的浏览器核实；原型路径 `前端静态原型/Enerlution-cloud-deploy-20260919-v2`，地址 `http://127.0.0.1:62462/`。
 
@@ -147,12 +147,12 @@ revoked grant with existing session -> 403
 
 ### T06：实现成员逐条授权接口（P0，依赖 T05）
 
-- [ ] 新增 `GET/POST /members/{memberId}/grants`、`PUT/DELETE /members/{memberId}/grants/{grantId}`。
-- [ ] 统一请求 `{roleId,stationIds,term}`，term 为 `permanent|30d|90d|1y`；响应包含 id、roleId、stationIds、validFrom、validUntil、source、状态。
-- [ ] 新增按服务器当前时间计算期限；编辑期限未改变时不重新起算，修改期限时明确按保存时间重新起算并展示新截止时间。
-- [ ] 禁止授予自己不具备的操作/站点/管理范围；有限期授权不能派生出超过可授权期限的访问。
-- [ ] 支持逐条编辑和撤销，不把所有授权拼成一个全量覆盖请求；隐藏范围外授权不能被顺便清空。
-- [ ] 验证空站点、重复站点、失效角色、越权目标成员、到期边界、并发撤销，写入审计。
+- [x] 新增 `GET/POST /members/{memberId}/grants`、`PUT/DELETE /members/{memberId}/grants/{grantId}`。
+- [x] 统一请求 `{roleId,stationIds,term}`，term 为 `permanent|30d|90d|1y`；响应包含 id、roleId、stationIds、validFrom、validUntil、source、状态。
+- [x] 新增按服务器当前时间计算期限；编辑期限未改变时不重新起算，修改期限时明确按保存时间重新起算并展示新截止时间。
+- [x] 禁止授予自己不具备的操作/站点/管理范围；有限期授权不能派生出超过可授权期限的访问。
+- [x] 支持逐条编辑和撤销，不把所有授权拼成一个全量覆盖请求；隐藏范围外授权不能被顺便清空。
+- [x] 验证空站点、重复站点、失效角色、越权目标成员、到期边界、并发撤销，写入审计。
 
 验收：同一成员可在不同站点持不同角色和不同期限，单条撤销不影响其他授权。
 
