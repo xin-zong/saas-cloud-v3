@@ -1,3 +1,4 @@
+import { hasStationPermission } from "@/auth/apiPermissions"
 import { DEMO_MODE, api, allRows, send, type ApiRow } from "@/api/client"
 
 import { useAuth } from "@/auth/AuthContext"
@@ -705,10 +706,10 @@ function AccountDrawer({
               className="operations-button is-active"
               disabled={
                 !DEMO_MODE &&
-                (saving || !user?.permissions.includes("revenue.review"))
+                (saving || !hasStationPermission(user, account.station.id, "revenue.review"))
               }
               title={
-                !DEMO_MODE && !user?.permissions.includes("revenue.review")
+                !DEMO_MODE && !hasStationPermission(user, account.station.id, "revenue.review")
                   ? "需要收益复核权限"
                   : undefined
               }

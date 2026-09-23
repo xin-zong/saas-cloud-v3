@@ -7,7 +7,9 @@ test('API alarm creates linked work order for current user', async () => {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } })
   await context.addInitScript(() => sessionStorage.setItem('enerlution-api-token', 'alarm-test'))
   const page = await context.newPage()
-  const user = { id: '7', name: '运维人', account: 'ops@test', role: 'operator', organization: '测试', stationIds: ['12'], permissions: ['asset.read', 'alarm.read', 'workorder.read', 'workorder.manage'] }
+  const user = { id: '7', name: '运维人', account: 'ops@test', role: 'operator', organization: '测试', stationIds: ['12'], permissions: ['asset.read', 'alarm.read', 'workorder.read', 'workorder.create','workorder.edit','workorder.handle'] }
+  user.stationPermissions = Object.fromEntries(user.stationIds.map(id => [id, [...user.permissions]]))
+  user.organizationPermissions = {}
   let orderBody
   await page.route('http://127.0.0.1:18090/api/**', async route => {
     const request = route.request(), path = new URL(request.url()).pathname.slice(4)

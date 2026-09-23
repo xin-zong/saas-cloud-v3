@@ -1,3 +1,4 @@
+import { hasStationPermission } from "@/auth/apiPermissions"
 import { DEMO_MODE, send, api, type ApiRow } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
 
@@ -1390,10 +1391,10 @@ function MaintenanceDetail({
                 disabled={
                   !DEMO_MODE &&
                   (saving ||
-                    !user?.permissions.includes(
+                    !hasStationPermission(user, row.station.id,
                       detail.kind === "alarm"
                         ? "alarm.handle"
-                        : "workorder.manage",
+                        : "workorder.handle",
                     ))
                 }
                 onClick={saveNote}
@@ -1490,6 +1491,7 @@ export default function MaintenanceCenterPage({
 
   const [tab, setTab] = useState<Tab>(visibleTabs[0] ?? "运维总览")
 
+  useEffect(() => {if (!visibleTabs.includes(tab)) setTab(visibleTabs[0] ?? "运维总览")}, [tab, visibleTabs.join("|")])
   const [now, setNow] = useState(() => initialDataNow)
 
   const [scope, setScope] = useState(initialFocus?.stationId ?? "")
@@ -3405,7 +3407,7 @@ export default function MaintenanceCenterPage({
                       className="operations-button"
                       disabled={
                         selectedAlarm.alarm.acknowledged ||
-                        !user?.permissions.includes("alarm.handle")
+                        !hasStationPermission(user, selectedAlarm.row.station.id, "alarm.handle")
                       }
                       onClick={async () => {
                         try {

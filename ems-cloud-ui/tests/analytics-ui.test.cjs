@@ -13,6 +13,8 @@ test("API analytics renders sparse history and downloads only successful server 
   page.on("pageerror", (error) => errors.push(error.message))
   page.on("download", () => { downloads++ })
   const user = { id: "7", name: "分析用户", account: "analytics@test", role: "owner", organization: "测试", stationIds: ["12"], permissions: ["asset.read", "telemetry.read", "report.export", "revenue.read", "strategy.read"] }
+  user.stationPermissions = Object.fromEntries(user.stationIds.map(id => [id, [...user.permissions]]))
+  user.organizationPermissions = {}
   let historyCalls = 0
   let reportCalls = 0
   let reportFails = false

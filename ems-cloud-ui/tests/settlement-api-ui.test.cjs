@@ -11,6 +11,8 @@ test("API settlement period loads historical currency and persists review histor
   const errors = []
   page.on("pageerror", (error) => errors.push(error.message))
   const user = { id: "7", name: "结算用户", account: "settlement@test", role: "owner", organization: "测试", stationIds: ["12"], permissions: ["revenue.read", "revenue.review"] }
+  user.stationPermissions = Object.fromEntries(user.stationIds.map(id => [id, [...user.permissions]]))
+  user.organizationPermissions = {}
   const reviews = [{ author_id: 3, note: "历史核对意见", created_at: "2025-04-13T10:00:00Z" }]
   const historical = []
   let posted = null
@@ -20,7 +22,8 @@ test("API settlement period loads historical currency and persists review histor
     if (path === "/auth/me") data = user
     else {
       assert.equal(request.headers().authorization, "Bearer settlement-token")
-      if (path === "/stations") data = [{ id: 12, name: "历史结算站", code: "S-12", rated_power_kw: 100, capacity_kwh: 200 }]
+      if (path === "/stations/options") data = [{id:12,name:"历史结算站"}]
+      else if (path === "/stations") data = [{ id: 12, name: "历史结算站", code: "S-12", rated_power_kw: 100, capacity_kwh: 200 }]
       else if (path === "/stations/12/settlements") {
         assert.equal(url.searchParams.get("limit"), "100")
         assert.equal(url.searchParams.get("offset"), "0")

@@ -1,3 +1,4 @@
+import { hasStationPermission } from "@/auth/apiPermissions"
 import { DEMO_MODE } from "@/api/client"
 import "./station-api-overview.css"
 import { useAuth } from "@/auth/AuthContext"
@@ -3872,7 +3873,7 @@ export default function StationDetailPage({
           canCreateOrder={
             DEMO_MODE
               ? role !== "owner"
-              : Boolean(user?.permissions.includes("workorder.manage"))
+              : hasStationPermission(user, station.id, "workorder.create")
           }
         />
       )}

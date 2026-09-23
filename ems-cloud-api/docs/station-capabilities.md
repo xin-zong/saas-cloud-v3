@@ -1,0 +1,13 @@
+# Station capability context and client refresh
+
+`GET /api/stations/options?permission=workorder.create` returns `{id,name}` rows for the current account's active grants for that exact capability. The permission must be an available catalog entry with `scope=station`. Missing, unknown, unavailable and organization-scoped codes return 400; a known station capability the account does not hold returns 403. Revocation and expiry are checked from current database state. No technical asset fields or implicit `asset.read` entitlement are returned.
+
+The API workspace uses `/auth/me.permissions` for navigation, `stationPermissions[id]` for station actions and the purpose-scoped organization directories for organization actions. Missing station maps deny actions. Customer details use the customer endpoint's scoped station summaries and `can_edit`; they never depend on technical asset inventory.
+
+The client loads operational context independently of the asset list. Minimal identities are adapted into the existing display model with unknown numeric values (`NaN`, rendered as `—`) and empty connected data sources, and never enter the asset inventory/detail page without `asset.read`. Unread alarm, work order, inspection and firmware collections remain undefined to distinguish unknown from an authorized empty result. Work order creation offers only `workorder.create` stations; assigning the current user additionally requires `workorder.handle`, otherwise the explicit unassigned choice sends `assignedTo:null`.
+
+Strategy-only accounts can open the existing strategy page within Operations Center. Tariff management has an API-only Operations Center tab with its own authorized station picker. The three demo identity configurations remain unchanged.
+
+Authorization mutations await one coalesced `/auth/me` refresh. JSON API and report-download 403 responses show a permission-change message and refresh capabilities; `/auth/me` errors do not recursively trigger another refresh. Focus and a 60-second timer detect other administrators' changes. Identical snapshots preserve object identity to avoid data reload churn. Token generation checks reject late successes/errors from a previous session, including reuse of the same token value. Failed refreshes remove actionable capabilities until a successful refresh.
+
+Validation: the guarded `GrantAuthorizationPostgresTest` checks minimal exact-code identity options, no asset-detail access, malformed codes and revocation. Browser capability tests cover independent work orders/customers/strategy/tariffs, A/B actions, mutation/403/focus/timer refresh and late session responses. The API remains the authority for every mutation.

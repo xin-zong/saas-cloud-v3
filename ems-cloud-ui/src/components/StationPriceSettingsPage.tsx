@@ -1,3 +1,4 @@
+import { hasStationPermission } from "@/auth/apiPermissions"
 import { DEMO_MODE, api, send, type ApiRow } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
 import { useEffect, useMemo, useState } from "react";
@@ -375,7 +376,7 @@ export default function StationPriceSettingsPage({
   onOpenStrategy?: () => void;
 }) {
   const {user} = useAuth();
-  const canManage = Boolean(user?.permissions.includes('tariff.manage'));
+  const canManage = hasStationPermission(user, station.id, 'tariff.manage');
   const [tariffs, setTariffs] = useState<ApiRow[]>([]);
   const [tariffName, setTariffName] = useState('');
   const [validUntil, setValidUntil] = useState('');

@@ -1,3 +1,4 @@
+import { hasStationPermission } from "@/auth/apiPermissions"
 import { DEMO_MODE, send, api, allRows, type ApiRow } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
@@ -490,7 +491,7 @@ const deviceOptionsForRow = (row?: MaintenanceStation) => [
   ...new Set([
     ...(row?.active.map((alarm) => alarm.device) ?? []),
     ...(row?.firmware.map((item) => item.device) ?? []),
-    ...COMMON_DEVICE_OPTIONS,
+    ...(DEMO_MODE ? COMMON_DEVICE_OPTIONS : (row?.station.deviceInventory?.map(device => device.name) ?? [])),
   ]),
 ]
 
@@ -602,6 +603,7 @@ export default function WorkOrdersApprovalPage({
     ? requestedInitialView
     : (visibleViews[0] ?? "工单中心")
   const [view, setView] = useState<View>(initialVisibleView)
+  useEffect(() => {if (!visibleViews.includes(view)) setView(visibleViews[0] ?? "工单中心")}, [view, visibleViews.join("|")])
   const [now, setNow] = useState(() => initialNow)
   const [range, setRange] = useState(() => defaultDateRange(initialNow))
   const [scope, setScope] = useState(initialFocus?.stationId ?? "")
@@ -650,6 +652,9 @@ export default function WorkOrdersApprovalPage({
         .map((station) => buildMaintenanceStation(station, now)),
     [stations, now],
   )
+  const canAt = (id: string, permission: string) => DEMO_MODE || hasStationPermission(user, id, permission)
+  const createRows = rows.filter(row => canAt(row.station.id, "workorder.create"))
+  const inspectionRows = rows.filter(row => canAt(row.station.id, "inspection.manage"))
   const allApprovals = DEMO_MODE
     ? rows.flatMap((row) => row.approvals.map((approval) => ({ row, approval })))
     : serverApprovals.flatMap((item) => {
@@ -885,7 +890,7 @@ export default function WorkOrdersApprovalPage({
     return () => controller.abort()
   }, [orderDetailKey, stations])
   useEffect(() => {
-    if (DEMO_MODE || !user) return
+    if (DEMO_MODE || !user || !user.permissions.some(code => ["approval.read", "strategy.manage"].includes(code))) return
     let active = true
     setApprovalLoading(true)
     allRows<ServerApproval>("/approvals")
@@ -895,7 +900,7 @@ export default function WorkOrdersApprovalPage({
     return () => { active = false }
   }, [user?.id, stations])
   useEffect(() => {
-    if (DEMO_MODE || !user?.permissions.includes("member.manage")) return
+    if (DEMO_MODE || !user?.permissions.includes("organization.member.read")) return
     let active = true
     api<ServerMember[]>("/members").then(items => { if (active) setMembers(items.filter(item => item.enabled)) }).catch(() => { if (active) setMembers([]) })
     return () => { active = false }
@@ -992,12 +997,12 @@ export default function WorkOrdersApprovalPage({
   }
   function buildOrderDraft(row?: MaintenanceStation) {
     const selectedRow =
-      row ?? rows.find((item) => item.station.id === scope) ?? rows[0]
+      row ?? createRows.find((item) => item.station.id === scope) ?? createRows[0]
     return {
       ...EMPTY_ORDER_DRAFT,
       stationId: selectedRow?.station.id ?? "",
-      owner: DEMO_MODE ? (selectedRow?.station.manager ?? "") : (user?.id ?? ""),
-      device: deviceOptionsForRow(selectedRow)[0] ?? "PCS-01",
+      owner: DEMO_MODE ? (selectedRow?.station.manager ?? "") : (hasStationPermission(user, selectedRow?.station.id, "workorder.handle") ? user?.id ?? "" : ""),
+      device: deviceOptionsForRow(selectedRow)[0] ?? (DEMO_MODE ? "PCS-01" : ""),
       dueAt: dueFromPriority("P2", now),
     }
   }
@@ -1012,25 +1017,28 @@ export default function WorkOrdersApprovalPage({
     setCreateOpen(true)
   }
   function openInspectionCreateDialog() {
-    setInspectionDraft({stationId:scope || rows[0]?.station.id || "", title:"", dueAt:dueFromPriority("P2", now)})
+    setInspectionDraft({stationId:inspectionRows.find(row => row.station.id === scope)?.station.id || inspectionRows[0]?.station.id || "", title:"", dueAt:dueFromPriority("P2", now)})
     setInspectionCreateError("")
     setInspectionCreateOpen(true)
   }
   async function submitInspection(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (serverBusy || !user?.permissions.includes("inspection.manage")) return
+    if (serverBusy || !hasStationPermission(user, inspectionDraft.stationId, "inspection.manage")) return
     const due = new Date(inspectionDraft.dueAt)
     if (!rows.some(row => row.station.id === inspectionDraft.stationId) || !inspectionDraft.title.trim() || !Number.isFinite(due.getTime()) || due.getTime() <= Date.now()) {setInspectionCreateError("请选择站点、填写标题并设置未来的巡检时间");return}
     setServerBusy(true)
     try {
-      const result = await send<{id:number}>("/inspections", "POST", {stationId:Number(inspectionDraft.stationId), title:inspectionDraft.title.trim(), dueAt:due.toISOString(), assignedTo:Number(user.id)})
+      const result = await send<{id:number}>("/inspections", "POST", {stationId:Number(inspectionDraft.stationId), title:inspectionDraft.title.trim(), dueAt:due.toISOString(), assignedTo:Number(user?.id)})
       setInspectionCreateOpen(false)
       setNotice(`巡检 ${result.id} 已由服务器创建`)
+      const dueDay = dateOnly(due)
+      setRange(current => ({start: current.start < dueDay ? current.start : dueDay, end: current.end > dueDay ? current.end : dueDay}))
       onServerChange?.()
     } catch(error) {setInspectionCreateError(error instanceof Error ? error.message : "创建巡检失败")}
     finally {setServerBusy(false)}
   }
   function updateOrderDraft(patch: Partial<WorkOrderDraft>) {
+    if (!DEMO_MODE && patch.stationId && !hasStationPermission(user, patch.stationId, "workorder.handle")) patch.owner = ""
     setOrderDraft((current) => ({ ...current, ...patch }))
     setCreateError("")
   }
@@ -1044,12 +1052,12 @@ export default function WorkOrdersApprovalPage({
   async function submitWorkOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!DEMO_MODE) {
-      if (serverBusy) return
+      if (serverBusy || !hasStationPermission(user, orderDraft.stationId, "workorder.create")) return
       setServerBusy(true)
       try {
         if (!orderDraft.description.trim()) throw new Error('请填写工单描述')
-        if (!/^\d+$/.test(orderDraft.owner)) throw new Error('负责人请输入已授权的用户编号')
-        const result = await send<{id: number}>('/work-orders', 'POST', {stationId: Number(orderDraft.stationId), title: orderDraft.title.trim(), description: orderDraft.description.trim(), assignedTo: Number(orderDraft.owner), dueAt: new Date(orderDraft.dueAt).toISOString()})
+        if (orderDraft.owner && !/^\d+$/.test(orderDraft.owner)) throw new Error('负责人请输入已授权的用户编号')
+        const result = await send<{id: number}>('/work-orders', 'POST', {stationId: Number(orderDraft.stationId), title: orderDraft.title.trim(), description: orderDraft.description.trim(), assignedTo: orderDraft.owner ? Number(orderDraft.owner) : null, dueAt: new Date(orderDraft.dueAt).toISOString()})
         setCreateOpen(false); setNotice(`工单 ${result.id} 已由服务器创建`); onServerChange?.()
       } catch(error) {setCreateError(error instanceof Error ? error.message : '创建失败')}
       finally {setServerBusy(false)}
@@ -1151,8 +1159,9 @@ export default function WorkOrdersApprovalPage({
   async function transitionWorkOrder(orderId: string, nextStatus: WorkOrderState) {
     if (!DEMO_MODE) {
       if (serverBusy) return
-      const order = allOrders.find(item => item.order.id === orderId)?.order
-      if (!order) return
+      const entry = allOrders.find(item => item.order.id === orderId)
+      const order = entry?.order
+      if (!order || !hasStationPermission(user, entry?.row.station.id, "workorder.handle")) return
       const note = window.prompt('请输入本次状态变更说明')
       if (!note?.trim()) return
       setServerBusy(true)
@@ -1266,7 +1275,7 @@ export default function WorkOrdersApprovalPage({
   }
   async function decide(next: ReviewState) {
     if (!DEMO_MODE) {
-      if (!selectedApproval || !canReview || serverBusy || getReviewState(selectedApproval.approval) !== "pending") return
+      if (!selectedApproval || !canAt(selectedApproval.row.station.id, "approval.review") || serverBusy || getReviewState(selectedApproval.approval) !== "pending") return
       if (serverApprovals.find(item => String(item.id) === selectedApproval.approval.id)?.submitter_id === Number(user?.id)) {setNotice("不能审批自己的申请"); return}
       if (!reviewNote.trim()) {setNotice("请填写审批意见"); return}
       setServerBusy(true)
@@ -1538,7 +1547,7 @@ export default function WorkOrdersApprovalPage({
               />
             ))}
           </div>
-          {view === "工单中心" && (
+          {view === "工单中心" && (DEMO_MODE || createRows.length > 0) && (
             <button
               className="operations-button work-orders-new"
               disabled={!rows.length}
@@ -1948,7 +1957,7 @@ export default function WorkOrdersApprovalPage({
               }
               note={reviewNote}
               notice={pageLevelNotice ? "" : notice}
-              canDecide={canReview && !serverBusy && (DEMO_MODE || serverApprovals.find(item => String(item.id) === selectedApproval.approval.id)?.submitter_id !== Number(user?.id))}
+              canDecide={canAt(selectedApproval.row.station.id, "approval.review") && !serverBusy && (DEMO_MODE || serverApprovals.find(item => String(item.id) === selectedApproval.approval.id)?.submitter_id !== Number(user?.id))}
               onNote={(value) => {
                 setReviewNote(value)
                 setNotice("")
@@ -1974,13 +1983,13 @@ export default function WorkOrdersApprovalPage({
         )}
         {createOpen && (
           <NewWorkOrderDialog
-            rows={rows}
+            rows={createRows}
             draft={orderDraft}
             error={createError}
             now={now}
             sourceOptions={workOrderSourceOptions}
             members={members}
-            self={user ? {id: user.id, name: user.name} : undefined}
+            self={user && hasStationPermission(user, orderDraft.stationId, "workorder.handle") ? {id: user.id, name: user.name} : undefined}
             onChange={updateOrderDraft}
             onClose={() => {
               setCreateOpen(false)
@@ -1989,12 +1998,12 @@ export default function WorkOrdersApprovalPage({
             onSubmit={submitWorkOrder}
           />
         )}
-        {inspectionCreateOpen && <InspectionCreateDialog rows={rows} draft={inspectionDraft} error={inspectionCreateError} busy={serverBusy} self={user?.name || user?.id || ""} onChange={patch => {setInspectionDraft(current => ({...current, ...patch})); setInspectionCreateError("")}} onClose={() => setInspectionCreateOpen(false)} onSubmit={submitInspection} />}
+        {inspectionCreateOpen && <InspectionCreateDialog rows={inspectionRows} draft={inspectionDraft} error={inspectionCreateError} busy={serverBusy} self={user?.name || user?.id || ""} onChange={patch => {setInspectionDraft(current => ({...current, ...patch})); setInspectionCreateError("")}} onClose={() => setInspectionCreateOpen(false)} onSubmit={submitInspection} />}
         {detailOrder && (
           <WorkOrderDetailDialog
             events={serverEvents}
-            assignees={[...(user ? [{id:user.id, name:`${user.name}（当前用户）`}] : []), ...members.filter(member => String(member.id) !== user?.id).map(member => ({id:String(member.id), name:member.display_name || member.account}))]}
-            onAssign={!DEMO_MODE && user?.permissions.includes("workorder.manage") ? async (assignedTo) => {
+            assignees={[...(user && canAt(detailOrder.row.station.id, "workorder.handle") ? [{id:user.id, name:`${user.name}（当前用户）`}] : []), ...members.filter(member => String(member.id) !== user?.id).map(member => ({id:String(member.id), name:member.display_name || member.account}))]}
+            onAssign={!DEMO_MODE && canAt(detailOrder.row.station.id, "workorder.edit") ? async (assignedTo) => {
               if (!/^\d+$/.test(assignedTo)) return
               try {await send(`/work-orders/${detailOrder.order.id}/assignee`, 'PUT', {assignedTo: Number(assignedTo)}); setNotice('服务器已更新负责人'); onServerChange?.()}
               catch(error) {setNotice(error instanceof Error ? error.message : '分派失败')}
@@ -2007,6 +2016,7 @@ export default function WorkOrdersApprovalPage({
             )}
             onClose={() => setOrderDetailKey("")}
             onDelete={() => removeLocalOrder(detailOrder.order.id)}
+            canHandle={canAt(detailOrder.row.station.id, "workorder.handle")}
             onTransition={(status) =>
               transitionWorkOrder(detailOrder.order.id, status)
             }
@@ -2095,7 +2105,7 @@ function NewWorkOrderDialog({
       owner: row?.station.manager ?? "",
       device: nextDeviceOptions.includes(draft.device)
         ? draft.device
-        : (nextDeviceOptions[0] ?? "PCS-01"),
+        : (nextDeviceOptions[0] ?? (DEMO_MODE ? "PCS-01" : "")),
     })
   }
   function changePriority(priority: Priority) {
@@ -2180,7 +2190,7 @@ function NewWorkOrderDialog({
             <label className="work-orders-create-field">
               设备 / 对象
               <input
-                required
+                required={DEMO_MODE}
                 list="work-order-device-options"
                 maxLength={40}
                 aria-label="新建工单设备"
@@ -2229,7 +2239,8 @@ function NewWorkOrderDialog({
                 aria-label="新建工单负责人"
                 value={draft.owner}
                 onChange={(event) => onChange({ owner: event.target.value })}
-              /> : <select aria-label="新建工单负责人" required value={draft.owner} onChange={(event) => onChange({owner:event.target.value})}>
+              /> : <select aria-label="新建工单负责人" value={draft.owner} onChange={(event) => onChange({owner:event.target.value})}>
+                <option value="">未分派</option>
                 {self && <option value={self.id}>{self.name}（当前用户）</option>}
                 {members.filter(member => String(member.id) !== self?.id).map(member => <option key={member.id} value={member.id}>{member.display_name || member.account} · {member.account}</option>)}
               </select>}
@@ -2256,11 +2267,11 @@ function NewWorkOrderDialog({
               </div>
               <div>
                 <dt>当前功率</dt>
-                <dd>{Math.round(selectedRow.station.activePower)} kW</dd>
+                <dd>{Number.isFinite(selectedRow.station.activePower) ? `${Math.round(selectedRow.station.activePower)} kW` : "—"}</dd>
               </div>
               <div>
                 <dt>活动告警</dt>
-                <dd>{selectedRow.active.length}</dd>
+                <dd>{selectedRow.alarmsKnown ? selectedRow.active.length : "—"}</dd>
               </div>
             </dl>
           )}
@@ -2289,6 +2300,7 @@ function NewWorkOrderDialog({
 
 function WorkOrderDetailDialog({
   events = [],
+  canHandle = true,
   assignees = [],
   onAssign,
   row,
@@ -2300,6 +2312,7 @@ function WorkOrderDetailDialog({
   onTransition,
   notice,
 }: {
+  canHandle?: boolean
   events?: ApiRow[]
   assignees?: {id:string; name:string}[]
   onAssign?: (assignedTo: string) => void
@@ -2410,7 +2423,7 @@ function WorkOrderDetailDialog({
               删除本地记录
             </button>
           )}
-          {open && (
+          {open && canHandle && (
             <button
               type="button"
               className="operations-button work-orders-reject"
@@ -2422,7 +2435,7 @@ function WorkOrderDetailDialog({
           <button type="button" className="operations-button" onClick={onClose}>
             关闭
           </button>
-          {order.status === "pending" && (
+          {canHandle && order.status === "pending" && (
             <button
               type="button"
               className="operations-button work-orders-approve"
@@ -2431,7 +2444,7 @@ function WorkOrderDetailDialog({
               开始处理
             </button>
           )}
-          {order.status === "processing" && (
+          {canHandle && order.status === "processing" && (
             <button
               type="button"
               className="operations-button work-orders-approve"
@@ -2542,7 +2555,7 @@ function InspectionDetailDialog({
             </div>
             <div>
               <dt>活动告警</dt>
-              <dd>{row.active.length}</dd>
+              <dd>{row.alarmsKnown ? row.active.length : "—"}</dd>
             </div>
           </dl>
         </section>

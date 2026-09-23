@@ -8,6 +8,8 @@ test('API inspection creation and cancellation use server state', async () => {
   await context.addInitScript(() => sessionStorage.setItem('enerlution-api-token', 'inspection-test'))
   const page = await context.newPage()
   const user = { id: '7', name: '巡检人', account: 'inspect@test', role: 'operator', organization: '测试', stationIds: ['12'], permissions: ['asset.read', 'workorder.read', 'inspection.manage'] }
+  user.stationPermissions = Object.fromEntries(user.stationIds.map(id => [id, [...user.permissions]]))
+  user.organizationPermissions = {}
   const inspections = []
   let createBody, cancelBody
   await page.route('http://127.0.0.1:18090/api/**', async route => {
@@ -33,6 +35,9 @@ test('API inspection creation and cancellation use server state', async () => {
     await page.getByRole('button', { name: '我的待办', exact: true }).click()
     await page.getByRole('button', { name: '新建巡检', exact: true }).click()
     await page.getByLabel('巡检标题', { exact: true }).fill('检查消防回路')
+    const future = new Date(Date.now() + 2 * 86400000)
+    const futureDay = `${future.getFullYear()}-${String(future.getMonth()+1).padStart(2,'0')}-${String(future.getDate()).padStart(2,'0')}`
+    await page.getByLabel('巡检计划时间', { exact: true }).fill(`${futureDay}T12:00`)
     await page.getByRole('button', { name: '创建巡检', exact: true }).click()
     await page.getByText('巡检 55 已由服务器创建', { exact: true }).waitFor()
     assert.equal(createBody.stationId, 12)

@@ -1,3 +1,5 @@
+import { useAuth } from "@/auth/AuthContext"
+import { hasStationPermission } from "@/auth/apiPermissions"
 import { DEMO_MODE } from "@/api/client"
 import { useMemo, useState } from "react"
 import { ArrowRight, Download, Search } from "lucide-react"
@@ -21,11 +23,12 @@ import {
 import { stationsDataNow } from "@/data/dataClock"
 import { PageHeader } from "./ui/Workspace"
 import "./operations-center.css"
+import StationPriceSettingsPage from "./StationPriceSettingsPage"
 import OperationsSchedulePage from "./OperationsSchedulePage"
 import OperationsMarketPage from "./OperationsMarketPage"
 import OperationsSettlementPage from "./OperationsSettlementPage"
 
-const TABS = ["运营总览", "策略执行", "市场服务", "收益结算"] as const
+const TABS = ["运营总览", "策略执行", "市场服务", "收益结算", "电价设置"] as const
 type Tab = (typeof TABS)[number]
 
 function daysInRange(start: string, end: string) {
@@ -261,8 +264,13 @@ export default function OperationsCenterPage({
   onOpenStation: (id: string, subNav?: string) => void
   allowedTabs?: readonly Tab[]
 }) {
+  const {user} = useAuth()
+  const forCapability = (code: string) => DEMO_MODE ? stations : stations.filter(station => hasStationPermission(user, station.id, code))
   const visibleTabs = TABS.filter((item) => allowedTabs.includes(item))
   const [tab, setTab] = useState<Tab>(visibleTabs[0] ?? "运营总览")
+  const [tariffStationId, setTariffStationId] = useState("")
+  const tariffStations = forCapability("tariff.manage")
+  const tariffStation = tariffStations.find(station => station.id === tariffStationId) ?? tariffStations[0]
   const activeTab = visibleTabs.includes(tab)
     ? tab
     : (visibleTabs[0] ?? "运营总览")
@@ -281,9 +289,10 @@ export default function OperationsCenterPage({
         ))}
       </nav>
       {activeTab === "运营总览" && <OperationsOverview stations={stations} onOpenStation={onOpenStation} />}
-      {activeTab === "策略执行" && <OperationsSchedulePage stations={stations} onOpenStation={onOpenStation} />}
-      {activeTab === "市场服务" && <OperationsMarketPage stations={stations} onOpenStation={onOpenStation} />}
-      {activeTab === "收益结算" && <OperationsSettlementPage stations={stations} onOpenStation={onOpenStation} />}
+      {activeTab === "策略执行" && <OperationsSchedulePage stations={forCapability("strategy.read")} onOpenStation={onOpenStation} />}
+      {activeTab === "市场服务" && <OperationsMarketPage stations={forCapability("market.read")} onOpenStation={onOpenStation} />}
+      {activeTab === "电价设置" && <section><label className="dispatch-toolbar">电价站点 <select aria-label="电价站点" value={tariffStation?.id ?? ""} onChange={event => setTariffStationId(event.target.value)}>{tariffStations.map(station => <option key={station.id} value={station.id}>{station.name}</option>)}</select></label>{tariffStation ? <StationPriceSettingsPage key={tariffStation.id} station={tariffStation} /> : <p className="operations-empty">暂无授权站点</p>}</section>}
+      {activeTab === "收益结算" && <OperationsSettlementPage stations={forCapability("revenue.read")} onOpenStation={onOpenStation} />}
     </main>
   )
 }

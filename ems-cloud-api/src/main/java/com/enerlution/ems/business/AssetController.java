@@ -1,6 +1,7 @@
 package com.enerlution.ems.business;
 
 import com.enerlution.ems.common.*;
+import com.enerlution.ems.auth.PermissionCatalog;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
@@ -34,6 +35,19 @@ public class AssetController {
   public ApiResponse<?> station(@PathVariable long id) {
     s.access.requireStationPermission(id, "asset.read");
     return ApiResponse.ok(s.one("SELECT * FROM station WHERE id=?", id));
+  }
+
+  /** Identity context for independent station capabilities; never exposes technical asset fields. */
+  @GetMapping("/stations/options")
+  public ApiResponse<?> stationOptions(@RequestParam(required = false) String permission) {
+    var entry = permission == null ? null : PermissionCatalog.find(permission);
+    if (entry == null || !entry.available() || !"station".equals(entry.scope()))
+      throw new BusinessException(400, "请选择可用的站点权限");
+    s.access.requirePermission(permission);
+    return ApiResponse.ok(s.db.queryForList(
+        "SELECT st.id,st.name FROM station st JOIN effective_station_permission p ON p.station_id=st.id"
+            + " WHERE p.user_id=? AND p.permission_code=? ORDER BY st.id",
+        s.access.userId(), permission));
   }
 
   public record Edit(

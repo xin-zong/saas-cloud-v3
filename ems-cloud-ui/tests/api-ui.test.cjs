@@ -7,7 +7,9 @@ test('API login, station scope, server workorder creation, reload and logout', a
   const page = await context.newPage()
   const errors = []
   page.on('pageerror', error => errors.push(error.message))
-  const user = {id:'7',name:'真实用户',account:'test@example.test',role:'operator',organization:'测试',stationIds:['12'],permissions:['asset.read','alarm.read','workorder.read','workorder.manage']}
+  const user = {id:'7',name:'真实用户',account:'test@example.test',role:'operator',organization:'测试',stationIds:['12'],permissions:['asset.read','alarm.read','workorder.read','workorder.create','workorder.edit','workorder.handle']}
+  user.stationPermissions = Object.fromEntries(user.stationIds.map(id => [id, [...user.permissions]]))
+  user.organizationPermissions = {}
   const orders = []
   let created = false, revoked = false
   await page.route('http://127.0.0.1:18090/api/**', async route => {
@@ -67,6 +69,8 @@ test('API strategy empty state, draft approval and tariff effective-period creat
   page.setDefaultTimeout(12000)
   const errors=[]; page.on('pageerror',e=>errors.push(e.message))
   const user={id:'7',name:'计划用户',account:'plan@test',role:'integrator',organization:'测试',stationIds:['12'],permissions:['asset.read','strategy.read','strategy.manage','tariff.manage']}
+  user.stationPermissions = Object.fromEntries(user.stationIds.map(id => [id, [...user.permissions]]))
+  user.organizationPermissions = {}
   const plans=[],tariffs=[]
   let submitted=false,tariffPosts=0
   await page.route('http://127.0.0.1:18090/api/**',async route=>{

@@ -1,7 +1,7 @@
 import { DEMO_MODE, send } from "@/api/client"
 
 import { loadStations } from "@/api/stations"
-import { apiRoleConfig } from "@/auth/apiPermissions"
+import { apiRoleConfig, hasStationPermission, stationRoleConfig } from "@/auth/apiPermissions"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import Sidebar from "@/components/Sidebar"
@@ -302,7 +302,7 @@ function formatCurrencyValue(value: number) {
 }
 
 function getInitialNavFromHash(user: AuthUser) {
-  const config = ROLE_CONFIG[user.role]
+  const config = DEMO_MODE ? ROLE_CONFIG[user.role] : apiRoleConfig(user)
 
   if (
     typeof window !== "undefined" &&
@@ -318,7 +318,7 @@ function getInitialNavFromHash(user: AuthUser) {
 function getInitialWorkOrdersViewFromHash(user: AuthUser) {
   if (typeof window === "undefined") return undefined
 
-  const views = ROLE_CONFIG[user.role].workOrderViews
+  const views = (DEMO_MODE ? ROLE_CONFIG[user.role] : apiRoleConfig(user)).workOrderViews
 
   if (
     window.location.hash === "#work-orders-approval" &&
@@ -427,8 +427,9 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
 
   const [detailSubNav, setDetailSubNav] = useState("站点概览")
 
+  const operationalStations = stations.filter(station => canAccessStation(user, station.id))
   const scopedStations = useMemo(
-    () => stations.filter((station) => canAccessStation(user, station.id)),
+    () => stations.filter((station) => canAccessStation(user, station.id) && (DEMO_MODE || hasStationPermission(user, station.id, "asset.read"))),
 
     [stations, user],
   )
@@ -443,7 +444,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
   )
 
   function handleOpenStation(id: string, subNav = "站点概览") {
-    if (!canAccessStation(user, id)) return
+    if (!canAccessStation(user, id) || (!DEMO_MODE && !hasStationPermission(user, id, "asset.read"))) return
 
     setActiveNav("资产与站点")
 
@@ -487,7 +488,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
 
   const handleUpdateStation = useCallback(
     async (id: string, patch: Partial<Station>) => {
-      if (!canAccessStation(user, id) || !roleConfig.canEditAssets) return
+      if (!canAccessStation(user, id) || !(DEMO_MODE ? roleConfig.canEditAssets : hasStationPermission(user, id, "asset.edit"))) return
 
       if (!DEMO_MODE) {
         const current = stations.find((s) => s.id === id)
@@ -923,7 +924,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
               setActiveDetailId(id)
             }}
             onBack={handleBackFromDetail}
-            allowedSubNavs={roleConfig.stationSubNavs}
+            allowedSubNavs={DEMO_MODE ? roleConfig.stationSubNavs : stationRoleConfig(user, activeDetailId).stationSubNavs}
             role={user.role}
           />
         )}
@@ -983,6 +984,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
               roleConfig.canEditAssets &&
               (DEMO_MODE || user.permissions.includes("asset.edit"))
             }
+            canEditStation={id => DEMO_MODE ? roleConfig.canEditAssets : hasStationPermission(user, id, "asset.edit")}
             showRevenue={roleConfig.showAssetRevenue}
           />
         </div>
@@ -990,7 +992,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
         {/* Map area */}
         {activeNav === "运营中心" && (
           <OperationsCenterPage
-            stations={scopedStations}
+            stations={operationalStations}
             onOpenStation={handleOpenStation}
             allowedTabs={roleConfig.operationsTabs}
           />
@@ -998,7 +1000,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
         {activeNav === "运维中心" && (
           <MaintenanceCenterPage
             onServerChange={refreshApi}
-            stations={scopedStations}
+            stations={operationalStations}
             onOpenStation={handleOpenStation}
             allowedTabs={roleConfig.maintenanceTabs}
             role={user.role}
@@ -1011,7 +1013,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
         )}
         {activeNav === "工单与审批" && (
           <WorkOrdersApprovalPage
-            stations={scopedStations}
+            stations={operationalStations}
             onServerChange={refreshApi}
             initialFocus={workOrderFocus}
             initialView={getInitialWorkOrdersViewFromHash(user)}
@@ -1021,7 +1023,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
         )}
         {activeNav === "分析与报告" && (
           <AnalyticsAiPage
-            stations={scopedStations}
+            stations={operationalStations}
             onOpenStation={handleOpenStation}
             allowedTabs={roleConfig.analysisTabs}
             allowedReportTypes={roleConfig.reportTypes}

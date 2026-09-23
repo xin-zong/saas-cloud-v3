@@ -179,6 +179,7 @@ interface Props {
   onCreateStation: (patch: Partial<Station>) => void;
   onOpenStation: (id: string) => void;
   canEdit?: boolean;
+  canEditStation?: (id: string) => boolean;
   showRevenue?: boolean;
 }
 
@@ -188,6 +189,7 @@ export default function AssetsPage({
   onCreateStation,
   onOpenStation,
   canEdit = true,
+  canEditStation = () => canEdit,
   showRevenue = true,
 }: Props) {
   const [activeTab, setActiveTab] = useState(() => DEMO_MODE ? localStorage.getItem("enerlution_assets_tab") ?? "列表查询" : "列表查询");
@@ -493,7 +495,7 @@ export default function AssetsPage({
                   {/* Actions */}
                   <td style={{ padding: "12px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      {canEdit && isPending ? (
+                      {canEditStation(s.id) && isPending ? (
                         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                           <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 10, background: "#fef3c7", color: "#d97706" }}>审核中</span>
                           <button
@@ -515,7 +517,7 @@ export default function AssetsPage({
                             style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}>
                             <Star size={14} fill={starred[s.id] ? G.blue : "none"} color={starred[s.id] ? G.blue : "#cbd8d0"} />
                           </button>
-                          {canEdit && (
+                          {canEditStation(s.id) && (
                             <button
                               title="编辑站点"
                               aria-label={`编辑${s.name}`}

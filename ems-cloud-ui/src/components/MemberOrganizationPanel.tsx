@@ -169,7 +169,7 @@ export default forwardRef<RolePermissionsHandle, {
     const controller = new AbortController()
     void load(controller.signal)
     return () => controller.abort()
-  }, [view, canRead, canProfile, canGrants, canOrganization])
+  }, [view, canRead, canProfile, canGrants, canOrganization, user])
   function requestLeave(action: () => void = () => {}): Promise<boolean> {
     if (pending.current) return Promise.resolve(false)
     if (grantMember)

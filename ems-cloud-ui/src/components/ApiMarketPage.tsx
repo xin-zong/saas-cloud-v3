@@ -1,3 +1,4 @@
+import { hasStationPermission } from "@/auth/apiPermissions"
 import { useEffect, useState, type FormEvent } from "react"
 
 import type { Station } from "@/App"
@@ -19,8 +20,8 @@ const statuses: Record<string, string> = {
 }
 
 export default function ApiMarketPage({ stations }: { stations: Station[] }) {
-  const { user } = useAuth(),
-    canManage = Boolean(user?.permissions.includes("market.manage"))
+  const { user } = useAuth()
+  stations = stations.filter(station => hasStationPermission(user, station.id, "market.read"))
 
   const [stationId, setStationId] = useState(stations[0]?.id ?? ""),
     [services, setServices] = useState<ApiRow[]>([]),
@@ -49,6 +50,7 @@ export default function ApiMarketPage({ stations }: { stations: Station[] }) {
   }, [stations, stationId])
 
   const station = stations.find((item) => item.id === stationId)
+  const canManage = hasStationPermission(user, stationId, "market.manage")
 
   useEffect(() => {
     if (!stationId) return
@@ -79,6 +81,7 @@ export default function ApiMarketPage({ stations }: { stations: Station[] }) {
 
   async function save(event: FormEvent) {
     event.preventDefault()
+    if (!canManage) return
     setError("")
     const q = qualifications.find((item) => String(item.id) === qualification)
 
@@ -124,6 +127,7 @@ export default function ApiMarketPage({ stations }: { stations: Station[] }) {
   }
 
   async function cancel(id: unknown) {
+    if (!canManage) return
     setBusy(true)
     setError("")
     try {
@@ -244,7 +248,7 @@ export default function ApiMarketPage({ stations }: { stations: Station[] }) {
               type="number"
               step="0.01"
               min="0.01"
-              max={station?.ratedPower}
+              max={Number.isFinite(station?.ratedPower) ? station?.ratedPower : undefined}
               required
               value={capacity}
               onChange={(e) => setCapacity(e.target.value)}

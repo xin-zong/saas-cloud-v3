@@ -9,7 +9,9 @@ test('API approval reviewer can decide a server record and sees refreshed state'
   const page = await context.newPage()
   const errors = []
   page.on('pageerror', error => errors.push(error.message))
-  const user = { id: '7', name: '审核人', account: 'review@test', role: 'operator', organization: '测试', stationIds: ['12'], permissions: ['asset.read', 'workorder.read', 'approval.review'] }
+  const user = { id: '7', name: '审核人', account: 'review@test', role: 'operator', organization: '测试', stationIds: ['12'], permissions: ['asset.read', 'workorder.read', 'approval.read','approval.review'] }
+  user.stationPermissions = Object.fromEntries(user.stationIds.map(id => [id, [...user.permissions]]))
+  user.organizationPermissions = {}
   const approval = { id: 45, title: '计划审批 #31', submitter_id: 9, requester_name: '申请人', reviewer_id: null, submitted_at: new Date().toISOString(), status: 'pending', note: null, plan_id: 31, work_order_id: null, station_id: 12, station_name: '审核站点' }
   let decisions = 0
   let conflict = false

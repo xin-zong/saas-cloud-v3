@@ -27,7 +27,7 @@ export type RoleConfig = {
   defaultNav: NavLabel
   nav: NavLabel[]
   stationSubNavs: StationSubNav[]
-  operationsTabs: Array<"运营总览" | "策略执行" | "市场服务" | "收益结算">
+  operationsTabs: Array<"运营总览" | "策略执行" | "市场服务" | "收益结算" | "电价设置">
   maintenanceTabs: Array<"运维总览" | "告警事件" | "设备健康" | "固件升级">
   workOrderViews: Array<"工单中心" | "审批中心" | "我的待办">
   analysisTabs: Array<"数据分析" | "数据下载" | "报告中心">
@@ -104,6 +104,8 @@ export type AuthUser = {
   organization: string
   stationIds: string[]
   permissions: string[]
+  stationPermissions?: Record<string, string[]>
+  organizationPermissions?: Record<string, string[]>
 }
 
 export const DEMO_USERS: Array<AuthUser & { password: string; requiresMfa: boolean }> = [

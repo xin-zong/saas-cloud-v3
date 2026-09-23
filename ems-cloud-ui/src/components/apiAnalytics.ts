@@ -1,4 +1,4 @@
-import { api, getToken, setToken, ApiError } from "@/api/client"
+import { api, getToken, setToken, getSessionVersion, refreshAfterForbidden, ApiError } from "@/api/client"
 
 export type MeasurementPoint = { id: string; name: string; unit: string; device_id: string }
 export type HistoryBucket = { timestamp: number; value: number; samples: number }
@@ -49,6 +49,7 @@ export function saveBlob(blob: Blob, filename: string) {
 export async function downloadServerReport(stationId: string, kind: ReportKind, from: string, to: string): Promise<void> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to) || to < from) throw new Error("请选择有效的报告日期范围。")
   const token = getToken()
+  const version = getSessionVersion()
   const base = (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:18090/api").replace(/\/$/, "")
   const query = new URLSearchParams({ from, to })
   let response: Response
@@ -59,6 +60,7 @@ export async function downloadServerReport(stationId: string, kind: ReportKind, 
   } catch {
     throw new ApiError("无法连接服务，请检查网络或服务地址。", 0)
   }
+  if (getToken() !== token || getSessionVersion() !== version) throw new ApiError("会话已变化，请重新操作。", 401)
   if (response.status === 401 && getToken() === token) {
     setToken(null)
     window.dispatchEvent(new Event("enerlution:unauthorized"))
@@ -69,9 +71,11 @@ export async function downloadServerReport(stationId: string, kind: ReportKind, 
       const body = await response.json() as { msg?: string }
       if (body.msg) message = body.msg
     } catch { /* response can be plain text */ }
+    if (response.status === 403) {await refreshAfterForbidden(); message = `权限已变化，已刷新当前权限。${message}`}
     throw new ApiError(message, response.status)
   }
   const blob = await response.blob()
   if (!response.headers.get("content-type")?.includes("text/csv")) throw new ApiError("服务器未返回 CSV 报告。", response.status)
+  if (getToken() !== token || getSessionVersion() !== version) throw new ApiError("会话已变化，请重新操作。", 401)
   saveBlob(blob, `report-${stationId}-${kind}-${from}-${to}.csv`)
 }

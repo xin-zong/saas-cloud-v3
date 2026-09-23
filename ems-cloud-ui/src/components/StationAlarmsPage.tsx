@@ -1,3 +1,4 @@
+import { hasStationPermission } from "@/auth/apiPermissions"
 import { DEMO_MODE, send } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -155,7 +156,7 @@ export default function StationAlarmsPage({
   function openOrder() {
     if (!selected) return;
     setOrderError(""); setOrderSaved(false);
-    const initial = { alarmId: selected.id, title: `${selected.title}排查`, assignee: DEMO_MODE ? station.manager || "" : user?.id || "", priority: levelLabel[selected.severity], note: `${station.name} / ${selected.device} / ${selected.id}\n发生时间：${dateTime(selected.occurredAt)}` };
+    const initial = { alarmId: selected.id, title: `${selected.title}排查`, assignee: DEMO_MODE ? station.manager || "" : hasStationPermission(user, station.id, "workorder.handle") ? user?.id || "" : "", priority: levelLabel[selected.severity], note: `${station.name} / ${selected.device} / ${selected.id}\n发生时间：${dateTime(selected.occurredAt)}` };
     if (!DEMO_MODE) { setOrder(initial); return; }
     try {
       const saved = JSON.parse(localStorage.getItem(`alarm-order:${station.id}:${selected.id}`) || "null");
@@ -204,7 +205,7 @@ export default function StationAlarmsPage({
           <h4>处理记录</h4><ol className="alarm-events">{selected.events.map((event, index) => <li key={`${event.at}-${index}`}><time dateTime={event.at} title={dateTime(event.at)}>{timeFormat.format(new Date(event.at))}</time><span>{event.text}</span></li>)}</ol>
           {!selected.events.length && <p className="alarm-detail-subtitle">暂无处理记录</p>}
           {canCreateOrder && (
-            <footer><button disabled={!DEMO_MODE && !user?.permissions.includes("workorder.manage")} className="alarm-action" onClick={openOrder}><FilePlus2 size={14} />基于该告警开单<ChevronRight size={13} /></button></footer>
+            <footer><button disabled={!DEMO_MODE && !hasStationPermission(user, station.id, "workorder.create")} className="alarm-action" onClick={openOrder}><FilePlus2 size={14} />基于该告警开单<ChevronRight size={13} /></button></footer>
           )}
         </> : <div className="alarm-empty">暂无告警详情</div>}
       </aside>
@@ -213,14 +214,14 @@ export default function StationAlarmsPage({
     {trendOpen && selected?.metric && <AlarmDialog title="告警数据分析" onClose={() => setTrendOpen(false)}><div className="alarm-analysis-body"><div className="alarm-analysis-title"><Activity size={17} /><strong>{selected.title}</strong><span>{selected.device} · {selected.metric.name} / {selected.metric.unit}</span></div><AlarmTrend alarm={selected} expanded /><div className="alarm-analysis-footer">{dateTime(selected.occurredAt)} · 阈值 {selected.metric.threshold} {selected.metric.unit} · {selected.samples.length} 个采样点</div></div></AlarmDialog>}
     {canCreateOrder && order && <AlarmDialog title="新建告警工单" onClose={() => setOrder(null)}><form className="alarm-order-form" onSubmit={async (event) => {
       event.preventDefault();
-      if (!order.title.trim() || !order.assignee.trim()) { setOrderError("请填写工单标题和负责人"); return; }
+      if (!order.title.trim() || (DEMO_MODE && !order.assignee.trim())) { setOrderError("请填写工单标题和负责人"); return; }
       if (!DEMO_MODE) {
         if (orderBusy) return;
-        if (!/^\d+$/.test(order.alarmId) || !/^\d+$/.test(station.id) || !/^\d+$/.test(order.assignee)) { setOrderError("告警、站点或负责人编号无效"); return; }
+        if (!/^\d+$/.test(order.alarmId) || !/^\d+$/.test(station.id) || (order.assignee && !/^\d+$/.test(order.assignee))) { setOrderError("告警、站点或负责人编号无效"); return; }
         if (!order.note.trim()) { setOrderError("请填写处理说明"); return; }
         setOrderBusy(true);
         try {
-          const result = await send<{id:number}>("/work-orders", "POST", {stationId:Number(station.id), alarmId:Number(order.alarmId), title:order.title.trim(), description:order.note.trim(), assignedTo:Number(order.assignee), dueAt:null});
+          const result = await send<{id:number}>("/work-orders", "POST", {stationId:Number(station.id), alarmId:Number(order.alarmId), title:order.title.trim(), description:order.note.trim(), assignedTo:order.assignee ? Number(order.assignee) : null, dueAt:null});
           setOrderSaved(true); setOrderError(""); setNotice(`工单 ${result.id} 已由服务器创建`);
         } catch(error) {setOrderError(error instanceof Error ? error.message : "创建工单失败");}
         finally {setOrderBusy(false);}
@@ -230,7 +231,7 @@ export default function StationAlarmsPage({
     }}>
       <p>{station.name} · {order.alarmId}</p>
       <label>工单标题<input required value={order.title} onChange={(event) => { setOrder({ ...order, title: event.target.value }); setOrderSaved(false); }} /></label>
-      <div className="alarm-order-fields"><label>负责人{DEMO_MODE ? <input required value={order.assignee} onChange={(event) => { setOrder({ ...order, assignee: event.target.value }); setOrderSaved(false); }} /> : <strong>{user?.name || user?.id}（当前用户）</strong>}</label><label>优先级<select value={order.priority} onChange={(event) => { setOrder({ ...order, priority: event.target.value }); setOrderSaved(false); }}><option>严重</option><option>重要</option><option>一般</option></select></label></div>
+      <div className="alarm-order-fields"><label>负责人{DEMO_MODE ? <input required value={order.assignee} onChange={(event) => { setOrder({ ...order, assignee: event.target.value }); setOrderSaved(false); }} /> : <strong>{order.assignee ? `${user?.name || user?.id}（当前用户）` : "未分派"}</strong>}</label><label>优先级<select value={order.priority} onChange={(event) => { setOrder({ ...order, priority: event.target.value }); setOrderSaved(false); }}><option>严重</option><option>重要</option><option>一般</option></select></label></div>
       <label>处理说明<textarea rows={4} value={order.note} onChange={(event) => { setOrder({ ...order, note: event.target.value }); setOrderSaved(false); }} /></label>
       <p className="alarm-order-note">{DEMO_MODE ? "工单服务未连接，草稿保存在本机。" : "工单将关联该告警并由服务器保存；优先级仅作页面参考。"}</p>
       {orderError && <p role="alert" className="alarm-text--critical">{orderError}</p>}

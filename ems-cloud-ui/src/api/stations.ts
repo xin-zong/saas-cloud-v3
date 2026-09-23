@@ -3,6 +3,7 @@ import { api, allRows, type ApiRow } from "./client"
 import { adaptStation, adaptOrder, text } from "./adapters"
 import { adaptSettlement } from "./settlement"
 import { canAccessStation, type AuthUser } from "../auth/roles"
+import { hasStationPermission } from "../auth/apiPermissions"
 
 import type { MarketKind } from "../data/stationMarket"
 
@@ -11,15 +12,21 @@ import type { SettlementRecord } from "../data/stationSettlement"
 import type { StationDevice } from "../data/stationDevices"
 
 export async function loadStations(user: AuthUser, signal?: AbortSignal) {
-  if (!user.permissions.includes("asset.read")) return []
-  const records = await allRows("/stations", signal)
+  const records = user.permissions.includes("asset.read") ? await allRows("/stations", signal) : []
+  // Independent operations need only authorized names, never synthetic asset measurements.
+  const contextCodes = ["workorder.read", "workorder.create", "inspection.manage", "approval.read", "strategy.read", "alarm.read", "telemetry.read", "market.read", "revenue.read", "tariff.manage"]
+  const identities = await Promise.all(contextCodes.filter(code =>
+    Object.entries(user.stationPermissions ?? {}).some(([id, codes]) => codes.includes(code) && !records.some(row => String(row.id) === id))
+  ).map(code => api<ApiRow[]>(`/stations/options?permission=${encodeURIComponent(code)}`, {signal})))
+  const contexts = new Map(records.map(record => [String(record.id), record]))
+  for (const identity of identities.flat()) if (!contexts.has(String(identity.id))) contexts.set(String(identity.id), identity)
 
   const orders = user.permissions.includes("workorder.read")
     ? await allRows("/work-orders", signal)
     : []
 
   return Promise.all(
-    records
+    [...contexts.values()]
       .filter((row) => canAccessStation(user, String(row.id)))
       .map(async (record) => {
         const station = adaptStation(record)
@@ -29,7 +36,7 @@ export async function loadStations(user: AuthUser, signal?: AbortSignal) {
           path: string,
           paginated = false,
         ) =>
-          user.permissions.includes(permission)
+          hasStationPermission(user, station.id, permission)
             ? paginated
               ? allRows(`/stations/${station.id}/${path}`, signal)
               : api<ApiRow[]>(`/stations/${station.id}/${path}`, { signal })
@@ -115,7 +122,7 @@ export async function loadStations(user: AuthUser, signal?: AbortSignal) {
         // Missing observations remain unknown; do not label every configured device offline.
 
         if (
-          user.permissions.includes("asset.read") &&
+          hasStationPermission(user, station.id, "asset.read") &&
           devices.every((d) => d.communication_status != null)
         )
           station.devices = {
@@ -249,6 +256,13 @@ export async function loadStations(user: AuthUser, signal?: AbortSignal) {
             level: a.severity === "critical" ? "critical" : "warning",
           }))
 
+        if (!hasStationPermission(user, station.id, "alarm.read")) {
+          station.maintenance.alarms = undefined
+          station.alarmHistory = undefined
+        }
+        if (!hasStationPermission(user, station.id, "workorder.read")) station.maintenance.workOrders = undefined
+        if (!hasStationPermission(user, station.id, "inspection.manage")) station.maintenance.inspections = undefined
+        if (!hasStationPermission(user, station.id, "asset.read")) station.maintenance.firmware = undefined
         return station
       }),
   )

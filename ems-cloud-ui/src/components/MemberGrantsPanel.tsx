@@ -1,3 +1,4 @@
+import { useAuth } from "@/auth/AuthContext"
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
 import { ArrowLeft, Plus, Search, X } from "lucide-react"
 import { PermissionMatrix, type RolePermissionsHandle } from "./RolePermissionsPanel"
@@ -14,6 +15,10 @@ const stationText = (grant: MemberGrant) => grant.stations.map(station => statio
 const statusText: Record<string, string> = { active: "有效", expired: "已过期", scheduled: "未生效", disabled: "成员已停用" }
 
 const MemberGrantsPanel = forwardRef<RolePermissionsHandle, { member: Member; organizationName: string; canManage: boolean; selfSelected: boolean; onClose: () => void }>(function MemberGrantsPanel({ member, organizationName, canManage, selfSelected, onClose }, ref) {
+  const {user} = useAuth()
+  const currentCapabilityScope = JSON.stringify([user?.stationPermissions, user?.organizationPermissions])
+  const [capabilityScope, setCapabilityScope] = useState(currentCapabilityScope)
+  const loadedScope = useRef(currentCapabilityScope)
   const [grants, setGrants] = useState<MemberGrant[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
@@ -33,6 +38,7 @@ const MemberGrantsPanel = forwardRef<RolePermissionsHandle, { member: Member; or
   const [confirmTerm, setConfirmTerm] = useState(false)
   const [leave, setLeave] = useState(false)
   const [busy, setBusy] = useState(false)
+  useEffect(() => { if (!busy) setCapabilityScope(currentCapabilityScope) }, [busy, currentCapabilityScope])
   const pending = useRef(false)
   const leaveResolve = useRef<((allow: boolean) => void) | null>(null)
   const leaveAction = useRef<(() => void) | null>(null)
@@ -41,10 +47,10 @@ const MemberGrantsPanel = forwardRef<RolePermissionsHandle, { member: Member; or
   const original = draft?.grant
   const dirty = !!draft && (original ? draft.roleId !== original.roleId || draft.term !== original.term || draft.stationIds.length !== original.stationIds.length || draft.stationIds.some(id => !original.stationIds.includes(id)) : draft.roleId !== null || draft.stationIds.length > 0 || draft.term !== "permanent")
   const changedTerm = !!original && draft?.term !== original.term
-  const canWrite = canManage && !selfSelected
+  const canWrite = grantsReady && canManage && !selfSelected
   const optionsMatch = !!options && options.roleId === draft?.roleId && options.term === draft?.term && options.grantId === (original?.id ?? null)
   const validSelection = !!draft && !!options && (options.stationSelectionRequired ? draft.stationIds.length > 0 : draft.stationIds.length > 0 || options.canSaveWithoutStations) && draft.stationIds.every(id => options.stations.some(station => station.id === id && station.selectable))
-  const canSave = canWrite && !!draft && !!draft.roleId && supportedTerm(draft.term) && directoryReady && optionsMatch && validSelection && !optionsLoading
+  const canSave = grantsReady && canWrite && !!draft && !!draft.roleId && supportedTerm(draft.term) && directoryReady && optionsMatch && validSelection && !optionsLoading
 
   useEffect(() => {
     const controller = new AbortController()
@@ -52,6 +58,25 @@ const MemberGrantsPanel = forwardRef<RolePermissionsHandle, { member: Member; or
     platformApi.memberGrants(member.id, controller.signal).then(rows => { if (!controller.signal.aborted) { setGrants(rows); setGrantsReady(true); setSelectedId(rows.find(row => !row.scopeRestricted)?.id ?? null) } }).catch(e => { if (!controller.signal.aborted) setError(errorText(e)) }).finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
   }, [member.id])
+
+  useEffect(() => {
+    if (loadedScope.current === capabilityScope) return
+    loadedScope.current = capabilityScope
+    const controller = new AbortController()
+    setGrantsReady(false); setOptions(null)
+    platformApi.memberGrants(member.id, controller.signal).then(rows => {
+      if (controller.signal.aborted) return
+      setGrants(rows); setGrantsReady(true)
+      setDraft(current => {
+        if (!current?.grant) return current
+        const fresh = rows.find(row => row.id === current.grant?.id)
+        if (fresh?.canEdit && !fresh.scopeRestricted) return {...current, grant: fresh}
+        setNotice("权限范围已变化，当前授权已不可编辑。")
+        return null
+      })
+    }).catch(e => {if (!controller.signal.aborted) {setError(errorText(e)); setGrants([]); setDraft(null)}})
+    return () => controller.abort()
+  }, [member.id, capabilityScope])
 
   const editing = draft !== null
   useEffect(() => {
@@ -64,7 +89,7 @@ const MemberGrantsPanel = forwardRef<RolePermissionsHandle, { member: Member; or
       setDraft(current => current ? { ...current, organizationId: rows.some(row => row.id === current.organizationId) ? current.organizationId : rows[0]?.id ?? null } : null)
     }).catch(e => { if (!controller.signal.aborted) { setError(errorText(e)); setDraft(current => current ? { ...current, organizationId: null } : null) } })
     return () => controller.abort()
-  }, [editing, member.id])
+  }, [editing, member.id, capabilityScope])
 
   const organizationId = draft?.organizationId
   useEffect(() => {
@@ -77,7 +102,7 @@ const MemberGrantsPanel = forwardRef<RolePermissionsHandle, { member: Member; or
       setRoles(rows); setCatalog(items); setDirectoryReady(true)
     }).catch(e => { if (!controller.signal.aborted) setError(errorText(e)) })
     return () => controller.abort()
-  }, [organizationId, editing])
+  }, [organizationId, editing, capabilityScope])
 
   useEffect(() => {
     setOptions(null)
@@ -135,7 +160,7 @@ const MemberGrantsPanel = forwardRef<RolePermissionsHandle, { member: Member; or
     else void save().then(ok => { if (ok && leaveResolve.current) finishLeave(true) })
   }
   async function remove() {
-    if (!revoke || pending.current || !canWrite || !revoke.canRevoke || revoke.scopeRestricted) return
+    if (!revoke || pending.current || !canWrite || !grants.find(grant => grant.id === revoke.id)?.canRevoke || revoke.scopeRestricted) return
     pending.current = true; setBusy(true); setError("")
     try { await platformApi.revokeGrant(member.id, revoke.id); setGrants(rows => rows.filter(row => row.id !== revoke.id)); setSelectedId(null); setRevoke(null); setNotice("授权已撤销") }
     catch (e) { setError(errorText(e)) }

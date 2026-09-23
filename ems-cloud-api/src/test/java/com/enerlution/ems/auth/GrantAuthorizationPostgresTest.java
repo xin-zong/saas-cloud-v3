@@ -76,6 +76,32 @@ INSERT INTO member_grant_station VALUES(21,101),(22,102);
   }
 
   @Test
+  void stationOptionsExposeOnlyIdentityForExactCapabilityWithoutAssetRead() throws Exception {
+    db.update("INSERT INTO permission(code,name) VALUES('workorder.read','orders'),('workorder.create','create')");
+    db.update("DELETE FROM role_permission");
+    db.update("INSERT INTO role_permission VALUES(11,'workorder.create'),(12,'workorder.read')");
+    AssetController assets = new AssetController(new DomainSupport(db, access));
+    // Reflection lets the RED test compile before the endpoint is introduced.
+    var options = AssetController.class.getMethod("stationOptions", String.class);
+    var response = (com.enerlution.ems.common.ApiResponse<?>) options.invoke(assets, "workorder.create");
+    var rows = (List<?>) response.data();
+    assertEquals(1, rows.size());
+    assertEquals(Map.of("id", 101L, "name", "A"), rows.getFirst());
+    assertEquals(List.of(Map.of("id", 102L, "name", "B")), assets.stationOptions("workorder.read").data());
+    assertTrue(((List<?>) assets.stations(100, 0).data()).isEmpty());
+    assertEquals(403, assertThrows(BusinessException.class, () -> assets.station(101)).status());
+    for (String code : Arrays.asList(null, "", "unknown", "organization.manage", "firmware.upgrade")) {
+      var failure = assertThrows(java.lang.reflect.InvocationTargetException.class, () -> options.invoke(assets, code));
+      assertEquals(400, ((BusinessException) failure.getCause()).status(), String.valueOf(code));
+    }
+    var denied = assertThrows(java.lang.reflect.InvocationTargetException.class, () -> options.invoke(assets, "asset.read"));
+    assertEquals(403, ((BusinessException) denied.getCause()).status());
+    db.update("DELETE FROM member_grant WHERE id=21");
+    var revoked = assertThrows(java.lang.reflect.InvocationTargetException.class, () -> options.invoke(assets, "workorder.create"));
+    assertEquals(403, ((BusinessException) revoked.getCause()).status());
+  }
+
+  @Test
   void editorAtAReaderAtBMayEditOnlyA() {
     AssetController controller = new AssetController(new DomainSupport(db, access));
     var edit =

@@ -1,3 +1,7 @@
+import { DEMO_MODE } from "@/api/client"
+import { useAuth } from "@/auth/AuthContext"
+import { hasStationPermission } from "@/auth/apiPermissions"
+import StationStrategyPage from "./StationStrategyPage"
 import { useMemo, useState } from "react"
 import { ArrowRight } from "lucide-react"
 import type { Station } from "@/App"
@@ -12,7 +16,7 @@ import { dispatchStation } from "@/data/stationDispatch"
 import "./operations-schedule.css"
 
 const number = (value: number | null | undefined) =>
-  value == null ? "--" : Math.round(value).toLocaleString("zh-CN")
+  value == null || !Number.isFinite(value) ? "--" : Math.round(value).toLocaleString("zh-CN")
 
 export default function OperationsSchedulePage({
   stations,
@@ -21,6 +25,13 @@ export default function OperationsSchedulePage({
   stations: Station[]
   onOpenStation: (id: string, subNav?: string) => void
 }) {
+  const {user} = useAuth()
+  const [strategyId, setStrategyId] = useState("")
+  const strategyStation = stations.find(station => station.id === strategyId)
+  function openStrategy(id: string) {
+    if (DEMO_MODE || hasStationPermission(user, id, "asset.read")) onOpenStation(id, "运行策略")
+    else setStrategyId(id)
+  }
   const [now] = useState(() => stationsDataNow(stations))
   const today = operationsDate(now)
   const [date, setDate] = useState(today)
@@ -44,6 +55,7 @@ export default function OperationsSchedulePage({
   )
   const currentMinute = now.getHours() * 60 + now.getMinutes()
 
+  if (strategyStation) return <div className="dispatch-page"><button className="operations-button" onClick={() => setStrategyId("")}>返回策略执行</button><StationStrategyPage station={strategyStation} /></div>
   return (
     <div className="dispatch-page">
       <section className="dispatch-toolbar" aria-label="策略执行筛选">
@@ -105,7 +117,7 @@ export default function OperationsSchedulePage({
                             style={{ left: `${(from / 1440) * 100}%`, width: `${(length / 1440) * 100}%` }}
                             aria-label={`${row.station.name} ${period.start}至${period.end} ${PERIOD_NAMES[period.mode]} ${number(period.power)}千瓦`}
                             title={`${period.start}–${period.end} ${PERIOD_NAMES[period.mode]} · ${number(period.power)} kW`}
-                            onClick={() => onOpenStation(row.station.id, "运行策略")}
+                            onClick={() => openStrategy(row.station.id)}
                           >
                             {length >= 90 ? PERIOD_NAMES[period.mode] : ""}
                           </button>
@@ -154,7 +166,7 @@ export default function OperationsSchedulePage({
                       {row.current.actual !== null && <small> · {number(row.current.actual)} kW</small>}
                     </td>
                     <td>
-                      <button className="operations-link" onClick={() => onOpenStation(row.station.id, "运行策略")}>
+                      <button className="operations-link" onClick={() => openStrategy(row.station.id)}>
                         查看策略 <ArrowRight size={13} />
                       </button>
                     </td>

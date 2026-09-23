@@ -1,3 +1,4 @@
+import { hasStationPermission } from "@/auth/apiPermissions"
 import { DEMO_MODE, api, send, type ApiRow } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
 import { planPeriods, validatePlan, type PlanPeriod } from "@/api/planning";
@@ -2537,8 +2538,8 @@ function DemoStationStrategyPage({ station }: { station: Station }) {
 
 function ApiStationStrategyPage({station}: {station: Station}) {
   const {user} = useAuth();
-  const canRead = Boolean(user?.permissions.includes('strategy.read'));
-  const canManage = Boolean(user?.permissions.includes('strategy.manage'));
+  const canRead = hasStationPermission(user, station.id, 'strategy.read');
+  const canManage = hasStationPermission(user, station.id, 'strategy.manage');
   const [date, setDate] = useState(() => new Date().toLocaleDateString('en-CA', {timeZone:'Asia/Shanghai'}));
   const [kind, setKind] = useState<'dayAhead'|'intraday'>('dayAhead');
   const [plans, setPlans] = useState<ApiRow[]>([]);
@@ -2602,7 +2603,7 @@ function ApiStationStrategyPage({station}: {station: Station}) {
       <fieldset disabled={!canManage || busy} style={{border:0,padding:0}}><table style={{width:'100%',marginTop:16}}><thead><tr><th>开始时间</th><th>结束时间</th><th>模式</th><th>计划功率 kW</th><th>操作</th></tr></thead><tbody>{periods.map(p => <tr key={p.id}>
         <td><input aria-label="计划开始时间" value={p.start} onChange={e => change(p.id,{start:e.target.value})}/></td><td><input aria-label="计划结束时间" value={p.end} onChange={e => change(p.id,{end:e.target.value})}/></td>
         <td><select aria-label="计划时段模式" value={p.mode} onChange={e => change(p.id,{mode:e.target.value as PlanPeriod['mode']})}><option value="charge">充电</option><option value="discharge">放电</option><option value="standby">待机</option></select></td>
-        <td><input aria-label="计划功率" type="number" min="0" max={station.ratedPower} value={p.power} onChange={e => change(p.id,{power:Number(e.target.value)})}/></td><td><button style={secondaryButton} onClick={() => {setPeriods(rows => rows.filter(row => row.id !== p.id));setDirty(true)}}>删除</button></td>
+        <td><input aria-label="计划功率" type="number" min="0" max={Number.isFinite(station.ratedPower) ? station.ratedPower : undefined} value={p.power} onChange={e => change(p.id,{power:Number(e.target.value)})}/></td><td><button style={secondaryButton} onClick={() => {setPeriods(rows => rows.filter(row => row.id !== p.id));setDirty(true)}}>删除</button></td>
       </tr>)}</tbody></table></fieldset></section>
   </div></div>;
 }

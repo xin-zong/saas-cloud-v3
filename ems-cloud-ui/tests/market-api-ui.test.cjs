@@ -9,6 +9,8 @@ test('market drafts persist through API and withdrawal is not external cancellat
  const errors=[];page.on('pageerror',e=>errors.push(e.message))
  let records=[],saved=null,cancelled=false
  const user={id:'3',name:'市场人员',account:'market@test',role:'owner',organization:'测试',stationIds:['12'],permissions:['asset.read','market.read','market.manage']}
+  user.stationPermissions = Object.fromEntries(user.stationIds.map(id => [id, [...user.permissions]]))
+  user.organizationPermissions = {}
  await page.route('http://127.0.0.1:18090/api/**',async route=>{
   const request=route.request(),path=new URL(request.url()).pathname.slice(4);let data=[]
   if(path==='/auth/me')data=user
@@ -22,7 +24,7 @@ test('market drafts persist through API and withdrawal is not external cancellat
   await route.fulfill({contentType:'application/json',body:JSON.stringify({code:0,data})})
  })
  try{
-  await page.goto('http://127.0.0.1:8443')
+  await page.goto(process.env.PREVIEW_URL || 'http://127.0.0.1:8445')
   await page.getByRole('button',{name:'运营中心',exact:true}).click()
   await page.getByRole('button',{name:'市场服务',exact:true}).click()
   await page.getByText('暂无服务记录',{exact:true}).waitFor()

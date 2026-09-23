@@ -3,10 +3,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react"
-import { api, send, DEMO_MODE, getToken, setToken } from "@/api/client"
+import { api, send, DEMO_MODE, getToken, setToken, getSessionVersion, registerCapabilityRefresh, CAPABILITIES_CHANGED } from "@/api/client"
 import { DEMO_USERS, type AuthUser } from "./roles"
 
 const SESSION_KEY = "enerlution-auth-session-v1"
@@ -141,18 +142,53 @@ function ApiAuthProvider({ children }: { children: ReactNode }) {
   const [challengeId, setChallengeId] = useState("")
   const [restoring, setRestoring] = useState(Boolean(getToken()))
   const rememberedAccount = localStorage.getItem(REMEMBERED_ACCOUNT_KEY) ?? ""
+  const [permissionNotice, setPermissionNotice] = useState("")
+  const sessionGeneration = useRef(0)
+  const refreshInFlight = useRef<{token: string; version: number; promise: Promise<void>} | null>(null)
   function normalize(next: AuthUser): AuthUser {
-    return {...next, id: String(next.id), stationIds: next.stationIds.map(String)}
+    return {...next, id: String(next.id), stationIds: next.stationIds.map(String), stationPermissions: next.stationPermissions ?? {}, organizationPermissions: next.organizationPermissions ?? {}}
   }
   useEffect(() => {
-    const controller = new AbortController()
-    const clear = () => { setUser(null); setPendingUser(null); setChallengeId("") }
+    let active = true
+    const clear = () => { sessionGeneration.current++; setUser(null); setPendingUser(null); setChallengeId("") }
+    const refresh = (): Promise<void> => {
+      const token = getToken()
+      if (!token) return Promise.resolve()
+      if (refreshInFlight.current?.token === token && refreshInFlight.current.version === getSessionVersion()) return refreshInFlight.current.promise
+      const generation = sessionGeneration.current
+      const version = getSessionVersion()
+      const promise = api<AuthUser>('/auth/me')
+        .then(next => {
+          if (!active || getToken() !== token || generation !== sessionGeneration.current || version !== getSessionVersion()) return
+          const normalized = normalize(next)
+          setUser(current => JSON.stringify(current) === JSON.stringify(normalized) ? current : normalized)
+        })
+        .catch(error => {
+          if (!active || getToken() !== token || generation !== sessionGeneration.current || version !== getSessionVersion()) return
+          setPermissionNotice(error instanceof Error ? error.message : '当前权限刷新失败，请重试。')
+          setUser(current => current ? {...current, permissions: [], stationPermissions: {}, organizationPermissions: {}, stationIds: []} : null)
+        })
+        .finally(() => { if (refreshInFlight.current?.promise === promise) refreshInFlight.current = null })
+      refreshInFlight.current = {token, version, promise}
+      return promise
+    }
+    const changed = () => setPermissionNotice('权限已变化，已刷新当前权限。')
+    const onFocus = () => { void refresh() }
     window.addEventListener('enerlution:unauthorized', clear)
-    if (getToken()) api<AuthUser>('/auth/me', {signal: controller.signal})
-      .then(next => { if (!controller.signal.aborted) setUser(normalize(next)) })
-      .catch(() => { if (!controller.signal.aborted) {setToken(null); clear()} })
-      .finally(() => {if (!controller.signal.aborted) setRestoring(false)})
-    return () => {controller.abort(); window.removeEventListener('enerlution:unauthorized', clear)}
+    window.addEventListener(CAPABILITIES_CHANGED, changed)
+    window.addEventListener('focus', onFocus)
+    registerCapabilityRefresh(refresh)
+    const timer = window.setInterval(onFocus, 60000)
+    void refresh().finally(() => {if (active) setRestoring(false)})
+    return () => {
+      active = false
+      refreshInFlight.current = null
+      registerCapabilityRefresh(null)
+      window.clearInterval(timer)
+      window.removeEventListener('enerlution:unauthorized', clear)
+      window.removeEventListener(CAPABILITIES_CHANGED, changed)
+      window.removeEventListener('focus', onFocus)
+    }
   }, [])
   async function login(account: string, password: string, remember: boolean): Promise<LoginResult> {
     try {
@@ -175,9 +211,13 @@ function ApiAuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {return {ok: false, message: error instanceof Error ? error.message : '验证失败'}}
   }
   async function logout() {
-    try {await send('/auth/logout', 'POST')} finally {setToken(null); setUser(null); setPendingUser(null); setChallengeId('')}
+    const request = send('/auth/logout', 'POST')
+    sessionGeneration.current++
+    setToken(null); setUser(null); setPendingUser(null); setChallengeId(''); setPermissionNotice('')
+    await request
   }
   return <AuthContext.Provider value={{user, pendingUser, rememberedAccount, login, verifyMfa, cancelMfa: () => {setPendingUser(null); setChallengeId('')}, logout: () => {void logout().catch(() => {})}}}>
+    {permissionNotice && user && <div role="alert" className="api-inline-error">{permissionNotice}<button onClick={() => setPermissionNotice("")}>关闭提示</button></div>}
     {restoring ? <div role="status" style={{padding: 40}}>正在验证登录会话…</div> : children}
   </AuthContext.Provider>
 }
