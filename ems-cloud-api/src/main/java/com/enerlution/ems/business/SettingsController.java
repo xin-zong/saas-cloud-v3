@@ -47,15 +47,20 @@ public class SettingsController {
 
   @GetMapping("/members")
   public ApiResponse<?> members(@RequestParam(defaultValue = "read") String purpose) {
-    if (!Set.of("read", "grants").contains(purpose)) throw new BusinessException(400, "无效的成员目录用途");
-    boolean grants = purpose.equals("grants");
-    String permission = grants ? "member.grant.manage" : "organization.member.read";
+    String permission =
+        switch (purpose) {
+          case "read" -> "organization.member.read";
+          case "grants" -> "member.grant.manage";
+          case "profiles" -> "member.manage.profile";
+          case "organizations" -> "organization.manage";
+          default -> throw new BusinessException(400, "无效的成员目录用途");
+        };
     s.access.requirePermission(permission);
     return ApiResponse.ok(
         s.db.queryForList(
             "SELECT"
                 + " u.id,u.account,u.display_name,u.enabled,u.organization_id,u.management_organization_id"
-                + (grants ? "" : ",u.email")
+                + (Set.of("read", "profiles").contains(purpose) ? ",u.email" : "")
                 + """
 
 FROM app_user u JOIN effective_organization_permission p ON p.organization_id=u.management_organization_id

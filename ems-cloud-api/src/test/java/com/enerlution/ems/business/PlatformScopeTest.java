@@ -29,7 +29,8 @@ class PlatformScopeTest {
           403,
           assertThrows(
                   BusinessException.class,
-                  () -> controller.edit(9, new MemberController.Edit("No change", true, null)))
+                  () ->
+                      controller.edit(9, new MemberController.Edit("No change", true, null, null)))
               .status());
       verify(db, never()).update(startsWith("UPDATE app_user"), any(Object[].class));
     }
@@ -48,7 +49,16 @@ class PlatformScopeTest {
                 () ->
                     controller.create(
                         new MemberController.Create(
-                            "name", "Name", "password", List.of(1L), List.of(2L), 1L)))
+                            "name",
+                            "Name",
+                            "password",
+                            null,
+                            1L,
+                            null,
+                            new com.fasterxml.jackson.databind.ObjectMapper()
+                                .valueToTree(List.of(1L)),
+                            new com.fasterxml.jackson.databind.ObjectMapper()
+                                .valueToTree(List.of(2L)))))
             .status());
     assertEquals(
         410,
@@ -58,6 +68,6 @@ class PlatformScopeTest {
                     controller.updateGrants(
                         1, new MemberController.Grants(List.of(1L), List.of(2L))))
             .status());
-    verifyNoInteractions(db);
+    verify(db, never()).update(anyString(), any(Object[].class));
   }
 }

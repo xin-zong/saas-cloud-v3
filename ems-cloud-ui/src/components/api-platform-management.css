@@ -94,3 +94,15 @@
  .api-modal-scroll { padding:18px; }
  .api-platform .platform-toolbar { flex-wrap:wrap; }
 }
+
+/* Member and organization workflows keep the prototype's 620px two-column forms. */
+.api-platform .member-workflow-modal { width:min(620px,100%); }
+.member-workflow-fields { border:0; padding:0; margin:0; min-width:0; }
+.member-workflow-wide { grid-column:1 / -1; }
+.member-workflow-leave { z-index:1500; }
+.api-platform .orgv2-member-table { min-width:0; table-layout:fixed; }
+.api-platform .orgv2-org-main .orgv2-member-table { min-width:0; }
+.api-platform .orgv2-member-table th:last-child { width:24%; }
+.api-platform .orgv2-member-table td { overflow-wrap:anywhere; white-space:normal; }
+.api-platform .orgv2-member-table .orgv2-actions { flex-wrap:wrap; gap:7px 12px; }
+.api-platform .orgv2-tree .member-workflow-add-org { width:100%; justify-content:center; margin-top:16px; border:1px solid #dfe8e2; }

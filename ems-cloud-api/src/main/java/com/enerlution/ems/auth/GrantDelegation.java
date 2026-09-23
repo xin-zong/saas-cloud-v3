@@ -133,6 +133,25 @@ SELECT EXISTS(SELECT 1 FROM active_member_grant g JOIN role_permission rp ON rp.
         owner);
   }
 
+  /** Validate an added hierarchy scope against authority BEFORE the edge is changed. */
+  public void requireAddedOrganizationScope(
+      long organization,
+      Collection<String> codes,
+      Instant validUntil,
+      String managementPermission) {
+    access.requireOrganizationPermission(organization, managementPermission);
+    Instant now = db.queryForObject("SELECT statement_timestamp()", Timestamp.class).toInstant();
+    if (validUntil != null && !validUntil.isAfter(now)) return;
+    if (!covers(organization, null, managementPermission, validUntil, true)) deny();
+    for (String code : codes) {
+      var entry = PermissionCatalog.find(code);
+      if (entry != null
+          && entry.available()
+          && entry.scope().equals("organization")
+          && !covers(organization, null, code, validUntil, true)) deny();
+    }
+  }
+
   private boolean covers(
       long organization, Long station, String code, Instant until, boolean boundExpiry) {
     return Boolean.TRUE.equals(

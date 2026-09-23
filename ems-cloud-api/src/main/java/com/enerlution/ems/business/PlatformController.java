@@ -1,6 +1,7 @@
 package com.enerlution.ems.business;
 
 import com.enerlution.ems.common.*;
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.util.*;
@@ -28,60 +29,91 @@ public class PlatformController {
     } else if (purpose.equals("grants")) {
       permission = "member.grant.manage";
       s.access.requirePermission(permission);
+    } else if (purpose.equals("profiles")) {
+      permission = "member.manage.profile";
+      s.access.requirePermission(permission);
+    } else if (purpose.equals("organizations")) {
+      permission = "organization.manage";
+      s.access.requirePermission(permission);
     } else throw new BusinessException(400, "无效的组织目录用途");
-    return ApiResponse.ok(
+    boolean leads = purpose == null || "organizations".equals(purpose);
+    var rows =
         s.db.queryForList(
             """
-            SELECT o.id,o.name,o.parent_id FROM organization o
-            JOIN effective_organization_permission p ON p.organization_id=o.id
+            SELECT o.id,o.name,o.parent_id,CASE WHEN ? THEN o.lead_user_id END AS lead_user_id
+            FROM organization o JOIN effective_organization_permission p ON p.organization_id=o.id
             WHERE p.user_id=? AND p.permission_code=? ORDER BY o.id
             """,
+            leads,
             s.access.userId(),
-            permission));
+            permission);
+    Set<Long> visible = new HashSet<>();
+    for (var row : rows) visible.add(s.number(row, "id"));
+    for (var row : rows) {
+      row.put("lead_name", null);
+      row.put("lead_restricted", false);
+      row.put(
+          "can_reparent",
+          "organizations".equals(purpose)
+              && !new OrganizationWorkflows(s)
+                  .isManagementRoot(s.number(row, "id"), (Long) row.get("parent_id")));
+      if (row.get("lead_user_id") != null) {
+        var lead =
+            s.one(
+                "SELECT display_name,organization_id,management_organization_id FROM app_user WHERE"
+                    + " id=?",
+                row.get("lead_user_id"));
+        boolean visibleLead =
+            visible.contains(lead.get("management_organization_id"))
+                && lead.get("organization_id") != null
+                && visible.contains(lead.get("organization_id"));
+        if (visibleLead) row.put("lead_name", lead.get("display_name"));
+        else {
+          row.put("lead_user_id", null);
+          row.put("lead_restricted", true);
+        }
+      }
+    }
+    return ApiResponse.ok(rows);
   }
 
   public ApiResponse<?> organizations() {
     return organizations(null);
   }
 
-  public record OrganizationInput(@NotBlank @Size(max = 120) String name, Long parentId) {}
-
-  private long defaultOrganization() {
-    var ids = s.access.organizationIds("organization.manage");
-    if (ids.isEmpty()) throw new BusinessException(403, "当前账号未分配管理组织");
-    return ids.getFirst();
-  }
+  public record OrganizationInput(
+      @NotBlank @Size(max = 120) String name, Long parentId, JsonNode leadUserId) {}
 
   @PostMapping("/platform/organizations")
   @Transactional
   public ApiResponse<?> createOrganization(@Valid @RequestBody OrganizationInput input) {
-    s.db.execute("SELECT pg_advisory_xact_lock(78291001)");
-    long parent = input.parentId() == null ? defaultOrganization() : input.parentId();
-    s.access.requireOrganizationPermission(parent, "organization.manage");
-    Long id =
-        s.db.queryForObject(
-            "INSERT INTO organization(name,parent_id) VALUES(?,?) RETURNING id",
-            Long.class,
-            input.name().trim(),
-            parent);
-    s.audit("organization.create", "organization=" + id);
-    return ApiResponse.ok(Map.of("id", id));
+    return ApiResponse.ok(
+        Map.of(
+            "id",
+            new OrganizationWorkflows(s)
+                .create(input.name(), input.parentId(), leadValue(input.leadUserId()))));
   }
 
   @PutMapping("/platform/organizations/{id}")
   @Transactional
   public ApiResponse<?> editOrganization(
       @PathVariable long id, @Valid @RequestBody OrganizationInput input) {
-    s.db.execute("SELECT pg_advisory_xact_lock(78291001)");
-    s.access.requireOrganizationPermission(id, "organization.manage");
-    var existing = s.one("SELECT parent_id FROM organization WHERE id=? FOR UPDATE", id);
-    Long parent = input.parentId() == null ? (Long) existing.get("parent_id") : input.parentId();
-    if (parent != null && !Objects.equals(parent, existing.get("parent_id")))
-      s.access.requireOrganizationPermission(parent, "organization.manage");
-    s.db.update(
-        "UPDATE organization SET name=?,parent_id=? WHERE id=?", input.name().trim(), parent, id);
-    s.audit("organization.edit", "organization=" + id);
+    s.access.requirePermission("organization.manage");
+    new OrganizationWorkflows(s)
+        .edit(
+            id,
+            input.name(),
+            input.parentId(),
+            leadValue(input.leadUserId()),
+            input.leadUserId() != null);
     return ApiResponse.ok(null);
+  }
+
+  private Long leadValue(JsonNode value) {
+    if (value == null || value.isNull()) return null;
+    if (!value.isIntegralNumber() || !value.canConvertToLong() || value.longValue() <= 0)
+      throw new BusinessException(400, "负责人编号无效");
+    return value.longValue();
   }
 
   @GetMapping("/platform/member-grants")
