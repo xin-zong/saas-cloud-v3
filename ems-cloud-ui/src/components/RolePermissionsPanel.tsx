@@ -64,6 +64,7 @@ const RolePermissionsPanel = forwardRef<RolePermissionsHandle, { onOpenMembers?:
   const [notice, setNotice] = useState("")
   const pendingAction = useRef<(() => void) | null>(null)
   const pendingResolve = useRef<((allow: boolean) => void) | null>(null)
+  const savePending = useRef(false)
   const selectedRole = roles.find(role => role.id === selectedRoleId)
   const dirty = !!selectedRole && !equalCodes(draft, selectedRole.permissionCodes)
 
@@ -98,7 +99,7 @@ const RolePermissionsPanel = forwardRef<RolePermissionsHandle, { onOpenMembers?:
   }, [dirty])
 
   function askLeave(action: () => void): Promise<boolean> {
-    if (busy) return Promise.resolve(false)
+    if (busy || savePending.current) return Promise.resolve(false)
     if (!dirty) { action(); return Promise.resolve(true) }
     setDialog("leave")
     pendingAction.current = action
@@ -106,6 +107,7 @@ const RolePermissionsPanel = forwardRef<RolePermissionsHandle, { onOpenMembers?:
   }
   useImperativeHandle(ref, () => ({ requestLeave: () => askLeave(() => {}) }))
   function finishLeave(allow: boolean) {
+    if (savePending.current) return
     setDialog(null)
     if (allow) { setDraft([...(selectedRole?.permissionCodes ?? [])]); pendingAction.current?.() }
     pendingAction.current = null
@@ -113,7 +115,9 @@ const RolePermissionsPanel = forwardRef<RolePermissionsHandle, { onOpenMembers?:
     pendingResolve.current = null
   }
   async function save(): Promise<boolean> {
-    if (!selectedRole || !dirty || busy) return !dirty
+    if (savePending.current || busy) return false
+    if (!selectedRole || !dirty) return !dirty
+    savePending.current = true
     setBusy(true); setError(""); setNotice("")
     try {
       const saved = await platformApi.saveRolePermissions(selectedRole.id, draft)
@@ -121,7 +125,7 @@ const RolePermissionsPanel = forwardRef<RolePermissionsHandle, { onOpenMembers?:
       setDraft([...saved.permissionCodes]); setNotice("角色权限已保存")
       return true
     } catch (e) { setError(errorText(e)); return false }
-    finally { setBusy(false) }
+    finally { savePending.current = false; setBusy(false) }
   }
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -157,7 +161,7 @@ const RolePermissionsPanel = forwardRef<RolePermissionsHandle, { onOpenMembers?:
       {dialog === "create" && <form onSubmit={event => { void create(event) }}><h2 id="role-dialog-title">新增角色</h2><div className="orgv2-form-body"><label>角色名称 *<input name="name" required maxLength={120} autoFocus placeholder="请输入角色名称" /></label><label>角色说明<textarea name="description" rows={3} placeholder="说明该角色的工作范围" /></label></div>{error && <p role="alert" className="api-inline-error">{error}</p>}<div className="orgv2-modal-footer"><button type="button" className="orgv2-outline" onClick={() => setDialog(null)}>取消</button><button type="submit" className="orgv2-primary" disabled={busy}>创建并配置权限</button></div></form>}
       {dialog === "delete" && <div className="orgv2-confirm"><h2 id="role-dialog-title">删除当前角色？</h2><p>删除后无法恢复。请确认不再需要这个角色。</p><div className="orgv2-modal-footer"><button type="button" className="orgv2-outline" onClick={() => setDialog(null)}>取消</button><button type="button" className="orgv2-danger" disabled={busy} onClick={() => { void remove() }}>确认删除</button></div></div>}
       {dialog === "in-use" && <div className="orgv2-confirm"><h2 id="role-dialog-title">{selectedRole?.memberCount || error.includes("成员") ? "该角色仍有成员使用" : "当前角色不可删除"}</h2><p>{error || selectedRole?.reason || "请先为相关成员更换角色，再删除当前角色。"}{selectedRole?.memberCount ? ` 当前可见 ${selectedRole.memberCount} 位成员。` : ""}</p><div className="orgv2-modal-footer"><button type="button" className="orgv2-outline" onClick={() => setDialog(null)}>关闭</button>{onOpenMembers && <button type="button" className="orgv2-primary" onClick={() => { setDialog(null); onOpenMembers() }}>返回成员管理</button>}</div></div>}
-      {dialog === "leave" && <div className="orgv2-confirm"><h2 id="role-dialog-title">未保存的修改</h2><p>当前角色权限有未保存的修改。</p><div className="orgv2-modal-footer"><button type="button" className="orgv2-outline" onClick={() => finishLeave(false)}>继续编辑</button><button type="button" className="orgv2-outline" onClick={() => finishLeave(true)}>放弃修改</button><button type="button" className="orgv2-primary" disabled={busy} onClick={() => { void save().then(ok => { if (ok) finishLeave(true) }) }}>保存并离开</button></div></div>}
+      {dialog === "leave" && <div className="orgv2-confirm"><h2 id="role-dialog-title">未保存的修改</h2><p>当前角色权限有未保存的修改。</p>{error && <p role="alert" className="api-inline-error">{error}</p>}<div className="orgv2-modal-footer"><button type="button" className="orgv2-outline" disabled={busy} onClick={() => finishLeave(false)}>继续编辑</button><button type="button" className="orgv2-outline" disabled={busy} onClick={() => finishLeave(true)}>放弃修改</button><button type="button" className="orgv2-primary" disabled={busy} onClick={() => { void save().then(ok => { if (ok) finishLeave(true) }) }}>保存并离开</button></div></div>}
     </div></div>}
   </div>
 })

@@ -180,6 +180,28 @@ test('pending permission save blocks role and organization context changes until
   assert.equal(await page.getByRole('checkbox', { name: '编辑站点', exact: true }).isChecked(), false)
 })
 
+test('save-and-leave keeps the pending role context until the delayed write completes', async t => {
+  const first = { id: 41, code: 'ops', name: '运营角色', description: '运营', organizationId: 3, permissionCodes: ['asset.read'], memberCount: 0, canEdit: true, canDelete: true, canAssign: true, reason: null }
+  const second = { id: 43, code: 'audit', name: '审计角色', description: '审计', organizationId: 3, permissionCodes: [], memberCount: 0, canEdit: true, canDelete: true, canAssign: true, reason: null }
+  const { page, roles, pendingSave, releaseSave, requests } = await setup(t, [first, second], ['role.manage'], { pauseSave: true })
+  await page.getByRole('checkbox', { name: '编辑站点', exact: true }).check()
+  await page.getByRole('button', { name: '审计角色' }).click()
+  await page.getByRole('button', { name: '保存并离开' }).click()
+  await pendingSave
+  assert.equal(await page.getByRole('button', { name: '放弃修改' }).isDisabled(), true)
+  assert.equal(await page.getByRole('button', { name: '继续编辑' }).isDisabled(), true)
+  assert.equal(await page.getByRole('button', { name: '关闭对话框' }).isDisabled(), true)
+  assert.equal(await page.getByRole('button', { name: '审计角色' }).isDisabled(), true)
+  assert.equal(await page.getByRole('heading', { name: '运营角色' }).count(), 1)
+  releaseSave()
+  await page.getByRole('heading', { name: '审计角色' }).waitFor()
+  assert.equal(await page.getByRole('checkbox', { name: '编辑站点', exact: true }).isChecked(), false)
+  assert.deepEqual(roles[1].permissionCodes, [])
+  assert.deepEqual(requests.filter(request => request.method === 'PUT' && request.path === '/platform/roles/41/permissions').map(request => request.body), [{ permissionCodes: ['asset.read', 'asset.edit'] }])
+  await page.getByRole('button', { name: '运营角色' }).click()
+  assert.equal(await page.getByRole('checkbox', { name: '编辑站点', exact: true }).isChecked(), true)
+})
+
 test('failed organization load hides prior organization roles and prevents stale edits', async t => {
   const { page, requests } = await setup(t, undefined, ['role.manage'], { organizations: [{ id: 3, name: '华东', parent_id: null }, { id: 4, name: '华南', parent_id: null }], failOrganizationId: 4 })
   await page.getByRole('checkbox', { name: '编辑站点', exact: true }).waitFor()
