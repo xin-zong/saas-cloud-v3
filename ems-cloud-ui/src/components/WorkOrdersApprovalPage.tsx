@@ -1,0 +1,2732 @@
+import { DEMO_MODE, send, api, allRows, type ApiRow } from "@/api/client"
+import { useAuth } from "@/auth/AuthContext"
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
+import {
+  CalendarDays,
+  Check,
+  ChevronRight,
+  Download,
+  Plus,
+  Search,
+  X,
+} from "lucide-react"
+import type { Station } from "@/App"
+import { ROLE_CONFIG, type UserRole } from "@/auth/roles"
+import { stationsDataNow } from "@/data/dataClock"
+import { exportOperationsCsv } from "@/data/operations"
+import {
+  buildMaintenanceStation,
+  maintenanceTime,
+  type MaintenanceApproval,
+  type MaintenanceInspection,
+  type MaintenanceStation,
+  type MaintenanceWorkOrder,
+} from "@/data/stationMaintenance"
+import "./operations-center.css"
+import "./work-orders-approval.css"
+
+type View = "工单中心" | "审批中心" | "我的待办"
+type ReviewState = MaintenanceApproval["status"]
+type ServerApproval = ApiRow & {
+  id: number
+  title: string
+  submitted_at: string
+  status: ReviewState
+  submitter_id: number
+  reviewer_id?: number | null
+  station_id?: number | null
+  station_name?: string | null
+  requester_name?: string | null
+  decider_name?: string | null
+  plan_id?: number | null
+  work_order_id?: number | null
+  note?: string | null
+}
+type ServerMember = { id: number; display_name: string; account: string; enabled: boolean }
+type WorkOrderState = MaintenanceWorkOrder["status"]
+type InspectionState = MaintenanceInspection["status"] | "processing"
+type Priority = "P1" | "P2" | "P3"
+type StatusTone = "normal" | "warning" | "danger" | "muted"
+type WorkOrderSource =
+  | "人工"
+  | "告警"
+  | "巡检"
+  | "维护"
+  | "安装"
+  | "调试"
+  | "升级"
+type DisplayWorkOrder = MaintenanceWorkOrder & {
+  stationId?: string
+  source?: WorkOrderSource
+  device?: string
+  priority?: Priority
+  createdBy?: string
+  updatedAt?: string
+}
+type LocalWorkOrder = DisplayWorkOrder & {
+  stationId: string
+  source: WorkOrderSource
+  device: string
+  priority: Priority
+  createdBy: string
+  updatedAt: string
+}
+type WorkOrderDraft = {
+  stationId: string
+  source: WorkOrderSource
+  device: string
+  priority: Priority
+  title: string
+  owner: string
+  dueAt: string
+  description: string
+}
+type OrderOverride = {
+  status: WorkOrderState
+  updatedAt: string
+  operator?: string
+}
+type InspectionOverride = {
+  status: InspectionState
+  updatedAt: string
+  startedAt?: string
+  completedAt?: string
+  operator?: string
+}
+type DisplayInspection = Omit<MaintenanceInspection, "status"> & {
+  status: InspectionState
+  startedAt?: string
+  completedAt?: string
+  updatedAt?: string
+  operator?: string
+}
+type TodoKind = "order" | "inspection" | "approval"
+type TodoGroup = "pending" | "processing" | "done"
+type TodoItem = {
+  key: string
+  kind: TodoKind
+  sourceId: string
+  typeLabel: string
+  title: string
+  row: MaintenanceStation
+  device: string
+  dueAt?: string
+  statusLabel: string
+  statusTone: StatusTone
+  group: TodoGroup
+  actionLabel: string
+  order?: DisplayWorkOrder
+  approval?: MaintenanceApproval
+  inspection?: DisplayInspection
+}
+type DeadlineInfo = {
+  label: string
+  tone: StatusTone
+}
+const PAGE_TABS: View[] = ["工单中心", "审批中心", "我的待办"]
+const OPERATOR_WORK_ORDER_SOURCE_OPTIONS: WorkOrderSource[] = [
+  "人工",
+  "告警",
+  "巡检",
+  "维护",
+]
+const INTEGRATOR_WORK_ORDER_SOURCE_OPTIONS: WorkOrderSource[] = [
+  "安装",
+  "调试",
+  "升级",
+  "维护",
+]
+const ALL_WORK_ORDER_SOURCE_OPTIONS = Array.from(
+  new Set([
+    ...OPERATOR_WORK_ORDER_SOURCE_OPTIONS,
+    ...INTEGRATOR_WORK_ORDER_SOURCE_OPTIONS,
+  ]),
+)
+const WORK_ORDER_PRIORITY_OPTIONS: Priority[] = ["P1", "P2", "P3"]
+const WORK_ORDER_STATE_OPTIONS: WorkOrderState[] = [
+  "pending",
+  "processing",
+  "completed",
+  "cancelled",
+]
+const INSPECTION_STATE_OPTIONS: InspectionState[] = [
+  "pending",
+  "processing",
+  "completed",
+  "cancelled",
+]
+const PRIORITY_DUE_MINUTES: Record<Priority, number> = {
+  P1: 30,
+  P2: 120,
+  P3: 480,
+}
+const COMMON_DEVICE_OPTIONS = [
+  "PCS-01",
+  "BMS-01",
+  "电表端07",
+  "网关",
+  "消防回路",
+  "温控系统",
+]
+const REVIEW_STATUS: Record<ReviewState, string> = {
+  pending: "待审批",
+  approved: "已通过",
+  rejected: "已驳回",
+  withdrawn: "已撤回",
+}
+const APPROVAL_TYPE_LABEL = {
+  strategy: "策略发布",
+  dispatch: "调度计划",
+  permission: "权限申请",
+  workOrder: "工单审批",
+  device: "站点接入",
+}
+const TYPE_LABEL = {
+  strategy: "策略发布",
+  dispatch: "调度计划",
+  permission: "权限变更",
+  workOrder: "工单审批",
+  device: "设备变更",
+}
+const URGENCY_LABEL = { normal: "普通", urgent: "紧急" }
+const ORDER_DISPLAY_STATUS: Record<WorkOrderState, string> = {
+  pending: "待处理",
+  processing: "处理中",
+  completed: "已完成",
+  cancelled: "已取消",
+}
+const INSPECTION_DISPLAY_STATUS: Record<InspectionState, string> = {
+  pending: "待处理",
+  processing: "处理中",
+  completed: "已办结",
+  cancelled: "已取消",
+}
+const NOTE_KEY = "enerlution-work-order-review-notes-v1"
+const REVIEW_STATE_KEY = "enerlution-work-order-review-states-v1"
+const LOCAL_ORDER_KEY = "enerlution-work-orders-local-v1"
+const ORDER_OVERRIDE_KEY = "enerlution-work-order-overrides-v1"
+const INSPECTION_OVERRIDE_KEY = "enerlution-inspection-overrides-v1"
+const EMPTY_ORDER_DRAFT: WorkOrderDraft = {
+  stationId: "",
+  source: "人工",
+  device: "PCS-01",
+  priority: "P2",
+  title: "",
+  owner: "",
+  dueAt: "",
+  description: "",
+}
+const dateOnly = (value: Date) =>
+  `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`
+const defaultDateRange = (now = new Date()) => {
+  const end = new Date(now)
+  const start = new Date(end)
+  start.setDate(start.getDate() - 6)
+  return { start: dateOnly(start), end: dateOnly(end) }
+}
+const dateTimeLocal = (value: Date) =>
+  `${dateOnly(value)}T${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`
+const dateTime = (value?: string) =>
+  value ? new Date(value).toLocaleString("zh-CN", { hour12: false }) : "--"
+const timeLabel = (value?: string) =>
+  value
+    ? new Date(value).toLocaleTimeString("zh-CN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      })
+    : "--"
+const compactDateLabel = (value?: string) => {
+  const time = maintenanceTime(value)
+  if (time === null) return "--"
+  const date = new Date(time)
+  return `${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${timeLabel(value)}`
+}
+const deadlineDateLabel = (value?: string, now = new Date()) => {
+  const time = maintenanceTime(value)
+  if (time === null) return "--"
+  const date = new Date(time)
+  const tomorrow = new Date(now)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  if (dateOnly(date) === dateOnly(now)) return `今日 ${timeLabel(value)}`
+  if (dateOnly(date) === dateOnly(tomorrow)) return `明日 ${timeLabel(value)}`
+  return compactDateLabel(value)
+}
+const minutesAgo = (value?: string, now = Date.now()) => {
+  const time = maintenanceTime(value)
+  return time === null ? null : Math.max(0, Math.floor((now - time) / 60000))
+}
+const isOpenOrder = (status: WorkOrderState) =>
+  status === "pending" || status === "processing"
+const durationLabel = (minutes: number) => {
+  const safe = Math.max(0, Math.floor(minutes))
+  const hours = Math.floor(safe / 60)
+  const mins = safe % 60
+  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`
+}
+const deadlineInfo = (
+  dueAt: string | undefined,
+  status: WorkOrderState,
+  now = Date.now(),
+): DeadlineInfo => {
+  if (!isOpenOrder(status)) return { label: "—", tone: "muted" }
+  const due = maintenanceTime(dueAt)
+  if (due === null) return { label: "未设定", tone: "muted" }
+  const minutes = Math.floor((due - now) / 60000)
+  if (minutes < 0)
+    return { label: `超时 ${durationLabel(Math.abs(minutes))}`, tone: "danger" }
+  if (minutes <= 30) return { label: durationLabel(minutes), tone: "danger" }
+  if (minutes <= 120) return { label: durationLabel(minutes), tone: "warning" }
+  return { label: durationLabel(minutes), tone: "normal" }
+}
+const isOrderRisk = (order: MaintenanceWorkOrder, now = Date.now()) =>
+  deadlineInfo(order.dueAt, order.status, now).tone === "danger"
+const orderPriority = (order: DisplayWorkOrder, now = Date.now()): Priority => {
+  if (order.priority) return order.priority
+  const due = deadlineInfo(order.dueAt, order.status, now)
+  if (due.tone === "danger") return "P1"
+  if (order.status === "pending" || due.tone === "warning") return "P2"
+  return "P3"
+}
+const approvalPriority = (
+  approval: MaintenanceApproval,
+  state: ReviewState = approval.status,
+): Priority => {
+  if (!DEMO_MODE) return "P3"
+  if (approval.urgency === "urgent" && state === "pending") return "P1"
+  if (state === "pending") return "P2"
+  return "P3"
+}
+const approvalDeadlineInfo = (
+  approval: MaintenanceApproval,
+  state: ReviewState,
+  now = Date.now(),
+): DeadlineInfo => {
+  if (!DEMO_MODE) return { label: "未设定", tone: "muted" }
+  if (state !== "pending") return { label: "—", tone: "muted" }
+  const elapsed = minutesAgo(approval.submittedAt, now)
+  if (elapsed === null) return { label: "未设定", tone: "muted" }
+  const limit = approval.urgency === "urgent" ? 30 : 120
+  const remaining = limit - elapsed
+  if (remaining < 0)
+    return {
+      label: `超时 ${durationLabel(Math.abs(remaining))}`,
+      tone: "danger",
+    }
+  if (remaining <= 15)
+    return { label: durationLabel(remaining), tone: "danger" }
+  if (remaining <= 45)
+    return { label: durationLabel(remaining), tone: "warning" }
+  return { label: durationLabel(remaining), tone: "normal" }
+}
+const orderSource = (order: DisplayWorkOrder) => {
+  if (!DEMO_MODE) return "服务器工单"
+  if (order.source) return order.source
+  if (order.alarmId) return "告警"
+  if (/巡检/.test(order.title)) return "巡检"
+  if (/检修|维护/.test(order.title)) return "维护"
+  return "人工"
+}
+const orderDevice = (row: MaintenanceStation, order: DisplayWorkOrder) => {
+  if (!DEMO_MODE) return order.device || "未关联设备"
+  if (order.device) return order.device
+  if (/通信|链路/.test(order.title)) return "网关"
+  if (/采集|电表/.test(order.title)) return "电表端07"
+  if (/电池|BMS/.test(order.title)) return "BMS-01"
+  return row.active[0]?.device ?? "PCS-01"
+}
+const rowSearchText = (text: string, keyword: string) =>
+  text.toLowerCase().includes(keyword.trim().toLowerCase())
+const dueFromPriority = (priority: Priority, now = new Date()) => {
+  const due = new Date(now.getTime() + PRIORITY_DUE_MINUTES[priority] * 60000)
+  due.setSeconds(0, 0)
+  return dateTimeLocal(due)
+}
+const defaultQuickFilter = (view: View) =>
+  view === "我的待办" ? "pending" : "all"
+const orderActionLabel = (status: WorkOrderState) => {
+  if (status === "pending") return "开始处理"
+  if (status === "processing") return "办结工单"
+  return "查看详情"
+}
+const inspectionActionLabel = (status: InspectionState) => {
+  if (status === "pending") return "开始巡检"
+  if (status === "processing") return "完成巡检"
+  return "查看详情"
+}
+const inspectionGroup = (status: InspectionState): TodoGroup =>
+  status === "completed" || status === "cancelled"
+    ? "done"
+    : status === "processing"
+      ? "processing"
+      : "pending"
+const inspectionTone = (
+  inspection: DisplayInspection,
+  now = Date.now(),
+): StatusTone => {
+  if (inspection.status === "completed" || inspection.status === "cancelled")
+    return "muted"
+  if (inspection.status === "processing") return "warning"
+  const due = maintenanceTime(inspection.dueAt)
+  return due !== null && due < now ? "danger" : "normal"
+}
+const stationName = (row: MaintenanceStation) =>
+  row.station.shortName || row.station.name
+const approvalCode = (approval: MaintenanceApproval) => {
+  const digits = approval.id.replace(/\D/g, "")
+  return `AP-${(digits.slice(-3) || approval.id).padStart(3, "0")}`
+}
+const approvalDueAt = (approval: MaintenanceApproval) => {
+  const submitted = maintenanceTime(approval.submittedAt)
+  if (submitted === null) return undefined
+  const limit = approval.urgency === "urgent" ? 30 : 120
+  return new Date(submitted + limit * 60000).toISOString()
+}
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+const isWorkOrderSource = (value: unknown): value is WorkOrderSource =>
+  typeof value === "string" &&
+  ALL_WORK_ORDER_SOURCE_OPTIONS.includes(value as WorkOrderSource)
+const isPriority = (value: unknown): value is Priority =>
+  typeof value === "string" &&
+  WORK_ORDER_PRIORITY_OPTIONS.includes(value as Priority)
+const isWorkOrderState = (value: unknown): value is WorkOrderState =>
+  typeof value === "string" &&
+  WORK_ORDER_STATE_OPTIONS.includes(value as WorkOrderState)
+const isInspectionState = (value: unknown): value is InspectionState =>
+  typeof value === "string" &&
+  INSPECTION_STATE_OPTIONS.includes(value as InspectionState)
+const isReviewState = (value: unknown): value is ReviewState =>
+  typeof value === "string" &&
+  ["pending", "approved", "rejected", "withdrawn"].includes(value)
+const readString = (value: unknown) => (typeof value === "string" ? value : "")
+const storedRecord = <T,>(
+  value: unknown,
+  mapItem: (id: string, item: Record<string, unknown>) => T | null,
+): Record<string, T> => {
+  if (!isRecord(value)) return {}
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([id, item]) => {
+      if (!isRecord(item)) return []
+      const next = mapItem(id, item)
+      return next ? [[id, next]] : []
+    }),
+  )
+}
+const storedLocalOrders = (value: unknown): LocalWorkOrder[] => {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item) => {
+    if (!isRecord(item)) return []
+    const stationId = readString(item.stationId)
+    const id = readString(item.id)
+    const title = readString(item.title).trim()
+    const dueAt = readString(item.dueAt)
+    const createdAt = readString(item.createdAt)
+    if (!stationId || !id || !title || maintenanceTime(createdAt) === null)
+      return []
+    const status = isWorkOrderState(item.status) ? item.status : "pending"
+    return [
+      {
+        id,
+        stationId,
+        title,
+        status,
+        createdAt,
+        dueAt: maintenanceTime(dueAt) === null ? undefined : dueAt,
+        owner: readString(item.owner),
+        alarmId: readString(item.alarmId) || undefined,
+        description: readString(item.description),
+        source: isWorkOrderSource(item.source) ? item.source : "人工",
+        device: readString(item.device) || "PCS-01",
+        priority: isPriority(item.priority) ? item.priority : "P2",
+        createdBy: readString(item.createdBy) || "本地创建",
+        updatedAt: readString(item.updatedAt) || createdAt,
+      },
+    ]
+  })
+}
+const storedOrderOverrides = (value: unknown): Record<string, OrderOverride> =>
+  storedRecord(value, (_id, item) => {
+    if (!isWorkOrderState(item.status)) return null
+    const updatedAt = readString(item.updatedAt)
+    return {
+      status: item.status,
+      updatedAt:
+        maintenanceTime(updatedAt) === null
+          ? new Date().toISOString()
+          : updatedAt,
+      operator: readString(item.operator) || undefined,
+    }
+  })
+const storedInspectionOverrides = (
+  value: unknown,
+): Record<string, InspectionOverride> =>
+  storedRecord(value, (_id, item) => {
+    if (!isInspectionState(item.status)) return null
+    const updatedAt = readString(item.updatedAt)
+    const startedAt = readString(item.startedAt)
+    const completedAt = readString(item.completedAt)
+    return {
+      status: item.status,
+      updatedAt:
+        maintenanceTime(updatedAt) === null
+          ? new Date().toISOString()
+          : updatedAt,
+      startedAt: maintenanceTime(startedAt) === null ? undefined : startedAt,
+      completedAt:
+        maintenanceTime(completedAt) === null ? undefined : completedAt,
+      operator: readString(item.operator) || undefined,
+    }
+  })
+const storedReviewStates = (value: unknown): Record<string, ReviewState> => {
+  if (!isRecord(value)) return {}
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([id, status]) =>
+      isReviewState(status) ? [[id, status]] : [],
+    ),
+  )
+}
+const deviceOptionsForRow = (row?: MaintenanceStation) => [
+  ...new Set([
+    ...(row?.active.map((alarm) => alarm.device) ?? []),
+    ...(row?.firmware.map((item) => item.device) ?? []),
+    ...COMMON_DEVICE_OPTIONS,
+  ]),
+]
+
+function ReviewBadge({
+  status,
+  urgency,
+}: {
+  status: ReviewState
+  urgency?: "normal" | "urgent"
+}) {
+  return (
+    <span className={`work-order-badge work-order-status-${status}`}>
+      <i />
+      {REVIEW_STATUS[status]}
+      {urgency === "urgent" && <b> · 紧急</b>}
+    </span>
+  )
+}
+function OrderStatus({
+  status,
+  risk = false,
+}: {
+  status: WorkOrderState
+  risk?: boolean
+}) {
+  const key = risk ? "risk" : status
+  return (
+    <span className={`work-order-badge work-order-order-${key}`}>
+      <i />
+      {risk ? "超时风险" : ORDER_DISPLAY_STATUS[status]}
+    </span>
+  )
+}
+function StatusChip({
+  label,
+  count,
+  active,
+  tone = "neutral",
+  onClick,
+}: {
+  label: string
+  count?: number
+  active: boolean
+  tone?: "neutral" | "danger"
+  onClick: () => void
+}) {
+  return (
+    <button
+      className={`work-orders-chip work-orders-chip--${tone}`}
+      aria-pressed={active}
+      onClick={onClick}
+    >
+      {label}
+      {typeof count === "number" ? ` ${count}` : ""}
+    </button>
+  )
+}
+function Stat({
+  priority,
+  total,
+  active,
+  risk,
+}: {
+  priority: Priority
+  total: number
+  active: number
+  risk: number
+}) {
+  const ratio = total ? Math.round((risk / total) * 100) : 0
+  return (
+    <div
+      className={`work-order-stat work-order-stat--${priority.toLowerCase()}`}
+    >
+      <span>{priority}</span>
+      <strong>
+        {active} <em>/</em> {total}
+      </strong>
+      <small>{ratio}% 临近超时</small>
+    </div>
+  )
+}
+
+export default function WorkOrdersApprovalPage({
+  stations,
+  onServerChange,
+  initialFocus,
+  initialView,
+  allowedViews = PAGE_TABS,
+  role = "operator",
+}: {
+  stations: Station[]
+  onServerChange?: () => void
+  initialFocus?: {
+    stationId: string
+    orderId?: string
+  } | null
+  initialView?: View
+  allowedViews?: readonly View[]
+  role?: UserRole
+}) {
+  const { user } = useAuth()
+  const [serverBusy, setServerBusy] = useState(false)
+  const initialNow = DEMO_MODE ? stationsDataNow(stations) : new Date()
+  const requestedInitialView: View = initialFocus?.orderId
+    ? "工单中心"
+    : (initialView ?? "工单中心")
+  const visibleViews = PAGE_TABS.filter((item) => allowedViews.includes(item))
+  const initialVisibleView = visibleViews.includes(requestedInitialView)
+    ? requestedInitialView
+    : (visibleViews[0] ?? "工单中心")
+  const [view, setView] = useState<View>(initialVisibleView)
+  const [now, setNow] = useState(() => initialNow)
+  const [range, setRange] = useState(() => defaultDateRange(initialNow))
+  const [scope, setScope] = useState(initialFocus?.stationId ?? "")
+  const [type, setType] = useState("")
+  const [status, setStatus] = useState("")
+  const [submitter, setSubmitter] = useState("")
+  const [search, setSearch] = useState("")
+  const [quickFilter, setQuickFilter] = useState(() =>
+    defaultQuickFilter(initialVisibleView),
+  )
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [selectedKey, setSelectedKey] = useState("")
+  const [orderDetailKey, setOrderDetailKey] = useState("")
+  const [inspectionDetailKey, setInspectionDetailKey] = useState("")
+  const [localOrders, setLocalOrders] = useState<LocalWorkOrder[]>([])
+  const [orderOverrides, setOrderOverrides] =
+    useState<Record<string, OrderOverride>>({})
+  const [inspectionOverrides, setInspectionOverrides] =
+    useState<Record<string, InspectionOverride>>({})
+  const [createOpen, setCreateOpen] = useState(false)
+  const [inspectionCreateOpen, setInspectionCreateOpen] = useState(false)
+  const [inspectionDraft, setInspectionDraft] = useState({stationId:"", title:"", dueAt:""})
+  const [inspectionCreateError, setInspectionCreateError] = useState("")
+  const [orderDraft, setOrderDraft] =
+    useState<WorkOrderDraft>(EMPTY_ORDER_DRAFT)
+  const [createError, setCreateError] = useState("")
+  const [reviewStates, setReviewStates] = useState<Record<string, ReviewState>>(
+    {},
+  )
+  const [reviewNote, setReviewNote] = useState("")
+  const [serverApprovals, setServerApprovals] = useState<ServerApproval[]>([])
+  const [members, setMembers] = useState<ServerMember[]>([])
+  const [approvalLoading, setApprovalLoading] = useState(false)
+  const [approvalError, setApprovalError] = useState("")
+  const [notice, setNotice] = useState("")
+  const canReview = DEMO_MODE || Boolean(user?.permissions.includes("approval.review"))
+  const currentActor = DEMO_MODE ? (role === "integrator" ? "林启明" : "陈明") : (user?.id ?? "")
+  const workOrderSourceOptions =
+    role === "integrator"
+      ? INTEGRATOR_WORK_ORDER_SOURCE_OPTIONS
+      : OPERATOR_WORK_ORDER_SOURCE_OPTIONS
+  const rows = useMemo(
+    () =>
+      stations
+        .filter((station) => station.status !== "building")
+        .map((station) => buildMaintenanceStation(station, now)),
+    [stations, now],
+  )
+  const allApprovals = DEMO_MODE
+    ? rows.flatMap((row) => row.approvals.map((approval) => ({ row, approval })))
+    : serverApprovals.flatMap((item) => {
+        const row = rows.find((candidate) => candidate.station.id === String(item.station_id))
+        if (!row) return []
+        const approval: MaintenanceApproval = {
+          id: String(item.id),
+          submittedAt: item.submitted_at,
+          type: item.plan_id != null ? "strategy" : "workOrder",
+          title: item.title,
+          submitter: item.requester_name || String(item.submitter_id),
+          reviewer: item.decider_name || (item.reviewer_id == null ? undefined : String(item.reviewer_id)),
+          urgency: "normal",
+          status: item.status,
+          stationId: String(item.station_id),
+          change: item.plan_id != null ? `计划 #${item.plan_id}` : `工单 #${item.work_order_id}`,
+          note: item.note || undefined,
+        }
+        return [{row, approval}]
+      })
+  const allInspections = rows.flatMap((row) =>
+    row.inspections.map(
+      (inspection): {
+        row: MaintenanceStation
+        inspection: DisplayInspection
+      } => {
+        const override = inspectionOverrides[inspection.id]
+        return {
+          row,
+          inspection: {
+            ...inspection,
+            status: override?.status ?? inspection.status,
+            startedAt: override?.startedAt,
+            completedAt: override?.completedAt ?? inspection.completedAt,
+            updatedAt: override?.updatedAt,
+            operator: override?.operator,
+          },
+        }
+      },
+    ),
+  )
+  const allOrders = rows.flatMap((row) => {
+    const stationOrders: DisplayWorkOrder[] = [
+      ...localOrders.filter((order) => order.stationId === row.station.id),
+      ...row.workOrders,
+    ]
+    return stationOrders.map((order) => {
+      const override = orderOverrides[order.id]
+      return {
+        row,
+        order: {
+          ...order,
+          status: override?.status ?? order.status,
+          updatedAt: override?.updatedAt ?? order.updatedAt,
+        },
+      }
+    })
+  })
+  const getReviewState = (approval: MaintenanceApproval) =>
+    reviewStates[approval.id] ?? approval.status
+  const inRange = (value?: string) => {
+    const time = maintenanceTime(value)
+    return (
+      time !== null &&
+      dateOnly(new Date(time)) >= range.start &&
+      dateOnly(new Date(time)) <= range.end
+    )
+  }
+  const nowTime = now.getTime()
+  const keyword = search.trim()
+  const orderBase = allOrders.filter(
+    ({ row, order }) =>
+      inRange(order.createdAt) &&
+      (!scope || row.station.id === scope) &&
+      rowSearchText(
+        `${order.id} ${order.title} ${row.station.name} ${row.station.code} ${order.owner} ${orderSource(order)} ${orderDevice(row, order)} ${order.description ?? ""}`,
+        keyword,
+      ),
+  )
+  const approvalBase = allApprovals.filter(
+    ({ row, approval }) =>
+      inRange(approval.submittedAt) &&
+      (!scope || row.station.id === scope) &&
+      (view === "我的待办" || !type || approval.type === type) &&
+      (!submitter || approval.submitter === submitter) &&
+      rowSearchText(
+        `${approval.id} ${approvalCode(approval)} ${approval.title} ${approval.submitter} ${row.station.name} ${row.station.code} ${APPROVAL_TYPE_LABEL[approval.type]}`,
+        keyword,
+      ),
+  )
+  const orders = orderBase.filter(({ order }) => {
+    if (view === "我的待办" && !isOpenOrder(order.status)) return false
+    if (status && order.status !== status) return false
+    if (quickFilter === "pending") return order.status === "pending"
+    if (quickFilter === "processing") return order.status === "processing"
+    if (quickFilter === "risk") return isOrderRisk(order, nowTime)
+    return true
+  })
+  const approvals = approvalBase.filter(({ approval }) => {
+    const reviewState = getReviewState(approval)
+    if (status && reviewState !== status) return false
+    if (quickFilter === "pending") return reviewState === "pending"
+    if (quickFilter === "finished") return reviewState !== "pending"
+    if (quickFilter === "approved") return reviewState === "approved"
+    if (quickFilter === "risk")
+      return approval.urgency === "urgent" && reviewState === "pending"
+    return true
+  })
+  const pendingOrders = orderBase.filter(
+    ({ order }) => order.status === "pending",
+  )
+  const processingOrders = orderBase.filter(
+    ({ order }) => order.status === "processing",
+  )
+  const riskOrders = orderBase.filter(({ order }) =>
+    isOrderRisk(order, nowTime),
+  )
+  const todoBase = [
+    ...allOrders
+      .filter(
+        ({ row, order }) =>
+          (inRange(order.dueAt ?? order.createdAt) ||
+            inRange(order.createdAt)) &&
+          (DEMO_MODE || order.owner === user?.id) &&
+          (!scope || row.station.id === scope),
+      )
+      .map<TodoItem>(({ row, order }) => {
+        const risk = isOrderRisk(order, nowTime)
+        const done =
+          order.status === "completed" || order.status === "cancelled"
+        const processing = order.status === "processing"
+        return {
+          key: `order:${row.station.id}:${order.id}`,
+          kind: "order",
+          sourceId: order.id,
+          typeLabel: "工单",
+          title: order.title,
+          row,
+          device: orderDevice(row, order),
+          dueAt: order.dueAt,
+          statusLabel: risk ? "超时风险" : ORDER_DISPLAY_STATUS[order.status],
+          statusTone: risk
+            ? "danger"
+            : processing
+              ? "warning"
+              : done
+                ? "muted"
+                : "normal",
+          group: done ? "done" : processing ? "processing" : "pending",
+          actionLabel: orderActionLabel(order.status),
+          order,
+        }
+      }),
+    ...((DEMO_MODE ? role === "operator" : user?.permissions.includes("inspection.manage"))
+      ? allInspections
+          .filter(
+            ({ row, inspection }) =>
+              inRange(inspection.dueAt) &&
+              (DEMO_MODE || inspection.owner === user?.id) &&
+              (DEMO_MODE ? inspection.status !== "cancelled" : true) &&
+              (!scope || row.station.id === scope),
+          )
+          .map<TodoItem>(({ row, inspection }) => {
+            const tone = inspectionTone(inspection, nowTime)
+            const statusLabel =
+              tone === "danger"
+                ? "逾期待处理"
+                : INSPECTION_DISPLAY_STATUS[inspection.status]
+            return {
+              key: `inspection:${row.station.id}:${inspection.id}`,
+              kind: "inspection",
+              sourceId: inspection.id,
+              typeLabel: "巡检",
+              title: inspection.title,
+              row,
+              device: "-",
+              dueAt: inspection.dueAt,
+              statusLabel,
+              statusTone: tone,
+              group: inspectionGroup(inspection.status),
+              actionLabel: inspectionActionLabel(inspection.status),
+              inspection,
+            }
+          })
+      : []),
+    ...(!DEMO_MODE && canReview ? allApprovals.filter(({approval}) => approval.status === "pending" && serverApprovals.find(item => String(item.id) === approval.id)?.submitter_id !== Number(user?.id)).map<TodoItem>(({row, approval}) => ({
+      key: `approval:${approval.id}`, kind: "approval", sourceId: approval.id,
+      typeLabel: "审批", title: approval.title, row, device: "-",
+      dueAt: approval.submittedAt, statusLabel: "待审批", statusTone: "normal",
+      group: "pending", actionLabel: "办理审批", approval,
+    })) : []),
+  ].filter((item) => {
+    if (
+      !rowSearchText(
+        `${item.sourceId} ${item.typeLabel} ${item.title} ${stationName(item.row)} ${item.row.station.name} ${item.device}`,
+        keyword,
+      )
+    )
+      return false
+    if (view === "我的待办" && type) return item.kind === type
+    return true
+  })
+  const todos = todoBase
+    .filter((item) => {
+      if (status) return item.group === status || item.statusLabel === status
+      if (quickFilter === "pending") return item.group === "pending"
+      if (quickFilter === "processing") return item.group === "processing"
+      if (quickFilter === "done") return item.group === "done"
+      return true
+    })
+    .sort((a, b) => {
+      const aDue = maintenanceTime(a.dueAt) ?? Infinity
+      const bDue = maintenanceTime(b.dueAt) ?? Infinity
+      return aDue - bDue
+    })
+  const pendingTodos = todoBase.filter((item) => item.group === "pending")
+  const processingTodos = todoBase.filter((item) => item.group === "processing")
+  const doneTodos = todoBase.filter((item) => item.group === "done")
+  const selectedApproval =
+    selectedKey === "closed" || view === "工单中心"
+      ? undefined
+      : (approvals.find(({ approval }) => approval.id === selectedKey) ??
+        approvalBase.find(({ approval }) => approval.id === selectedKey) ??
+        allApprovals.find(({ approval }) => approval.id === selectedKey))
+  const selectedOrder = orders.find(({ order }) => order.id === selectedKey)
+  const selectedRow = selectedApproval?.row ?? selectedOrder?.row
+  const [serverEvents, setServerEvents] = useState<ApiRow[]>([])
+  useEffect(() => {
+    setServerEvents([])
+    if (DEMO_MODE || !orderDetailKey) return
+    const controller = new AbortController()
+    api<ApiRow[]>(`/work-orders/${orderDetailKey}/events`, {signal: controller.signal}).then(setServerEvents).catch(error => {if (!controller.signal.aborted) setNotice(error.message)})
+    return () => controller.abort()
+  }, [orderDetailKey, stations])
+  useEffect(() => {
+    if (DEMO_MODE || !user) return
+    let active = true
+    setApprovalLoading(true)
+    allRows<ServerApproval>("/approvals")
+      .then((items) => { if (active) { setServerApprovals(items); setApprovalError("") } })
+      .catch((error) => { if (active) setApprovalError(error instanceof Error ? error.message : "审批列表加载失败") })
+      .finally(() => { if (active) setApprovalLoading(false) })
+    return () => { active = false }
+  }, [user?.id, stations])
+  useEffect(() => {
+    if (DEMO_MODE || !user?.permissions.includes("member.manage")) return
+    let active = true
+    api<ServerMember[]>("/members").then(items => { if (active) setMembers(items.filter(item => item.enabled)) }).catch(() => { if (active) setMembers([]) })
+    return () => { active = false }
+  }, [user?.id, user?.permissions])
+  const detailOrder = allOrders.find(({ order }) => order.id === orderDetailKey)
+  const detailInspection = allInspections.find(
+    ({ inspection }) => inspection.id === inspectionDetailKey,
+  )
+  useEffect(() => {
+    setNow(DEMO_MODE ? stationsDataNow(stations) : new Date())
+    const timer = window.setInterval(() => setNow(DEMO_MODE ? stationsDataNow(stations) : new Date()), 30000)
+    return () => window.clearInterval(timer)
+  }, [stations])
+  useEffect(() => {
+    if (!DEMO_MODE) return
+    try {
+      setLocalOrders(
+        storedLocalOrders(
+          JSON.parse(localStorage.getItem(LOCAL_ORDER_KEY) ?? "[]"),
+        ),
+      )
+      setOrderOverrides(
+        storedOrderOverrides(
+          JSON.parse(localStorage.getItem(ORDER_OVERRIDE_KEY) ?? "{}"),
+        ),
+      )
+      setInspectionOverrides(
+        storedInspectionOverrides(
+          JSON.parse(localStorage.getItem(INSPECTION_OVERRIDE_KEY) ?? "{}"),
+        ),
+      )
+      setReviewStates(
+        storedReviewStates(
+          JSON.parse(localStorage.getItem(REVIEW_STATE_KEY) ?? "{}"),
+        ),
+      )
+    } catch {
+      setLocalOrders([])
+      setOrderOverrides({})
+      setInspectionOverrides({})
+      setReviewStates({})
+    }
+  }, [])
+  useEffect(() => {
+    const item = selectedApproval?.approval
+    if (!item) {
+      setReviewNote("")
+      return
+    }
+    if (!DEMO_MODE) { setReviewNote(item.note ?? ""); return }
+    try {
+      const saved = JSON.parse(localStorage.getItem(NOTE_KEY) ?? "{}")
+      setReviewNote(
+        typeof saved[item.id]?.note === "string"
+          ? saved[item.id].note
+          : (item.note ?? ""),
+      )
+    } catch {
+      setReviewNote(item.note ?? "")
+    }
+  }, [selectedApproval?.approval?.id])
+  useEffect(() => {
+    if (!initialFocus?.orderId) return
+    setView("工单中心")
+    setQuickFilter("all")
+    setSelectedKey(initialFocus.orderId)
+  }, [initialFocus?.orderId])
+  function persistLocalOrders(next: LocalWorkOrder[]) {
+    localStorage.setItem(LOCAL_ORDER_KEY, JSON.stringify(next))
+  }
+  function persistOrderOverrides(next: Record<string, OrderOverride>) {
+    localStorage.setItem(ORDER_OVERRIDE_KEY, JSON.stringify(next))
+  }
+  function persistInspectionOverrides(
+    next: Record<string, InspectionOverride>,
+  ) {
+    localStorage.setItem(INSPECTION_OVERRIDE_KEY, JSON.stringify(next))
+  }
+  function persistReviewStates(next: Record<string, ReviewState>) {
+    localStorage.setItem(REVIEW_STATE_KEY, JSON.stringify(next))
+  }
+  function reset() {
+    setScope("")
+    setType("")
+    setStatus("")
+    setSubmitter("")
+    setSearch("")
+    setRange(defaultDateRange(now))
+    setQuickFilter(defaultQuickFilter(view))
+    setSelectedKey("")
+    setOrderDetailKey("")
+    setInspectionDetailKey("")
+    setNotice("筛选条件已重置")
+  }
+  function buildOrderDraft(row?: MaintenanceStation) {
+    const selectedRow =
+      row ?? rows.find((item) => item.station.id === scope) ?? rows[0]
+    return {
+      ...EMPTY_ORDER_DRAFT,
+      stationId: selectedRow?.station.id ?? "",
+      owner: DEMO_MODE ? (selectedRow?.station.manager ?? "") : (user?.id ?? ""),
+      device: deviceOptionsForRow(selectedRow)[0] ?? "PCS-01",
+      dueAt: dueFromPriority("P2", now),
+    }
+  }
+  function openCreateDialog() {
+    setView("工单中心")
+    setQuickFilter("all")
+    setCreateError("")
+    setOrderDetailKey("")
+    setInspectionDetailKey("")
+    setNotice("")
+    setOrderDraft(buildOrderDraft())
+    setCreateOpen(true)
+  }
+  function openInspectionCreateDialog() {
+    setInspectionDraft({stationId:scope || rows[0]?.station.id || "", title:"", dueAt:dueFromPriority("P2", now)})
+    setInspectionCreateError("")
+    setInspectionCreateOpen(true)
+  }
+  async function submitInspection(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (serverBusy || !user?.permissions.includes("inspection.manage")) return
+    const due = new Date(inspectionDraft.dueAt)
+    if (!rows.some(row => row.station.id === inspectionDraft.stationId) || !inspectionDraft.title.trim() || !Number.isFinite(due.getTime()) || due.getTime() <= Date.now()) {setInspectionCreateError("请选择站点、填写标题并设置未来的巡检时间");return}
+    setServerBusy(true)
+    try {
+      const result = await send<{id:number}>("/inspections", "POST", {stationId:Number(inspectionDraft.stationId), title:inspectionDraft.title.trim(), dueAt:due.toISOString(), assignedTo:Number(user.id)})
+      setInspectionCreateOpen(false)
+      setNotice(`巡检 ${result.id} 已由服务器创建`)
+      onServerChange?.()
+    } catch(error) {setInspectionCreateError(error instanceof Error ? error.message : "创建巡检失败")}
+    finally {setServerBusy(false)}
+  }
+  function updateOrderDraft(patch: Partial<WorkOrderDraft>) {
+    setOrderDraft((current) => ({ ...current, ...patch }))
+    setCreateError("")
+  }
+  function createOrderId() {
+    const max = allOrders.reduce((best, { order }) => {
+      const value = Number(order.id.match(/^WO-(\d+)$/)?.[1])
+      return Number.isFinite(value) ? Math.max(best, value) : best
+    }, 3000)
+    return `WO-${max + 1}`
+  }
+  async function submitWorkOrder(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!DEMO_MODE) {
+      if (serverBusy) return
+      setServerBusy(true)
+      try {
+        if (!orderDraft.description.trim()) throw new Error('请填写工单描述')
+        if (!/^\d+$/.test(orderDraft.owner)) throw new Error('负责人请输入已授权的用户编号')
+        const result = await send<{id: number}>('/work-orders', 'POST', {stationId: Number(orderDraft.stationId), title: orderDraft.title.trim(), description: orderDraft.description.trim(), assignedTo: Number(orderDraft.owner), dueAt: new Date(orderDraft.dueAt).toISOString()})
+        setCreateOpen(false); setNotice(`工单 ${result.id} 已由服务器创建`); onServerChange?.()
+      } catch(error) {setCreateError(error instanceof Error ? error.message : '创建失败')}
+      finally {setServerBusy(false)}
+      return
+    }
+    const targetRow = rows.find(
+      (row) => row.station.id === orderDraft.stationId,
+    )
+    const title = orderDraft.title.trim()
+    const owner = orderDraft.owner.trim()
+    const device = orderDraft.device.trim()
+    const dueTime = new Date(orderDraft.dueAt).getTime()
+    if (!targetRow) {
+      setCreateError("请选择有效站点")
+      return
+    }
+    if (title.length < 4) {
+      setCreateError("工单标题至少需要 4 个字符")
+      return
+    }
+    if (!device) {
+      setCreateError("请填写设备或对象")
+      return
+    }
+    if (!owner) {
+      setCreateError("请填写负责人")
+      return
+    }
+    if (!Number.isFinite(dueTime)) {
+      setCreateError("请选择处理时限")
+      return
+    }
+    if (dueTime <= now.getTime()) {
+      setCreateError("处理时限必须晚于当前时间")
+      return
+    }
+    const createdAt = now.toISOString()
+    const order: LocalWorkOrder = {
+      id: createOrderId(),
+      stationId: targetRow.station.id,
+      title,
+      status: "pending",
+      createdAt,
+      dueAt: new Date(dueTime).toISOString(),
+      owner,
+      description: orderDraft.description.trim(),
+      source: orderDraft.source,
+      device,
+      priority: orderDraft.priority,
+      createdBy: currentActor,
+      updatedAt: createdAt,
+    }
+    const next = [order, ...localOrders]
+    let saved = true
+    try {
+      persistLocalOrders(next)
+    } catch {
+      saved = false
+    }
+    setLocalOrders(next)
+    setCreateOpen(false)
+    setOrderDraft(EMPTY_ORDER_DRAFT)
+    setCreateError("")
+    setStatus("")
+    setQuickFilter("all")
+    setScope(targetRow.station.id)
+    setSearch("")
+    setSelectedKey(order.id)
+    setOrderDetailKey(order.id)
+    setNotice(
+      saved
+        ? `${order.id} 已创建为本地工单，未下发后台`
+        : `${order.id} 已创建在当前页面，本地保存失败`,
+    )
+  }
+  function removeLocalOrder(orderId: string) {
+    if (!DEMO_MODE) {setNotice("服务端工单不支持删除，请使用取消操作"); return}
+    const next = localOrders.filter((order) => order.id !== orderId)
+    try {
+      persistLocalOrders(next)
+    } catch {
+      // The in-memory state still updates when browser storage is unavailable.
+    }
+    setLocalOrders(next)
+    setOrderOverrides((current) => {
+      if (!(orderId in current)) return current
+      const { [orderId]: _removed, ...remaining } = current
+      try {
+        persistOrderOverrides(remaining)
+      } catch {
+        // The in-memory state still updates when browser storage is unavailable.
+      }
+      return remaining
+    })
+    setOrderDetailKey("")
+    if (selectedKey === orderId) setSelectedKey("")
+    setNotice(`${orderId} 已从本地工单移除`)
+  }
+  async function transitionWorkOrder(orderId: string, nextStatus: WorkOrderState) {
+    if (!DEMO_MODE) {
+      if (serverBusy) return
+      const order = allOrders.find(item => item.order.id === orderId)?.order
+      if (!order) return
+      const note = window.prompt('请输入本次状态变更说明')
+      if (!note?.trim()) return
+      setServerBusy(true)
+      try {await send(`/work-orders/${orderId}/transition`, 'POST', {expectedStatus: order.status, status: nextStatus, note}); setNotice('服务器已更新工单'); onServerChange?.()}
+      catch(error) {setNotice(error instanceof Error ? error.message : '更新失败'); onServerChange?.()}
+      finally {setServerBusy(false)}
+      return
+    }
+    const updatedAt = now.toISOString()
+    setLocalOrders((current) => {
+      const next = current.map((order) =>
+        order.id === orderId
+          ? { ...order, status: nextStatus, updatedAt }
+          : order,
+      )
+      if (next !== current)
+        try {
+          persistLocalOrders(next)
+        } catch {
+          // The in-memory state still updates when browser storage is unavailable.
+        }
+      return next
+    })
+    setOrderOverrides((current) => {
+      const next = {
+        ...current,
+        [orderId]: {
+          status: nextStatus,
+          updatedAt,
+          operator: currentActor,
+        },
+      }
+      try {
+        persistOrderOverrides(next)
+      } catch {
+        // The in-memory state still updates when browser storage is unavailable.
+      }
+      return next
+    })
+    setNotice(
+      `${orderId} 已更新为${ORDER_DISPLAY_STATUS[nextStatus]}（本地预览）`,
+    )
+  }
+  async function transitionInspection(
+    inspectionId: string,
+    nextStatus: InspectionState,
+  ) {
+    if (!DEMO_MODE) {
+      if (nextStatus !== 'completed' && nextStatus !== 'cancelled') return
+      if (serverBusy) return
+      const note = window.prompt(nextStatus === 'cancelled' ? '请输入取消原因' : '请输入巡检结果')
+      if (!note?.trim()) return
+      setServerBusy(true)
+      try {await send(`/inspections/${inspectionId}/${nextStatus === 'cancelled' ? 'cancel' : 'complete'}`,'POST',{note:note.trim()});setNotice(nextStatus === 'cancelled' ? '巡检已由服务器取消' : '巡检已由服务器确认完成');onServerChange?.()}
+      catch(error) {setNotice(error instanceof Error ? error.message : '巡检操作失败')}
+      finally {setServerBusy(false)}
+      return
+    }
+    const updatedAt = now.toISOString()
+    setInspectionOverrides((current) => {
+      const previous = current[inspectionId]
+      const next = {
+        ...current,
+        [inspectionId]: {
+          ...previous,
+          status: nextStatus,
+          updatedAt,
+          startedAt:
+            nextStatus === "processing"
+              ? (previous?.startedAt ?? updatedAt)
+              : previous?.startedAt,
+          completedAt:
+            nextStatus === "completed" ? updatedAt : previous?.completedAt,
+          operator: currentActor,
+        },
+      }
+      try {
+        persistInspectionOverrides(next)
+      } catch {
+        // The in-memory state still updates when browser storage is unavailable.
+      }
+      return next
+    })
+    setNotice(
+      `${inspectionId} 已更新为${INSPECTION_DISPLAY_STATUS[nextStatus]}（本地预览）`,
+    )
+  }
+  function saveNote() {
+    if (!DEMO_MODE) {setNotice("审批意见将在提交审核决定时保存至服务器"); return}
+    if (!selectedApproval) return
+    try {
+      const saved = JSON.parse(localStorage.getItem(NOTE_KEY) ?? "{}")
+      const base =
+        saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {}
+      localStorage.setItem(
+        NOTE_KEY,
+        JSON.stringify({
+          ...base,
+          [selectedApproval.approval.id]: {
+            note: reviewNote,
+            savedAt: new Date().toISOString(),
+          },
+        }),
+      )
+      setNotice(
+        `${approvalCode(selectedApproval.approval)} 审核意见已保存至本机`,
+      )
+    } catch {
+      setNotice("保存失败：本地存储不可用")
+    }
+  }
+  async function decide(next: ReviewState) {
+    if (!DEMO_MODE) {
+      if (!selectedApproval || !canReview || serverBusy || getReviewState(selectedApproval.approval) !== "pending") return
+      if (serverApprovals.find(item => String(item.id) === selectedApproval.approval.id)?.submitter_id === Number(user?.id)) {setNotice("不能审批自己的申请"); return}
+      if (!reviewNote.trim()) {setNotice("请填写审批意见"); return}
+      setServerBusy(true)
+      try {
+        await send(`/approvals/${selectedApproval.approval.id}/decision`, "POST", {decision: next, note: reviewNote.trim()})
+        const fresh = await allRows<ServerApproval>("/approvals")
+        setServerApprovals(fresh)
+        setNotice(next === "approved" ? "审批已由服务器确认通过" : "审批已由服务器确认驳回")
+        onServerChange?.()
+      } catch (error) {setNotice(error instanceof Error ? error.message : "审批失败")}
+      finally {setServerBusy(false)}
+      return
+    }
+    if (
+      !selectedApproval ||
+      getReviewState(selectedApproval.approval) !== "pending"
+    )
+      return
+    if (next === "rejected" && !reviewNote.trim()) {
+      setNotice("请先填写驳回原因")
+      return
+    }
+    setReviewStates((current) => {
+      const nextStates = {
+        ...current,
+        [selectedApproval.approval.id]: next,
+      }
+      try {
+        persistReviewStates(nextStates)
+      } catch {
+        // The in-memory state still updates when browser storage is unavailable.
+      }
+      return nextStates
+    })
+    setNotice(
+      next === "approved"
+        ? `${approvalCode(selectedApproval.approval)} 已记录同意（本地预览），未向设备下发`
+        : `${approvalCode(selectedApproval.approval)} 已驳回（本地预览），未连接后台`,
+    )
+  }
+  function exportCurrent() {
+    if (view === "审批中心") {
+      exportOperationsCsv(
+        "审批中心.csv",
+        [
+          "审核编号",
+          "提交时间",
+          "类型",
+          "标题",
+          "提交人",
+          "紧急程度",
+          "状态",
+          "站点",
+        ],
+        approvals.map(({ row, approval }) => [
+          approval.id,
+          approval.submittedAt,
+          TYPE_LABEL[approval.type],
+          approval.title,
+          approval.submitter,
+          DEMO_MODE ? URGENCY_LABEL[approval.urgency] : "未提供",
+          REVIEW_STATUS[getReviewState(approval)],
+          row.station.name,
+        ]),
+      )
+      setNotice(`已导出审批中心 ${approvals.length} 条记录`)
+    } else if (view === "我的待办") {
+      exportOperationsCsv(
+        "我的待办.csv",
+        [
+          "来源编号",
+          "事项类型",
+          "事项名称",
+          "站点",
+          "设备",
+          "截止时间",
+          "状态",
+        ],
+        todos.map((item) => [
+          item.sourceId,
+          item.typeLabel,
+          item.title,
+          stationName(item.row),
+          item.device,
+          item.dueAt ?? "",
+          item.statusLabel,
+        ]),
+      )
+      setNotice(`已导出我的待办 ${todos.length} 条记录`)
+    } else {
+      exportOperationsCsv(
+        "运维工单.csv",
+        [
+          "站点",
+          "编号",
+          "来源",
+          "设备",
+          "等级",
+          "标题",
+          "状态",
+          "负责人",
+          "截止时间",
+          "描述",
+        ],
+        orders.map(({ row, order }) => [
+          row.station.name,
+          order.id,
+          orderSource(order),
+          orderDevice(row, order),
+          orderPriority(order, nowTime),
+          order.title,
+          ORDER_DISPLAY_STATUS[order.status],
+          order.owner || row.station.manager,
+          order.dueAt ?? "",
+          order.description ?? "",
+        ]),
+      )
+      setNotice(`已导出工单中心 ${orders.length} 条记录`)
+    }
+  }
+  const currentCount =
+    view === "工单中心"
+      ? orders.length
+      : view === "审批中心"
+        ? approvals.length
+        : todos.length
+  const quickChips: {
+    key: string
+    label: string
+    count?: number
+    tone?: "neutral" | "danger"
+  }[] =
+    view === "工单中心"
+      ? [
+          { key: "all", label: "全部工单", count: orderBase.length },
+          { key: "pending", label: "待处理", count: pendingOrders.length },
+          {
+            key: "processing",
+            label: "处理中",
+            count: processingOrders.length,
+          },
+          {
+            key: "risk",
+            label: "超时风险",
+            count: riskOrders.length,
+            tone: "danger",
+          },
+        ]
+      : view === "审批中心"
+        ? [
+            { key: "all", label: "全部审批" },
+            { key: "pending", label: "待审批" },
+            { key: "finished", label: "已结束" },
+          ]
+        : [
+            { key: "pending", label: "待处理", count: pendingTodos.length },
+            {
+              key: "processing",
+              label: "处理中",
+              count: processingTodos.length,
+            },
+            { key: "done", label: "已办结" },
+          ]
+  const searchPlaceholder =
+    view === "工单中心"
+      ? "搜索工单编号 / 标题"
+      : view === "审批中心"
+        ? "搜索审批编号 / 申请事项"
+        : "搜索编号 / 事项名称"
+  const filterTypeOptions =
+    view === "我的待办"
+      ? (DEMO_MODE ? role === "operator" : Boolean(user?.permissions.includes("inspection.manage")))
+        ? [
+            {
+              key: "order",
+              label: "工单",
+            },
+            {
+              key: "inspection",
+              label: "巡检",
+            },
+          ]
+        : [
+            {
+              key: "order",
+              label: "交付与技术工单",
+            },
+          ]
+      : Object.entries(APPROVAL_TYPE_LABEL).map(([key, label]) => ({
+          key,
+          label,
+        }))
+  const filterStatusOptions =
+    view === "工单中心"
+      ? Object.entries(ORDER_DISPLAY_STATUS).map(([key, label]) => ({
+          key,
+          label,
+        }))
+      : view === "审批中心"
+        ? Object.entries(REVIEW_STATUS).map(([key, label]) => ({
+            key,
+            label,
+          }))
+        : [
+            { key: "pending", label: "待处理" },
+            { key: "processing", label: "处理中" },
+            { key: "done", label: "已办结" },
+          ]
+  const activeFilterCount = [scope, type, status, submitter, keyword].filter(
+    Boolean,
+  ).length
+  const slaGroups = (["P1", "P2", "P3"] as const).map((priority) => {
+    const group = orderBase.filter(
+      ({ order }) => orderPriority(order, nowTime) === priority,
+    )
+    return {
+      priority,
+      total: group.length,
+      active: group.filter(({ order }) => isOpenOrder(order.status)).length,
+      risk: group.filter(({ order }) => isOrderRisk(order, nowTime)).length,
+    }
+  })
+  const pageLevelNotice = notice.startsWith("已导出")
+  return (
+    <main className="operations-page work-orders-page">
+      <header className="work-orders-topbar">
+        <nav aria-label="工单与审批一级导航">
+          {visibleViews.map((item) => (
+            <button
+              key={item}
+              aria-current={view === item ? "page" : undefined}
+              onClick={() => {
+                setView(item)
+                setStatus("")
+                setType("")
+                setSubmitter("")
+                setQuickFilter(defaultQuickFilter(item))
+                setSelectedKey("")
+                setOrderDetailKey("")
+                setInspectionDetailKey("")
+                setNotice("")
+              }}
+            >
+              {item}
+            </button>
+          ))}
+        </nav>
+        <span className="work-orders-sync">
+          {ROLE_CONFIG[role].shortLabel}范围 · 更新 {timeLabel(now.toISOString())}
+        </span>
+      </header>
+      <div className="work-orders-content">
+        <section className="work-orders-summary" aria-label="工单审批状态筛选">
+          <div className="work-orders-chips">
+            {quickChips.map((chip) => (
+              <StatusChip
+                key={chip.key}
+                label={chip.label}
+                count={chip.count}
+                active={quickFilter === chip.key}
+                tone={chip.tone}
+                onClick={() => {
+                  setQuickFilter(chip.key)
+                  setSelectedKey("")
+                  setOrderDetailKey("")
+                  setInspectionDetailKey("")
+                  setNotice("")
+                }}
+              />
+            ))}
+          </div>
+          {view === "工单中心" && (
+            <button
+              className="operations-button work-orders-new"
+              disabled={!rows.length}
+              onClick={openCreateDialog}
+            >
+              <Plus size={14} />
+              新建工单
+            </button>
+          )}
+        </section>
+        <section className="work-orders-toolbar" aria-label="工单审批筛选">
+          <label className="work-orders-search">
+            <Search size={13} />
+            <input
+              type="search"
+              aria-label="搜索审批或工单"
+              placeholder={searchPlaceholder}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </label>
+          <button
+            className="operations-button work-orders-filter"
+            aria-expanded={filtersOpen}
+            onClick={() => setFiltersOpen((open) => !open)}
+          >
+            <Plus size={13} />
+            添加筛选
+            {activeFilterCount > 0 && <span>{activeFilterCount}</span>}
+          </button>
+        </section>
+        {filtersOpen && (
+          <section className="work-orders-scope" aria-label="高级筛选">
+            <label>
+              责任范围
+              <select
+                aria-label="审核站点范围"
+                value={scope}
+                onChange={(event) => setScope(event.target.value)}
+              >
+                <option value="">全部站点 · {rows.length}</option>
+                {rows.map((row) => (
+                  <option key={row.station.id} value={row.station.id}>
+                    {row.station.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              类型
+              <select
+                aria-label={view === "我的待办" ? "事项类型" : "审批类型"}
+                disabled={view === "工单中心"}
+                value={type}
+                onChange={(event) => setType(event.target.value)}
+              >
+                <option value="">类型：全部</option>
+                {filterTypeOptions.map(({ key, label }) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              状态
+              <select
+                aria-label="审批状态"
+                value={status}
+                onChange={(event) => setStatus(event.target.value)}
+              >
+                <option value="">状态：全部</option>
+                {filterStatusOptions.map(({ key, label }) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              提交人
+              <select
+                aria-label="提交人"
+                disabled={view === "工单中心" || view === "我的待办"}
+                value={submitter}
+                onChange={(event) => setSubmitter(event.target.value)}
+              >
+                <option value="">提交人：全部</option>
+                {[
+                  ...new Set(
+                    allApprovals.map(({ approval }) => approval.submitter),
+                  ),
+                ].map((name) => (
+                  <option key={name}>{name}</option>
+                ))}
+              </select>
+            </label>
+            <div className="work-orders-date">
+              <CalendarDays size={13} />
+              <input
+                type="date"
+                aria-label="开始日期"
+                value={range.start}
+                onChange={(event) => {
+                  const start = event.target.value
+                  setRange((current) => ({
+                    start,
+                    end: current.end < start ? start : current.end,
+                  }))
+                }}
+              />
+              <span>至</span>
+              <input
+                type="date"
+                aria-label="结束日期"
+                value={range.end}
+                min={range.start}
+                onChange={(event) =>
+                  setRange((current) => ({
+                    ...current,
+                    end: event.target.value,
+                  }))
+                }
+              />
+            </div>
+            <div className="work-orders-filter-actions">
+              <button
+                className="operations-button"
+                onClick={exportCurrent}
+                disabled={!currentCount}
+              >
+                <Download size={13} />
+                导出
+              </button>
+              <button className="work-orders-reset" onClick={reset}>
+                重置筛选
+              </button>
+            </div>
+          </section>
+        )}
+        {notice &&
+          !detailOrder &&
+          !detailInspection &&
+          (pageLevelNotice || view === "工单中心" || !selectedApproval) && (
+            <div className="work-orders-notice" role="status">
+              {notice}
+            </div>
+          )}
+          {!DEMO_MODE && view === "我的待办" && user?.permissions.includes("inspection.manage") && <button className="operations-button work-orders-new" disabled={!rows.length} onClick={openInspectionCreateDialog}><Plus size={14} />新建巡检</button>}
+        {!DEMO_MODE && view === "审批中心" && approvalLoading && <div className="work-orders-notice" role="status">正在加载审批记录…</div>}
+        {!DEMO_MODE && view === "审批中心" && approvalError && <div className="work-orders-notice" role="alert">{approvalError}</div>}
+        <section className="work-orders-table-panel work-orders-orders-panel">
+          <div className="work-orders-table-scroll">
+            {view === "工单中心" ? (
+              <table>
+                <thead>
+                  <tr>
+                    {[
+                      "工单 / 来源",
+                      "站点",
+                      "设备",
+                      "等级",
+                      "处理时限",
+                      "负责人",
+                      "状态",
+                      "更新",
+                      "操作",
+                    ].map((label) => (
+                      <th key={label}>{label}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.map(({ row, order }) => {
+                    const deadline = deadlineInfo(
+                      order.dueAt,
+                      order.status,
+                      nowTime,
+                    )
+                    const priority = orderPriority(order, nowTime)
+                    const risk = isOrderRisk(order, nowTime)
+                    return (
+                      <tr
+                        key={`${row.station.id}:${order.id}`}
+                        className={
+                          selectedOrder?.order.id === order.id
+                            ? "is-selected"
+                            : ""
+                        }
+                        onClick={() => setSelectedKey(order.id)}
+                      >
+                        <td className="work-orders-title">
+                          <strong>
+                            {order.id} · {orderSource(order)}
+                          </strong>
+                          <small>{order.title}</small>
+                        </td>
+                        <td>{row.station.name}</td>
+                        <td>{orderDevice(row, order)}</td>
+                        <td>
+                          <span
+                            className={`work-orders-priority work-orders-priority--${priority.toLowerCase()}`}
+                          >
+                            {priority}
+                          </span>
+                        </td>
+                        <td
+                          className={`work-orders-deadline work-orders-deadline--${deadline.tone}`}
+                        >
+                          {deadline.label}
+                        </td>
+                        <td>{order.owner || row.station.manager}</td>
+                        <td>
+                          <OrderStatus status={order.status} risk={risk} />
+                        </td>
+                        <td>{timeLabel(order.updatedAt ?? order.createdAt)}</td>
+                        <td>
+                          <button
+                            className="work-orders-detail-button"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              setSelectedKey(order.id)
+                              setOrderDetailKey(order.id)
+                              setInspectionDetailKey("")
+                              setNotice("")
+                            }}
+                          >
+                            {orderActionLabel(order.status)}
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            ) : view === "审批中心" ? (
+              <table className="work-orders-sub-table">
+                <thead>
+                  <tr>
+                    {[
+                      "审批编号",
+                      "审批类型",
+                      "申请事项",
+                      "站点",
+                      "设备",
+                      "提交时间",
+                      "状态",
+                      "操作",
+                    ].map((label) => (
+                      <th key={label}>{label}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {approvals.map(({ row, approval }) => {
+                    const reviewState = getReviewState(approval)
+                    return (
+                      <tr
+                        key={`${row.station.id}:${approval.id}`}
+                        className={
+                          selectedApproval?.approval.id === approval.id
+                            ? "is-selected"
+                            : ""
+                        }
+                        onClick={() => setSelectedKey(approval.id)}
+                      >
+                        <td className="work-orders-title">
+                          <strong>{approvalCode(approval)}</strong>
+                        </td>
+                        <td>{APPROVAL_TYPE_LABEL[approval.type]}</td>
+                        <td>{approval.title}</td>
+                        <td>{stationName(row)}</td>
+                        <td>-</td>
+                        <td>{compactDateLabel(approval.submittedAt)}</td>
+                        <td>
+                          <span
+                            className={`work-order-badge work-orders-review-status--${reviewState}`}
+                          >
+                            {REVIEW_STATUS[reviewState]}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            className="work-orders-detail-button work-orders-action-link"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              setSelectedKey(approval.id)
+                              setOrderDetailKey("")
+                              setInspectionDetailKey("")
+                              setNotice("")
+                            }}
+                          >
+                            {reviewState === "pending"
+                              ? "办理审批"
+                              : "查看详情"}
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              <table className="work-orders-sub-table">
+                <thead>
+                  <tr>
+                    {[
+                      "来源编号",
+                      "事项类型",
+                      "事项名称",
+                      "站点",
+                      "设备",
+                      "截止时间",
+                      "状态",
+                      "操作",
+                    ].map((label) => (
+                      <th key={label}>{label}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {todos.map((item) => (
+                    <tr
+                      key={item.key}
+                      className={
+                        selectedKey === item.sourceId ||
+                        selectedKey === item.approval?.id
+                          ? "is-selected"
+                          : ""
+                      }
+                      onClick={() => {
+                        setSelectedKey(item.approval?.id ?? item.sourceId)
+                        if (item.kind !== "approval") setNotice("")
+                      }}
+                    >
+                      <td className="work-orders-title">
+                        <strong>{item.sourceId}</strong>
+                      </td>
+                      <td>{item.typeLabel}</td>
+                      <td>{item.title}</td>
+                      <td>{stationName(item.row)}</td>
+                      <td>{item.device}</td>
+                      <td>{deadlineDateLabel(item.dueAt, now)}</td>
+                      <td>
+                        <span
+                          className={`work-order-badge work-orders-todo-status--${item.statusTone}`}
+                        >
+                          {item.statusLabel}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          className="work-orders-detail-button work-orders-action-link"
+                          aria-label={item.kind === "inspection" ? `查看巡检 ${item.sourceId}` : undefined}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            setNotice("")
+                            setOrderDetailKey("")
+                            setInspectionDetailKey("")
+                            setSelectedKey(item.approval?.id ?? item.sourceId)
+                            if (item.kind === "order" && item.order) {
+                              setOrderDetailKey(item.order.id)
+                            } else if (
+                              item.kind === "approval" &&
+                              item.approval
+                            ) {
+                              setSelectedKey(item.approval.id)
+                            } else if (
+                              item.kind === "inspection" &&
+                              item.inspection
+                            ) {
+                              setInspectionDetailKey(item.inspection.id)
+                            }
+                          }}
+                        >
+                          {item.actionLabel}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+          {!currentCount && (
+            <div className="operations-empty">
+              {view === "工单中心"
+                ? "暂无符合条件的工单"
+                : view === "审批中心"
+                  ? "暂无符合条件的审批记录"
+                  : "暂无符合条件的待办事项"}
+              <button className="work-orders-link" onClick={reset}>
+                重置筛选
+              </button>
+            </div>
+          )}
+        </section>
+        {view !== "工单中心" && selectedApproval && (
+          <div className="work-orders-detail-row">
+            <ApprovalDetail
+              row={selectedRow}
+              approval={selectedApproval?.approval}
+              reviewState={
+                selectedApproval
+                  ? getReviewState(selectedApproval.approval)
+                  : undefined
+              }
+              note={reviewNote}
+              notice={pageLevelNotice ? "" : notice}
+              canDecide={canReview && !serverBusy && (DEMO_MODE || serverApprovals.find(item => String(item.id) === selectedApproval.approval.id)?.submitter_id !== Number(user?.id))}
+              onNote={(value) => {
+                setReviewNote(value)
+                setNotice("")
+              }}
+              onSaveNote={saveNote}
+              onDecide={decide}
+              onClose={() => {
+                setSelectedKey("closed")
+                setNotice("")
+              }}
+            />
+          </div>
+        )}
+        {view === "工单中心" && (
+          <section className="work-orders-sla" aria-label="SLA 负载">
+            <h2>SLA 负载</h2>
+            <div className="work-orders-sla-grid">
+              {slaGroups.map((group) => (
+                <Stat key={group.priority} {...group} />
+              ))}
+            </div>
+          </section>
+        )}
+        {createOpen && (
+          <NewWorkOrderDialog
+            rows={rows}
+            draft={orderDraft}
+            error={createError}
+            now={now}
+            sourceOptions={workOrderSourceOptions}
+            members={members}
+            self={user ? {id: user.id, name: user.name} : undefined}
+            onChange={updateOrderDraft}
+            onClose={() => {
+              setCreateOpen(false)
+              setCreateError("")
+            }}
+            onSubmit={submitWorkOrder}
+          />
+        )}
+        {inspectionCreateOpen && <InspectionCreateDialog rows={rows} draft={inspectionDraft} error={inspectionCreateError} busy={serverBusy} self={user?.name || user?.id || ""} onChange={patch => {setInspectionDraft(current => ({...current, ...patch})); setInspectionCreateError("")}} onClose={() => setInspectionCreateOpen(false)} onSubmit={submitInspection} />}
+        {detailOrder && (
+          <WorkOrderDetailDialog
+            events={serverEvents}
+            assignees={[...(user ? [{id:user.id, name:`${user.name}（当前用户）`}] : []), ...members.filter(member => String(member.id) !== user?.id).map(member => ({id:String(member.id), name:member.display_name || member.account}))]}
+            onAssign={!DEMO_MODE && user?.permissions.includes("workorder.manage") ? async (assignedTo) => {
+              if (!/^\d+$/.test(assignedTo)) return
+              try {await send(`/work-orders/${detailOrder.order.id}/assignee`, 'PUT', {assignedTo: Number(assignedTo)}); setNotice('服务器已更新负责人'); onServerChange?.()}
+              catch(error) {setNotice(error instanceof Error ? error.message : '分派失败')}
+            } : undefined}
+            row={detailOrder.row}
+            order={detailOrder.order}
+            nowTime={nowTime}
+            local={localOrders.some(
+              (order) => order.id === detailOrder.order.id,
+            )}
+            onClose={() => setOrderDetailKey("")}
+            onDelete={() => removeLocalOrder(detailOrder.order.id)}
+            onTransition={(status) =>
+              transitionWorkOrder(detailOrder.order.id, status)
+            }
+            notice={notice}
+          />
+        )}
+        {detailInspection && (
+          <InspectionDetailDialog
+            row={detailInspection.row}
+            inspection={detailInspection.inspection}
+            onClose={() => setInspectionDetailKey("")}
+            onTransition={(status) =>
+              transitionInspection(detailInspection.inspection.id, status)
+            }
+            notice={notice}
+          />
+        )}
+      </div>
+    </main>
+  )
+}
+
+function InspectionCreateDialog({rows, draft, error, busy, self, onChange, onClose, onSubmit}: {
+  rows: MaintenanceStation[]
+  draft: {stationId:string; title:string; dueAt:string}
+  error: string
+  busy: boolean
+  self: string
+  onChange: (patch: Partial<{stationId:string; title:string; dueAt:string}>) => void
+  onClose: () => void
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+}) {
+  const ref = useRef<HTMLDialogElement>(null)
+  useEffect(() => {const dialog = ref.current; dialog?.showModal(); return () => dialog?.close()}, [])
+  return <dialog ref={ref} className="work-orders-create-dialog" aria-label="新建巡检" onCancel={onClose}>
+    <form onSubmit={onSubmit}>
+      <header><h2>新建巡检</h2><button type="button" className="operations-icon" aria-label="关闭" onClick={onClose}><X size={16} /></button></header>
+      <div className="work-orders-create-body"><div className="work-orders-create-grid">
+        <label className="work-orders-create-field">站点<select aria-label="巡检站点" required value={draft.stationId} onChange={event => onChange({stationId:event.target.value})}>{rows.map(row => <option key={row.station.id} value={row.station.id}>{row.station.name}</option>)}</select></label>
+        <label className="work-orders-create-field">巡检标题<input aria-label="巡检标题" required maxLength={200} value={draft.title} onChange={event => onChange({title:event.target.value})} /></label>
+        <label className="work-orders-create-field">计划时间<input aria-label="巡检计划时间" required type="datetime-local" value={draft.dueAt} onChange={event => onChange({dueAt:event.target.value})} /></label>
+        <div className="work-orders-create-field">负责人<strong>{self}（当前用户）</strong></div>
+      </div>{error && <p role="alert" className="work-orders-create-error">{error}</p>}</div>
+      <footer><button type="button" className="operations-button" onClick={onClose}>关闭</button><button type="submit" className="operations-button work-orders-approve" disabled={busy}>创建巡检</button></footer>
+    </form>
+  </dialog>
+}
+
+function NewWorkOrderDialog({
+  rows,
+  draft,
+  error,
+  now,
+  sourceOptions,
+  members,
+  self,
+  onChange,
+  onClose,
+  onSubmit,
+}: {
+  rows: MaintenanceStation[]
+  draft: WorkOrderDraft
+  error: string
+  now: Date
+  sourceOptions: readonly WorkOrderSource[]
+  members: ServerMember[]
+  self?: {id: string; name: string}
+  onChange: (patch: Partial<WorkOrderDraft>) => void
+  onClose: () => void
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+}) {
+  const ref = useRef<HTMLDialogElement>(null)
+  const selectedRow =
+    rows.find((row) => row.station.id === draft.stationId) ?? rows[0]
+  const deviceOptions = deviceOptionsForRow(selectedRow)
+  useEffect(() => {
+    const dialog = ref.current
+    dialog?.showModal()
+    return () => dialog?.close()
+  }, [])
+  function changeStation(stationId: string) {
+    const row = rows.find((item) => item.station.id === stationId)
+    const nextDeviceOptions = deviceOptionsForRow(row)
+    onChange({
+      stationId,
+      owner: row?.station.manager ?? "",
+      device: nextDeviceOptions.includes(draft.device)
+        ? draft.device
+        : (nextDeviceOptions[0] ?? "PCS-01"),
+    })
+  }
+  function changePriority(priority: Priority) {
+    onChange({
+      priority,
+      dueAt: dueFromPriority(priority, now),
+    })
+  }
+  return (
+    <dialog
+      ref={ref}
+      className="work-orders-create-dialog"
+      aria-label="新建工单"
+      onCancel={onClose}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose()
+      }}
+    >
+      <form onSubmit={onSubmit}>
+        <header>
+          <div>
+            <h2>新建工单</h2>
+            <span>本地创建 · 未下发后台</span>
+          </div>
+          <button
+            type="button"
+            className="operations-icon"
+            aria-label="关闭新建工单"
+            title="关闭"
+            onClick={onClose}
+          >
+            <X size={16} />
+          </button>
+        </header>
+        <div className="work-orders-create-body">
+          <div className="work-orders-create-grid">
+            <label className="work-orders-create-field">
+              站点
+              <select
+                required
+                aria-label="新建工单站点"
+                value={draft.stationId}
+                onChange={(event) => changeStation(event.target.value)}
+              >
+                {rows.map((row) => (
+                  <option key={row.station.id} value={row.station.id}>
+                    {row.station.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="work-orders-create-field">
+              来源
+              <select
+                required
+                aria-label="新建工单来源"
+                value={draft.source}
+                onChange={(event) =>
+                  onChange({
+                    source: event.target.value as WorkOrderSource,
+                  })
+                }
+              >
+                {sourceOptions.map((source) => (
+                  <option key={source} value={source}>
+                    {source}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="work-orders-create-field work-orders-create-field--wide">
+              工单标题
+              <input
+                required
+                maxLength={80}
+                aria-label="新建工单标题"
+                placeholder="例如：PCS-01 直流侧绝缘告警复核"
+                value={draft.title}
+                onChange={(event) => onChange({ title: event.target.value })}
+              />
+            </label>
+            <label className="work-orders-create-field">
+              设备 / 对象
+              <input
+                required
+                list="work-order-device-options"
+                maxLength={40}
+                aria-label="新建工单设备"
+                value={draft.device}
+                onChange={(event) => onChange({ device: event.target.value })}
+              />
+              <datalist id="work-order-device-options">
+                {deviceOptions.map((device) => (
+                  <option key={device} value={device} />
+                ))}
+              </datalist>
+            </label>
+            <label className="work-orders-create-field">
+              等级
+              <select
+                required
+                aria-label="新建工单等级"
+                value={draft.priority}
+                onChange={(event) =>
+                  changePriority(event.target.value as Priority)
+                }
+              >
+                {WORK_ORDER_PRIORITY_OPTIONS.map((priority) => (
+                  <option key={priority} value={priority}>
+                    {priority}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="work-orders-create-field">
+              处理时限
+              <input
+                required
+                type="datetime-local"
+                aria-label="新建工单处理时限"
+                min={dateTimeLocal(new Date(now.getTime() + 60000))}
+                value={draft.dueAt}
+                onChange={(event) => onChange({ dueAt: event.target.value })}
+              />
+            </label>
+            <label className="work-orders-create-field">
+              负责人
+              {DEMO_MODE ? <input
+                required
+                maxLength={32}
+                aria-label="新建工单负责人"
+                value={draft.owner}
+                onChange={(event) => onChange({ owner: event.target.value })}
+              /> : <select aria-label="新建工单负责人" required value={draft.owner} onChange={(event) => onChange({owner:event.target.value})}>
+                {self && <option value={self.id}>{self.name}（当前用户）</option>}
+                {members.filter(member => String(member.id) !== self?.id).map(member => <option key={member.id} value={member.id}>{member.display_name || member.account} · {member.account}</option>)}
+              </select>}
+            </label>
+            <label className="work-orders-create-field work-orders-create-field--wide">
+              描述
+              <textarea
+                maxLength={1000}
+                aria-label="新建工单描述"
+                placeholder="记录异常现象、处置要求或交接说明"
+                value={draft.description}
+                onChange={(event) =>
+                  onChange({ description: event.target.value })
+                }
+              />
+            </label>
+          </div>
+          {!DEMO_MODE && <p role="note">服务器保存标题、描述、站点、负责人和截止时间；来源、设备和等级暂不保存。</p>}
+          {selectedRow && (
+            <dl className="work-orders-create-context">
+              <div>
+                <dt>站点状态</dt>
+                <dd>{selectedRow.station.runStatus}</dd>
+              </div>
+              <div>
+                <dt>当前功率</dt>
+                <dd>{Math.round(selectedRow.station.activePower)} kW</dd>
+              </div>
+              <div>
+                <dt>活动告警</dt>
+                <dd>{selectedRow.active.length}</dd>
+              </div>
+            </dl>
+          )}
+          {error && (
+            <p className="work-orders-create-error" role="alert">
+              {error}
+            </p>
+          )}
+        </div>
+        <footer>
+          <span>创建后进入待处理列表</span>
+          <button type="button" className="operations-button" onClick={onClose}>
+            取消
+          </button>
+          <button
+            type="submit"
+            className="operations-button work-orders-approve"
+          >
+            创建工单
+          </button>
+        </footer>
+      </form>
+    </dialog>
+  )
+}
+
+function WorkOrderDetailDialog({
+  events = [],
+  assignees = [],
+  onAssign,
+  row,
+  order,
+  nowTime,
+  local,
+  onClose,
+  onDelete,
+  onTransition,
+  notice,
+}: {
+  events?: ApiRow[]
+  assignees?: {id:string; name:string}[]
+  onAssign?: (assignedTo: string) => void
+  row: MaintenanceStation
+  order: DisplayWorkOrder
+  nowTime: number
+  local: boolean
+  onClose: () => void
+  onDelete: () => void
+  onTransition: (status: WorkOrderState) => void
+  notice: string
+}) {
+  const ref = useRef<HTMLDialogElement>(null)
+  const [selectedAssignee, setSelectedAssignee] = useState(order.owner || assignees[0]?.id || "")
+  const deadline = deadlineInfo(order.dueAt, order.status, nowTime)
+  const open = isOpenOrder(order.status)
+  useEffect(() => {
+    const dialog = ref.current
+    dialog?.showModal()
+    return () => dialog?.close()
+  }, [])
+  const fields: [string, string][] = [
+    ["工单编号", order.id],
+    ["来源", orderSource(order)],
+    ["站点", row.station.name],
+    ["设备 / 对象", orderDevice(row, order)],
+    ["等级", orderPriority(order, nowTime)],
+    ["状态", ORDER_DISPLAY_STATUS[order.status]],
+    ["负责人", order.owner || row.station.manager || "--"],
+    ["创建时间", dateTime(order.createdAt)],
+    ["更新时间", dateTime(order.updatedAt ?? order.createdAt)],
+    ["数据来源", local ? "本地创建" : "站点数据"],
+    ["截止时间", dateTime(order.dueAt)],
+    ["处理时限", deadline.label],
+  ]
+  return (
+    <dialog
+      ref={ref}
+      className="work-orders-create-dialog work-orders-order-detail-dialog"
+      aria-label="工单详情"
+      onCancel={onClose}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose()
+      }}
+    >
+      <header>
+        <div>
+          <h2>
+            {order.id} · {order.title}
+          </h2>
+          <span>
+            {row.station.name} · {orderSource(order)}
+            {order.createdBy ? ` · ${order.createdBy}` : ""}
+          </span>
+        </div>
+        <button
+          type="button"
+          className="operations-icon"
+          aria-label="关闭工单详情"
+          title="关闭"
+          onClick={onClose}
+        >
+          <X size={16} />
+        </button>
+      </header>
+      <div className="work-orders-create-body">
+        <dl className="work-orders-order-detail-list">
+          {fields.map(([label, value]) => (
+            <div key={label}>
+              <dt>{label}</dt>
+              <dd
+                className={
+                  label === "处理时限"
+                    ? `work-orders-deadline work-orders-deadline--${deadline.tone}`
+                    : undefined
+                }
+              >
+                {value || "--"}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <section className="work-orders-order-description">
+          <h3>描述</h3>
+          <p>{order.description || "暂无描述"}</p>
+        </section>
+      </div>
+      <footer>
+        <span>{DEMO_MODE ? '详情为当前页面数据，本地工单未下发后台' : '工单数据来自服务器'}</span>
+        {!DEMO_MODE && <details><summary>服务器事件记录 ({events.length})</summary>{events.map(event => <p key={String(event.id)}>{String(event.created_at ?? '')} · {String(event.action ?? '')} · {String(event.note ?? '')}</p>)}</details>}
+        {onAssign && open && <label>负责人 <select aria-label="更改负责人" value={selectedAssignee} onChange={event => setSelectedAssignee(event.target.value)}>
+          {order.owner && !assignees.some(member => member.id === order.owner) && <option value={order.owner}>当前负责人 #{order.owner}</option>}
+          {assignees.map(member => <option key={member.id} value={member.id}>{member.name}</option>)}
+        </select></label>}
+        {onAssign && open && <button onClick={() => onAssign(selectedAssignee)} disabled={!selectedAssignee || selectedAssignee === order.owner} className="operations-button">更改负责人</button>}
+        <div className="work-orders-dialog-actions">
+          {notice && (
+            <span className="work-orders-dialog-notice" role="status">
+              {notice}
+            </span>
+          )}
+          {local && (
+            <button
+              type="button"
+              className="operations-button work-orders-reject"
+              onClick={onDelete}
+            >
+              删除本地记录
+            </button>
+          )}
+          {open && (
+            <button
+              type="button"
+              className="operations-button work-orders-reject"
+              onClick={() => onTransition("cancelled")}
+            >
+              取消工单
+            </button>
+          )}
+          <button type="button" className="operations-button" onClick={onClose}>
+            关闭
+          </button>
+          {order.status === "pending" && (
+            <button
+              type="button"
+              className="operations-button work-orders-approve"
+              onClick={() => onTransition("processing")}
+            >
+              开始处理
+            </button>
+          )}
+          {order.status === "processing" && (
+            <button
+              type="button"
+              className="operations-button work-orders-approve"
+              onClick={() => onTransition("completed")}
+            >
+              办结工单
+            </button>
+          )}
+          {!open && (
+            <span className="work-orders-final-state">
+              {ORDER_DISPLAY_STATUS[order.status]} · 工单操作已完成
+            </span>
+          )}
+        </div>
+      </footer>
+    </dialog>
+  )
+}
+
+function InspectionDetailDialog({
+  row,
+  inspection,
+  onClose,
+  onTransition,
+  notice,
+}: {
+  row: MaintenanceStation
+  inspection: DisplayInspection
+  onClose: () => void
+  onTransition: (status: InspectionState) => void
+  notice: string
+}) {
+  const ref = useRef<HTMLDialogElement>(null)
+  const open =
+    inspection.status === "pending" || inspection.status === "processing"
+  const tone = inspectionTone(inspection)
+  useEffect(() => {
+    const dialog = ref.current
+    dialog?.showModal()
+    return () => dialog?.close()
+  }, [])
+  const fields: [string, string][] = [
+    ["巡检编号", inspection.id],
+    ["巡检事项", inspection.title],
+    ["站点", row.station.name],
+    ["负责人", inspection.owner || row.station.manager || "--"],
+    ["计划时间", dateTime(inspection.dueAt)],
+    ["当前状态", INSPECTION_DISPLAY_STATUS[inspection.status]],
+    ["开始时间", dateTime(inspection.startedAt)],
+    ["完成时间", dateTime(inspection.completedAt)],
+  ]
+  return (
+    <dialog
+      ref={ref}
+      className="work-orders-create-dialog work-orders-order-detail-dialog"
+      aria-label="巡检详情"
+      onCancel={onClose}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose()
+      }}
+    >
+      <header>
+        <div>
+          <h2>
+            {inspection.id} · {inspection.title}
+          </h2>
+          <span>
+            {row.station.name} · {inspection.owner || row.station.manager}
+          </span>
+        </div>
+        <button
+          type="button"
+          className="operations-icon"
+          aria-label="关闭巡检详情"
+          title="关闭"
+          onClick={onClose}
+        >
+          <X size={16} />
+        </button>
+      </header>
+      <div className="work-orders-create-body">
+        <dl className="work-orders-order-detail-list">
+          {fields.map(([label, value]) => (
+            <div key={label}>
+              <dt>{label}</dt>
+              <dd
+                className={
+                  label === "当前状态"
+                    ? `work-orders-todo-status--${tone}`
+                    : undefined
+                }
+              >
+                {value || "--"}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <section className="work-orders-inspection-context">
+          <h3>站点参考</h3>
+          <dl>
+            <div>
+              <dt>运行状态</dt>
+              <dd>{row.station.runStatus}</dd>
+            </div>
+            <div>
+              <dt>SoC</dt>
+              <dd>{Number.isFinite(row.station.soc) ? `${Math.round(row.station.soc)}%` : "未知"}</dd>
+            </div>
+            <div>
+              <dt>活动告警</dt>
+              <dd>{row.active.length}</dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+      <footer>
+        <span>{DEMO_MODE ? "巡检操作为本地预览，未同步巡检系统" : "完成巡检将由服务器保存结果"}</span>
+        <div className="work-orders-dialog-actions">
+          {notice && (
+            <span className="work-orders-dialog-notice" role="status">
+              {notice}
+            </span>
+          )}
+          {open && (
+            <button
+              type="button"
+              className="operations-button work-orders-reject"
+              disabled={!DEMO_MODE && inspection.status !== "pending"} onClick={() => onTransition("cancelled")}
+            >
+              取消巡检
+            </button>
+          )}
+          <button type="button" className="operations-button" onClick={onClose}>
+            关闭
+          </button>
+          {inspection.status === "pending" && (
+            <button
+              type="button"
+              className="operations-button work-orders-approve"
+              onClick={() => onTransition(DEMO_MODE ? "processing" : "completed")}
+            >
+              {DEMO_MODE ? "开始巡检" : "完成巡检"}
+            </button>
+          )}
+          {inspection.status === "processing" && (
+            <button
+              type="button"
+              className="operations-button work-orders-approve"
+              onClick={() => onTransition("completed")}
+            >
+              完成巡检
+            </button>
+          )}
+          {!open && (
+            <span className="work-orders-final-state">
+              {INSPECTION_DISPLAY_STATUS[inspection.status]} · 巡检操作已完成
+            </span>
+          )}
+        </div>
+      </footer>
+    </dialog>
+  )
+}
+
+function ApprovalDetail({
+  row,
+  approval,
+  reviewState,
+  note,
+  notice,
+  canDecide,
+  onNote,
+  onSaveNote,
+  onDecide,
+  onClose,
+}: {
+  row?: MaintenanceStation
+  approval?: MaintenanceApproval
+  reviewState?: ReviewState
+  note: string
+  notice: string
+  canDecide: boolean
+  onNote: (value: string) => void
+  onSaveNote: () => void
+  onDecide: (state: ReviewState) => void
+  onClose: () => void
+}) {
+  if (!approval || !row)
+    return (
+      <aside className="work-orders-detail">
+        <div className="operations-empty">请选择一条审核记录</div>
+      </aside>
+    )
+  return (
+    <aside className="work-orders-detail" aria-label="审核复核详情">
+      <header>
+        <div>
+          <h2>
+            {approval.id} · {approval.title}
+          </h2>
+          <span>
+            {row.station.name} · {TYPE_LABEL[approval.type]}
+          </span>
+        </div>
+        <button
+          className="operations-icon"
+          aria-label="关闭详情"
+          title="关闭详情"
+          onClick={onClose}
+        >
+          <X size={16} />
+        </button>
+      </header>
+      <div className="work-orders-detail-body">
+        <section className="work-orders-change">
+          <small>操作内容</small>
+          <strong>{approval.change || "系统未提供变更内容"}</strong>
+          {DEMO_MODE && <span>
+            SoC：{Math.round(row.station.soc)} % · 有功：
+            {Math.round(row.station.activePower)} kW
+          </span>}
+        </section>
+        <section className="work-orders-evidence">
+          <h3>审批意见与参考</h3>
+          <div>
+            <span>提交人</span>
+            <strong>{approval.submitter}</strong>
+          </div>
+          <div>
+            <span>提交时间</span>
+            <strong>{dateTime(approval.submittedAt)}</strong>
+          </div>
+          <div>
+            <span>紧急程度</span>
+            <strong
+              className={
+                approval.urgency === "urgent" ? "work-orders-urgent" : ""
+              }
+            >
+              {DEMO_MODE ? URGENCY_LABEL[approval.urgency] : "未提供"}
+            </strong>
+          </div>
+          <div>
+            <span>当前状态</span>
+            <ReviewBadge status={reviewState ?? approval.status} />
+          </div>
+          {approval.reviewer && <div><span>审核人</span><strong>{approval.reviewer}</strong></div>}
+        </section>
+        <section className="work-orders-comment">
+          <label>
+            填写审批意见
+            <textarea
+              aria-label="审批意见"
+              value={note}
+              readOnly={!DEMO_MODE && (!canDecide || reviewState !== "pending")}
+              maxLength={2000}
+              onChange={(event) => onNote(event.target.value)}
+              placeholder="请输入审批意见或驳回原因..."
+            />
+          </label>
+          <div>
+            {DEMO_MODE && <button className="operations-button" onClick={onSaveNote}>
+              <Check size={13} />
+              保存意见
+            </button>}
+            {!DEMO_MODE && <span>{canDecide ? "审批意见将在提交审核决定时保存。" : "当前账号不能办理此审批。"}</span>}
+            {notice && <span role="status">{notice}</span>}
+          </div>
+        </section>
+      </div>
+      <footer>
+        {reviewState === "pending" ? (
+          <>
+            <button
+              className="operations-button work-orders-reject"
+              disabled={!canDecide}
+              onClick={() => onDecide("rejected")}
+            >
+              驳回
+            </button>
+            <button
+              className="operations-button work-orders-approve"
+              disabled={!canDecide}
+              onClick={() => onDecide("approved")}
+            >
+              {DEMO_MODE ? "同意（预览）" : "同意"}
+              <ChevronRight size={13} />
+            </button>
+          </>
+        ) : (
+          <span className="work-orders-final-state">
+            {REVIEW_STATUS[reviewState ?? approval.status]} · 审核操作已完成
+          </span>
+        )}
+      </footer>
+    </aside>
+  )
+}

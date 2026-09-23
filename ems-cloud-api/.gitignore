@@ -1,0 +1,8 @@
+target/
+.tools/
+.env
+.env.*
+!.env.example
+.superpowers/
+.idea/
+*.log

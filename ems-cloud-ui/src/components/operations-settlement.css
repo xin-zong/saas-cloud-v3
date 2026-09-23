@@ -1,0 +1,108 @@
+.settlement-page { padding: 0 var(--ui-page-space) 24px; min-width: 0; }
+.settlement-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 18px; padding: 15px 0; border-bottom: 1px solid var(--ops-line); }
+.settlement-toolbar label, .settlement-range-control { display: flex; align-items: center; gap: 8px; color: var(--ops-muted); font-size: 12px; }
+.settlement-range { font-variant-numeric: tabular-nums; }
+.settlement-toolbar .operations-segment button { min-width: 36px; height: 32px; }
+.settlement-toolbar select { max-width: 180px; }
+.settlement-export { margin-left: auto; color: var(--ops-green); }
+.settlement-kpis { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); padding: 20px 0; border-bottom: 1px solid var(--ops-line); }
+.settlement-kpi { min-width: 0; padding: 0 20px; border-right: 1px solid var(--ops-line); }
+.settlement-kpi:first-child { padding-left: 0; }
+.settlement-kpi:last-child { border: 0; }
+.settlement-kpi > span { color: var(--ops-muted); font-size: 12px; }
+.settlement-kpi strong { display: block; font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; margin: 6px 0; overflow-wrap: anywhere; }
+.settlement-kpi small { color: var(--ops-muted); font-size: 12px; }
+.settlement-middle { display: grid; grid-template-columns: minmax(0,1.85fr) minmax(300px,1fr); border-bottom: 1px solid var(--ops-line); }
+.settlement-composition { padding: 20px 24px 20px 0; min-width: 0; }
+.settlement-progress { border-left: 1px solid var(--ops-line); padding: 20px 0 20px 24px; min-width: 0; }
+.settlement-badge { display: inline-flex; align-items: center; justify-content: center; padding: 4px 12px; border-radius: 4px; min-width: 58px; background: var(--ui-subtle); color: var(--ui-muted); font-size: 12px; white-space: nowrap; }
+.settlement-state--disputed { background: var(--ui-danger-bg); color: var(--ui-danger); }
+.settlement-state--unknown { background: var(--ui-subtle); color: var(--ui-muted); }
+.settlement-income-heading { display: grid; grid-template-columns: minmax(0,1fr) 112px 66px; color: var(--ops-muted); font-size: 12px; padding: 7px 0 4px; }
+.settlement-income-heading > span:not(:first-child) { text-align: right; }
+.settlement-income-row { display: grid; grid-template-columns: 75px minmax(40px,1fr) 112px 54px; gap: 12px; align-items: center; min-height: 40px; font-size: 12px; }
+.settlement-income-row strong { font-size: 12px; font-weight: 550; font-variant-numeric: tabular-nums; text-align: right; }
+.settlement-income-row > span:last-child { text-align: right; color: var(--ops-muted); font-variant-numeric: tabular-nums; }
+.settlement-income-track { height: 6px; background: var(--ui-subtle); border-radius: 3px; overflow: hidden; }
+.settlement-income-track > div { height: 100%; border-radius: 3px; transition: width .18s ease-out; }
+.settlement-costs { display: grid; grid-template-columns: 75px repeat(3,minmax(0,1fr)); gap: 12px; padding-top: 16px; margin-top: 13px; border-top: 1px solid var(--ops-line); }
+.settlement-costs > span { color: var(--ops-muted); font-size: 12px; padding-top: 4px; }
+.settlement-costs > div { background: var(--ui-subtle); color: var(--ui-text); padding: 8px 10px; border-radius: 4px; min-width: 0; }
+.settlement-costs span { display: block; font-size: 12px; }
+.settlement-costs strong { display: block; font-size: 12px; font-weight: 550; font-variant-numeric: tabular-nums; margin-top: 5px; overflow-wrap: anywhere; }
+.settlement-progress-list { display: grid; gap: 26px; margin: 28px 0; }
+.settlement-progress-row { display: grid; grid-template-columns: 75px minmax(0,1fr) 60px; gap: 14px; align-items: center; font-size: 12px; }
+.settlement-progress-row strong { font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; text-align: right; }
+.settlement-progress-row progress { width: 100%; height: 5px; overflow: hidden; border: 0; border-radius: 3px; background: var(--ui-subtle); accent-color: var(--ui-chart-primary); }
+.settlement-progress-row progress::-webkit-progress-bar { background: var(--ui-subtle); border-radius: 3px; }
+.settlement-progress-row progress::-webkit-progress-value { background: var(--ui-chart-primary); border-radius: 3px; }
+.settlement-progress-row progress::-moz-progress-bar { background: var(--ui-chart-primary); border-radius: 3px; }
+.settlement-dispute-summary { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 42px; padding: 9px 12px; background: var(--ui-subtle); border-radius: 4px; color: var(--ops-muted); font-size: 12px; }
+.settlement-dispute-summary.has-dispute { color: var(--ui-danger); }
+.settlement-dispute-summary .operations-link { color: inherit; white-space: nowrap; }
+.settlement-table-section { padding-top: 18px; }
+.settlement-search { position: relative; display: flex; align-items: center; }
+.settlement-search > svg { position: absolute; left: 8px; color: var(--ops-muted); }
+.settlement-search input { width: 154px; padding-left: 27px; }
+.settlement-search input::placeholder { color: var(--ops-muted); }
+.settlement-numeric { font-variant-numeric: tabular-nums; }
+.settlement-service-name { display: block; font-size: 12px; color: var(--ops-muted); margin-top: 4px; }
+.settlement-table-section td { padding-block: 13px; }
+.settlement-danger { color: var(--ui-danger); }
+.settlement-footnote { padding-top: 10px; color: var(--ops-muted); font-size: 12px; }
+.settlement-dialog { width: min(600px,calc(100vw - 28px)); max-height: calc(100dvh - 40px); margin: auto; padding: 0; border: 1px solid var(--ui-border); border-radius: 8px; background: white; color: var(--ui-text); font-size: 14px; }
+.settlement-dialog[open] { display: flex; flex-direction: column; }
+.settlement-dialog::backdrop { background: rgb(20 25 33 / 32%); }
+.settlement-dialog.is-drawer { width: min(820px,calc(100vw - 20px)); height: 100dvh; max-height: 100dvh; margin: 0 0 0 auto; border-radius: 0; }
+.settlement-dialog > header { flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--ui-border); gap: 12px; }
+.settlement-dialog h2 { font-size: 16px; font-weight: 600; margin: 0; }
+.settlement-dialog-body { padding: 20px; overflow: auto; min-height: 0; flex: 1; }
+.settlement-dialog > footer { flex-shrink: 0; display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--ui-border); }
+.settlement-date-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; }
+.settlement-date-fields label { display: grid; gap: 8px; color: var(--ui-muted); }
+.settlement-date-fields input { width: 100%; }
+.settlement-error { color: var(--ui-danger); background: var(--ui-danger-bg); padding: 10px 12px; border-radius: 4px; margin: 16px 0 0; }
+.settlement-drawer-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.settlement-drawer-meta > div { min-width: 0; overflow-wrap: anywhere; }
+.settlement-drawer-meta strong { font-weight: 550; }
+.settlement-drawer-meta > div > span { display: block; margin-top: 6px; font-size: 12px; color: var(--ui-muted); }
+.settlement-drawer-metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); padding: 20px 0; margin-top: 14px; border-block: 1px solid var(--ui-border); gap: 12px; }
+.settlement-drawer-metrics span { display: block; color: var(--ui-muted); font-size: 12px; margin-bottom: 6px; }
+.settlement-drawer-metrics strong { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.settlement-dispute-banner { display: flex; gap: 12px; padding: 12px 0; color: var(--ui-danger); font-size: 12px; }
+.settlement-dispute-banner strong { white-space: nowrap; }
+.settlement-drawer-tabs { display: flex; gap: 24px; margin: 20px 0; border-bottom: 1px solid var(--ui-border); }
+.settlement-drawer-tabs button { border: 0; border-bottom: 2px solid transparent; background: none; padding: 0 0 10px; color: var(--ui-muted); }
+.settlement-drawer-tabs button[aria-pressed="true"] { color: var(--ui-primary); border-color: var(--ui-primary); }
+.settlement-reconciliation { margin: 0 0 20px; display: grid; gap: 12px; }
+.settlement-reconciliation > div { display: flex; justify-content: space-between; gap: 16px; }
+.settlement-reconciliation dt { color: var(--ui-muted); }
+.settlement-reconciliation dd { margin: 0; font-variant-numeric: tabular-nums; }
+.settlement-evidence { padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid var(--ui-border); }
+.settlement-evidence > header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
+.settlement-evidence > header > span { margin-left: auto; color: var(--ui-muted); font-size: 12px; overflow-wrap: anywhere; }
+.settlement-evidence dl { display: grid; gap: 10px; margin: 0; }
+.settlement-evidence dl > div { display: grid; grid-template-columns: 110px minmax(0,1fr); gap: 12px; }
+.settlement-evidence dt { color: var(--ui-muted); font-size: 12px; }
+.settlement-evidence dd { margin: 0; overflow-wrap: anywhere; font-size: 12px; }
+.settlement-review label { display: grid; gap: 10px; }
+.settlement-review textarea { width: 100%; min-height: 160px; resize: vertical; padding: 10px; border: 1px solid var(--ui-border); border-radius: 4px; font: inherit; color: var(--ui-text); }
+.settlement-review > div { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.settlement-review > p { color: var(--ui-success); padding: 12px; background: var(--ui-success-bg); border-radius: 4px; }
+body:has(.settlement-dialog[open]) [data-live-preview] { display: none; }
+@media (prefers-reduced-motion: reduce) { .settlement-income-track > div { transition: none; } }
+@media (max-width: 480px) {
+  .settlement-page .settlement-kpis { grid-template-columns: minmax(0,1fr); gap: 0; padding-block: 4px; }
+  .settlement-page .settlement-kpi:nth-child(n) { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 4px 12px; align-items: baseline; padding: 14px 0; border: 0; border-bottom: 1px solid var(--ui-border); }
+  .settlement-page .settlement-kpi:last-child { border-bottom: 0; }
+  .settlement-page .settlement-kpi strong { margin: 0; white-space: nowrap; }
+  .settlement-page .settlement-kpi small { grid-column: 1 / -1; }
+  .settlement-page .settlement-income-heading { grid-template-columns: minmax(0,1fr) 100px 44px; }
+  .settlement-page .settlement-income-row { grid-template-columns: minmax(0,1fr) 100px 44px; gap: 8px; padding-block: 12px; }
+  .settlement-page .settlement-income-track { grid-row: 2; grid-column: 1 / -1; }
+  .settlement-page .settlement-income-row strong { white-space: nowrap; }
+}
+@media (min-width:1001px) and (max-height:850px) { .settlement-toolbar { padding-block: 12px; } .settlement-kpis { padding-block: 14px; } .settlement-kpi strong { font-size: 19px; margin-block: 4px; } .settlement-composition, .settlement-progress { padding-block: 16px; } .settlement-income-row { min-height: 32px; } .settlement-progress-list { gap: 22px; margin-block: 23px; } .settlement-costs { margin-top: 9px; padding-top: 12px; } .settlement-table-section { padding-top: 12px; } .settlement-table-section td { padding-block: 10px; } }
+@media (max-width:1200px) { .settlement-kpi { padding-inline: var(--ui-page-space); } .settlement-kpi strong { font-size: 18px; } .settlement-middle { grid-template-columns: minmax(0,1.8fr) minmax(285px,1fr); } .settlement-composition { padding-right: 18px; } .settlement-progress { padding-left: 18px; } .settlement-income-row { grid-template-columns: 63px minmax(30px,1fr) 105px 48px; gap: 8px; } .settlement-costs { grid-template-columns: 63px repeat(3,minmax(0,1fr)); gap: 8px; } }
+@media (max-width:1000px) { .settlement-middle { grid-template-columns: minmax(0,1fr); } .settlement-composition { padding-right: 0; } .settlement-progress { border-left: 0; border-top: 1px solid var(--ops-line); padding-left: 0; } .settlement-kpis { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px 0; } .settlement-kpi:nth-child(3) { border: 0; } .settlement-kpi:nth-child(4) { padding-left: 0; } .settlement-export { margin-left: 0; } }
+@media (max-width:640px) { .settlement-page { padding-inline: var(--ui-page-space); } .settlement-toolbar { gap: 10px; } .settlement-range-control { width: 100%; } .settlement-range { flex: 1; padding-inline: 8px; font-size: 12px; } .settlement-range > svg { flex-shrink: 0; } .settlement-range span { white-space: normal; } .settlement-toolbar > label { justify-content: space-between; } .settlement-export { width: 100%; } .settlement-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); } .settlement-kpi { padding-inline: 10px; } .settlement-kpi:nth-child(odd) { padding-left: 0; border-right: 1px solid var(--ops-line); } .settlement-kpi:nth-child(even), .settlement-kpi:last-child { border-right: 0; } .settlement-kpi:last-child { grid-column: 1 / -1; } .settlement-kpi strong { font-size: 18px; } .settlement-kpi:nth-child(4) { padding-left: 10px; } .settlement-income-heading { grid-template-columns: minmax(0,1fr) 100px 47px; } .settlement-income-row { grid-template-columns: 57px minmax(15px,1fr) 100px 43px; gap: 5px; font-size: 12px; } .settlement-income-row strong { font-size: 12px; overflow-wrap: anywhere; } .settlement-costs { grid-template-columns: repeat(3,minmax(0,1fr)); } .settlement-costs > span { grid-column: 1 / -1; padding: 0; } .settlement-costs > div { padding: 8px; } .settlement-costs strong { font-size: 12px; } .settlement-progress-row { grid-template-columns: 64px minmax(0,1fr) 48px; gap: 10px; } .settlement-table-section .operations-actions { width: 100%; } .settlement-search { flex: 1; min-width: 0; } .settlement-search input { width: 100%; } .settlement-dialog h2 { font-size: 14px; } .settlement-dialog-body { padding: 14px; } .settlement-dialog > header, .settlement-dialog > footer { padding: 12px 14px; } .settlement-date-fields { grid-template-columns: minmax(0,1fr); gap: 14px; } .settlement-drawer-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); } .settlement-evidence dl > div { grid-template-columns: 78px minmax(0,1fr); } .settlement-drawer-tabs { gap: 18px; } .settlement-review > div { flex-wrap: wrap; } }

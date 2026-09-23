@@ -1,0 +1,293 @@
+.global-ai-shell {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1280;
+  pointer-events: none;
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: 14px;
+  letter-spacing: 0;
+}
+
+.global-ai-trigger {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 44px;
+  min-height: 106px;
+  padding: 10px 6px;
+  transform: translateY(-50%);
+  border: 1px solid var(--ui-border);
+  border-right: 0;
+  border-radius: 6px 0 0 6px;
+  background: var(--ui-surface);
+  color: var(--ui-primary);
+  box-shadow: -3px 0 8px rgb(28 55 48 / 8%);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.global-ai-trigger:hover {
+  background: var(--ui-selected);
+}
+
+.global-ai-trigger span {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  color: var(--ui-text);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.global-ai-shell[data-open="true"] .global-ai-trigger {
+  right: min(392px, calc(100vw - var(--nav-width, 56px)));
+  color: var(--ui-muted);
+}
+
+.global-ai-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  width: min(392px, calc(100vw - var(--nav-width, 56px)));
+  height: 100dvh;
+  overflow: hidden;
+  border-left: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  box-shadow: -6px 0 14px rgb(28 55 48 / 10%);
+  pointer-events: auto;
+  animation: global-ai-slide-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.global-ai-drawer[hidden] {
+  display: none;
+}
+
+.global-ai-drawer__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--ui-border);
+  flex-shrink: 0;
+}
+
+.global-ai-drawer__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ui-primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.global-ai-drawer__header h2 {
+  margin: 5px 0 0;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.global-ai-drawer__scope {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--ui-border);
+  background: var(--ui-subtle);
+  flex-shrink: 0;
+}
+
+.global-ai-drawer__scope label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: var(--ui-muted);
+  font-size: 12px;
+}
+
+.global-ai-drawer__scope .ui-select-wrap {
+  width: 180px;
+}
+
+.global-ai-conversation {
+  flex: 1;
+  min-height: 0;
+  padding: 16px 20px;
+  overflow-y: auto;
+}
+
+.global-ai-message {
+  margin-bottom: 14px;
+  padding: 12px;
+  border-radius: var(--ui-radius);
+  background: var(--ui-subtle);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.global-ai-message > span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ui-muted);
+  font-size: 12px;
+}
+
+.global-ai-message p {
+  margin: 0;
+}
+
+.global-ai-message--user {
+  margin-left: 24px;
+  background: var(--ui-selected);
+}
+
+.global-ai-quick {
+  display: grid;
+  gap: 0;
+  padding: 0 20px 12px;
+  flex-shrink: 0;
+}
+
+.global-ai-quick button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 38px;
+  padding: 8px 0;
+  border: 0;
+  border-top: 1px solid var(--ui-border);
+  background: transparent;
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.global-ai-quick button:hover {
+  color: var(--ui-primary);
+}
+
+.global-ai-composer {
+  padding: 16px 20px max(16px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  flex-shrink: 0;
+}
+
+.global-ai-composer textarea {
+  display: block;
+  width: 100%;
+  min-height: 88px;
+  max-height: 170px;
+  margin-top: 8px;
+  padding: 10px;
+  resize: vertical;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  color: var(--ui-text);
+  background: var(--ui-surface);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.global-ai-composer textarea::placeholder {
+  color: var(--ui-muted);
+}
+
+.global-ai-composer > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.global-ai-drawer button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+body:has(.global-ai-shell[data-open="true"]) [data-live-preview] {
+  visibility: hidden;
+}
+
+@media (max-width: 1100px) {
+  .global-ai-shell[data-active-nav="工单与审批"][data-open="false"]
+    .global-ai-trigger {
+    display: none;
+  }
+}
+
+@keyframes global-ai-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 760px) {
+  .global-ai-trigger {
+    top: auto;
+    right: calc(100vw - 48px);
+    bottom: 62px;
+    width: 40px;
+    min-height: 40px;
+    padding: 0;
+    border-right: 1px solid var(--ui-border);
+    border-radius: 6px;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .global-ai-trigger span {
+    display: none;
+  }
+
+  .global-ai-shell[data-open="true"] .global-ai-trigger {
+    right: min(360px, calc(100vw - var(--nav-width, 56px)));
+  }
+
+  .global-ai-drawer {
+    width: min(360px, calc(100vw - var(--nav-width, 56px)));
+  }
+
+  .global-ai-drawer__header,
+  .global-ai-drawer__scope,
+  .global-ai-conversation,
+  .global-ai-quick,
+  .global-ai-composer {
+    padding-inline: 14px;
+  }
+
+  .global-ai-drawer__scope {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .global-ai-drawer__scope .ui-select-wrap {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .global-ai-drawer {
+    animation-duration: .01ms;
+  }
+}

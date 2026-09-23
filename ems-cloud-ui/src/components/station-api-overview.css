@@ -1,0 +1,36 @@
+.station-api-panel { background:#fff; border:1px solid #dbe6df; border-radius:8px; box-shadow:0 4px 10px rgb(28 55 48 / 5%); padding:14px; min-width:0; display:flex; flex-direction:column; flex:1; }
+.station-api-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.station-api-heading h2,.station-api-heading h3 { margin:0; color:#1d2f2a; font-size:13px; font-weight:600; }
+.station-api-heading h3 { font-size:12px; }
+.station-api-heading>span { font-size:10px; color:#76857f; }
+.station-api-segments { display:flex; padding:3px; gap:3px; border-radius:6px; background:#f4f8f5; }
+.station-api-segments button { flex:1; border:0; background:transparent; border-radius:4px; color:#61716b; padding:5px 9px; font-size:11px; cursor:pointer; }
+.station-api-segments button[aria-pressed=true] { color:#1f7a68; background:#fff; box-shadow:0 1px 3px #0001; font-weight:600; }
+.station-api-notice { margin:12px 0; background:#f4f8f5; padding:8px; color:#76857f; border-radius:5px; font-size:11px; }
+.station-api-device-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); flex:1; gap:14px 8px; padding:10px 0; }
+.station-api-device-metrics div { display:flex; flex-direction:column; gap:10px; }
+.station-api-device-metrics span { color:#76857f; font-size:11px; }
+.station-api-device-metrics strong { font-size:20px; font-weight:600; color:#61716b; }
+.station-api-link { color:#1f7a68; background:transparent; border:0; border-top:1px solid #e8f0eb; padding:12px 0 0; font-size:12px; cursor:pointer; text-align:left; }
+.station-api-photo { min-height:0; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:linear-gradient(145deg,#edf3ef,#f8faf8); color:#899a91; font-size:11px; }
+.station-api-photo>span { font-size:32px; }
+.station-api-flow-empty { flex:1; min-height:210px; border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; background:radial-gradient(#d9e5dc 1px,transparent 1px) 0 0/18px 18px; color:#76857f; font-size:11px; }
+.station-api-flow-empty.is-perspective { background:repeating-linear-gradient(150deg,transparent,transparent 24px,#e4ece6 25px,transparent 26px),#f7faf8; }
+.station-api-flow-empty>strong { color:#61716b; font-size:13px; font-weight:500; }
+.station-api-flow-symbol { display:grid; place-items:center; width:44px; height:44px; border:1px solid #dbe6df; background:#f4f8f5; border-radius:12px; font-size:22px; filter:grayscale(1); opacity:.65; }
+.station-api-flow-types { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); width:90%; gap:10px; margin-top:15px; }
+.station-api-flow-types>div { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:5px; padding:10px 5px; border:1px solid #dbe6df; background:#fff; border-radius:6px; }
+.station-api-flow-types span { width:100%; text-align:center; }.station-api-flow-types b {font-size:18px;color:#61716b;}
+.station-api-chart-grid { display:grid; grid-template-columns:1fr; gap:18px; flex:1; }
+.station-api-chart-grid>div { min-width:0; }
+.station-api-chart-empty { min-height:190px; display:grid; place-items:center; background:repeating-linear-gradient(to bottom,transparent,transparent 46px,#e8efea 47px,transparent 48px); border-left:1px solid #dbe6df; border-bottom:1px solid #dbe6df; color:#899a91; font-size:12px; }
+.station-api-chart-empty>span { background:#fff; padding:8px 12px; }
+.station-api-chart-axis { display:flex; justify-content:space-between; margin-top:8px; color:#899a91; font-size:10px; }
+.station-api-chart-legend { color:#76857f; font-size:11px; text-align:center; padding-top:15px; }
+.api-topology-workspace { padding:20px; background:#f4f8f5; flex:1; overflow:auto; }
+.api-topology-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:18px 0; }
+.api-topology-metrics>div { background:#fff; border:1px solid #dbe6df; border-radius:8px; padding:16px; display:flex; flex-direction:column; gap:10px; }
+.api-topology-metrics span { color:#76857f; font-size:12px; }.api-topology-metrics strong { font-size:23px; color:#1d2f2a; font-weight:600; }
+.api-topology-canvas { min-height:400px; background:radial-gradient(#d9e5dc 1px,transparent 1px) 0 0/20px 20px; display:flex; flex-direction:column; justify-content:center; }
+.api-topology-legend { display:flex; gap:20px; padding-top:15px; border-top:1px solid #e8efea; color:#76857f; font-size:11px; }
+@media(max-width:700px) { .station-api-chart-grid {grid-template-columns:1fr;} .api-topology-metrics {grid-template-columns:repeat(2,minmax(0,1fr));} }

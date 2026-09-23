@@ -1,0 +1,51 @@
+server:
+  address: ${EMS_BIND_ADDRESS:127.0.0.1}
+  port: ${EMS_PORT:18090}
+  forward-headers-strategy: none
+  error:
+    include-message: never
+    include-stacktrace: never
+spring:
+  application:
+    name: ems-cloud-api
+  datasource:
+    url: ${EMS_DB_URL}
+    username: ${EMS_DB_USERNAME}
+    password: ${EMS_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      schema: public
+      maximum-pool-size: 10
+      connection-timeout: 10000
+  flyway:
+    enabled: false
+  jackson:
+    time-zone: UTC
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: 28800
+  is-concurrent: true
+  is-share: false
+  token-style: random-64
+  is-read-header: true
+  is-read-body: false
+  is-read-cookie: false
+  is-write-header: false
+  is-log: false
+  is-print: false
+springdoc:
+  api-docs:
+    enabled: ${EMS_API_DOCS_ENABLED:false}
+  swagger-ui:
+    enabled: ${EMS_API_DOCS_ENABLED:false}
+ems:
+  cors:
+    origins: ${EMS_CORS_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
+  auth:
+    mfa-encryption-key: ${EMS_MFA_ENCRYPTION_KEY:}
+  clickhouse:
+    url: ${EMS_CH_URL}
+    database: ${EMS_CH_DATABASE}
+    username: ${EMS_CH_USERNAME}
+    password: ${EMS_CH_PASSWORD}

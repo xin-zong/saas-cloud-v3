@@ -1,0 +1,14 @@
+.api-analytics-page .ui-page-header label { display: flex; align-items: center; gap: 8px; color: var(--ui-muted); font-size: 12px; }
+.api-analytics-page .analytics-analysis-host { display: grid; gap: 14px; padding: 16px var(--ui-page-space) 24px; }
+.api-analytics-page .api-analytics-query-filters { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 16px; }
+.api-analytics-query-filters .analytics-report-field { flex: 1 1 170px; }
+.api-analytics-page .analytics-report-field input { width: 100%; min-width: 0; height: var(--ui-control-height, 36px); padding: 7px 10px; border: 1px solid var(--ui-border); border-radius: var(--ui-radius); background: var(--ui-surface); color: var(--ui-text); font: inherit; }
+.api-analytics-page > .analytics-report-notice { margin: 14px var(--ui-page-space) 0; }
+.api-analytics-hint { margin: 0; color: var(--ui-muted); font-size: 12px; line-height: 20px; }
+.api-analytics-chart { height: 320px; margin-top: 20px; }
+.api-analytics-chart-empty { min-height: 320px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--ui-muted); text-align: center; }
+.api-analytics-chart-empty strong { color: var(--ui-text); font-weight: 500; }
+.api-analytics-chart-empty p { margin: 0; font-size: 12px; }
+.api-analytics-page .api-analytics-table-empty { height: 220px; text-align: center; color: var(--ui-muted); }
+.api-analytics-data-table { min-width: 640px; }
+.api-analytics-page .analytics-download-table-wrap { max-height: 440px; overflow: auto; }

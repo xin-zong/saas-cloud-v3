@@ -1,0 +1,12 @@
+Product: Enerlution Energy Asset Platform
+Package: Source and development handoff
+Version: 2026-09-21-source-handoff
+Runtime: Node.js 22
+Package manager: pnpm 10
+Entry: src/main.tsx -> src/App.tsx
+Install: pnpm install --frozen-lockfile
+Dev: pnpm dev
+Build: pnpm build
+Tests: node --test tests/operations.test.cjs
+Production deploy: build dist/ first, then use deployment scripts
+Excluded: node_modules, dist, screenshots, test caches, temporary files

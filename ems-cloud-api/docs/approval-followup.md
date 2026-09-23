@@ -1,0 +1,9 @@
+# Approval and work-order UI follow-up
+
+The API approval page now reads `GET /approvals`, shows the persisted status and reviewer note, and sends `approved` or `rejected` with a required note to `POST /approvals/{id}/decision`. It refreshes from the server after a decision. The UI disables decisions for the submitter and for users without `approval.review`; the backend remains authoritative for both checks and for concurrent changes. API-mode todos include assigned work orders, assigned inspections, and actionable pending approvals. The demo flow remains local.
+
+The API approval list needs the station and person fields supplied by the enriched `GET /approvals` query: `station_id`, `station_name`, `requester_name`, and `decider_name`. Its existing approval table does not define urgency or an approval deadline, so the API UI does not invent either. There is no separate API operation to save an undecided reviewer note; the note is saved with the final decision.
+
+API work-order creation defaults the assignee to the current user. Accounts with `member.manage` can choose enabled organization members from `GET /members`; that endpoint does not expose station grants, so the work-order endpoint validates eligibility and displays its rejection. Reassignment uses the same picker. API alarm detail can create a work order with `stationId`, `alarmId`, title, description, and the current user as assignee. Its priority selector is only a page reference because `POST /work-orders` has no priority field. API users with `inspection.manage` can create inspections assigned to themselves. Pending inspections can be completed with a result or cancelled with a reason; both outcomes are reloaded from the server.
+
+Focused checks: `node --test tests/approval-api-ui.test.cjs tests/alarm-order-api-ui.test.cjs tests/inspection-api-ui.test.cjs` and `node node_modules/typescript/bin/tsc --noEmit` from `ems-cloud-ui`.

@@ -1,0 +1,22 @@
+.api-market-page h3 { font-size: 15px; font-weight: 600; margin-top: 10px; }
+.api-market-page > p { color: var(--ui-muted); }
+.api-market-page input, .api-market-page select { padding: 8px 10px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-surface); }
+.api-market-page .market-create-form { display: grid; grid-template-columns: repeat(auto-fit,minmax(210px,1fr)); gap: 16px; padding: 20px; border: 1px solid var(--ui-border); border-radius: 10px; background: var(--ui-surface); }
+.api-market-page .market-create-form h3 { grid-column: 1 / -1; }
+.api-market-page .market-create-form label { display: flex; flex-direction: column; gap: 7px; }
+.api-market-page .market-create-form button { align-self: end; justify-content: center; }
+.api-market-page .operations-table { width: 100%; border-collapse: collapse; background: var(--ui-surface); }
+.api-market-page .operations-table th, .api-market-page .operations-table td { text-align: left; padding: 12px; border-bottom: 1px solid var(--ui-border); }
+.api-market-page [role=alert] { color: #b42318; }
+.api-market-page .market-toolbar > label { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--ui-muted); font-size: 12px; }
+.api-market-page .market-toolbar select { max-width: 260px; }
+.api-market-page .market-toolbar .market-primary { margin-left: auto; }
+.api-market-page .market-notice { margin: 0; color: var(--ui-primary); }
+.api-market-page .operations-table th { color: var(--ui-muted); background: var(--ui-surface-soft); font-size: 12px; font-weight: 500; white-space: nowrap; }
+.api-market-page .operations-table td { font-size: 13px; }
+.api-market-page .operations-table .api-market-empty { height: 160px; text-align: center; color: var(--ui-muted); }
+.api-market-page .market-event-list .api-market-empty { height: 240px; }
+.api-market-status { white-space: nowrap; color: var(--ui-primary); font-size: 12px; }
+.api-market-page .operations-table-scroll { overflow-x: auto; }
+.api-market-page .operations-table { min-width: 600px; }
+.api-market-page button:disabled { opacity: .5; cursor: not-allowed; }

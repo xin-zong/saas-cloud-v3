@@ -1,0 +1,12 @@
+{
+  "title": "Enerlution 能源资产管理平台",
+  "description": "面向电站业主、运维人员与安装服务商的能源资产管理工作台。",
+  "language": "zh-CN",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

@@ -1,0 +1,1651 @@
+.maintenance-page {
+  --ops-ink: var(--ui-text);
+  --ops-muted: var(--ui-muted);
+  --maintenance-inline-start: clamp(28px, 2.8vw, 40px);
+  --maintenance-inline-end: clamp(28px, 2.8vw, 40px);
+  --maintenance-panel-pad: clamp(24px, 2.1vw, 30px);
+  background: var(--ui-bg) !important;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+.maintenance-content {
+  container-type: inline-size;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px var(--maintenance-inline-end) 32px
+    var(--maintenance-inline-start);
+}
+.maintenance-page-title {
+  margin: 16px var(--maintenance-inline-end) 0 var(--maintenance-inline-start);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+.maintenance-role-scope {
+  margin: 3px var(--maintenance-inline-end) 0 var(--maintenance-inline-start);
+  color: var(--ops-muted);
+  font-size: 12px;
+}
+.maintenance-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; border-bottom: 1px solid var(--ops-line); padding: 16px 0; }
+.maintenance-toolbar label { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ops-muted); }
+.maintenance-toolbar select { max-width: 180px; }
+.maintenance-toolbar .maintenance-attention { margin-left: auto; color: var(--ui-muted); gap: 7px; }
+.maintenance-attention input { width: 16px; height: 16px; accent-color: var(--ui-primary); }
+.maintenance-search { position: relative; }
+.maintenance-search > svg { position: absolute; left: 9px; }
+.maintenance-search input { padding-left: 29px; width: 168px; }
+.maintenance-search input::placeholder { color: var(--ui-muted); }
+.maintenance-metrics { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); padding: 22px 0; border-bottom: 1px solid var(--ops-line); }
+.maintenance-metric { min-width: 0; padding: 0 20px; border-right: 1px solid var(--ops-line); }
+.maintenance-metric:first-child { padding-left: 0; }
+.maintenance-metric:last-child { border: 0; }
+.maintenance-metric > span { font-size: 12px; color: var(--ops-muted); }
+.maintenance-metric > strong, .maintenance-metric-value { display: block; height: 35px; margin: 4px 0; padding: 0; border: 0; background: none; font-size: 22px !important; font-weight: 600; line-height: 35px; font-variant-numeric: tabular-nums; text-align: left; }
+.maintenance-metric-value:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+.maintenance-page .maintenance-metric-value { font-weight: 600; }
+.maintenance-metric small { display: block; color: var(--ops-muted); font-size: 12px; overflow-wrap: anywhere; }
+.maintenance-middle { display: grid; grid-template-columns: minmax(0,1.65fr) minmax(340px,1fr); border-bottom: 1px solid var(--ops-line); }
+.maintenance-trend-section { min-width: 0; padding: 20px 22px 18px 0; }
+.maintenance-period { padding: 4px 12px; border: 1px solid var(--ops-line); border-radius: 4px; font-size: 12px; color: var(--ops-muted); }
+.maintenance-trend-layout { display: grid; grid-template-columns: minmax(0,1fr) 190px; gap: 20px; margin-top: 22px; }
+.maintenance-trend { min-width: 0; }
+.maintenance-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; min-height: 26px; font-size: 12px; color: var(--ops-muted); }
+.maintenance-legend button { display: inline-flex; align-items: center; gap: 6px; border: 0; padding: 0; background: none; color: var(--ui-muted); font-size: 12px; }
+.maintenance-legend i { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.maintenance-legend button[aria-pressed="false"] { text-decoration: line-through; opacity: .55; }
+.maintenance-chart { height: 235px; min-width: 0; }
+.maintenance-chart > .operations-empty { height: 100%; }
+.maintenance-chart-foot { display: flex; justify-content: space-between; gap: 12px; color: var(--ops-muted); font-size: 12px; margin: 14px 0 0; }
+.maintenance-device-sources { min-width: 0; border-left: 1px solid var(--ops-line); padding-left: 20px; }
+.maintenance-device-sources h3 { font-size: 12px; font-weight: 600; margin: 0 0 4px; }
+.maintenance-device-sources > span, .maintenance-device-sources > p { color: var(--ops-muted); font-size: 12px; }
+.maintenance-device-sources > div { display: grid; gap: 21px; padding: 23px 0; }
+.maintenance-source-row { display: grid; grid-template-columns: 30px minmax(0,1fr) 18px; gap: 9px; align-items: center; font-size: 12px; color: var(--ops-muted); }
+.maintenance-source-row > div { height: 7px; background: var(--ui-subtle); overflow: hidden; border-radius: 4px; }
+.maintenance-source-row i { display: block; height: 100%; border-radius: 4px; }
+.maintenance-source-row strong { text-align: right; font-weight: 500; font-variant-numeric: tabular-nums; }
+.maintenance-priority { min-width: 0; border-left: 1px solid var(--ops-line); padding: 20px 0 18px 22px; }
+.maintenance-queue-item { display: grid; grid-template-columns: 44px minmax(0,1fr) 78px; align-items: start; gap: 12px; padding: 19px 0; border-bottom: 1px solid var(--ops-line); }
+.maintenance-queue-item:last-child { border: 0; }
+.maintenance-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 42px; padding: 4px 8px; font-size: 12px; border-radius: 4px; white-space: nowrap; }
+.maintenance-critical { background: var(--ui-subtle); color: var(--ui-danger); }
+.maintenance-warning { background: var(--ui-subtle); color: var(--ui-warning); }
+.maintenance-info { background: var(--ui-subtle); color: var(--ui-muted); }
+.maintenance-order { background: var(--ui-subtle); color: var(--ui-muted); }
+.maintenance-queue-item > div { min-width: 0; }
+.maintenance-queue-item strong { font-size: 14px; font-weight: 500; display: block; line-height: 1.6; overflow-wrap: anywhere; }
+.maintenance-queue-item .operations-link { margin-top: 7px; font-size: 12px; }
+.maintenance-queue-item > span:last-child { text-align: right; font-size: 12px; padding-top: 4px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.maintenance-danger { color: var(--ui-danger); }
+.maintenance-amber { color: var(--ui-warning); }
+.maintenance-blue { color: var(--ui-muted); }
+.maintenance-stations, .maintenance-records { padding-top: 18px; }
+.maintenance-page table { font-variant-numeric: tabular-nums; }
+.maintenance-page td { padding-block: 14px; }
+.maintenance-page td small { display: block; margin-top: 5px; font-size: 12px; color: var(--ops-muted); }
+.maintenance-page td strong { font-weight: 550; }
+.maintenance-row-critical, .maintenance-row-warning { background: var(--ui-surface); }
+.maintenance-footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; color: var(--ops-muted); font-size: 12px; padding-top: 12px; }
+.maintenance-work-heading { display: flex; align-items: center; gap: 12px; }
+.maintenance-work-heading h1 { font-size: 15px; font-weight: 600; margin: 0; }
+.maintenance-dialog { width: min(640px,calc(100vw - 20px)); height: 100dvh; max-height: 100dvh; margin: 0 0 0 auto; padding: 0; border: 1px solid var(--ui-border); background: var(--ui-surface); color: var(--ops-ink); font-size: 14px; }
+.maintenance-dialog[open] { display: flex; flex-direction: column; }
+.maintenance-dialog::backdrop { background: rgb(20 25 33 / 32%); }
+.maintenance-dialog > header, .maintenance-dialog > footer { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; gap: 12px; flex-shrink: 0; }
+.maintenance-dialog > header { border-bottom: 1px solid var(--ops-line); }
+.maintenance-dialog h2 { font-size: 16px; margin: 0 0 6px; font-weight: 600; overflow-wrap: anywhere; }
+.maintenance-dialog header span { font-size: 12px; color: var(--ops-muted); }
+.maintenance-dialog-body { padding: 22px 20px; overflow: auto; flex: 1; min-height: 0; }
+.maintenance-dialog dl { display: grid; gap: 18px; margin: 0; }
+.maintenance-dialog dl > div { display: grid; grid-template-columns: 90px minmax(0,1fr); gap: 16px; }
+.maintenance-dialog dt { color: var(--ops-muted); }
+.maintenance-dialog dd { margin: 0; overflow-wrap: anywhere; }
+.maintenance-dialog > footer { border-top: 1px solid var(--ops-line); justify-content: flex-end; flex-wrap: wrap; }
+.maintenance-note { border-top: 1px solid var(--ops-line); padding-top: 24px; margin-top: 28px; }
+.maintenance-note label { display: grid; gap: 12px; }
+.maintenance-note textarea { width: 100%; min-height: 145px; resize: vertical; border: 1px solid var(--ui-border); border-radius: 4px; padding: 10px; font: inherit; }
+.maintenance-note > div { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+.maintenance-note > p { color: var(--ui-success); background: var(--ui-success-bg); padding: 10px; border-radius: 4px; }
+.maintenance-reset { padding: 12px 0; }
+body:has(.maintenance-dialog[open]) [data-live-preview] { display: none; }
+.alarm-badge--info { color: var(--ui-muted); background: var(--ui-subtle); }
+.alarm-pin--info, .alarm-text--info, .alarm-category--info { color: var(--ui-muted); }
+@media (min-width:1001px) and (max-height:850px) { .maintenance-metrics { padding-block: 15px; } .maintenance-toolbar { padding-block: 12px; } .maintenance-chart { height: 200px; } .maintenance-trend-layout { margin-top: 15px; } .maintenance-queue-item { padding-block: 15px; } .maintenance-page td { padding-block: 12px; } .maintenance-device-sources > div { gap: 18px; padding-block: 20px; } }
+@media (max-width:1250px) { .maintenance-toolbar { gap: 10px 14px; } .maintenance-toolbar .maintenance-attention { margin-left: 0; } .maintenance-middle { grid-template-columns: minmax(0,1.55fr) minmax(310px,1fr); } .maintenance-trend-layout { grid-template-columns: minmax(0,1fr) 150px; gap: 14px; } .maintenance-device-sources { padding-left: 14px; } .maintenance-metric { padding-inline: var(--ui-page-space); } .maintenance-priority { padding-left: 18px; } .maintenance-queue-item { gap: 9px; grid-template-columns: 42px minmax(0,1fr) 68px; } }
+@media (max-width:1000px) { .maintenance-middle { grid-template-columns: minmax(0,1fr); } .maintenance-trend-section { padding-right: 0; } .maintenance-priority { border-left: 0; border-top: 1px solid var(--ops-line); padding-left: 0; } .maintenance-metrics { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px 0; } .maintenance-metric:nth-child(3) { border: 0; } .maintenance-metric:nth-child(4) { padding-left: 0; } }
+@media (max-width:640px) { .maintenance-content { padding-inline: var(--ui-page-space); } .maintenance-toolbar { gap: 10px; } .maintenance-toolbar > label:not(.maintenance-attention) { width: 100%; justify-content: space-between; } .maintenance-toolbar select { flex: 1; max-width: 215px; } .maintenance-search input { width: 100%; } .maintenance-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); } .maintenance-metric:nth-child(odd) { padding-left: 0; border-right: 1px solid var(--ops-line); } .maintenance-metric:nth-child(even) { padding-left: 10px; border: 0; } .maintenance-metric-value, .maintenance-metric > strong { font-size: 21px !important; } .maintenance-trend-layout { grid-template-columns: minmax(0,1fr); gap: 22px; } .maintenance-chart { height: 220px; } .maintenance-device-sources { border-left: 0; border-top: 1px solid var(--ops-line); padding: 18px 0 0; } .maintenance-device-sources > div { gap: 16px; padding-block: 18px; } .maintenance-legend { gap: 13px; } .maintenance-chart-foot { flex-wrap: wrap; } .maintenance-queue-item { grid-template-columns: 42px minmax(0,1fr) 66px; gap: 8px; } .maintenance-priority .operations-section-heading { flex-wrap: nowrap; } .maintenance-dialog h2 { font-size: 14px; } .maintenance-dialog > header, .maintenance-dialog > footer, .maintenance-dialog-body { padding: 16px; } .maintenance-dialog dl > div { grid-template-columns: 70px minmax(0,1fr); gap: 12px; } .maintenance-page .operations-topbar nav { gap: 22px; } }
+
+/* The overview is a triage surface: keep state readable before detail. */
+.maintenance-page .ui-page-header {
+  padding-inline: var(--maintenance-inline-start) var(--maintenance-inline-end);
+  background: var(--ui-surface-soft);
+}
+.maintenance-page .ui-page-heading p {
+  max-width: 36ch;
+}
+.maintenance-page .ui-tabs {
+  padding-inline: var(--maintenance-inline-start) var(--maintenance-inline-end);
+}
+.maintenance-page .maintenance-tabs {
+  align-items: center;
+  min-height: 44px;
+}
+.maintenance-page .maintenance-tabs .maintenance-live-status {
+  margin-left: auto;
+}
+.maintenance-live-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ui-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.maintenance-live-status i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ui-success);
+  box-shadow: 0 0 0 3px var(--ui-success-bg);
+}
+.maintenance-toolbar {
+  min-height: 68px;
+  background: var(--ui-surface);
+}
+.maintenance-toolbar > label {
+  min-height: var(--ui-control-height);
+}
+.maintenance-toolbar .maintenance-attention {
+  min-height: var(--ui-control-height);
+  margin-left: auto;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius);
+  background: var(--ui-subtle);
+}
+.maintenance-toolbar .maintenance-attention:has(input:checked) {
+  border-color: #b9d8ca;
+  background: var(--ui-selected);
+  color: var(--ui-primary);
+}
+.maintenance-toolbar .maintenance-search {
+  min-height: var(--ui-control-height);
+  padding-block: 0;
+  border-color: var(--ui-border);
+  background: var(--ui-surface);
+}
+.maintenance-clear-filters {
+  color: var(--ui-muted);
+}
+.maintenance-clear-filters:hover:not(:disabled) {
+  color: var(--ui-primary);
+  border-color: #a9bdb3;
+  background: var(--ui-selected);
+}
+.maintenance-metrics {
+  padding-block: 18px;
+  background: var(--ui-surface);
+}
+.maintenance-metric {
+  gap: 4px;
+}
+.maintenance-metric-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 20px;
+}
+.maintenance-metric-heading > span {
+  color: var(--ops-muted);
+  font-size: 12px;
+}
+.maintenance-metric-heading > svg {
+  flex-shrink: 0;
+  color: var(--ui-muted);
+}
+.maintenance-metric[data-tone="critical"] .maintenance-metric-heading > svg {
+  color: var(--ui-danger);
+}
+.maintenance-metric[data-tone="warning"] .maintenance-metric-heading > svg {
+  color: var(--ui-warning);
+}
+.maintenance-metric[data-tone="danger"] .maintenance-metric-heading > svg {
+  color: var(--ui-danger);
+}
+.maintenance-metric[data-tone="success"] .maintenance-metric-heading > svg {
+  color: var(--ui-success);
+}
+.maintenance-metric-value {
+  cursor: pointer;
+}
+.maintenance-middle {
+  background: var(--ui-surface);
+}
+.maintenance-trend-section,
+.maintenance-priority {
+  background: var(--ui-surface);
+}
+.maintenance-period {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--ui-subtle);
+}
+.maintenance-section-title {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  min-width: 0;
+}
+.maintenance-section-title > span {
+  color: var(--ui-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.maintenance-queue {
+  border-top: 1px solid var(--ops-line);
+}
+.maintenance-queue-item {
+  grid-template-columns: 44px minmax(0, 1fr) minmax(84px, auto);
+  gap: 12px;
+  padding-block: 14px;
+}
+.maintenance-queue-copy {
+  min-width: 0;
+}
+.maintenance-queue-copy > strong {
+  display: block;
+  color: var(--ui-text);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+.maintenance-queue-copy > span {
+  display: block;
+  margin-top: 2px;
+  color: var(--ui-text);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.maintenance-queue-copy .operations-link {
+  margin-top: 6px;
+}
+.maintenance-queue-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  padding-top: 2px;
+  text-align: right;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.maintenance-queue-meta > span {
+  white-space: nowrap;
+}
+.maintenance-queue-meta small {
+  max-width: 84px;
+  overflow-wrap: anywhere;
+  color: var(--ui-muted);
+  font-size: 11px;
+}
+.maintenance-stations {
+  padding-top: 20px;
+}
+.maintenance-stations .operations-section-heading {
+  margin-bottom: 10px;
+}
+.maintenance-station-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.maintenance-status-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: var(--ui-muted);
+}
+.maintenance-status-dot.is-critical {
+  background: var(--ui-danger);
+}
+.maintenance-status-dot.is-offline {
+  background: var(--ui-warning);
+}
+.maintenance-status-dot.is-attention {
+  background: var(--ui-primary);
+}
+.maintenance-status-dot.is-healthy {
+  background: var(--ui-success);
+}
+.maintenance-health-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 94px;
+}
+.maintenance-health-cell > strong {
+  min-width: 24px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.maintenance-health-cell > span {
+  display: block;
+  width: 54px;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--ui-subtle);
+}
+.maintenance-health-cell > span > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ui-chart-primary);
+}
+.maintenance-page td {
+  vertical-align: middle;
+}
+.maintenance-footer {
+  border-top: 1px solid var(--ops-line);
+}
+
+.maintenance-toolbar,
+.maintenance-metrics,
+.maintenance-middle,
+.maintenance-stations,
+.maintenance-records,
+.maintenance-reset {
+  border: 1px solid var(--ops-line);
+  border-radius: 6px;
+  background: var(--ui-surface);
+}
+
+.maintenance-toolbar {
+  padding: 16px var(--maintenance-panel-pad);
+}
+
+.maintenance-metrics {
+  padding: 18px var(--maintenance-panel-pad);
+}
+
+.maintenance-middle {
+  padding-inline: var(--maintenance-panel-pad);
+}
+
+.maintenance-stations,
+.maintenance-records {
+  padding: 20px var(--maintenance-panel-pad);
+}
+
+.maintenance-reset {
+  padding: 14px var(--maintenance-panel-pad);
+}
+
+.maintenance-toolbar,
+.maintenance-metrics,
+.maintenance-middle,
+.maintenance-trend-layout,
+.maintenance-trend,
+.maintenance-priority,
+.maintenance-stations,
+.maintenance-device-sources {
+  min-width: 0;
+}
+
+.maintenance-chart {
+  width: 100%;
+}
+
+.maintenance-toolbar--reference {
+  min-height: 46px;
+  padding: 8px 12px;
+  gap: 10px 18px;
+}
+
+.maintenance-toolbar--reference label {
+  gap: 8px;
+}
+
+.maintenance-toolbar--reference label > span {
+  color: var(--ui-muted);
+  font-size: 12px;
+}
+
+.maintenance-toolbar--reference select {
+  min-width: 112px;
+  height: 30px;
+  padding: 4px 26px 4px 14px;
+  border-radius: 15px;
+  background: var(--ui-subtle);
+  color: var(--ui-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.maintenance-toolbar--reference .maintenance-search {
+  margin-left: 0;
+}
+
+.maintenance-toolbar--reference .maintenance-search input {
+  width: 150px;
+  height: 30px;
+  font-size: 12px;
+}
+
+.maintenance-toolbar--reference .operations-button {
+  min-height: 30px;
+  padding: 4px 18px;
+  border-radius: 15px;
+  font-size: 12px;
+}
+
+.maintenance-toolbar--reference .operations-button.is-active {
+  margin-left: auto;
+  border-color: transparent;
+  background: var(--ui-selected);
+  color: var(--ui-primary);
+}
+
+.maintenance-action-feedback {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 38px;
+  padding: 7px 10px 7px 14px;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font-size: 12px;
+}
+
+.maintenance-action-feedback.is-success {
+  border-color: #b9d8ca;
+  background: var(--ui-selected);
+  color: var(--ui-primary);
+}
+
+.maintenance-action-feedback.is-warning {
+  border-color: #ead0a4;
+  background: #fff8ec;
+  color: var(--ui-warning);
+}
+
+.maintenance-action-feedback.is-info {
+  background: var(--ui-subtle);
+  color: var(--ui-muted);
+}
+
+.maintenance-action-feedback .operations-icon {
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  flex-basis: 28px;
+}
+
+.maintenance-alert-layout,
+.maintenance-health-layout,
+.maintenance-firmware-layout,
+.maintenance-firmware-main,
+.maintenance-reference-panel {
+  min-width: 0;
+}
+
+.maintenance-alert-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(300px, 0.9fr);
+  gap: 14px;
+}
+
+.maintenance-reference-panel {
+  border: 1px solid var(--ops-line);
+  border-radius: 8px;
+  background: var(--ui-surface);
+  padding: 20px;
+}
+
+.maintenance-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.maintenance-panel-heading h2,
+.maintenance-reference-panel h2 {
+  margin: 0;
+  color: var(--ui-text);
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.maintenance-panel-heading span,
+.maintenance-panel-note,
+.maintenance-detail-station {
+  color: var(--ui-muted);
+  font-size: 12px;
+}
+
+.maintenance-reference-panel .operations-table-scroll {
+  border-radius: 4px;
+}
+
+.maintenance-reference-panel table {
+  font-size: 12px;
+}
+
+.maintenance-reference-panel th {
+  padding-block: 9px;
+}
+
+.maintenance-reference-panel td {
+  height: 46px;
+  padding-block: 10px;
+}
+
+.maintenance-reference-panel tr.is-selected td {
+  background: #edf6f2;
+}
+
+.maintenance-alert-layout tr.is-selected td {
+  background: #fff1f1;
+  border-bottom-color: #efc5c7;
+}
+
+.maintenance-alert-layout th,
+.maintenance-alert-layout td {
+  padding-inline: 8px;
+}
+
+.maintenance-alert-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.maintenance-alert-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ui-muted);
+  font-size: 12px;
+}
+
+.maintenance-alert-detail h2 {
+  font-size: 18px;
+  line-height: 1.45;
+}
+
+.maintenance-alert-detail p {
+  margin: 0;
+}
+
+.maintenance-status-flow {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  padding-block: 8px;
+  border-block: 1px solid var(--ops-line);
+}
+
+.maintenance-status-flow span {
+  display: grid;
+  gap: 7px;
+  color: var(--ui-muted);
+  font-size: 11px;
+}
+
+.maintenance-status-flow i {
+  display: block;
+  height: 6px;
+  border-radius: 4px;
+  background: var(--ui-border);
+}
+
+.maintenance-status-flow span[data-active="true"] i {
+  background: var(--ui-primary);
+}
+
+.maintenance-status-flow span:first-child i {
+  background: var(--ui-danger);
+}
+
+.maintenance-evidence h3,
+.maintenance-inline-trend h3,
+.maintenance-disposal-log h3 {
+  margin: 0 0 10px;
+  color: var(--ui-text);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.maintenance-evidence dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.maintenance-evidence dl > div {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.maintenance-evidence dt,
+.maintenance-disposal-log p {
+  color: var(--ui-muted);
+  font-size: 12px;
+}
+
+.maintenance-evidence dd {
+  margin: 0;
+  color: var(--ui-text);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.maintenance-inline-trend svg {
+  display: block;
+  width: 100%;
+  height: 88px;
+  border-radius: 6px;
+  background:
+    linear-gradient(var(--ui-border) 1px, transparent 1px) 0 18px / 100% 24px,
+    var(--ui-subtle);
+}
+
+.maintenance-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.maintenance-health-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.95fr);
+  gap: 14px;
+}
+
+.maintenance-patterns {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.9fr);
+  gap: 20px;
+}
+
+.maintenance-score-cell {
+  display: grid;
+  grid-template-columns: 38px minmax(42px, 76px);
+  align-items: center;
+  gap: 8px;
+}
+
+.maintenance-score-cell > span,
+.maintenance-risk-bars i,
+.maintenance-upgrade-progress span {
+  display: block;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--ui-subtle);
+}
+
+.maintenance-score-cell > span {
+  height: 5px;
+}
+
+.maintenance-score-cell i,
+.maintenance-risk-bars em,
+.maintenance-upgrade-progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ui-primary);
+}
+
+.maintenance-action-pill {
+  min-width: 86px;
+  height: 30px;
+  margin-right: 10px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--ui-subtle);
+  color: var(--ui-muted);
+  font-size: 12px;
+}
+
+.maintenance-action-pill:hover:not(:disabled) {
+  background: var(--ui-selected);
+  color: var(--ui-primary);
+}
+
+.maintenance-action-pill:focus-visible,
+.maintenance-radio-row:focus-visible,
+.maintenance-firmware-sidebar button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--ui-primary) 42%, transparent);
+  outline-offset: 2px;
+}
+
+.maintenance-action-pill.is-danger {
+  background: #fdecec;
+  color: var(--ui-danger);
+}
+
+.maintenance-action-pill.is-warning {
+  background: #fff5e7;
+  color: var(--ui-warning);
+}
+
+.maintenance-risk-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.maintenance-risk-card > p {
+  margin: -4px 0 0;
+  color: var(--ui-primary);
+  font-size: 12px;
+}
+
+.maintenance-risk-bars {
+  display: grid;
+  gap: 16px;
+}
+
+.maintenance-risk-bars span {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ui-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.maintenance-risk-bars b {
+  color: var(--ui-danger);
+  font-weight: 500;
+}
+
+.maintenance-risk-bars i {
+  height: 7px;
+  margin: 7px 0 4px;
+}
+
+.maintenance-risk-bars small {
+  color: var(--ui-muted);
+  font-size: 12px;
+}
+
+.maintenance-risk-advice {
+  margin-top: auto;
+  padding: 14px;
+  border-radius: 6px;
+  background: var(--ui-subtle);
+}
+
+.maintenance-risk-advice strong {
+  color: var(--ui-text);
+  font-size: 13px;
+}
+
+.maintenance-risk-advice p {
+  margin: 7px 0 10px;
+  color: var(--ui-muted);
+  font-size: 12px;
+}
+
+.maintenance-health-history {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.maintenance-health-history p {
+  display: grid;
+  grid-template-columns: 8px 46px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ops-line);
+  color: var(--ui-muted);
+  font-size: 12px;
+}
+
+.maintenance-health-history i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ui-primary);
+}
+
+.maintenance-health-history p[data-tone="danger"] i {
+  background: var(--ui-danger);
+}
+
+.maintenance-health-history p[data-tone="warning"] i {
+  background: var(--ui-warning);
+}
+
+.maintenance-firmware-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 14px;
+}
+
+.maintenance-firmware-sidebar {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.maintenance-firmware-sidebar .maintenance-search,
+.maintenance-firmware-sidebar .maintenance-search input {
+  width: 100%;
+}
+
+.maintenance-firmware-sidebar > div {
+  display: grid;
+  gap: 12px;
+}
+
+.maintenance-firmware-sidebar button {
+  min-height: 34px;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font: inherit;
+}
+
+.maintenance-firmware-sidebar button:hover:not(.is-active) {
+  border-color: #b9d8ca;
+  background: var(--ui-selected);
+  color: var(--ui-primary);
+}
+
+.maintenance-firmware-sidebar button.is-active {
+  border-color: transparent;
+  background: var(--ui-primary);
+  color: var(--ui-surface);
+  font-weight: 600;
+}
+
+.maintenance-firmware-main {
+  display: grid;
+  gap: 14px;
+}
+
+.maintenance-firmware-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 28px 0 18px;
+}
+
+.maintenance-firmware-filters label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 164px;
+  min-height: 34px;
+  gap: 6px;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.maintenance-firmware-filters select,
+.maintenance-firmware-filters input {
+  width: auto;
+  border: 0 !important;
+  background: transparent;
+  font-weight: 600;
+}
+
+.maintenance-firmware-filters .maintenance-search {
+  width: min(100%, 280px);
+  justify-content: flex-start;
+  padding-inline: 12px;
+}
+
+.maintenance-firmware-filters .maintenance-search input {
+  width: 100%;
+}
+
+.maintenance-radio-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  border: 0;
+  background: transparent;
+  color: var(--ui-text);
+  font: inherit;
+}
+
+.maintenance-radio-row:hover {
+  color: var(--ui-primary);
+}
+
+.maintenance-radio-row i {
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--ui-border);
+  border-radius: 50%;
+  background: var(--ui-subtle);
+}
+
+tr.is-selected .maintenance-radio-row i {
+  box-shadow: inset 0 0 0 4px var(--ui-subtle);
+  background: var(--ui-primary);
+}
+
+.maintenance-target-firmware {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px 18px;
+  align-items: start;
+}
+
+.maintenance-target-firmware span {
+  display: block;
+  margin-top: 8px;
+  color: var(--ui-muted);
+  font-size: 12px;
+}
+
+.maintenance-target-firmware p {
+  grid-column: 1 / -1;
+  margin: 0;
+  min-height: 34px;
+  padding: 8px 12px;
+  border: 1px solid var(--ops-line);
+  border-radius: 6px;
+  color: var(--ui-text);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.maintenance-upgrade-progress {
+  min-height: 210px;
+}
+
+.maintenance-upgrade-progress > div {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) 48px 92px 82px;
+  align-items: center;
+  gap: 24px;
+  margin-top: 42px;
+}
+
+.maintenance-upgrade-progress span {
+  height: 7px;
+}
+
+.maintenance-upgrade-progress b,
+.maintenance-upgrade-progress strong {
+  color: var(--ui-text);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+body:has(main.maintenance-page) .global-ai-shell .global-ai-trigger {
+  top: auto;
+  right: 12px;
+  bottom: 78px;
+  flex-direction: row;
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
+  transform: none;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+}
+
+body:has(main.maintenance-page) .global-ai-shell .global-ai-trigger span {
+  display: none;
+}
+
+.maintenance-page-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+  font-size: 20px;
+}
+
+@container (max-width: 980px) {
+  .maintenance-toolbar {
+    gap: 10px;
+  }
+
+  .maintenance-toolbar > label {
+    gap: 8px;
+  }
+
+  .maintenance-toolbar .maintenance-attention {
+    margin-left: 0;
+  }
+
+  .maintenance-search input {
+    width: 152px;
+  }
+
+  .maintenance-middle {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .maintenance-trend-section {
+    padding-right: 0;
+  }
+
+  .maintenance-priority {
+    border-top: 1px solid var(--ops-line);
+    border-left: 0;
+    padding-left: 0;
+  }
+}
+
+@container (max-width: 760px) {
+  .maintenance-toolbar {
+    align-items: stretch;
+  }
+
+  .maintenance-toolbar > label:not(.maintenance-attention),
+  .maintenance-search {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .maintenance-toolbar select,
+  .maintenance-search input {
+    width: min(100%, 260px);
+    max-width: none;
+  }
+
+  .maintenance-trend-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .maintenance-device-sources {
+    border-top: 1px solid var(--ops-line);
+    border-left: 0;
+    padding: 18px 0 0;
+  }
+
+  .maintenance-alert-layout,
+  .maintenance-health-layout,
+  .maintenance-firmware-layout,
+  .maintenance-patterns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .maintenance-toolbar--reference .operations-button.is-active {
+    margin-left: 0;
+  }
+
+  .maintenance-target-firmware {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .maintenance-card-actions {
+    justify-content: flex-start;
+  }
+
+  .maintenance-upgrade-progress > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    margin-top: 24px;
+  }
+}
+
+@container (max-width: 520px) {
+  .maintenance-metrics {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .maintenance-metric,
+  .maintenance-metric:nth-child(odd),
+  .maintenance-metric:nth-child(even) {
+    padding: 14px 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--ops-line);
+  }
+
+  .maintenance-metric:last-child {
+    border-bottom: 0;
+  }
+
+  .maintenance-legend {
+    gap: 10px 12px;
+  }
+
+  .maintenance-chart-foot {
+    flex-direction: column;
+  }
+
+  .maintenance-queue-item {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .maintenance-queue-meta {
+    grid-column: 2;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .maintenance-queue-meta small {
+    max-width: 100%;
+  }
+
+  .maintenance-priority .operations-section-heading {
+    flex-wrap: wrap;
+  }
+}
+
+@media (min-width: 1001px) and (max-height: 850px) {
+  .maintenance-toolbar {
+    min-height: 60px;
+    padding-block: 11px;
+  }
+  .maintenance-metrics {
+    padding-block: 13px;
+  }
+  .maintenance-trend-section,
+  .maintenance-priority {
+    padding-top: 14px;
+    padding-bottom: 12px;
+  }
+  .maintenance-trend-layout {
+    margin-top: 14px;
+  }
+  .maintenance-chart {
+    height: 190px;
+  }
+  .maintenance-device-sources > div {
+    gap: 13px;
+    padding-block: 15px;
+  }
+  .maintenance-queue-item {
+    padding-block: 10px;
+  }
+  .maintenance-stations {
+    padding-top: 14px;
+  }
+}
+
+@media (max-width: 760px) {
+  .maintenance-page {
+    --maintenance-inline-start: 16px;
+    --maintenance-inline-end: 16px;
+    --maintenance-panel-pad: 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .maintenance-live-status {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .maintenance-toolbar .maintenance-attention {
+    margin-left: 0;
+  }
+  .maintenance-toolbar .maintenance-clear-filters {
+    margin-left: auto;
+  }
+  .maintenance-queue-item {
+    grid-template-columns: 42px minmax(0, 1fr) 72px;
+  }
+  .maintenance-queue-meta small {
+    max-width: 72px;
+  }
+  .maintenance-queue-meta > span {
+    white-space: normal;
+  }
+  .maintenance-health-cell {
+    min-width: 84px;
+  }
+  .maintenance-health-cell > span {
+    width: 44px;
+  }
+}
+
+/* Device health follows a record-first workflow: scan the table, then drill into one device. */
+.maintenance-health-toolbar {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--ops-line);
+}
+.maintenance-health-control,
+.maintenance-health-date-control,
+.maintenance-health-condition-control {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+.maintenance-health-control select,
+.maintenance-health-filter-button {
+  min-width: 158px;
+  height: 32px;
+  padding: 5px 30px 5px 14px;
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 20px;
+  text-align: left;
+  white-space: nowrap;
+}
+.maintenance-health-control select {
+  appearance: none;
+  cursor: pointer;
+}
+.maintenance-health-control > svg,
+.maintenance-health-filter-button > svg {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  pointer-events: none;
+  color: var(--ui-muted);
+}
+.maintenance-health-filter-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 164px;
+  padding-right: 10px;
+  cursor: pointer;
+}
+.maintenance-health-filter-button:hover:not(:disabled),
+.maintenance-health-control select:hover {
+  border-color: #a9bdb3;
+  background: var(--ui-subtle);
+}
+.maintenance-health-filter-button.is-active {
+  border-color: #b9d8ca;
+  background: var(--ui-selected);
+  color: var(--ui-primary);
+}
+.maintenance-health-condition-control {
+  margin-left: 0;
+}
+.maintenance-health-condition-control .maintenance-health-filter-button {
+  min-width: 168px;
+}
+.maintenance-health-condition-control .maintenance-health-filter-button > svg {
+  position: static;
+  pointer-events: auto;
+}
+.maintenance-health-date-popover,
+.maintenance-health-condition-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 40;
+  min-width: 220px;
+  padding: 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+  background: var(--ui-surface);
+  color: var(--ui-text);
+}
+.maintenance-health-date-popover {
+  display: grid;
+  gap: 10px;
+}
+.maintenance-health-date-popover label {
+  display: grid;
+  gap: 5px;
+  color: var(--ui-muted);
+  font-size: 12px;
+}
+.maintenance-health-date-popover input {
+  width: 100%;
+  height: 32px;
+  padding: 5px 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font-size: 12px;
+}
+.maintenance-health-date-popover .operations-button {
+  justify-self: end;
+  min-height: 30px;
+  padding-block: 4px;
+  font-size: 12px;
+}
+.maintenance-health-date-error {
+  margin: 0;
+  color: var(--ui-danger);
+  font-size: 12px;
+}
+.maintenance-health-condition-popover {
+  display: grid;
+  gap: 2px;
+  min-width: 168px;
+  padding: 5px;
+}
+.maintenance-health-condition-popover button {
+  min-height: 30px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ui-text);
+  font-size: 12px;
+  text-align: left;
+}
+.maintenance-health-condition-popover button:hover,
+.maintenance-health-condition-popover button[aria-checked="true"] {
+  background: var(--ui-selected);
+  color: var(--ui-primary);
+}
+.maintenance-health-list-panel {
+  min-width: 0;
+  padding: 18px 18px 12px;
+  border: 1px solid var(--ops-line);
+  border-radius: 6px;
+  background: var(--ui-surface);
+}
+.maintenance-health-list-heading,
+.maintenance-health-detail-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 30px;
+  margin-bottom: 12px;
+}
+.maintenance-health-list-heading h2,
+.maintenance-health-detail-heading h2 {
+  margin: 0;
+  color: var(--ui-text);
+  font-size: 16px;
+  font-weight: 650;
+}
+.maintenance-health-list-heading > span {
+  color: var(--ui-muted);
+  font-size: 12px;
+}
+.maintenance-health-list-table,
+.maintenance-health-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.maintenance-health-list-table {
+  min-width: 960px;
+}
+.maintenance-health-list-table th,
+.maintenance-health-detail-table th {
+  height: 36px;
+  padding: 8px 10px;
+  background: #f0f6f2;
+  color: var(--ui-muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+}
+.maintenance-health-list-table td,
+.maintenance-health-detail-table td {
+  height: 48px;
+  padding: 10px;
+  border-bottom: 1px solid var(--ui-border);
+  color: var(--ui-text);
+  vertical-align: middle;
+}
+.maintenance-health-list-table tbody tr:hover,
+.maintenance-health-detail-table tbody tr:hover {
+  background: var(--ui-subtle);
+}
+.maintenance-health-list-table td:first-child {
+  min-width: 130px;
+}
+.maintenance-health-list-table td strong {
+  display: block;
+  font-weight: 600;
+}
+.maintenance-health-list-table td small {
+  display: block;
+  margin-top: 3px;
+  color: var(--ui-muted);
+  font-size: 11px;
+}
+.maintenance-health-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.maintenance-health-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ui-muted);
+}
+.maintenance-health-status.is-success {
+  color: var(--ui-success);
+}
+.maintenance-health-status.is-success i {
+  background: var(--ui-success);
+}
+.maintenance-health-status.is-danger {
+  color: var(--ui-danger);
+}
+.maintenance-health-status.is-danger i {
+  background: var(--ui-danger);
+}
+.maintenance-health-list-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 12px;
+  color: var(--ui-muted);
+  font-size: 12px;
+}
+.maintenance-health-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  justify-self: start;
+  min-height: 30px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--ui-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+.maintenance-health-back:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.maintenance-health-detail {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.maintenance-health-device-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(420px, 1fr);
+  gap: 20px;
+  padding: 16px 18px;
+  border: 1px solid var(--ops-line);
+  border-radius: 6px;
+  background: var(--ui-surface);
+}
+.maintenance-health-device-head h2 {
+  margin: 0;
+  color: var(--ui-text);
+  font-size: 16px;
+  font-weight: 650;
+}
+.maintenance-health-device-head p {
+  margin: 8px 0 0;
+  color: var(--ui-muted);
+  font-size: 12px;
+}
+.maintenance-health-device-head dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 22px;
+  margin: 0;
+}
+.maintenance-health-device-head dl > div {
+  min-width: 0;
+}
+.maintenance-health-device-head dt {
+  color: var(--ui-muted);
+  font-size: 11px;
+}
+.maintenance-health-device-head dd {
+  margin: 3px 0 0;
+  color: var(--ui-text);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.maintenance-health-device-head dl > .is-success dd {
+  color: var(--ui-success);
+}
+.maintenance-health-device-head dl > .is-danger dd {
+  color: var(--ui-danger);
+}
+.maintenance-health-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+.maintenance-health-metric-card {
+  min-width: 0;
+  min-height: 64px;
+  padding: 10px 12px;
+  border: 1px solid var(--ops-line);
+  border-radius: 5px;
+  background: var(--ui-surface);
+}
+.maintenance-health-metric-card span {
+  display: block;
+  color: var(--ui-muted);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.maintenance-health-metric-card strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--ui-text);
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.maintenance-health-detail-panel {
+  min-width: 0;
+  padding: 14px 14px 12px;
+  border: 1px solid var(--ops-line);
+  border-radius: 6px;
+  background: var(--ui-surface);
+}
+.maintenance-health-detail-heading {
+  margin-bottom: 9px;
+}
+.maintenance-health-detail-heading h2 span {
+  color: var(--ui-muted);
+  font-weight: 400;
+}
+.maintenance-health-detail-table {
+  min-width: 660px;
+}
+.maintenance-health-detail-table th {
+  height: 34px;
+}
+.maintenance-health-detail-table td {
+  height: 38px;
+  padding-block: 8px;
+}
+.maintenance-success {
+  color: var(--ui-success) !important;
+}
+.maintenance-health-work-order {
+  color: var(--ui-primary) !important;
+}
+.maintenance-health-detail .maintenance-health-date-control {
+  flex-shrink: 0;
+}
+.maintenance-health-detail .maintenance-health-filter-button {
+  min-width: 142px;
+  background: var(--ui-surface);
+}
+@media (max-width: 760px) {
+  .maintenance-health-toolbar {
+    align-items: stretch;
+  }
+  .maintenance-health-control,
+  .maintenance-health-date-control,
+  .maintenance-health-condition-control,
+  .maintenance-health-control select,
+  .maintenance-health-filter-button {
+    width: 100%;
+  }
+  .maintenance-health-date-popover,
+  .maintenance-health-condition-popover {
+    right: 0;
+    left: auto;
+  }
+  .maintenance-health-list-panel {
+    padding-inline: 12px;
+  }
+  .maintenance-health-list-heading,
+  .maintenance-health-detail-heading,
+  .maintenance-health-list-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .maintenance-health-device-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .maintenance-health-device-head dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .maintenance-health-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .maintenance-health-filter-button,
+  .maintenance-health-condition-popover button,
+  .maintenance-health-back {
+    transition: none;
+  }
+}

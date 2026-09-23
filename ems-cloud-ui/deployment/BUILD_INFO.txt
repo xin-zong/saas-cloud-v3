@@ -1,0 +1,8 @@
+Product: Enerlution Energy Asset Platform
+Package version: 2026-09-19-v2
+Release date: 2026-09-19
+Deployment: Prebuilt React SPA for Windows IIS or Nginx in Docker Compose
+Windows health check: /
+Docker health endpoint: /healthz
+Production asset: assets/index-C3MhQJWO.js
+Includes: owner secondary navigation restoration and hidden-map resize fix
