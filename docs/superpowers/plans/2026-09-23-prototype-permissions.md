@@ -64,7 +64,7 @@
 
 - 后端现有：`ems-cloud-api/src/main/java/com/enerlution/ems/auth/AccessControl.java`、`AuthService.java`；`business/MemberController.java`、`PlatformController.java`、各业务 Controller。
 - 后端新增：同包 `business/RoleController.java`、`MemberGrantController.java`、`auth/GrantAuthorization.java`，分别负责角色目录、逐条授权、联合授权判定。
-- 数据库：`ems-cloud-api/src/main/resources/db/migration/V6__member_grant_schema.sql` 为结构；`V7__migrate_member_grants.sql` 为旧授权迁移。运行库当前仍为 V5，仅做了回滚演练；禁止覆盖已执行迁移。
+- 数据库：`ems-cloud-api/src/main/resources/db/migration/V6__member_grant_schema.sql` 为结构；`V7__migrate_member_grants.sql` 为旧授权迁移。运行库已在 T11 备份后迁移至 V9；禁止覆盖已执行迁移。
 - 前端保留原型参考：`ems-cloud-ui/src/components/OrganizationPermissions.tsx`；不可把原型本地 state 的保存直接当成服务器实现。
 - 前端业务组件：修改 `ApiPlatformManagement.tsx`；新增 `platform/RolePermissionsPanel.tsx`、`platform/MemberGrantsPanel.tsx`、`platform/platformApi.ts`，避免继续扩大单文件。
 - 鉴权导航：`ems-cloud-ui/src/auth/apiPermissions.ts`、`AuthContext.tsx`，以及各站点操作入口。
@@ -110,7 +110,7 @@ CHECK (valid_until IS NULL OR valid_until > valid_from)
 - [x] 将当前每个用户的角色和站点访问能力转换为逐条授权；原系统本来是角色集合×站点集合，迁移必须准确保留原有效能力而非猜测角色与站点的原始对应关系。
 - [x] 八类原型角色作为组织内默认定义初始化，但不能直接替换现有角色映射，也不能给所有服务商自动追加平台治理权限。
 - [x] 对比迁移前后“用户/权限/站点”有效组合，无意外新增或丢失；包含没有站点的管理账号。
-- [ ] 新代码停止写旧模型；旧 `PUT /members/{id}/grants` 不再作为绕过新模型的入口。先完成客户端切换，再停用旧入口；不维持两套可独立修改的权限真相。
+- [x] 新代码停止写旧模型；旧 `PUT /members/{id}/grants` 不再作为绕过新模型的入口。先完成客户端切换，再停用旧入口；不维持两套可独立修改的权限真相。
 - [x] 迁移演练通过后记录实施顺序、备份恢复办法和异常中止条件。
 
 验收：旧角色与实际管理员角色均覆盖，迁移不能因只识别 owner/operator/integrator 而丢弃自定义角色。
@@ -207,11 +207,11 @@ await page.getByRole('button', { name: '取消修改', exact: true }).click()
 
 ### T11：权限审计、兼容清理与数据库实测（P1，依赖 T05—T10）
 
-- [ ] 记录角色创建/更新/删除、授权新增/编辑/撤销、成员停用和组织关系变化；复用现有审计机制，不记密码或验证码。
-- [ ] 执行 `database/tests/permission_grants.py`，验证真实 PostgreSQL 约束、到期、跨站拒绝和迁移一致性，测试数据按明确 ID 清理。
-- [ ] 清理仍使用旧 user_role/user_station 写入口与客户端代码；旧表处理单独迁移并在对照验收后执行，避免不可恢复的提前删表。
-- [ ] 重复角色编辑/授权变更并测试并发治理入口保护，核对事务失败不会留下半条授权。
-- [ ] 更新启动、迁移和权限初始化文档；标明保留的旧接口及其退役时点。
+- [x] 记录角色创建/更新/删除、授权新增/编辑/撤销、成员停用和组织关系变化；复用现有审计机制，不记密码或验证码。
+- [x] 执行 `database/tests/permission_grants.py`，验证真实 PostgreSQL 约束、到期、跨站拒绝和迁移一致性，测试数据按明确 ID 清理。
+- [x] 清理仍使用旧 user_role/user_station 写入口与客户端代码；旧表处理单独迁移并在对照验收后执行，避免不可恢复的提前删表。
+- [x] 重复角色编辑/授权变更并测试并发治理入口保护，核对事务失败不会留下半条授权。
+- [x] 更新启动、迁移和权限初始化文档；标明保留的旧接口及其退役时点。
 
 验收：不存在新旧两条授权路径产生不同判断，审计可追溯且不泄露敏感凭据。
 
