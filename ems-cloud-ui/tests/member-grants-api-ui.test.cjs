@@ -31,6 +31,7 @@ async function setup(t, options = {}) {
       if (failOptions) { status = 500; msg = '站点范围加载失败' }
       const current = grants.find(g => g.id === Number(url.searchParams.get('grantId'))), term = url.searchParams.get('term'), pure = url.searchParams.get('roleId') === '42'
       data = { roleId: Number(url.searchParams.get('roleId')), grantId: current?.id ?? null, term, validFrom: current?.term === term ? current.validFrom : '2026-09-23T00:00:00Z', validUntil: term === 'permanent' ? null : current?.term === term ? current.validUntil : '2026-12-22T00:00:00Z', stationSelectionRequired: !pure, canSaveWithoutStations: pure, canExpand: true, reason: null, stations: options.noStations ? [] : [{ id: 1, name: '一号站', selectable: true, reason: null }, { id: 2, name: '二号站', selectable: true, reason: null }] }
+      if (options.grantOptions) data = { ...data, ...options.grantOptions }
     } else if (path.startsWith('/members/8/grants') && ['POST', 'PUT', 'DELETE'].includes(method)) {
       if (options.pauseSave) { startedSave(); await new Promise(resolve => { releaseSave = resolve }) }
       if (options.failSave) { status = 409; msg = '授权范围已变化' }
@@ -205,4 +206,74 @@ test('grant list load failure is explicit and exposes no stale row actions', asy
   assert.equal(await page.getByText('暂无授权，可按成员职责分配权限。').count(), 0)
   assert.equal(await page.getByRole('button', { name: '分配权限', exact: true }).count(), 0)
   assert.equal(writes(requests).length, 0)
+})
+
+test('grant dialogs focus safe action, contain keyboard traversal and restore their trigger', async t => {
+  const { page } = await setup(t)
+  const previewTrigger = grantRow(page, 101).getByRole('button', { name: '查看角色权限' })
+  await previewTrigger.click()
+  const close = page.getByRole('button', { name: '关闭权限详情' })
+  assert.equal(await close.evaluate(e => e === document.activeElement), true, 'preview initially focuses its close action')
+  await page.keyboard.press('Tab')
+  assert.equal(await close.evaluate(e => e === document.activeElement), true)
+  await page.keyboard.press('Shift+Tab')
+  assert.equal(await close.evaluate(e => e === document.activeElement), true)
+  await page.keyboard.press('Escape')
+  assert.equal(await page.getByRole('dialog').count(), 0)
+  assert.equal(await previewTrigger.evaluate(e => e === document.activeElement), true)
+  const revokeTrigger = grantRow(page, 101).getByRole('button', { name: '撤销', exact: true })
+  await revokeTrigger.click()
+  const cancel = page.getByRole('dialog').getByRole('button', { name: '取消', exact: true })
+  assert.equal(await cancel.evaluate(e => e === document.activeElement), true, 'destructive confirmation focuses cancel')
+  await page.keyboard.press('Shift+Tab')
+  assert.equal(await page.getByRole('button', { name: '确认撤销' }).evaluate(e => e === document.activeElement), true)
+  await page.keyboard.press('Tab')
+  assert.equal(await cancel.evaluate(e => e === document.activeElement), true)
+  await page.keyboard.press('Escape')
+  assert.equal(await revokeTrigger.evaluate(e => e === document.activeElement), true)
+  await edit(page, 101)
+  await page.getByLabel('授权期限').selectOption('90d')
+  const save = page.getByRole('button', { name: '保存授权', exact: true })
+  await save.click()
+  assert.equal(await page.getByRole('button', { name: '继续编辑' }).evaluate(e => e === document.activeElement), true)
+  await page.keyboard.press('Escape')
+  assert.equal(await save.evaluate(e => e === document.activeElement), true)
+  const back = page.getByRole('button', { name: '返回成员权限', exact: true })
+  await back.click()
+  assert.equal(await page.getByRole('button', { name: '继续编辑' }).evaluate(e => e === document.activeElement), true)
+  await page.keyboard.press('Shift+Tab')
+  assert.equal(await page.getByRole('button', { name: '保存并离开' }).evaluate(e => e === document.activeElement), true)
+  await page.keyboard.press('Escape')
+  assert.equal(await back.evaluate(e => e === document.activeElement), true)
+})
+
+test('pending grant dialog retains keyboard focus while every action is disabled', async t => {
+  const { page, pendingSave, releaseSave } = await setup(t, { pauseSave: true, failSave: true })
+  t.after(releaseSave)
+  await edit(page, 101)
+  await page.getByLabel('二号站', { exact: true }).check()
+  await page.getByRole('button', { name: '返回成员权限', exact: true }).click()
+  await page.getByRole('button', { name: '保存并离开' }).click()
+  await pendingSave
+  await page.keyboard.press('Tab')
+  assert.equal(await page.getByRole('dialog').evaluate(e => e.contains(document.activeElement)), true)
+  await page.keyboard.press('Escape')
+  assert.equal(await page.getByRole('dialog').count(), 1, 'busy operation cannot be dismissed')
+  releaseSave()
+  await page.getByRole('dialog').getByText('授权范围已变化').waitFor()
+  await page.keyboard.press('Escape')
+  assert.equal(await page.getByRole('dialog').count(), 0)
+})
+
+test('unavailable existing role can narrow with canExpand false while added stations remain unavailable', async t => {
+  const retained = grant(101, 1, { canExpand: false, stationIds: [1, 2], stations: [{ id: 1, name: '一号站' }, { id: 2, name: '二号站' }], permissionCodes: ['asset.read', 'workorder.manage'], reason: '角色含暂不可用权限，只能保留或缩小已有授权' })
+  const { page, requests } = await setup(t, { grants: [retained], roles: [{ ...role, canAssign: false, permissionCodes: retained.permissionCodes, reason: retained.reason }], grantOptions: { canExpand: false, stations: [{ id: 1, name: '一号站', selectable: true, reason: null }, { id: 2, name: '二号站', selectable: true, reason: null }, { id: 3, name: '三号站', selectable: false, reason: '仅可缩小已有授权' }] } })
+  await edit(page, 101)
+  await page.getByLabel('三号站', { exact: true }).waitFor()
+  assert.equal(await page.getByLabel('业务角色').inputValue(), '41')
+  assert.equal(await page.getByLabel('三号站', { exact: true }).isDisabled(), true)
+  await page.getByLabel('二号站', { exact: true }).uncheck()
+  await page.getByRole('button', { name: '保存授权', exact: true }).click()
+  await grantRow(page, 101).getByText('一号站', { exact: true }).waitFor()
+  assert.deepEqual(writes(requests), [{ path: '/members/8/grants/101', method: 'PUT', search: '', body: { roleId: 41, stationIds: [1], term: '30d' } }])
 })

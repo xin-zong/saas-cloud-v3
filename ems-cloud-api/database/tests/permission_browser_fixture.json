@@ -1,0 +1,10 @@
+{
+  "namespace": "permission-t12",
+  "actorId": 982001,
+  "actorAccount": "permission-t12-actor",
+  "targetAccount": "permission-t12-target",
+  "organizationId": 982001,
+  "stationIds": [982001, 982002],
+  "stationNames": ["permission-t12-station-A", "permission-t12-station-B"],
+  "roleNames": ["permission-t12-editor", "permission-t12-reader"]
+}

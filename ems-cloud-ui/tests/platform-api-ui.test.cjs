@@ -10,6 +10,7 @@ async function setup(t, permissions = ['organization.member.read','member.manage
   const errors=[]; page.on('pageerror', e=>errors.push(e.message)); t.after(()=>assert.deepEqual(errors,[]))
   const orgs=[{id:3,name:'华东',parent_id:99,lead_user_id:null},{id:4,name:'子组织',parent_id:3,lead_user_id:9,...(options.nestedRoot?{can_reparent:false}:{}),...(options.hiddenLead?{lead_user_id:null,lead_restricted:true}:{})}]
   const members=[{id:9,account:'real.member',display_name:'真实成员',enabled:true,organization_id:4,management_organization_id:4,email:'member@example.com'},{id:10,account:'free.member',display_name:'待安排成员',enabled:true,organization_id:null,management_organization_id:3,email:null}]
+  if(options.longIdentity) Object.assign(members[0], options.longIdentity)
   if(options.mixedScopes) {
     orgs.splice(0,orgs.length,{id:3,name:'只读A',parent_id:null},{id:4,name:'档案B',parent_id:null},{id:5,name:'授权C',parent_id:null})
     members.splice(0,members.length,
@@ -227,4 +228,20 @@ test('profile and grant scopes without directory-read permission retain both tar
   await page.getByLabel('筛选所属组织').selectOption('5')
   await page.getByRole('row').filter({hasText:'授权成员C'}).getByRole('button',{name:'查看权限',exact:true}).click()
   await page.getByRole('button',{name:'分配权限',exact:true}).waitFor()
+})
+
+test('long member identities retain one-line ellipsis and complete accessible titles at both reference viewports', async t => {
+  const identity={account:'permission-t12-long-account-'.repeat(3)+'@example.invalid',display_name:'跨站点项目只读观察与运营授权验收成员'.repeat(3)}
+  const {page}=await setup(t,undefined,{longIdentity:identity})
+  for(const viewport of [{width:1280,height:720},{width:1440,height:900}]){
+    await page.setViewportSize(viewport)
+    const account=page.getByText(identity.account,{exact:true})
+    await account.waitFor()
+    assert.equal(await account.getAttribute('title'),identity.account)
+    const layout=await account.evaluate(e=>({whiteSpace:getComputedStyle(e).whiteSpace,overflow:getComputedStyle(e).textOverflow,height:e.getBoundingClientRect().height,lineHeight:parseFloat(getComputedStyle(e).lineHeight)}))
+    assert.equal(layout.whiteSpace,'nowrap')
+    assert.equal(layout.overflow,'ellipsis')
+    assert.ok(layout.height<=layout.lineHeight+1)
+    assert.equal(await page.getByText(identity.display_name,{exact:true}).getAttribute('title'),identity.display_name)
+  }
 })

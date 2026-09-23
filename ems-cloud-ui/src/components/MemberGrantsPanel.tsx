@@ -39,7 +39,42 @@ const MemberGrantsPanel = forwardRef<RolePermissionsHandle, { member: Member; or
   const [leave, setLeave] = useState(false)
   const [busy, setBusy] = useState(false)
   useEffect(() => { if (!busy) setCapabilityScope(currentCapabilityScope) }, [busy, currentCapabilityScope])
+  const panelRef = useRef<HTMLElement>(null)
+  const modalRef = useRef<HTMLDivElement>(null)
+  const modalKind = confirmTerm ? "term" : leave ? "leave" : revoke ? "revoke" : preview ? "preview" : null
   const pending = useRef(false)
+  useEffect(() => {
+    if (!modalKind) return
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const container = modalRef.current
+    if (!container) return
+    const items = () => Array.from(container.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex="0"]')).filter(element => element.getClientRects().length > 0)
+    ;(items()[0] ?? container).focus()
+    const keyboard = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault()
+        event.stopPropagation()
+        if (pending.current) return
+        if (modalKind === "preview") setPreview(null)
+        else if (modalKind === "term") setConfirmTerm(false)
+        else if (modalKind === "leave") finishLeave(false)
+        else setRevoke(null)
+      }
+      if (event.key !== "Tab") return
+      const elements = items(), first = elements[0], last = elements[elements.length - 1]
+      if (!first) { event.preventDefault(); container.focus() }
+      else if (!container.contains(document.activeElement) || document.activeElement === container) { event.preventDefault(); (event.shiftKey ? last : first).focus() }
+      else if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
+    }
+    document.addEventListener("keydown", keyboard, true)
+    return () => {
+      document.removeEventListener("keydown", keyboard, true)
+      if (previous?.isConnected) previous.focus()
+      else panelRef.current?.querySelector<HTMLElement>(".member-grants-back")?.focus()
+    }
+  }, [modalKind])
+  useEffect(() => { if (busy && modalKind) modalRef.current?.focus() }, [busy, modalKind])
   const leaveResolve = useRef<((allow: boolean) => void) | null>(null)
   const leaveAction = useRef<(() => void) | null>(null)
   const selected = grants.find(grant => grant.id === selectedId)
@@ -167,7 +202,7 @@ const MemberGrantsPanel = forwardRef<RolePermissionsHandle, { member: Member; or
     finally { pending.current = false; setBusy(false) }
   }
 
-  return <section className="member-grants-panel" aria-label="成员权限详情">
+  return <section ref={panelRef} className="member-grants-panel" aria-label="成员权限详情">
     <div className="member-grants-heading"><button className="member-grants-back" disabled={busy} onClick={() => { void requestLeave(draft ? () => setDraft(null) : onClose) }}><ArrowLeft size={16} />{draft ? "返回成员权限" : "返回成员列表"}</button></div>
     {error && <p role="alert" className="api-inline-error">{error}</p>}
     {notice && <p role="status" className="orgv2-notice">{notice}</p>}
@@ -198,8 +233,8 @@ const MemberGrantsPanel = forwardRef<RolePermissionsHandle, { member: Member; or
       <section className="orgv2-panel"><div className="orgv2-heading"><h2>已分配权限 {grantsReady && <small className="orgv2-subtext">共 {grants.length} 条授权</small>}</h2>{canWrite && <button className="orgv2-primary" disabled={!grantsReady} onClick={() => start(null)}><Plus size={16} />分配权限</button>}</div><div className="orgv2-table-scroll"><table className="orgv2-table member-grants-table"><thead><tr><th>角色</th><th>站点范围</th><th>授权来源</th><th>有效期</th><th>操作</th></tr></thead><tbody>{grants.map(grant => <tr key={grant.id} data-grant-id={grant.id}>{grant.scopeRestricted ? <td colSpan={5}><strong>受限授权</strong><p className="orgv2-subtext">{grant.reason || "包含当前管理范围外的内容，无法查看、编辑或撤销"}</p></td> : <><td><strong>{grant.roleName}</strong><span className="orgv2-subtext">{statusText[grant.status] ?? grant.status}</span></td><td>{stationText(grant)}{!grant.stationIds.length && <small className="orgv2-subtext">不授予任何站点权限</small>}</td><td>{grant.source || "—"}</td><td>{time(grant.validUntil)}{grant.term === "custom" && <small className="orgv2-subtext">历史自定义期限</small>}</td><td><div className="orgv2-actions"><button onClick={() => showGrant(grant)}>查看角色权限</button>{canWrite && <><button disabled={busy || !grant.canEdit} title={grant.reason ?? undefined} onClick={() => start(grant)}>编辑</button><button disabled={busy || !grant.canRevoke} title={grant.reason ?? undefined} onClick={() => { setError(""); setRevoke(grant) }}>撤销</button></>}</div>{grant.reason && <small className="orgv2-subtext">{grant.reason}</small>}</td></>}</tr>)}</tbody></table></div>{grantsReady && !grants.length && <p className="orgv2-empty">暂无授权，可按成员职责分配权限。</p>}{!grantsReady && <p className="orgv2-empty">无法加载授权，请稍后重新进入。</p>}</section>
       {selected && !selected.scopeRestricted && <section className="orgv2-panel member-grant-summary"><div className="orgv2-heading"><h2>{selected.roleName} · 操作权限</h2><button className="orgv2-outline" onClick={() => showGrant(selected)}>查看角色权限</button></div><p>{selected.rolePermissions.map(item => item.name).join("、") || (selected.permissionCodes.length ? "包含历史权限，请查看完整清单。" : "该角色暂无操作权限")}</p></section>}
     </>}
-    {preview && <div className="orgv2-overlay"><div className="orgv2-modal member-grant-preview" role="dialog" aria-modal="true" aria-label="角色权限详情"><div className="orgv2-heading"><h2>{preview.name} · 完整权限</h2><button className="orgv2-outline" aria-label="关闭权限详情" onClick={() => setPreview(null)}><X size={18} />关闭</button></div><PermissionMatrix catalog={preview.catalog} selectedCodes={preview.codes} readOnly /></div></div>}
-    {(revoke || leave || confirmTerm) && <div className="orgv2-overlay"><div className="orgv2-modal member-grant-confirm" role="dialog" aria-modal="true" aria-labelledby="grant-confirm-title">
+    {preview && <div className="orgv2-overlay"><div ref={modalRef} tabIndex={-1} className="orgv2-modal member-grant-preview" role="dialog" aria-modal="true" aria-label="角色权限详情"><div className="orgv2-heading"><h2>{preview.name} · 完整权限</h2><button className="orgv2-outline" aria-label="关闭权限详情" onClick={() => setPreview(null)}><X size={18} />关闭</button></div><PermissionMatrix catalog={preview.catalog} selectedCodes={preview.codes} readOnly /></div></div>}
+    {(revoke || leave || confirmTerm) && <div className="orgv2-overlay"><div ref={modalRef} tabIndex={-1} className="orgv2-modal member-grant-confirm" role="dialog" aria-modal="true" aria-labelledby="grant-confirm-title">
       <h2 id="grant-confirm-title">{confirmTerm ? "确认重新起算授权期限" : leave ? "未保存的修改" : "撤销这条授权？"}</h2>
       {confirmTerm ? <p>期限将从保存时重新起算。预计截止时间：{time(options?.validUntil ?? null)}（北京时间），最终时间以服务器保存结果为准。</p> : leave ? <p>当前成员授权有未保存的修改。</p> : <><p>{revoke?.roleName}</p><p>{revoke && stationText(revoke)}</p><p>仅撤销这条授权，其他授权保持不变。</p></>}
       {error && <p role="alert" className="api-inline-error">{error}</p>}

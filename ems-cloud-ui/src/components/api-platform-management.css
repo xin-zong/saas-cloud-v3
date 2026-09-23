@@ -104,5 +104,6 @@
 .api-platform .orgv2-org-main .orgv2-member-table { min-width:0; }
 .api-platform .orgv2-member-table th:last-child { width:24%; }
 .api-platform .orgv2-member-table td { overflow-wrap:anywhere; white-space:normal; }
+.api-platform .orgv2-member-table .orgv2-member-identity { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .api-platform .orgv2-member-table .orgv2-actions { flex-wrap:wrap; gap:7px 12px; }
 .api-platform .orgv2-tree .member-workflow-add-org { width:100%; justify-content:center; margin-top:16px; border:1px solid #dfe8e2; }

@@ -388,8 +388,8 @@ export default forwardRef<RolePermissionsHandle, {
             {rows.map((m) => (
               <tr key={m.id}>
                 <td>
-                  <strong>{m.display_name}</strong>
-                  <span className="orgv2-subtext">{m.account}</span>
+                  <strong className="orgv2-member-identity" title={m.display_name}>{m.display_name}</strong>
+                  <span className="orgv2-subtext orgv2-member-identity" title={m.account}>{m.account}</span>
                 </td>
                 <td>{orgPath(m.organization_id)}</td>
                 <td title="通过查看权限查看授权明细">

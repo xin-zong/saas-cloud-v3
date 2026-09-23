@@ -152,13 +152,13 @@ type HealthDeviceRecord = {
 
   stationName: string
 
-  status: "在线" | "异常"
+  status: "在线" | "异常" | "离线" | "未知"
 
   runtime: string
 
-  faultCount: number
+  faultCount: number | null
 
-  responseCount: number
+  responseCount: number | null
 
   latestFault?: string
 
@@ -167,7 +167,7 @@ type HealthDeviceRecord = {
   detail: {
     statusLabel: string
 
-    statusTone: "success" | "danger"
+    statusTone: "success" | "danger" | "neutral"
 
     sampledAt: string
 
@@ -677,7 +677,7 @@ function buildHealthDeviceRecords(stations: Station[]) {
         )[0]
 
       const currentStatus: HealthDeviceRecord["status"] =
-        device.status === "warning" || activeAlarms.length ? "异常" : "在线"
+        device.status === "warning" || activeAlarms.length ? "异常" : device.status === "online" ? "在线" : device.status === "offline" ? "离线" : "未知"
 
       const commissioned = Date.parse(device.commissionedAt)
 
@@ -722,7 +722,7 @@ function buildHealthDeviceRecords(stations: Station[]) {
       }))
 
       const statusTone: HealthDeviceRecord["detail"]["statusTone"] =
-        currentStatus === "异常" ? "danger" : "success"
+        currentStatus === "异常" ? "danger" : currentStatus === "在线" ? "success" : "neutral"
 
       return {
         id: `${station.id}-${device.id}`,
@@ -740,11 +740,11 @@ function buildHealthDeviceRecords(stations: Station[]) {
         status: currentStatus,
 
         runtime:
-          runtimeHours === null ? "—" : `${runtimeHours.toLocaleString()} h`,
+          !DEMO_MODE || runtimeHours === null ? "—" : `${runtimeHours.toLocaleString()} h`,
 
-        faultCount: alarms.length,
+        faultCount: DEMO_MODE ? alarms.length : null,
 
-        responseCount: device.logs?.length ?? 0,
+        responseCount: DEMO_MODE ? device.logs?.length ?? 0 : null,
 
         latestFault: latestAlarm ? dateLabel(latestAlarm.at) : undefined,
 
@@ -1013,7 +1013,7 @@ function HealthDeviceDetail({
       <section className="maintenance-health-detail-panel">
         <div className="maintenance-health-detail-heading">
           <h2>
-            历史故障 <span>· {visibleFaults.length} 次</span>
+            历史故障 <span>· {DEMO_MODE ? `${visibleFaults.length} 次` : "—"}</span>
           </h2>
           <div className="maintenance-health-date-control">
             <button
@@ -1628,7 +1628,7 @@ export default function MaintenanceCenterPage({
       (healthDeviceType === "all" || record.category === healthDeviceType) &&
       (healthCondition === "all" ||
         (healthCondition === "fault"
-          ? record.faultCount > 0 || record.status === "异常"
+          ? (record.faultCount ?? 0) > 0 || record.status === "异常"
           : record.faultCount === 0 && record.status === "在线")) &&
       withinDate
     )
@@ -1888,7 +1888,16 @@ export default function MaintenanceCenterPage({
     (row) => row.station.id === activeFirmwareStationId,
   )
 
-  const firmwareDeviceRows = selectedFirmwareStation
+  const firmwareDeviceRows = !DEMO_MODE
+    ? (selectedFirmwareStation?.station.deviceInventory ?? [])
+        .filter(device => `${device.code} ${device.group}`.toUpperCase().includes(firmwareDeviceType))
+        .map(device => {
+          const task = selectedFirmwareStation?.firmware.find(item => item.device === device.id)
+          return { key: `${activeFirmwareStationId}:${device.id}`, device: device.name || device.code, model: device.model,
+            connection: device.status === "online" ? "在线" : device.status === "offline" ? "离线" : "未知",
+            task, condition: task ? FIRMWARE_STATUS[task.status] : "暂无升级任务" }
+        }).filter(item => !firmwareQuery.trim() || `${item.device} ${item.model} ${item.condition}`.toLowerCase().includes(firmwareQuery.trim().toLowerCase()))
+    : selectedFirmwareStation
     ? ["PCS-01", "PCS-02", "PCS-03", "PCS-04"]
 
         .map((device, index) => {
@@ -1941,7 +1950,7 @@ export default function MaintenanceCenterPage({
   const selectedFirmwareJob =
     firmwareJob?.key === selectedFirmwareResolvedKey ? firmwareJob : null
 
-  const firmwareProgress = selectedFirmwareJob
+  const firmwareProgress = !DEMO_MODE ? null : selectedFirmwareJob
     ? selectedFirmwareJob.progress
     : selectedFirmwareDevice?.task
       ? {
@@ -1955,7 +1964,7 @@ export default function MaintenanceCenterPage({
         }[selectedFirmwareDevice.task.status]
       : 0
 
-  const firmwareProgressText = selectedFirmwareJob
+  const firmwareProgressText = !DEMO_MODE ? (selectedFirmwareDevice?.task ? FIRMWARE_STATUS[selectedFirmwareDevice.task.status] : "暂无升级任务") : selectedFirmwareJob
     ? selectedFirmwareJob.status === "running"
       ? "传输中"
       : selectedFirmwareJob.status === "stopped"
@@ -3623,7 +3632,7 @@ export default function MaintenanceCenterPage({
                         <td>
                           <span
                             className={`maintenance-health-status is-${
-                              record.status === "异常" ? "danger" : "success"
+                              record.status === "异常" ? "danger" : record.status === "在线" ? "success" : "neutral"
                             }`}
                           >
                             <i />
@@ -3631,8 +3640,8 @@ export default function MaintenanceCenterPage({
                           </span>
                         </td>
                         <td>{record.runtime}</td>
-                        <td>{record.faultCount}</td>
-                        <td>{record.responseCount}</td>
+                        <td>{record.faultCount ?? "—"}</td>
+                        <td>{record.responseCount ?? "—"}</td>
                         <td>{record.latestFault ?? "—"}</td>
                         <td>{record.latestMaintenance}</td>
                         <td>
@@ -3815,16 +3824,16 @@ export default function MaintenanceCenterPage({
                   </button>
                 </div>
                 <p>
-                  {`E:\\固件升级\\${firmwareDeviceType}\\EPC-100\\${firmwareUploadName || `${firmwareDeviceType.toLowerCase()}_firmware.bin`}`}
+                  {DEMO_MODE ? `E:\\固件升级\\${firmwareDeviceType}\\EPC-100\\${firmwareUploadName || `${firmwareDeviceType.toLowerCase()}_firmware.bin`}` : "未选择固件文件"}
                 </p>
               </section>
               <section className="maintenance-reference-panel maintenance-upgrade-progress">
                 <h2>升级进度</h2>
                 <div>
                   <span>
-                    <i style={{ width: `${firmwareProgress}%` }} />
+                    {firmwareProgress !== null && <i style={{ width: `${firmwareProgress}%` }} />}
                   </span>
-                  <b>{firmwareProgress}%</b>
+                  <b>{firmwareProgress === null ? "—" : `${firmwareProgress}%`}</b>
                   <strong>{firmwareProgressText}</strong>
                   <button
                     className="operations-button"

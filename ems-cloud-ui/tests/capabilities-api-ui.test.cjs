@@ -219,3 +219,31 @@ test('organization map changes refresh role scope even when navigation union is 
   await page.getByRole('button',{name:'角色 2'}).waitFor()
   assert.equal(await page.getByRole('button',{name:'角色 1'}).count(),0)
 })
+
+test('API firmware empty state retains structure without invented devices, path or progress', async t => {
+  const user={...base,role:'operator',permissions:['asset.read','alarm.read'],stationPermissions:{1:['asset.read','alarm.read'],2:['asset.read','alarm.read']}}
+  const {page}=await setup(t,user)
+  await page.getByRole('button',{name:'运维中心',exact:true}).click()
+  await page.getByRole('button',{name:'固件升级',exact:true}).click()
+  await page.getByRole('heading',{name:'目标固件',exact:true}).waitFor()
+  assert.equal(await page.locator('.maintenance-firmware-layout').getByText(/PCS-0[1-4]|EPC-100|pcs_firmware\.bin/).count(),0)
+  assert.equal(await page.locator('.maintenance-upgrade-progress b').innerText(),'—')
+  assert.equal(await page.getByRole('button',{name:'上传固件',exact:true}).isDisabled(),true)
+  assert.equal(await page.getByRole('button',{name:'开始升级',exact:true}).isDisabled(),true)
+  assert.equal(await page.getByRole('heading',{name:'升级进度',exact:true}).count(),1)
+  assert.equal(await page.getByRole('columnheader',{name:'连接状态',exact:true}).count(),1)
+})
+
+test('API health preserves missing observations and offline status without invented diagnostic counts', async t => {
+  const user={...base,role:'operator',permissions:['asset.read','alarm.read'],stationPermissions:{1:['asset.read','alarm.read'],2:['asset.read','alarm.read']}}
+  const {page}=await setup(t,user,({path})=>path==='/stations/1/devices'?{data:[{id:77,code:'PCS-real',name:'真实设备未知',category:'储能变流器',communication_status:null},{id:78,code:'PCS-offline',name:'真实设备离线',category:'储能变流器',communication_status:'offline'}]}:undefined)
+  await page.getByRole('button',{name:'运维中心',exact:true}).click()
+  await page.getByRole('button',{name:'设备健康',exact:true}).click()
+  const unknown=page.getByRole('row').filter({hasText:'1-77'})
+  await unknown.waitFor()
+  assert.equal(await unknown.getByText('未知',{exact:true}).count(),1)
+  assert.equal(await unknown.getByText('在线',{exact:true}).count(),0)
+  assert.equal(await unknown.getByText('0',{exact:true}).count(),0)
+  const offline=page.getByRole('row').filter({hasText:'1-78'})
+  assert.equal(await offline.getByText('离线',{exact:true}).count(),1)
+})
