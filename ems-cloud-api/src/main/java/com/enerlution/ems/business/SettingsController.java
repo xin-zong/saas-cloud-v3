@@ -46,18 +46,26 @@ public class SettingsController {
   }
 
   @GetMapping("/members")
-  public ApiResponse<?> members() {
-    s.access.requirePermission("organization.member.read");
+  public ApiResponse<?> members(@RequestParam(defaultValue = "read") String purpose) {
+    if (!Set.of("read", "grants").contains(purpose)) throw new BusinessException(400, "无效的成员目录用途");
+    boolean grants = purpose.equals("grants");
+    String permission = grants ? "member.grant.manage" : "organization.member.read";
+    s.access.requirePermission(permission);
     return ApiResponse.ok(
         s.db.queryForList(
-            """
-SELECT u.id,u.account,u.display_name,u.email,u.enabled,u.organization_id,u.management_organization_id
+            "SELECT"
+                + " u.id,u.account,u.display_name,u.enabled,u.organization_id,u.management_organization_id"
+                + (grants ? "" : ",u.email")
+                + """
+
 FROM app_user u JOIN effective_organization_permission p ON p.organization_id=u.management_organization_id
-WHERE p.user_id=? AND p.permission_code='organization.member.read'
+WHERE p.user_id=? AND p.permission_code=?
  AND (u.organization_id IS NULL OR EXISTS(SELECT 1 FROM effective_organization_permission m
-  WHERE m.user_id=p.user_id AND m.organization_id=u.organization_id AND m.permission_code='organization.member.read'))
+  WHERE m.user_id=p.user_id AND m.organization_id=u.organization_id AND m.permission_code=?))
 ORDER BY u.id""",
-            s.access.userId()));
+            s.access.userId(),
+            permission,
+            permission));
   }
 
   @GetMapping("/organizations")

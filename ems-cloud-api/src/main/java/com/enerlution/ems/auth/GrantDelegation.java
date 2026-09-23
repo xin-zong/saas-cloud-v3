@@ -32,13 +32,8 @@ public final class GrantDelegation {
   /** Checks mutable scope even for expired, disabled, and future retained grants. */
   public void requireScope(
       long owner, long member, Collection<Long> stations, String managementPermission) {
-    access.requireOrganizationPermission(owner, managementPermission);
-    requireMemberScope(member, managementPermission);
+    requireOrganizationScope(owner, member, stations, managementPermission);
     for (long station : stations) {
-      var rows = db.queryForList("SELECT organization_id FROM station WHERE id=?", station);
-      if (rows.isEmpty() || rows.getFirst().get("organization_id") == null) deny();
-      long organization = ((Number) rows.getFirst().get("organization_id")).longValue();
-      access.requireOrganizationPermission(organization, managementPermission);
       if (!Boolean.TRUE.equals(
           db.queryForObject(
               """
@@ -48,6 +43,19 @@ SELECT EXISTS(SELECT 1 FROM active_member_grant g JOIN member_grant_station gs O
               Boolean.class,
               access.userId(),
               station))) deny();
+    }
+  }
+
+  /** Organization metadata visibility; grants no station business or mutation capability. */
+  public void requireOrganizationScope(
+      long owner, long member, Collection<Long> stations, String managementPermission) {
+    access.requireOrganizationPermission(owner, managementPermission);
+    requireMemberScope(member, managementPermission);
+    for (long station : stations) {
+      var rows = db.queryForList("SELECT organization_id FROM station WHERE id=?", station);
+      if (rows.isEmpty() || rows.getFirst().get("organization_id") == null) deny();
+      long organization = ((Number) rows.getFirst().get("organization_id")).longValue();
+      access.requireOrganizationPermission(organization, managementPermission);
     }
   }
 

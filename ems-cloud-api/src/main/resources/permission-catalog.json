@@ -597,10 +597,10 @@
     "scope": "organization",
     "page": "平台管理",
     "origin": "prototype",
-    "available": false,
+    "available": true,
     "bindings": [
       {
-        "status": "planned",
+        "status": "current",
         "controller": "MemberGrantController",
         "method": "Post",
         "path": "/members/{memberId}/grants"
