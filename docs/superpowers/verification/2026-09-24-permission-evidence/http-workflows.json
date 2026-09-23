@@ -1,0 +1,20 @@
+{
+  "namespace": "permission-t11",
+  "createdRoleIds": [
+    326
+  ],
+  "createdGrants": [
+    {
+      "memberId": 981003,
+      "grantId": 17
+    }
+  ],
+  "checks": [
+    "NULL-owner stationless grant has no organization or station wildcard",
+    "finite issuer cannot expand a role held by a permanent grant",
+    "real role/grant CRUD, repeated writes, cross-station denial, atomic failure and same-session revocation",
+    "same authenticated session loses permission at actual expiry",
+    "concurrent last permanent governance loss denied atomically"
+  ],
+  "status": "PASS"
+}

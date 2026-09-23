@@ -1,0 +1,144 @@
+{
+  "namespace": "permission-t12r2",
+  "actorId": 983001,
+  "targetId": 13,
+  "roleIds": [
+    329,
+    330
+  ],
+  "grantIds": [
+    18,
+    19
+  ],
+  "checks": [
+    "Actor isolated to organization983001 and its two fixed stations; no preexisting target",
+    "Two empty roles created through UI, then real permission matrices saved",
+    "Target created through member UI; A edit and B read-only grants have separate roles and terms",
+    "Target UI saves A station; B has no edit action and actual server PUT returns403",
+    "A revoke causes immediate403 on held edit form; same-session refresh removes held editor and A edit action, B read remains, rejected address not persisted"
+  ],
+  "screenshots": [
+    {
+      "file": "role-matrix-1280x720.png",
+      "width": 1280,
+      "height": 720,
+      "documentWidth": 1280
+    },
+    {
+      "file": "role-matrix-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440
+    },
+    {
+      "file": "organization-tree-1280x720.png",
+      "width": 1280,
+      "height": 720,
+      "documentWidth": 1280
+    },
+    {
+      "file": "organization-tree-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440
+    },
+    {
+      "file": "member-long-name-1280x720.png",
+      "width": 1280,
+      "height": 720,
+      "documentWidth": 1280
+    },
+    {
+      "file": "member-long-name-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440
+    },
+    {
+      "file": "member-empty-grants-1280x720.png",
+      "width": 1280,
+      "height": 720,
+      "documentWidth": 1280
+    },
+    {
+      "file": "member-empty-grants-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440
+    },
+    {
+      "file": "grant-form-1280x720.png",
+      "width": 1280,
+      "height": 720,
+      "documentWidth": 1280
+    },
+    {
+      "file": "grant-form-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440
+    },
+    {
+      "file": "grant-permission-dialog-1280x720.png",
+      "width": 1280,
+      "height": 720,
+      "documentWidth": 1280
+    },
+    {
+      "file": "grant-permission-dialog-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440
+    },
+    {
+      "file": "two-independent-grants-1280x720.png",
+      "width": 1280,
+      "height": 720,
+      "documentWidth": 1280
+    },
+    {
+      "file": "two-independent-grants-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440
+    },
+    {
+      "file": "target-A-edit-B-read-1280x720.png",
+      "width": 1280,
+      "height": 720,
+      "documentWidth": 1280
+    },
+    {
+      "file": "target-A-edit-B-read-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440
+    },
+    {
+      "file": "revoke-confirm-1280x720.png",
+      "width": 1280,
+      "height": 720,
+      "documentWidth": 1280
+    },
+    {
+      "file": "revoke-confirm-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440
+    },
+    {
+      "file": "target-revoked-same-session-1280x720.png",
+      "width": 1280,
+      "height": 720,
+      "documentWidth": 1280
+    },
+    {
+      "file": "target-revoked-same-session-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440
+    }
+  ],
+  "status": "passed",
+  "stage": "same target session loses A authority after actor revokes grant"
+}
