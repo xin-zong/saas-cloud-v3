@@ -754,7 +754,7 @@ function buildHealthDeviceRecords(stations: Station[]) {
 
         detail: {
           statusLabel:
-            currentStatus === "异常"
+            !DEMO_MODE ? currentStatus : currentStatus === "异常"
               ? `在线 · ${activeAlarms.length}项故障未恢复`
               : "在线 · 无未恢复故障",
 

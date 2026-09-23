@@ -212,6 +212,13 @@ export default function AssetsPage({
   const [pending, setPending] = useState<Record<string, Partial<Station>>>({});
 
   useEffect(() => {
+    if (!DEMO_MODE && editTarget && editTarget !== "new" && !canEditStation(editTarget.id)) {
+      setEditTarget(null);
+      setInitialDraft(null);
+    }
+  }, [editTarget, canEditStation]);
+
+  useEffect(() => {
     function onClickOutside(e: MouseEvent) {
       if (regionRef.current && !regionRef.current.contains(e.target as Node)) setRegionOpen(false);
     }
