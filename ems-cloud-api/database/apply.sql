@@ -38,6 +38,11 @@ SELECT NOT EXISTS(SELECT 1 FROM schema_migration WHERE version=6) AS apply_v6 \g
 \ir ../src/main/resources/db/migration/V6__member_grant_schema.sql
 INSERT INTO schema_migration(version) VALUES(6);
 \endif
+SELECT NOT EXISTS(SELECT 1 FROM schema_migration WHERE version=7) AS apply_v7 \gset
+\if :apply_v7
+\ir ../src/main/resources/db/migration/V7__migrate_member_grants.sql
+INSERT INTO schema_migration(version) VALUES(7);
+\endif
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 GRANT USAGE ON SCHEMA public TO ems_proto_app;
 GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ems_proto_app;

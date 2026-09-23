@@ -1,0 +1,50 @@
+[
+  {
+    "code": "owner",
+    "name": "项目业主 / 资产方",
+    "description": "查看资产、运营收益与分析报告",
+    "permissions": ["asset.read", "revenue.read", "strategy.read", "operations.read", "settlement.read", "alarm.read", "device.health.read", "workorder.read", "approval.read", "analytics.realtime.read", "analytics.history.read", "report.generate", "report.export"]
+  },
+  {
+    "code": "pmo",
+    "name": "项目管理方 / 项目公司",
+    "description": "项目计划、站点管理与运营协作",
+    "permissions": ["asset.read", "revenue.read", "strategy.read", "operations.read", "settlement.read", "alarm.read", "device.health.read", "workorder.read", "approval.read", "analytics.realtime.read", "analytics.history.read", "report.generate", "asset.edit", "dispatch.read", "dispatch.manage", "invitation.read", "invitation.accept", "workorder.create", "approval.review"]
+  },
+  {
+    "code": "ems",
+    "name": "EMS 运行管理方",
+    "description": "查看站点与收益、编辑运行方案、查询数据、生成报告",
+    "permissions": ["asset.read", "revenue.read", "strategy.read", "operations.read", "settlement.read", "alarm.read", "device.health.read", "workorder.read", "approval.read", "analytics.realtime.read", "analytics.history.read", "report.generate", "strategy.manage"]
+  },
+  {
+    "code": "om",
+    "name": "运维服务方",
+    "description": "站点运维、设备健康、告警与工单处理",
+    "permissions": ["asset.read", "strategy.read", "alarm.read", "device.health.read", "alarm.handle", "alarm.to.workorder", "firmware.upload", "firmware.upgrade", "workorder.read", "workorder.create", "workorder.edit", "workorder.handle", "approval.read", "approval.review", "analytics.realtime.read", "analytics.history.read", "report.generate", "report.export", "organization.member.read"]
+  },
+  {
+    "code": "epc",
+    "name": "EPC / 系统集成方",
+    "description": "站点建设与系统集成",
+    "permissions": ["asset.read", "asset.create", "asset.edit", "strategy.read", "device.health.read", "workorder.read", "workorder.create", "workorder.edit"]
+  },
+  {
+    "code": "vendor",
+    "name": "设备厂家",
+    "description": "设备诊断与固件服务",
+    "permissions": ["asset.read", "alarm.read", "device.health.read", "firmware.upload", "firmware.upgrade", "workorder.read"]
+  },
+  {
+    "code": "platform",
+    "name": "平台治理方",
+    "description": "客户、组织、权限与安全审计治理",
+    "permissions": ["asset.read", "asset.create", "asset.edit", "asset.delete", "revenue.read", "strategy.read", "strategy.manage", "strategy.dispatch", "operations.read", "settlement.read", "dispatch.read", "dispatch.manage", "invitation.read", "invitation.accept", "alarm.read", "device.health.read", "alarm.handle", "alarm.to.workorder", "firmware.upload", "firmware.upgrade", "workorder.read", "workorder.create", "workorder.edit", "workorder.handle", "approval.read", "approval.review", "analytics.realtime.read", "analytics.history.read", "report.generate", "report.export", "customer.read", "customer.manage", "organization.member.read", "organization.manage", "member.manage.profile", "role.manage", "member.grant.manage", "audit.read"]
+  },
+  {
+    "code": "readonly",
+    "name": "只读观察员",
+    "description": "查看授权站点的数据，不执行修改和控制",
+    "permissions": ["asset.read", "revenue.read", "strategy.read", "operations.read", "settlement.read", "alarm.read", "device.health.read", "workorder.read", "approval.read", "analytics.realtime.read", "analytics.history.read", "report.generate"]
+  }
+]
