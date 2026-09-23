@@ -150,24 +150,41 @@ function ApiAuthProvider({ children }: { children: ReactNode }) {
   }
   useEffect(() => {
     let active = true
+    let invalidationEpoch = 0
     const clear = () => { sessionGeneration.current++; setUser(null); setPendingUser(null); setChallengeId("") }
-    const refresh = (): Promise<void> => {
+    const refresh = (invalidate = false): Promise<void> => {
       const token = getToken()
       if (!token) return Promise.resolve()
+      if (invalidate) invalidationEpoch++
       if (refreshInFlight.current?.token === token && refreshInFlight.current.version === getSessionVersion()) return refreshInFlight.current.promise
       const generation = sessionGeneration.current
       const version = getSessionVersion()
-      const promise = api<AuthUser>('/auth/me')
-        .then(next => {
-          if (!active || getToken() !== token || generation !== sessionGeneration.current || version !== getSessionVersion()) return
-          const normalized = normalize(next)
-          setUser(current => JSON.stringify(current) === JSON.stringify(normalized) ? current : normalized)
-        })
-        .catch(error => {
-          if (!active || getToken() !== token || generation !== sessionGeneration.current || version !== getSessionVersion()) return
-          setPermissionNotice(error instanceof Error ? error.message : '当前权限刷新失败，请重试。')
-          setUser(current => current ? {...current, permissions: [], stationPermissions: {}, organizationPermissions: {}, stationIds: []} : null)
-        })
+      const isCurrentSession = () => active && getToken() === token && generation === sessionGeneration.current && version === getSessionVersion()
+      const promise = (async () => {
+        // Collapse a burst of completed writes before taking the next snapshot.
+        // Only a newer invalidation can queue a trailing request; focus/timer calls
+        // share this promise without invalidating it or causing an auth loop.
+        do {
+          await new Promise(resolve => window.setTimeout(resolve, 0))
+          if (!isCurrentSession()) return
+          const requestedEpoch = invalidationEpoch
+          try {
+            const next = await api<AuthUser>('/auth/me')
+            if (!isCurrentSession()) return
+            if (requestedEpoch !== invalidationEpoch) continue
+            const normalized = normalize(next)
+            setUser(current => JSON.stringify(current) === JSON.stringify(normalized) ? current : normalized)
+          } catch (error) {
+            if (!isCurrentSession()) return
+            if (requestedEpoch !== invalidationEpoch) continue
+            setPermissionNotice(error instanceof Error ? error.message : '当前权限刷新失败，请重试。')
+            setUser(current => current ? {...current, permissions: [], stationPermissions: {}, organizationPermissions: {}, stationIds: []} : null)
+          }
+          // Stop sharing the completed snapshot before promise cleanup runs.
+          refreshInFlight.current = null
+          return
+        } while (isCurrentSession())
+      })()
         .finally(() => { if (refreshInFlight.current?.promise === promise) refreshInFlight.current = null })
       refreshInFlight.current = {token, version, promise}
       return promise

@@ -38,6 +38,7 @@ export default function ApiAnalyticsPage({ stations, allowedTabs, allowedReportT
   const [tab, setTab] = useState<Tab>(tabs[0] ?? "数据分析")
   const [stationId, setStationId] = useState(stations[0]?.id ?? "")
   const station = stations.find((item) => item.id === stationId) ?? stations[0]
+  const canReadStationTelemetry = hasStationPermission(user, station?.id, "telemetry.read")
   const stationReports = reports.filter(report => hasStationPermission(user, station?.id, "report.export") && hasStationPermission(user, station?.id, report.permission))
   const [points, setPoints] = useState<MeasurementPoint[]>([])
   const [pointId, setPointId] = useState("")
@@ -67,7 +68,7 @@ export default function ApiAnalyticsPage({ stations, allowedTabs, allowedReportT
     if (station && station.id !== stationId) setStationId(station.id)
   }, [station, stationId])
   useEffect(() => {
-    if (!station || !hasStationPermission(user, station.id, "telemetry.read")) { setPoints([]); setPointId(""); setRows([]); return }
+    if (!station || !canReadStationTelemetry) { setLoadingPoints(false); setPoints([]); setPointId(""); setRows([]); return }
     const controller = new AbortController()
     setLoadingPoints(true); setPoints([]); setPointId(""); setRows([]); setError("")
     loadPoints(station.id, controller.signal)
@@ -75,18 +76,18 @@ export default function ApiAnalyticsPage({ stations, allowedTabs, allowedReportT
       .catch((cause) => { if (!controller.signal.aborted) setError(errorText(cause)) })
       .finally(() => { if (!controller.signal.aborted) setLoadingPoints(false) })
     return () => controller.abort()
-  }, [canTelemetry, station?.id])
+  }, [canReadStationTelemetry, station?.id])
   useEffect(() => {
     historyRequest.current?.abort()
     setLoadingHistory(false); setRows([]); setNotice("")
     return () => historyRequest.current?.abort()
-  }, [station?.id, pointId, from, to, minutes])
+  }, [canReadStationTelemetry, station?.id, pointId, from, to, minutes])
   useEffect(() => {
     if (!stationReports.some((item) => item.kind === reportKind)) setReportKind(stationReports[0]?.kind ?? "operations")
   }, [reportKind, stationReports.map((item) => item.kind).join("|")])
 
   async function query() {
-    if (!point) return
+    if (!canReadStationTelemetry || !point) return
     historyRequest.current?.abort()
     const controller = new AbortController()
     historyRequest.current = controller
@@ -100,7 +101,7 @@ export default function ApiAnalyticsPage({ stations, allowedTabs, allowedReportT
     finally { if (!controller.signal.aborted) setLoadingHistory(false) }
   }
   function exportData() {
-    if (!point || !rows.length) return
+    if (!canReadStationTelemetry || !point || !rows.length) return
     saveBlob(new Blob([historyCsv(point, rows)], { type: "text/csv;charset=utf-8" }), `point-${point.id}-history.csv`)
     setNotice("已导出当前查询的真实采样数据。")
   }
@@ -134,8 +135,8 @@ export default function ApiAnalyticsPage({ stations, allowedTabs, allowedReportT
         <label className="analytics-report-field"><span>开始时间</span><input aria-label="开始时间" type="datetime-local" value={from} onChange={(event) => setFrom(event.target.value)} /></label>
         <label className="analytics-report-field"><span>结束时间</span><input aria-label="结束时间" type="datetime-local" value={to} onChange={(event) => setTo(event.target.value)} /></label>
         <label className="analytics-report-field"><span>粒度</span><Select aria-label="粒度" value={String(minutes)} onChange={(event) => setMinutes(Number(event.target.value))}>{[1, 5, 15, 30, 60].map((value) => <option key={value} value={value}>{value} 分钟</option>)}</Select></label>
-        <Button variant="primary" disabled={!point || loadingHistory} onClick={() => void query()}>{loadingHistory ? "查询中…" : "查询历史"}</Button>
-        {tab === "数据下载" && <Button disabled={!rows.length} onClick={exportData}>导出查询 CSV</Button>}
+        <Button variant="primary" disabled={!canReadStationTelemetry || !point || loadingHistory} onClick={() => void query()}>{loadingHistory ? "查询中…" : "查询历史"}</Button>
+        {tab === "数据下载" && <Button disabled={!canReadStationTelemetry || !rows.length} onClick={exportData}>导出查询 CSV</Button>}
       </div></section>
       {tab === "数据分析" ? <section className="analytics-download-records"><h2>历史采样曲线</h2>{rows.length ? <><div className="analytics-ai-chart api-analytics-chart" aria-label="历史采样曲线"><ResponsiveContainer width="100%" height="100%"><LineChart data={chartRows}><CartesianGrid stroke="#e6edf2" /><XAxis dataKey="time" minTickGap={35} /><YAxis domain={["auto", "auto"]} unit={point?.unit} /><Tooltip /><Line dataKey="value" name={point?.name} stroke="#2f7c6a" dot={false} connectNulls={false} isAnimationActive={false} /></LineChart></ResponsiveContainer></div><p className="api-analytics-hint">{rows.length} 个采样区间 · 数值为服务器返回的区间平均值。</p></> : <div className="api-analytics-chart-empty"><strong>{loadingHistory ? "正在查询历史数据" : loadingPoints ? "正在加载测点" : points.length ? "暂无采样数据" : "暂无授权测点"}</strong><p>选择站点、测点与时间范围后查询。缺失采样不会显示为零。</p></div>}</section> : <section className="analytics-download-records"><h2>采样数据</h2><div className="analytics-download-table-wrap"><table className="ui-table api-analytics-data-table"><thead><tr>{["采样时间", "测点", "区间平均值", "单位", "采样数"].map((heading) => <th scope="col" key={heading}>{heading}</th>)}</tr></thead><tbody>{chartRows.length ? chartRows.map((row) => <tr key={row.timestamp}><td>{row.time}</td><td>{point?.name}</td><td>{row.value}</td><td>{point?.unit || "—"}</td><td>{row.samples}</td></tr>) : <tr><td colSpan={5} className="api-analytics-table-empty">{loadingHistory ? "正在查询历史数据…" : "暂无采样数据，请选择测点与时间范围后查询"}</td></tr>}</tbody></table></div><footer className="analytics-download-records-footer">共 {rows.length} 个采样区间</footer></section>}
     </section>}

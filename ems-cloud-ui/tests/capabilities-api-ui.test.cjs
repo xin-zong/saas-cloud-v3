@@ -24,6 +24,54 @@ async function setup(t, user, customize = () => undefined, options = {}) {
   return {page,requests,setUser:next=>{current=next}}
 }
 const base={id:'7',name:'同一身份',account:'user',role:'integrator',organization:'测试',stationIds:['1','2'],organizationPermissions:{}}
+test('selected station telemetry revocation clears history while report context and union remain',async t=>{
+  const user={...base,permissions:['telemetry.read','report.export','strategy.read'],stationPermissions:{1:['telemetry.read','report.export','strategy.read'],2:['telemetry.read']}}
+  const {page,requests,setUser}=await setup(t,user,({path})=>{
+    if(path==='/stations/1/points')return {data:[{id:17,name:'Power',unit:'kW'}]}
+    if(path==='/points/17/history')return {data:[{timestamp:Date.now(),value:42,samples:1}]}
+  })
+  await page.getByRole('button',{name:'分析与报告',exact:true}).click()
+  await page.getByRole('option',{name:'Power (kW)'}).waitFor({state:'attached'})
+  await page.getByRole('button',{name:'查询历史',exact:true}).click()
+  await page.getByText('已读取 1 个采样区间。',{exact:true}).waitFor()
+  await page.getByRole('tab',{name:'数据下载',exact:true}).click()
+  assert.equal(await page.getByRole('button',{name:'导出查询 CSV'}).isEnabled(),true)
+  setUser({...user,stationPermissions:{1:['report.export','strategy.read'],2:['telemetry.read']}})
+  const refreshed=page.waitForResponse(response=>response.url().endsWith('/auth/me'))
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')))
+  await refreshed;await page.waitForTimeout(250)
+  assert.equal(await page.getByLabel('分析站点',{exact:true}).inputValue(),'1')
+  assert.equal(await page.getByRole('button',{name:'查询历史',exact:true}).isDisabled(),true)
+  assert.equal(await page.getByRole('button',{name:'导出查询 CSV'}).isDisabled(),true)
+  assert.deepEqual(await page.getByLabel('测点',{exact:true}).locator('option').allTextContents(),['暂无授权测点'])
+  assert.equal(await page.getByText('共 0 个采样区间',{exact:true}).count(),1)
+  await page.getByRole('button',{name:'查询历史',exact:true}).evaluate(button=>button.click())
+  assert.equal(requests.filter(request=>request.path==='/points/17/history').length,1)
+  await page.getByRole('tab',{name:'报告中心',exact:true}).click()
+  assert.equal(await page.getByRole('button',{name:'下载 CSV 报告'}).isEnabled(),true)
+})
+
+for(const invalidation of ['mutation','403'])test(`${invalidation} invalidation waits for a post-invalidation snapshot after held focus refresh`,async t=>{
+  const user={...base,permissions:['asset.read','asset.edit'],stationPermissions:{1:['asset.read','asset.edit'],2:['asset.read']}}
+  const revoked={...user,permissions:['asset.read'],stationPermissions:{1:['asset.read'],2:['asset.read']}}
+  let hold=false,release,started,invalidated
+  const waiting=new Promise(resolve=>{started=resolve}),committed=new Promise(resolve=>{invalidated=resolve})
+  const {page,requests}=await setup(t,user,async({path,req,setUser})=>{
+    if(path==='/auth/me' && hold){hold=false;started();await new Promise(resolve=>{release=resolve});return {data:user}}
+    if(path==='/members/8' && req.method()==='PUT'){setUser(revoked);invalidated();return invalidation==='403'?{status:403,msg:'权限已收回'}:{data:null}}
+  })
+  await page.getByRole('button',{name:'资产与站点',exact:true}).click()
+  await page.getByRole('button',{name:'编辑站点 A',exact:true}).waitFor()
+  const baseline=requests.filter(request=>request.path==='/auth/me').length
+  hold=true
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')))
+  await waiting
+  const save=page.evaluate(async()=>{const {send}=await import(performance.getEntriesByType('resource').map(entry=>entry.name).find(url=>new URL(url).pathname==='/src/api/client.ts'));try{await send('/members/8','PUT',{enabled:false})}catch(error){if(error.status!==403)throw error}})
+  await committed;await page.waitForTimeout(100);release();await save
+  assert.equal(requests.filter(request=>request.path==='/auth/me').length,baseline+2)
+  await page.getByRole('button',{name:'编辑站点 A',exact:true}).waitFor({state:'detached'})
+})
+
 test('workorders load without asset.read and create choices contain only create-authorized stations',async t=>{
   const user={...base,permissions:['workorder.read','workorder.create'],stationPermissions:{1:['workorder.read','workorder.create'],2:['workorder.read']}}
   let created

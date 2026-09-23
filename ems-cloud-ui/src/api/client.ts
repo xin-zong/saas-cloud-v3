@@ -6,11 +6,11 @@ let sessionVersion = 0
 export const getSessionVersion = () => sessionVersion
 export const setToken = (token: string | null) => { sessionVersion++; if (token) sessionStorage.setItem(TOKEN_KEY, token); else sessionStorage.removeItem(TOKEN_KEY) }
 export const CAPABILITIES_CHANGED = 'enerlution:permissions-changed'
-let refreshCapabilities: (() => Promise<void>) | null = null
-export function registerCapabilityRefresh(refresh: (() => Promise<void>) | null) { refreshCapabilities = refresh }
+let refreshCapabilities: ((invalidate?: boolean) => Promise<void>) | null = null
+export function registerCapabilityRefresh(refresh: ((invalidate?: boolean) => Promise<void>) | null) { refreshCapabilities = refresh }
 export async function refreshAfterForbidden() {
   window.dispatchEvent(new Event(CAPABILITIES_CHANGED))
-  await refreshCapabilities?.()
+  await refreshCapabilities?.(true)
 }
 export class ApiError extends Error {
   constructor(message: string, public status: number) { super(message) }
@@ -35,13 +35,13 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   if (response.status === 403 || body.code === 403) {
     if (!path.startsWith('/auth/')) {
       window.dispatchEvent(new Event(CAPABILITIES_CHANGED))
-      await refreshCapabilities?.()
+      await refreshCapabilities?.(true)
     }
     throw new ApiError(`权限已变化，已刷新当前权限。${body.msg || '无权执行此操作。'}`, 403)
   }
   if (!response.ok || (body.code !== 0 && body.code !== 200)) throw new ApiError(body.msg || `请求失败 (${response.status})`, body.code || response.status)
   if (options.method && options.method !== 'GET' && /^(\/members(?:\/|$)|\/platform\/(roles|organizations)(?:\/|$))/.test(path)) {
-    await refreshCapabilities?.()
+    await refreshCapabilities?.(true)
     if (getToken() !== token || getSessionVersion() !== version) throw new ApiError('会话已变化，请重新操作。', 401)
   }
   return body.data
