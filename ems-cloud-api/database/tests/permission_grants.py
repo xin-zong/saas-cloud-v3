@@ -12,6 +12,7 @@ import subprocess
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--with-v6', action='store_true')
+    parser.add_argument('--emit', action='store_true', help='Emit guarded rollback SQL without connecting')
     args = parser.parse_args()
     api = Path(__file__).resolve().parents[2]
     guard = "DO $$ BEGIN IF current_database() <> 'ems_cloud_v2_proto' THEN RAISE EXCEPTION 'Wrong database'; END IF; END $$;\n"
@@ -20,8 +21,11 @@ def main():
         sql += (api / 'src/main/resources/db/migration/V6__member_grant_schema.sql').read_text(encoding='utf-8') + '\n'
     sql += Path(__file__).with_suffix('.sql').read_text(encoding='utf-8')
     sql += '\nROLLBACK;\n'
-    result = subprocess.run(['psql', '-X', '--dbname=ems_cloud_v2_proto'], input=sql, text=True)
-    raise SystemExit(result.returncode)
+    if args.emit:
+        print(sql)
+    else:
+        result = subprocess.run(['psql', '-X', '--dbname=ems_cloud_v2_proto'], input=sql, text=True)
+        raise SystemExit(result.returncode)
 
 
 if __name__ == '__main__':

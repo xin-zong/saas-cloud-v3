@@ -200,8 +200,9 @@ test('late member grant response cannot populate another member detail', async t
 })
 
 test('grant list load failure is explicit and exposes no stale row actions', async t => {
-  const { page } = await setup(t, { failGrants: true })
+  const { page, requests } = await setup(t, { failGrants: true })
   await page.getByText('授权列表加载失败').waitFor(); assert.equal(await page.locator('[data-grant-id]').count(), 0)
   assert.equal(await page.getByText('暂无授权，可按成员职责分配权限。').count(), 0)
-  assert.equal(await page.getByRole('button', { name: '分配权限', exact: true }).isDisabled(), true)
+  assert.equal(await page.getByRole('button', { name: '分配权限', exact: true }).count(), 0)
+  assert.equal(writes(requests).length, 0)
 })

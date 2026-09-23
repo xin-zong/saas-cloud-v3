@@ -59,4 +59,6 @@ GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ems_proto_ap
 GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ems_proto_app;
 REVOKE ALL ON schema_migration FROM ems_proto_app;
 REVOKE UPDATE,DELETE ON audit_event FROM ems_proto_app;
+-- Retain historical relations, but close the old authorization write path after broad grants.
+REVOKE INSERT,UPDATE,DELETE ON user_role,user_station FROM ems_proto_app;
 COMMIT;

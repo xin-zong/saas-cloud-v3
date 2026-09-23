@@ -27,6 +27,28 @@ class MemberOrganizationPostgresTest {
   String lastMessage;
 
   @Test
+  void auditCapturesDisableAndRelationshipChangesWithoutCredentials() throws Exception {
+    request("PUT", "/api/members/108", "{\"name\":\"Target\",\"enabled\":false,\"email\":null}", 200);
+    var edit = json.readTree(db.queryForObject("SELECT detail FROM audit_event WHERE action='member.edit'", String.class));
+    assertTrue(edit.path("before").path("enabled").asBoolean());
+    assertFalse(edit.path("after").path("enabled").asBoolean(true));
+    request("PUT", "/api/members/108/organization", "{\"organizationId\":103}", 200);
+    var move = json.readTree(db.queryForObject("SELECT detail FROM audit_event WHERE action='member.organization'", String.class));
+    assertEquals(102, move.path("before").path("organization_id").asLong());
+    assertEquals(103, move.path("after").path("organization_id").asLong());
+    request("PUT", "/api/platform/organizations/102", "{\"name\":\"Moved\",\"parentId\":103}", 200);
+    var org = json.readTree(db.queryForObject("SELECT detail FROM audit_event WHERE action='organization.edit'", String.class));
+    assertEquals(101, org.path("before").path("parent_id").asLong());
+    assertEquals(103, org.path("after").path("parent_id").asLong());
+    for (String detail : db.queryForList("SELECT detail FROM audit_event", String.class)) {
+      assertFalse(detail.contains("password"));
+      assertFalse(detail.contains("unused"));
+      assertFalse(detail.contains("totp"));
+    }
+    assertEquals(3, db.queryForObject("SELECT count(*) FROM audit_event WHERE actor_id=107", Integer.class));
+  }
+
+  @Test
   void reparentCannotRemoveLastCompleteGovernanceHorizon() throws Exception {
     db.update(
         "INSERT INTO app_role(id,code,name,organization_id)"

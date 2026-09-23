@@ -1,0 +1,15 @@
+const { test } = require('node:test')
+const assert = require('node:assert/strict')
+const { readdirSync } = require('node:fs')
+const { groups } = require('../scripts/run-tests.cjs')
+
+test('every test file belongs to exactly one preview mode', () => {
+  const files = readdirSync(__dirname).filter(file => file.endsWith('.test.cjs'))
+  const split = groups(files)
+  assert.deepEqual(split.demo, ['centers-ui.test.cjs', 'operations-redesign-ui.test.cjs', 'role-access-ui.test.cjs', 'workspace-ui.test.cjs'])
+  assert.deepEqual([...split.api, ...split.demo].sort(), files.sort())
+  assert.equal(new Set([...split.api, ...split.demo]).size, files.length)
+  assert(split.api.includes('analytics-ui.test.cjs'))
+  assert(split.api.includes('platform-api-ui.test.cjs'))
+  assert.throws(() => groups(files.filter(file => file !== 'workspace-ui.test.cjs')), /Missing demo test/)
+})

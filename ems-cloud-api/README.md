@@ -45,6 +45,8 @@ pnpm dev --host 127.0.0.1 --port 8443 --strictPort
 
 ## 初始化和迁移
 
+权限模型 V6–V9 的正式切换必须先审查并执行 [权限切换手册](docs/permission-cutover.md)：停旧 API、重新备份、事务迁移、配套新 API/客户端一起启用。旧表保留只读；默认模板同步是独立显式命令，首位真实角色管理员需要明确选择，不能自动提权。手册也提供 rollback-only SQL、API/demo 两组完整 UI 运行器和专用真实 HTTP 样本的精确清理流程。
+
 服务器新库已建立。`database/apply.sql` 使用事务、咨询锁和版本表 `schema_migration`，可重跑；V1–V5 已应用，已应用迁移文件不可修改，后续从 V6 开始新增。Flyway 自动运行关闭，避免两个迁移系统重复建表。
 
 ```bash

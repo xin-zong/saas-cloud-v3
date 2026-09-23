@@ -113,6 +113,28 @@ INSERT INTO member_grant_station VALUES(21,101),(22,102);
   }
 
   @Test
+  void exactStatementClockBoundariesAreStartInclusiveAndEndExclusive() {
+    db.execute("""
+DO $$ BEGIN
+  UPDATE member_grant SET valid_until=statement_timestamp() WHERE id=21;
+  IF NOT EXISTS(SELECT 1 FROM member_grant WHERE id=21 AND valid_until=statement_timestamp()) THEN
+    RAISE EXCEPTION 'test clock is not exactly equal';
+  END IF;
+  IF EXISTS(SELECT 1 FROM effective_station_permission WHERE user_id=7 AND station_id=101 AND permission_code='asset.edit') THEN
+    RAISE EXCEPTION 'valid_until equality must deny';
+  END IF;
+  UPDATE member_grant SET valid_until=NULL,valid_from=statement_timestamp() WHERE id=21;
+  IF NOT EXISTS(SELECT 1 FROM member_grant WHERE id=21 AND valid_from=statement_timestamp()) THEN
+    RAISE EXCEPTION 'test clock is not exactly equal';
+  END IF;
+  IF NOT EXISTS(SELECT 1 FROM effective_station_permission WHERE user_id=7 AND station_id=101 AND permission_code='asset.edit') THEN
+    RAISE EXCEPTION 'valid_from equality must allow';
+  END IF;
+END $$;
+""");
+  }
+
+  @Test
   void retainedSessionRechecksExpiryRevocationRoleEditsAndDisabledAccount() {
     assertDoesNotThrow(() -> access.requireStationPermission(101, "asset.edit"));
     db.update("UPDATE member_grant SET valid_until=statement_timestamp() WHERE id=21");

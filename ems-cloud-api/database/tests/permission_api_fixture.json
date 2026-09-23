@@ -1,0 +1,16 @@
+{
+  "namespace": "permission-t11",
+  "organizationId": 981001,
+  "stationId": 981001,
+  "outsideStationId": 981002,
+  "longRoleId": 981007,
+  "governorPermissionCodes": ["role.manage", "member.grant.manage", "organization.manage", "organization.member.read", "member.manage.profile", "audit.read", "asset.read", "asset.edit"],
+  "actors": {
+    "actor": {"id": 981001, "account": "permission-t11-actor", "roleId": 981001},
+    "peer": {"id": 981002, "account": "permission-t11-peer", "roleId": 981002},
+    "target": {"id": 981003, "account": "permission-t11-target"},
+    "legacy": {"id": 981004, "account": "permission-t11-legacy"},
+    "limited": {"id": 981005, "account": "permission-t11-limited"},
+    "expiring": {"id": 981006, "account": "permission-t11-expiring"}
+  }
+}

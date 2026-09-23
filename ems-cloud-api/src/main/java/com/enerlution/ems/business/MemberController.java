@@ -77,6 +77,7 @@ public class MemberController {
     delegation.requireMemberScope(id, "member.manage.profile");
     if (n.organizationId() != null) throw new BusinessException(400, "请使用独立的组织成员移动流程");
     if (id == s.access.userId() && !n.enabled()) throw new BusinessException(409, "不能停用自己");
+    var previous = s.one("SELECT display_name,email,enabled FROM app_user WHERE id=? FOR UPDATE", id);
     var before = governance.snapshot();
     s.db.update(
         "UPDATE app_user SET display_name=?,email=?,enabled=? WHERE id=?",
@@ -85,7 +86,8 @@ public class MemberController {
         n.enabled(),
         id);
     governance.preserve(before);
-    s.audit("member.edit", "user=" + id);
+    s.audit("member.edit", Map.of("memberId", id, "before", previous,
+        "after", s.one("SELECT display_name,email,enabled FROM app_user WHERE id=?", id)));
     return ApiResponse.ok(null);
   }
 
@@ -110,19 +112,22 @@ public class MemberController {
     var before = governance.snapshot();
     s.db.update("UPDATE app_user SET organization_id=? WHERE id=?", target, id);
     // Administrative ownership and role owners deliberately remain fixed.
-    s.db.update(
+    var clearedLeads = s.db.queryForList(
         """
 WITH RECURSIVE branch(root,id) AS (
   SELECT id,id FROM organization UNION SELECT b.root,o.id FROM branch b JOIN organization o ON o.parent_id=b.id
 ) UPDATE organization o SET lead_user_id=NULL WHERE o.lead_user_id=? AND NOT EXISTS(
   SELECT 1 FROM branch b JOIN app_user u ON u.organization_id=b.id WHERE b.root=o.id AND u.id=?)
   AND EXISTS(SELECT 1 FROM branch b WHERE b.root=o.id AND b.id=?::bigint)
+RETURNING o.id
 """,
         id,
         id,
         member.get("organization_id"));
     governance.preserve(before);
-    s.audit("member.organization", "user=" + id + ",organization=" + target);
+    s.audit("member.organization", Map.of("memberId", id, "before", member,
+        "after", s.one("SELECT organization_id FROM app_user WHERE id=?", id),
+        "clearedLeadOrganizations", clearedLeads));
     return ApiResponse.ok(null);
   }
 

@@ -30,14 +30,15 @@ final class OrganizationWorkflows {
             name.trim(),
             parent);
     initializeRoles(id);
-    s.audit("organization.create", "organization=" + id);
+    s.audit("organization.create", Map.of("organizationId", id, "after",
+        s.one("SELECT name,parent_id,lead_user_id FROM organization WHERE id=?", id)));
     return id;
   }
 
   void edit(long id, String name, Long requestedParent, Long lead, boolean updateLead) {
     governance.lock();
     s.access.requireOrganizationPermission(id, "organization.manage");
-    var existing = s.one("SELECT parent_id FROM organization WHERE id=? FOR UPDATE", id);
+    var existing = s.one("SELECT name,parent_id,lead_user_id FROM organization WHERE id=? FOR UPDATE", id);
     Long oldParent = (Long) existing.get("parent_id");
     Long parent = requestedParent == null ? oldParent : requestedParent;
     var before = governance.snapshot();
@@ -99,7 +100,9 @@ final class OrganizationWorkflows {
     for (long organization : invalidatedLeads)
       s.db.update("UPDATE organization SET lead_user_id=NULL WHERE id=?", organization);
     governance.preserve(before);
-    s.audit("organization.edit", "organization=" + id);
+    s.audit("organization.edit", Map.of("organizationId", id, "before", existing,
+        "after", s.one("SELECT name,parent_id,lead_user_id FROM organization WHERE id=?", id),
+        "clearedLeadOrganizations", invalidatedLeads));
   }
 
   boolean isManagementRoot(long id, Long parent) {

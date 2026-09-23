@@ -34,6 +34,14 @@ public class DomainSupport {
         detail);
   }
 
+  public void audit(String action, Map<String, ?> detail) {
+    try {
+      audit(action, new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(detail));
+    } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+      throw new IllegalStateException("Cannot serialize audit event", e);
+    }
+  }
+
   public int limit(int value) {
     if (value < 1 || value > 200) throw new BusinessException(400, "每页数量应为 1–200");
     return value;

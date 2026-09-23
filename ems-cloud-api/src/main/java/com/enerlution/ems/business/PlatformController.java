@@ -118,65 +118,15 @@ public class PlatformController {
 
   @GetMapping("/platform/member-grants")
   public ApiResponse<?> memberGrants() {
-    s.access.requirePermission("organization.member.read");
-    var result = new ArrayList<Map<String, Object>>();
-    for (var row :
-        s.db.queryForList(
-            """
-SELECT u.id FROM app_user u JOIN effective_organization_permission p
-  ON p.organization_id=u.management_organization_id
-WHERE p.user_id=? AND p.permission_code='organization.member.read'
-  AND (u.organization_id IS NULL OR EXISTS(SELECT 1 FROM effective_organization_permission m
-    WHERE m.user_id=p.user_id AND m.organization_id=u.organization_id
-      AND m.permission_code='organization.member.read')) ORDER BY u.id
-""",
-            s.access.userId())) {
-      long id = s.number(row, "id");
-      result.add(
-          Map.of(
-              "member_id",
-              id,
-              "role_ids",
-              s.db.queryForList(
-                  "SELECT DISTINCT role_id FROM active_member_grant WHERE user_id=? ORDER BY"
-                      + " role_id",
-                  Long.class,
-                  id),
-              "station_count",
-              s.db.queryForObject(
-                  "SELECT count(DISTINCT gs.station_id) FROM active_member_grant g JOIN"
-                      + " member_grant_station gs ON gs.grant_id=g.id WHERE g.user_id=?",
-                  Long.class,
-                  id),
-              "station_ids",
-              s.db.queryForList(
-                  """
-SELECT DISTINCT target.station_id FROM effective_station_permission target
-JOIN effective_station_permission mine ON mine.station_id=target.station_id AND mine.user_id=?
-WHERE target.user_id=? ORDER BY target.station_id
-""",
-                  Long.class,
-                  s.access.userId(),
-                  id)));
-    }
-    return ApiResponse.ok(result);
+    s.access.userId();
+    throw new BusinessException(410, "聚合授权读取已停用，请使用逐条成员授权接口");
   }
 
   @GetMapping("/platform/role-permissions")
   public ApiResponse<?> rolePermissions() {
-    s.access.requirePermission("organization.member.read");
-    return ApiResponse.ok(
-        s.db.queryForList(
-            """
-SELECT r.id AS role_id,p.code,p.name FROM app_role r JOIN effective_organization_permission scope
-  ON scope.organization_id=r.organization_id AND scope.user_id=?
-  AND scope.permission_code='organization.member.read'
-JOIN role_permission rp ON rp.role_id=r.id JOIN permission p ON p.code=rp.permission_code
-ORDER BY r.id,p.code
-""",
-            s.access.userId()));
+    s.access.userId();
+    throw new BusinessException(410, "聚合角色权限读取已停用，请使用组织角色接口");
   }
-
   @GetMapping("/platform/customers")
   public ApiResponse<?> customers() {
     s.access.requirePermission("customer.read");
