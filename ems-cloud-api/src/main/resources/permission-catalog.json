@@ -134,10 +134,12 @@
     "available": false,
     "bindings": [
       {
-        "status": "planned",
+        "status": "shared-candidate",
         "controller": "RevenueController",
         "method": "Get",
-        "path": "/stations/{id}/settlements"
+        "path": "/stations/{id}/settlements",
+        "enforcesCode": false,
+        "sharedWithCurrentCode": "revenue.read"
       }
     ],
     "legacyBinding": "revenue.read"
@@ -152,10 +154,12 @@
     "available": false,
     "bindings": [
       {
-        "status": "planned",
+        "status": "shared-candidate",
         "controller": "OperationsController",
         "method": "Get",
-        "path": "/stations/{id}/plans"
+        "path": "/stations/{id}/plans",
+        "enforcesCode": false,
+        "sharedWithCurrentCode": "strategy.read"
       }
     ],
     "legacyBinding": "strategy.read"
@@ -170,10 +174,12 @@
     "available": false,
     "bindings": [
       {
-        "status": "planned",
+        "status": "shared-candidate",
         "controller": "OperationsController",
         "method": "Post",
-        "path": "/plans"
+        "path": "/plans",
+        "enforcesCode": false,
+        "sharedWithCurrentCode": "strategy.manage"
       }
     ],
     "legacyBinding": "strategy.manage"
@@ -188,10 +194,13 @@
     "available": false,
     "bindings": [
       {
-        "status": "planned",
+        "status": "shared-candidate",
         "controller": "RevenueController",
         "method": "Get",
-        "path": "/stations/{id}/market-services"
+        "path": "/stations/{id}/market-services",
+        "enforcesCode": false,
+        "sharedWithCurrentCode": "market.read",
+        "representsPrototypeOperation": false
       }
     ],
     "legacyBinding": "market.read"
@@ -444,7 +453,7 @@
     "code": "customer.read",
     "name": "查看客户",
     "module": "platform",
-    "scope": "organization",
+    "scope": "station",
     "page": "平台管理",
     "origin": "prototype",
     "available": false,
@@ -456,13 +465,14 @@
         "path": "/platform/customers"
       }
     ],
-    "legacyBinding": "asset.read"
+    "legacyBinding": "asset.read",
+    "scopeRule": "visible_customer_stations"
   },
   {
     "code": "customer.manage",
     "name": "管理客户",
     "module": "platform",
-    "scope": "organization",
+    "scope": "station",
     "page": "平台管理",
     "origin": "prototype",
     "available": false,
@@ -474,7 +484,8 @@
         "path": "/platform/customers/{id}"
       }
     ],
-    "legacyBinding": "asset.edit + member.manage"
+    "legacyBinding": "asset.edit + member.manage",
+    "scopeRule": "all_customer_stations_in_actor_station_scope_and_organization_branch"
   },
   {
     "code": "organization.member.read",

@@ -42,7 +42,7 @@ class PermissionCatalogTest {
         names.add(entry.path("name").asText());
       }
       for (JsonNode binding : entry.path("bindings")) {
-        assertTrue(Set.of("current", "planned").contains(binding.path("status").asText()), code);
+        assertTrue(Set.of("current", "planned", "shared-candidate").contains(binding.path("status").asText()), code);
         assertTrue(binding.path("method").isTextual(), code);
         assertTrue(binding.path("path").isTextual(), code);
         if (!entry.path("available").asBoolean())
@@ -83,5 +83,39 @@ class PermissionCatalogTest {
     Set<String> all = new HashSet<>(extensions);
     for (JsonNode entry : entries) all.add(entry.path("code").asText());
     assertTrue(all.containsAll(Set.of("asset.read", "asset.edit", "telemetry.read", "alarm.read", "alarm.handle", "workorder.read", "workorder.manage", "inspection.manage", "approval.review", "strategy.read", "strategy.manage", "tariff.manage", "market.read", "market.manage", "revenue.read", "revenue.review", "report.export", "member.manage", "audit.read")));
+  }
+
+  @Test
+  void customerAccessRemainsStationScopedWithTheExistingAggregateConditions() throws Exception {
+    JsonNode entries = mapper.readTree(Files.readString(catalog));
+    JsonNode read = find(entries, "customer.read");
+    JsonNode manage = find(entries, "customer.manage");
+    assertEquals("station", read.path("scope").asText());
+    assertEquals("visible_customer_stations", read.path("scopeRule").asText());
+    assertEquals("station", manage.path("scope").asText());
+    assertEquals("all_customer_stations_in_actor_station_scope_and_organization_branch", manage.path("scopeRule").asText());
+    assertEquals("asset.edit + member.manage", manage.path("legacyBinding").asText());
+    assertFalse(read.path("available").asBoolean());
+    assertFalse(manage.path("available").asBoolean());
+  }
+
+  @Test
+  void overlappingOperationsAreCandidatesNotCommittedPermissionReplacements() throws Exception {
+    JsonNode entries = mapper.readTree(Files.readString(catalog));
+    for (String code : Set.of("settlement.read", "dispatch.read", "dispatch.manage", "invitation.read")) {
+      JsonNode entry = find(entries, code);
+      assertFalse(entry.path("available").asBoolean(), code);
+      assertEquals(1, entry.path("bindings").size(), code);
+      assertEquals("shared-candidate", entry.path("bindings").get(0).path("status").asText(), code);
+      assertFalse(entry.path("bindings").get(0).path("enforcesCode").asBoolean(), code);
+      assertEquals(entry.path("legacyBinding").asText(), entry.path("bindings").get(0).path("sharedWithCurrentCode").asText(), code);
+    }
+    assertFalse(find(entries, "invitation.read").path("bindings").get(0).path("representsPrototypeOperation").asBoolean());
+  }
+
+  private JsonNode find(JsonNode entries, String code) {
+    for (JsonNode entry : entries) if (entry.path("code").asText().equals(code)) return entry;
+    fail("missing catalog code " + code);
+    return null;
   }
 }
