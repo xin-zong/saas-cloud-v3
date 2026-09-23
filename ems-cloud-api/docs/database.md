@@ -1,6 +1,6 @@
 # 数据字典与规范化说明
 
-业务库为 `ems_cloud_v2_proto`；全部业务表在 public，40 张业务表另加迁移版本表。ClickHouse 新库 `ems_cloud_v2_proto_telemetry` 只有一张测点事实表。
+业务库为 `ems_cloud_v2_proto`；全部业务表在 public，V6 后 42 张业务表另加迁移版本表。ClickHouse 新库 `ems_cloud_v2_proto_telemetry` 只有一张测点事实表。逐条授权、组织管理归属及 V7 数据迁移契约见 [授权模型](permission-grant-schema.md)。
 
 ## 表、候选键与字段用途
 
@@ -8,9 +8,11 @@
 
 | 表 | 主键/其他候选键 | 非键字段用途 |
 | --- | --- | --- |
-| organization | id；parent_id+name（NULL 不重复） | 组织名称和父级，支持组织树，禁止自环与祖先环 |
-| app_user | id；account | 展示名、BCrypt 密码、组织、启用状态；不存明文凭据 |
-| app_role | id；code | 业务角色名称 |
+| organization | id；parent_id+name（NULL 不重复） | 组织名称、父级、可空负责人引用，支持组织树，禁止自环与祖先环 |
+| app_user | id；account | 展示名、BCrypt 密码、所属组织、独立管理组织、可空邮箱、启用状态；不存明文凭据 |
+| app_role | id；code；非空管理组织内 btrim(name) | 业务角色名称、说明、管理组织引用 |
+| member_grant | id | 成员、角色、起止时刻、授予人；结束可空表示长期，结束晚于开始 |
+| member_grant_station | grant_id+station_id | 单条授权的站点集合；空集合无站点权限 |
 | permission | code | 权限展示名 |
 | user_role | user_id+role_id | 用户到角色多对多，无冗余字段 |
 | role_permission | role_id+permission_code | 角色到功能权限多对多 |
