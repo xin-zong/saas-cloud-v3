@@ -1,0 +1,84 @@
+.tariff-workspace { display: flex; flex-direction: column; padding: 12px 20px 24px; flex: 1; overflow: auto; min-height: 0; background: #f6f8f7; color: #1f2a2e; font-size: 13px; }
+.tariff-workspace>section,.tariff-workspace>header,.tariff-workspace>nav,.tariff-workspace>footer { flex-shrink: 0; }
+.tariff-workspace[data-tariff-view="templates"] { background: white; }
+.tariff-workspace * { box-sizing: border-box; }
+.tariff-workspace button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 32px; border: 1px solid #dde4e1; border-radius: 8px; padding: 5px 13px; background: white; color: #23312f; font: inherit; cursor: pointer; }
+.tariff-workspace button:disabled { opacity: .5; cursor: not-allowed; }
+.tariff-workspace button.primary { background: #0c8768; border-color: #0c8768; color: white; }
+.tariff-workspace button img { display: block; flex: none; }
+.tariff-workspace input,.tariff-workspace select { min-width: 0; border: 1px solid #dde4e1; border-radius: 7px; padding: 8px 11px; font: inherit; color: #263532; background: #f4f7f6; }
+.tariff-workspace input:focus,.tariff-workspace select:focus,.tariff-workspace button:focus-visible { outline: 2px solid #8bbfaf; outline-offset: 2px; }
+.tariff-workspace input:disabled,.tariff-workspace select:disabled { color: #a9b2b1; }
+.tariff-workspace label { display: flex; flex-direction: column; gap: 8px; font-size: 12px; color: #758581; }
+.tariff-workspace h1 { font-size: 22px; font-weight: 600; margin: 0; }
+.tariff-workspace h2 { font-size: 16px; font-weight: 500; margin: 0 0 20px; }
+.tariff-breadcrumb { display: flex; align-items: center; gap: 9px; height: 24px; font-size: 11px; color: #a6b2ad; }
+.tariff-breadcrumb button { padding: 0; border: 0; min-height: auto; background: transparent; font-size: 11px; color: #537b70; }
+.tariff-title { display: flex; align-items: center; justify-content: space-between; margin: 6px 0 20px; }
+.tariff-title>div { display: flex; gap: 10px; }
+.tariff-card { padding: 18px; border: 1px solid #dde4e1; border-radius: 12px; background: white; margin-bottom: 16px; }
+.tariff-card>header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.tariff-card>header h2 { flex: 1; margin: 0; }
+.tariff-card>header>span { color: #87968f; font-size: 11px; }
+.tariff-month { display: flex; align-items: center; justify-content: center; gap: 16px; height: 56px; }
+.tariff-month strong { font-size: 18px; font-weight: 500; }
+.tariff-calendar { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); border: 1px solid #dde4e1; border-radius: 12px; overflow: hidden; background: white; }
+.tariff-weekday { padding: 14px 8px; text-align: center; font-size: 12px; border-right: 1px solid #e0e6e3; background: #f7f9f8; }
+.tariff-day { min-height: 108px; padding: 10px 12px 14px; display: flex; flex-direction: column; align-items: stretch; gap: 13px; border-top: 1px solid #dde4e1; border-right: 1px solid #dde4e1; }
+.tariff-day>span { display: grid; place-items: center; width: 30px; height: 30px; align-self: center; font-size: 12px; }
+.tariff-day .tariff-today { color: white; background: #078967; border-radius: 50%; }
+.tariff-day select { width: 100%; font-size: 12px; }
+.tariff-day[data-past="true"],.tariff-day[data-current="false"] { background: #f1f4f2; color: #9ca9a5; }
+.tariff-day small { color: #247a63; font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tariff-footnote { color: #7b8883; font-size: 11px; line-height: 1.7; margin: 12px 0; }
+.tariff-workspace table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+.tariff-workspace th { color: #7c8b86; font-size: 12px; font-weight: 400; padding: 8px 0 18px; }
+.tariff-workspace td { padding: 18px 8px 18px 0; }
+.tariff-template-table td { height: 76px; }
+.tariff-template-table th:first-child { width: 30%; }
+.tariff-badge { display: inline-block; padding: 3px 9px; border-radius: 5px; color: #267e68; background: #e3f2ec; font-size: 11px; }
+.tariff-row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.tariff-row-actions button:has(img) { padding: 3px; }
+.tariff-empty { text-align: center; color: #8b9892; height: 120px; }
+.tariff-template-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; padding: 20px 18px; }
+.tariff-template-heading>label { flex-direction: row; align-items: center; gap: 10px; }
+.tariff-template-heading>span { margin-left: 50px; font-size: 12px; color: #758581; }
+.tariff-template-heading>label:first-child input { background: white; width: 210px; }
+.tariff-mode-buttons { display: flex; gap: 8px; }
+.tariff-mode-buttons button[aria-pressed="true"] { background: #e4f3ed; color: #008367; border-color: #189176; }
+.tariff-fixed-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.tariff-fixed-fields label>div { display: flex; align-items: center; gap: 12px; padding: 14px 20px; background: #f0f4f2; border-radius: 9px; }
+.tariff-fixed-fields input { font-size: 28px; width: 100%; border: 0; padding: 0; background: transparent; }
+.tariff-fixed-fields span { white-space: nowrap; }
+.tariff-validity { display: flex; align-items: center; gap: 40px; background: #e5f5ee; border-radius: 8px; padding: 16px; color: #148368; font-size: 12px; margin-top: 24px; }
+.tariff-validity>span:last-child { margin-left: auto; }
+.tariff-side-select { display: flex; flex-basis: 100%; gap: 14px; }
+.tariff-side-select button { flex: 1; flex-direction: column; align-items: flex-start; padding: 12px 16px; gap: 5px; }
+.tariff-side-select button[aria-pressed="true"] { background: #e5f4ed; border-color: #84cab7; }
+.tariff-side-select small { font-size: 11px; color: #7c8b86; }
+.tariff-period-row { display: grid; grid-template-columns: minmax(90px,1fr) minmax(90px,1fr) minmax(90px,1fr) minmax(150px,2fr) 38px; gap: 24px; margin: 9px 0; padding: 4px 0; border-bottom: 1px solid #edf1ef; }
+.tariff-period-row input,.tariff-period-row select { width: 100%; border: 0; }
+.tariff-period-labels { font-size: 12px; color: #7a8882; border: 0; }
+.tariff-price-input { display: flex!important; flex-direction: row!important; align-items: center; background: #f4f7f6; border-radius: 7px; }
+.tariff-price-input input { width: 100%; }
+.tariff-price-input span { white-space: nowrap; margin-right: 12px; font-size: 11px; }
+.tariff-dynamic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.tariff-dynamic-grid label { margin: 14px 0; }
+.tariff-three-fields,.tariff-two-fields { display: grid; gap: 16px; grid-template-columns: repeat(3,minmax(0,1fr)); }
+.tariff-two-fields { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.tariff-two-fields label { margin: 8px 0; }
+.tariff-fallback { justify-content: space-between!important; width: 100%; background: #f3f6f4!important; border: 0!important; padding: 14px!important; margin-top: 16px; }
+.tariff-fallback>span { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.tariff-fallback small { color: #8b9792; font-size: 11px; }
+.tariff-editor-status { display: flex; justify-content: space-between; gap: 16px; font-size: 12px; margin-top: auto; }
+.tariff-editor-status>span:last-child { color: #8a9791; }
+.tariff-error { color: #b73b3b; padding: 10px; background: #fff0f0; border-radius: 7px; }
+.tariff-notice { color: #206b58; padding: 10px; background: #eaf5ef; border-radius: 7px; }
+.tariff-dialog-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+.tariff-workspace .station-modal label { margin: 16px 0; }
+@media(max-width:1100px) {
+  .tariff-template-heading>span { margin-left: 0; }
+  .tariff-period-row { gap: 12px; }
+  .tariff-day { padding: 8px 5px; }
+  .tariff-day select { padding: 8px 3px; font-size: 11px; }
+}
