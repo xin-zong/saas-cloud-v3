@@ -1,6 +1,6 @@
 # 02资产与站点 Figma Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 按Figma完整实现02资产与站点页面与交互，重复稿优先克制风格。
 **Architecture:** 复用现有Station组件及数据权限，资产区独立样式作用域，新增建站状态机及策略/电价子视图。
@@ -57,7 +57,7 @@
 
 ### Task 6: 整体验证、审查与同步
 **Files:** 任务验证文档，必要的集成修复。
-- [ ] 将所有设计状态映射到实际页面入口；检查未覆盖项并补齐。
-- [ ] 运行tsc、Vite build、受影响前端回归；浏览器核对主要页面与弹窗，留存截图。
-- [ ] 派发独立审查并解决发现；只同步本任务文件回主工作区，复测8443可访问。
-- [ ] 更新计划与验证记录，不推送远端。
+- [x] 将所有设计状态映射到实际页面入口；检查未覆盖项并补齐。
+- [x] 运行tsc、Vite build、受影响前端回归；浏览器核对主要页面与弹窗，留存截图。
+- [x] 派发独立审查并解决发现；只同步本任务文件回主工作区，复测8443可访问。
+- [x] 更新计划与验证记录，不推送远端。
