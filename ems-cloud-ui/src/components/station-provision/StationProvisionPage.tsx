@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react"
 import type { Station } from "@/App"
+import { DEMO_MODE } from "@/api/client"
+import { useAuth } from "@/auth/AuthContext"
+import { useEditorLeaveGuard, type RegisterLeaveGuard } from "../useEditorLeaveGuard"
 import { Button } from "../ui/Workspace"
 import { Asset, Field, Modal } from "./Common"
 import {
-  PROVISION_KEY,
+  provisionDraftKey,
   deviceTypes,
   emptyProvision,
   parseDraft,
@@ -49,14 +52,22 @@ function initialFor(station?: Station): ProvisionDraft {
       }
     : emptyProvision()
 }
-export default function StationProvisionPage({
-  station,
-  onBack,
-}: {
+type Props = {
   station?: Station
   onBack: () => void
-}) {
-  const key = station ? `${PROVISION_KEY}_${station.id}` : PROVISION_KEY
+  registerLeaveGuard?: RegisterLeaveGuard
+}
+export default function StationProvisionPage(props: Props) {
+  const { user } = useAuth()
+  const storageKey = provisionDraftKey(user?.id ?? "anonymous", DEMO_MODE, props.station?.id)
+  return <ProvisionEditor key={storageKey} {...props} storageKey={storageKey} />
+}
+function ProvisionEditor({
+  station,
+  onBack,
+  registerLeaveGuard,
+  storageKey: key,
+}: Props & { storageKey: string }) {
   const [draft, setDraft] = useState<ProvisionDraft>(() => {
     try {
       return parseDraft(localStorage.getItem(key)) ?? initialFor(station)
@@ -75,6 +86,14 @@ export default function StationProvisionPage({
   const canvas = useRef<HTMLDivElement>(null)
   const file = useRef<HTMLInputElement>(null)
   const dirty = JSON.stringify(draft) !== saved
+  const { settleLeave } = useEditorLeaveGuard({
+    dirty, registerLeaveGuard,
+    onConfirm: () => setModal("leave"), onCancel: () => setModal(null),
+  })
+  function finishLeave() {
+    settleLeave(true)
+    onBack()
+  }
   const device = draft.devices.find((d) => d.id === selected)
   const issues = validateTopology(draft.devices)
   const communication = draft.devices.filter(
@@ -895,15 +914,15 @@ export default function StationProvisionPage({
       {modal === "leave" && (
         <Modal
           title="未保存的更改"
-          onClose={() => setModal(null)}
+          onClose={() => { settleLeave(false); setModal(null) }}
           actions={
             <>
-              <Button onClick={() => setModal(null)}>取消</Button>
-              <Button onClick={onBack}>不保存离开</Button>
+              <Button onClick={() => { settleLeave(false); setModal(null) }}>取消</Button>
+              <Button onClick={finishLeave}>不保存离开</Button>
               <Button
                 variant="primary"
                 onClick={() => {
-                  if (save()) onBack()
+                  if (save()) finishLeave()
                 }}
               >
                 保存并离开

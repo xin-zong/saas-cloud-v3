@@ -26,7 +26,7 @@ test(
       ),
     );
     try {
-      await page.goto("http://127.0.0.1:8450", {
+      await page.goto(process.env.DEMO_PREVIEW_URL || "http://127.0.0.1:8450", {
         waitUntil: "domcontentloaded",
       });
       await page
@@ -229,7 +229,7 @@ test(
       });
     });
     try {
-      await page.goto("http://127.0.0.1:8451", {
+      await page.goto(process.env.API_PREVIEW_URL || "http://127.0.0.1:8451", {
         waitUntil: "domcontentloaded",
       });
       await page
@@ -388,7 +388,7 @@ test(
       });
     });
     const open = async () => {
-      await page.goto("http://127.0.0.1:8451", {
+      await page.goto(process.env.API_PREVIEW_URL || "http://127.0.0.1:8451", {
         waitUntil: "domcontentloaded",
       });
       await page

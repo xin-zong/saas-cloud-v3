@@ -4,6 +4,7 @@ import { api, send, DEMO_MODE, type ApiRow } from '@/api/client'
 import { useAuth } from '@/auth/AuthContext'
 import { hasStationPermission } from '@/auth/apiPermissions'
 import { Modal as Dialog } from '../station-provision/Common'
+import { useEditorLeaveGuard } from '../useEditorLeaveGuard'
 import TariffTemplateEditor, { TariffIcon } from './TariffTemplateEditor'
 import TariffCalendar from './TariffCalendar'
 import { dateKey, minute, modeNames, newTemplate, validateTemplate, validatePeriods, type TariffTemplate, type TariffWorkspace as Workspace } from './model'
@@ -26,7 +27,7 @@ export default function TariffWorkspace({station,onOpenStrategy,registerLeaveGua
   const [view,setView]=useState<'calendar'|'templates'|'editor'>('calendar')
   const [editor,setEditor]=useState<TariffTemplate|null>(null)
   const [editorBase,setEditorBase]=useState('')
-  const [pendingLeave,setPendingLeave]=useState<{target?:'calendar'|'templates';resolve?:(allowed:boolean)=>void}|null>(null)
+  const [pendingLeave,setPendingLeave]=useState<{target?:'calendar'|'templates'}|null>(null)
   const [deleting,setDeleting]=useState<string|null>(null)
   const [notice,setNotice]=useState('')
   const [error,setError]=useState('')
@@ -40,21 +41,16 @@ export default function TariffWorkspace({station,onOpenStrategy,registerLeaveGua
   const calendarDirty=JSON.stringify(workspace.assignments)!==JSON.stringify(saved.assignments)
   const editorDirty=!!editor && JSON.stringify(editor)!==editorBase
   const dirty=calendarDirty||editorDirty
-  const requestLeave=()=>{
-    if(!canManage || !dirty)return Promise.resolve(true)
-    return new Promise<boolean>(resolve=>setPendingLeave({resolve}))
-  }
+  const {requestLeave,settleLeave}=useEditorLeaveGuard({
+    dirty,enabled:canRead&&canManage,registerLeaveGuard,
+    onConfirm:()=>setPendingLeave({}),onCancel:()=>setPendingLeave(null),
+  })
 
   useEffect(()=>{
     const handler=(event:BeforeUnloadEvent)=>{if(dirty&&canManage){event.preventDefault();event.returnValue=''}}
     window.addEventListener('beforeunload',handler)
     return()=>window.removeEventListener('beforeunload',handler)
   },[dirty,canManage])
-  useEffect(()=>{
-    if(!registerLeaveGuard)return
-    registerLeaveGuard(requestLeave)
-    return()=>registerLeaveGuard(null)
-  },[registerLeaveGuard,canManage,dirty])
   useEffect(()=>{
     if(DEMO_MODE || !canRead) {setServerRows([]);setLoading(false);return}
     const controller=new AbortController()
@@ -96,7 +92,7 @@ export default function TariffWorkspace({station,onOpenStrategy,registerLeaveGua
     if(save && (editorDirty && !saveTemplate() || calendarDirty && !saveCalendar()))return
     if(!save)discardDraft()
     const target=pendingLeave?.target
-    pendingLeave?.resolve?.(true)
+    settleLeave(true)
     setPendingLeave(null)
     if(target){setEditor(null);setView(target);setError('')}
   }
@@ -168,8 +164,8 @@ export default function TariffWorkspace({station,onOpenStrategy,registerLeaveGua
       </section>}
     </>}
     {view==='editor'&&editor&&<TariffTemplateEditor value={editor} onChange={next=>{setEditor(next);setError('')}} disabled={!canManage}/>}
-    {pendingLeave&&<Dialog title={editorDirty?'未保存的模板':'未保存的日历分配'} onClose={()=>{pendingLeave.resolve?.(false);setPendingLeave(null)}}><p>{editorDirty?'模板尚未保存':'日历分配尚未保存'}，离开后本次修改将丢失。</p>{error&&<p role="alert" className="tariff-error">{error}</p>}<div className="tariff-dialog-actions">
-      <button onClick={()=>{pendingLeave.resolve?.(false);setPendingLeave(null)}}>继续编辑</button><button onClick={()=>finishLeave(false)}>不保存离开</button>
+    {pendingLeave&&<Dialog title={editorDirty?'未保存的模板':'未保存的日历分配'} onClose={()=>{settleLeave(false);setPendingLeave(null)}}><p>{editorDirty?'模板尚未保存':'日历分配尚未保存'}，离开后本次修改将丢失。</p>{error&&<p role="alert" className="tariff-error">{error}</p>}<div className="tariff-dialog-actions">
+      <button onClick={()=>{settleLeave(false);setPendingLeave(null)}}>继续编辑</button><button onClick={()=>finishLeave(false)}>不保存离开</button>
       <button className="primary" disabled={!canManage} onClick={()=>finishLeave(true)}>保存并离开</button>
     </div></Dialog>}
     {deleting&&<Dialog title="删除日模板" onClose={()=>setDeleting(null)}><p>删除后，将同时移除本机日历对该模板的分配，不会删除服务器已生效电价。</p><div className="tariff-dialog-actions">

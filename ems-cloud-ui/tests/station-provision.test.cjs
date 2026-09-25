@@ -74,3 +74,19 @@ test("corrupt or unrelated local drafts are discarded", () => {
   const draft = emptyProvision()
   assert.equal(parseDraft(JSON.stringify(draft)).name, "")
 })
+test("provision storage separates identity, mode, new stations and existing stations", () => {
+  const { provisionDraftKey } = moduleResult.exports
+  assert.equal(typeof provisionDraftKey, "function")
+  const keys = []
+  for (const identity of ["A", "B", "A:api"]) {
+    for (const demo of [false, true]) {
+      for (const station of [undefined, "12", "13", "new"]) {
+        const key = provisionDraftKey(identity, demo, station)
+        assert.notEqual(key, "enerlution_station_provision_v1")
+        assert.notEqual(key, `enerlution_station_provision_v1_${station}`)
+        keys.push(key)
+      }
+    }
+  }
+  assert.equal(new Set(keys).size, keys.length)
+})

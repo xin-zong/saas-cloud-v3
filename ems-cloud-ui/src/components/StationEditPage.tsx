@@ -4,6 +4,7 @@ import type { Station } from "@/App"
 import { Button } from "./ui/Workspace"
 import { Asset, EntryTabs, Field, Modal } from "./station-provision/Common"
 import StationProvisionPage from "./station-provision/StationProvisionPage"
+import { useEditorLeaveGuard, type RegisterLeaveGuard } from "./useEditorLeaveGuard"
 import "./station-provision/station-entry.css"
 export const DRAFT_KEY = "enerlution_new_draft"
 type Draft = Partial<Station>
@@ -16,9 +17,10 @@ interface Props {
   onBack: () => void
   onNavigate?: (tab: string) => void
   onSubmit: (patch: Partial<Station>) => void | Promise<void>
+  registerLeaveGuard?: RegisterLeaveGuard
 }
 export default function StationEditPage(props: Props) {
-  if (props.isNew) return <StationProvisionPage onBack={props.onBack} />
+  if (props.isNew) return <StationProvisionPage onBack={props.onBack} registerLeaveGuard={props.registerLeaveGuard} />
   return <StationEditor {...props} />
 }
 function StationEditor({
@@ -29,6 +31,7 @@ function StationEditor({
   onBack,
   onNavigate,
   onSubmit,
+  registerLeaveGuard,
 }: Props) {
   const [draft, setDraft] = useState<Draft>(
     () => initialDraft ?? { ...station },
@@ -48,6 +51,11 @@ function StationEditor({
   const destination = useRef<string | undefined>(undefined)
   const initialNumbers = useRef({ ratedPower: draft.ratedPower, storageCapacity: draft.storageCapacity })
   const dirty = JSON.stringify(draft) !== snapshot
+  const { settleLeave } = useEditorLeaveGuard({
+    dirty, enabled: !readOnly, registerLeaveGuard,
+    onConfirm: () => { destination.current = undefined; setModal("leave") },
+    onCancel: () => setModal(null),
+  })
   useEffect(() => {
     const listener = (e: BeforeUnloadEvent) => {
       if (dirty) {
@@ -64,6 +72,7 @@ function StationEditor({
     setError("")
   }
   function finishLeave() {
+    settleLeave(true)
     if (destination.current && onNavigate) onNavigate(destination.current)
     else onBack()
   }
@@ -430,10 +439,10 @@ function StationEditor({
       {modal === "leave" && (
         <Modal
           title="未保存的更改"
-          onClose={() => setModal(null)}
+          onClose={() => { settleLeave(false); setModal(null) }}
           actions={
             <>
-              <Button onClick={() => setModal(null)}>取消</Button>
+              <Button onClick={() => { settleLeave(false); setModal(null) }}>取消</Button>
               <Button disabled={saving} onClick={finishLeave}>
                 不保存离开
               </Button>

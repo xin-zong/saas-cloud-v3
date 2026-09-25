@@ -1,4 +1,7 @@
 export const PROVISION_KEY = "enerlution_station_provision_v1"
+export function provisionDraftKey(identity: string, demo: boolean, stationId?: string): string {
+  return `${PROVISION_KEY}:${demo ? "demo" : "api"}:${encodeURIComponent(identity)}:${stationId === undefined ? "new" : `station:${encodeURIComponent(stationId)}`}`
+}
 export const deviceTypes = [
   "电网",
   "光伏",

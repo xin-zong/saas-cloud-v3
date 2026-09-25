@@ -349,10 +349,15 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
   const { logout } = useAuth()
   const platformLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
   const stationLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
+  const assetsLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
+  const operationsLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
   const sidebarTransitionPending = useRef(false)
   const registerPlatformLeaveGuard = useCallback((guard: null | (() => Promise<boolean>)) => { platformLeaveGuard.current = guard }, [])
   const registerStationLeaveGuard = useCallback((guard: null | (() => Promise<boolean>)) => { stationLeaveGuard.current = guard }, [])
   const requestStationLeave = useCallback(() => stationLeaveGuard.current?.() ?? Promise.resolve(true), [])
+  const registerAssetsLeaveGuard = useCallback((guard: null | (() => Promise<boolean>)) => { assetsLeaveGuard.current = guard }, [])
+  const registerOperationsLeaveGuard = useCallback((guard: null | (() => Promise<boolean>)) => { operationsLeaveGuard.current = guard }, [])
+  const requestOperationsLeave = useCallback(() => operationsLeaveGuard.current?.() ?? Promise.resolve(true), [])
 
   const roleConfig = useMemo(
     () => (DEMO_MODE ? ROLE_CONFIG[user.role] : apiRoleConfig(user)),
@@ -451,7 +456,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
 
   async function handleOpenStation(id: string, subNav?: string) {
     if (!canAccessStation(user, id) || (!DEMO_MODE && !hasStationPermission(user, id, "asset.read"))) return
-    if (activeNav === "资产与站点" && activeDetailId && !(await requestStationLeave())) return
+    if (!(await requestActiveEditorLeave())) return
 
     setActiveNav("资产与站点")
 
@@ -487,6 +492,12 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
   async function handleBackFromDetail() {
     if (!(await requestStationLeave())) return
     setActiveDetailId(null)
+  }
+
+  function requestActiveEditorLeave() {
+    if (activeNav === "资产与站点") return activeDetailId ? requestStationLeave() : assetsLeaveGuard.current?.() ?? Promise.resolve(true)
+    if (activeNav === "运营中心") return requestOperationsLeave()
+    return Promise.resolve(true)
   }
 
   useEffect(() => {
@@ -889,7 +900,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
             sidebarTransitionPending.current = true
             try {
               if (activeNav === "平台管理" && nav !== activeNav && platformLeaveGuard.current && !(await platformLeaveGuard.current())) return
-              if (activeNav === "资产与站点" && activeDetailId && nav !== activeNav && !(await requestStationLeave())) return
+              if (nav !== activeNav && !(await requestActiveEditorLeave())) return
               if (nav === "工单与审批") setWorkOrderFocus(null)
               setActiveNav(nav as NavLabel)
             } finally { sidebarTransitionPending.current = false }
@@ -1001,11 +1012,13 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
           }}
         >
           <AssetsPage
+            registerLeaveGuard={registerAssetsLeaveGuard}
             stations={scopedStations}
             onUpdateStation={handleUpdateStation}
             onCreateStation={handleCreateStation}
             onOpenStation={handleOpenStation}
             canEdit={
+              roleConfig.nav.includes("资产与站点") &&
               roleConfig.canEditAssets &&
               (DEMO_MODE || user.permissions.includes("asset.edit"))
             }
@@ -1017,6 +1030,8 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
         {/* Map area */}
         {activeNav === "运营中心" && (
           <OperationsCenterPage
+            registerLeaveGuard={registerOperationsLeaveGuard}
+            requestLeave={requestOperationsLeave}
             stations={operationalStations}
             onOpenStation={handleOpenStation}
             allowedTabs={roleConfig.operationsTabs}

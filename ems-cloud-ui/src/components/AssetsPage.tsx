@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react"
 import type { Station } from "@/App"
+import { DEMO_MODE } from "@/api/client"
+import { useAuth } from "@/auth/AuthContext"
+import type { RegisterLeaveGuard } from "./useEditorLeaveGuard"
 import { Button } from "./ui/Workspace"
 import StationEditPage from "./StationEditPage"
 import MapQueryTab from "./MapQueryTab"
 import SmartRulesTab from "./SmartRulesTab"
 import StationProvisionPage from "./station-provision/StationProvisionPage"
 import { Asset, EntryTabs, Modal } from "./station-provision/Common"
-import { PROVISION_KEY, parseDraft } from "./station-provision/model"
+import { provisionDraftKey, parseDraft } from "./station-provision/model"
 import "./station-provision/station-entry.css"
 interface Props {
   stations: Station[]
@@ -16,6 +19,7 @@ interface Props {
   canEdit?: boolean
   canEditStation?: (id: string) => boolean
   showRevenue?: boolean
+  registerLeaveGuard?: RegisterLeaveGuard
 }
 const number = (value: number, suffix = "") =>
   Number.isFinite(value) ? String(value) + suffix : "—"
@@ -26,7 +30,9 @@ export default function AssetsPage({
   canEdit = true,
   canEditStation = () => canEdit,
   showRevenue = true,
+  registerLeaveGuard,
 }: Props) {
+  const { user } = useAuth()
   const [tab, setTab] = useState("列表查询")
   const [search, setSearch] = useState("")
   const [region, setRegion] = useState("")
@@ -97,6 +103,7 @@ export default function AssetsPage({
       <StationProvisionPage
         station={provision === "new" ? undefined : provision}
         onBack={() => setProvision(null)}
+        registerLeaveGuard={registerLeaveGuard}
       />
     )
   }
@@ -108,6 +115,7 @@ export default function AssetsPage({
         isNew={false}
         readOnly={viewOnly || !allowedEdit}
         showRevenue={showRevenue}
+        registerLeaveGuard={registerLeaveGuard}
         onBack={() => setEditing(null)}
         onNavigate={(destination) => { setEditing(null); changeTab(destination) }}
         onSubmit={async (patch) => {
@@ -132,7 +140,7 @@ export default function AssetsPage({
   const rows = filtered.slice((current - 1) * size, current * size)
   let hasDraft = false
   try {
-    hasDraft = !!parseDraft(localStorage.getItem(PROVISION_KEY))
+    hasDraft = !!parseDraft(localStorage.getItem(provisionDraftKey(user?.id ?? "anonymous", DEMO_MODE)))
   } catch {
     /* unavailable storage */
   }

@@ -6,6 +6,7 @@ import { hasStationPermission } from "@/auth/apiPermissions";
 import { ROLE_CONFIG } from "@/auth/roles";
 import { Modal } from "./station-provision/Common";
 import StationPriceSettingsPage from "./StationPriceSettingsPage";
+import { useEditorLeaveGuard } from "./useEditorLeaveGuard";
 import ModeEditor, { StrategyIcon } from "./strategy/ModeEditor";
 import StrategyOverview from "./strategy/StrategyOverview";
 import StrategyAssistant from "./strategy/StrategyAssistant";
@@ -92,18 +93,15 @@ function StrategyWorkspace({ station, registerLeaveGuard }: { station: Station; 
   } | null>(null);
   const [ai, setAi] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  const [externalLeave, setExternalLeave] = useState<((allowed:boolean)=>void)|null>(null);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const dirty = !!editor && JSON.stringify(editor) !== base;
-  useEffect(() => {
-    if (!registerLeaveGuard || view === "price") return;
-    registerLeaveGuard(() => {
-      if (view !== "editor" || !dirty || !canManage) return Promise.resolve(true);
-      return new Promise<boolean>(resolve => { setExternalLeave(() => resolve); setLeaving(true); });
-    });
-    return () => registerLeaveGuard(null);
-  }, [registerLeaveGuard, view, dirty, canManage]);
+  const { settleLeave } = useEditorLeaveGuard({
+    dirty: view === "editor" && dirty,
+    enabled: canRead && canManage,
+    registerLeaveGuard: view === "price" ? undefined : registerLeaveGuard,
+    onConfirm: () => setLeaving(true), onCancel: () => setLeaving(false),
+  });
   useEffect(() => {
     if (!canManage) {
       setSlot(null);
@@ -570,18 +568,17 @@ function StrategyWorkspace({ station, registerLeaveGuard }: { station: Station; 
         />
       )}
       {leaving && (
-        <Modal title="未保存的策略" onClose={() => { externalLeave?.(false); setExternalLeave(null); setLeaving(false); }}>
+        <Modal title="未保存的策略" onClose={() => { settleLeave(false); setLeaving(false); }}>
           <p>当前修改尚未保存，离开后会丢失。</p>
           {error && <p className="strategy-error">{error}</p>}
           <div className="strategy-dialog-actions">
-            <button onClick={() => { externalLeave?.(false); setExternalLeave(null); setLeaving(false); }}>继续编辑</button>
+            <button onClick={() => { settleLeave(false); setLeaving(false); }}>继续编辑</button>
             <button
               onClick={() => {
                 setLeaving(false);
                 setEditor(null);
                 setView("overview");
-                externalLeave?.(true);
-                setExternalLeave(null);
+                settleLeave(true);
               }}
             >
               放弃修改
@@ -589,8 +586,7 @@ function StrategyWorkspace({ station, registerLeaveGuard }: { station: Station; 
             <button className="primary" disabled={!canManage} onClick={() => {
               if (!save()) return;
               setLeaving(false);
-              if (externalLeave) { externalLeave(true); setExternalLeave(null); }
-              else { setEditor(null); setView("overview"); }
+              if (!settleLeave(true)) { setEditor(null); setView("overview"); }
             }}>保存并离开</button>
           </div>
         </Modal>
