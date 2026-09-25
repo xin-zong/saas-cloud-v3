@@ -27,6 +27,7 @@ import StationPriceSettingsPage from "./StationPriceSettingsPage"
 import OperationsSchedulePage from "./OperationsSchedulePage"
 import OperationsMarketPage from "./OperationsMarketPage"
 import OperationsSettlementPage from "./OperationsSettlementPage"
+import type { RegisterLeaveGuard } from "./useEditorLeaveGuard"
 
 const TABS = ["运营总览", "策略执行", "市场服务", "收益结算", "电价设置"] as const
 type Tab = (typeof TABS)[number]
@@ -259,10 +260,14 @@ export default function OperationsCenterPage({
   stations,
   onOpenStation,
   allowedTabs = TABS,
+  registerLeaveGuard,
+  requestLeave,
 }: {
   stations: Station[]
   onOpenStation: (id: string, subNav?: string) => void
   allowedTabs?: readonly Tab[]
+  registerLeaveGuard?: RegisterLeaveGuard
+  requestLeave?: () => Promise<boolean>
 }) {
   const {user} = useAuth()
   const forCapability = (code: string) => DEMO_MODE ? stations : stations.filter(station => hasStationPermission(user, station.id, code))
@@ -283,15 +288,21 @@ export default function OperationsCenterPage({
       {!DEMO_MODE && <p style={{padding: "8px 24px", fontSize:12}}>计划、市场服务与结算来自业务服务器。内部草稿、审批及复核不触发设备控制、外部市场交易或付款；执行数据缺失时显示未知。</p>}
       <nav className="ui-tabs ops-tabs" aria-label="运营中心二级导航">
         {visibleTabs.map((item) => (
-          <button key={item} aria-current={activeTab === item ? "page" : undefined} onClick={() => setTab(item)}>
+          <button key={item} aria-current={activeTab === item ? "page" : undefined} onClick={() => { void (async () => {
+            if (item !== activeTab && requestLeave && !(await requestLeave())) return
+            setTab(item)
+          })() }}>
             {item}
           </button>
         ))}
       </nav>
       {activeTab === "运营总览" && <OperationsOverview stations={stations} onOpenStation={onOpenStation} />}
-      {activeTab === "策略执行" && <OperationsSchedulePage stations={forCapability("strategy.read")} onOpenStation={onOpenStation} />}
+      {activeTab === "策略执行" && <OperationsSchedulePage stations={forCapability("strategy.read")} onOpenStation={onOpenStation} registerLeaveGuard={registerLeaveGuard} requestLeave={requestLeave} />}
       {activeTab === "市场服务" && <OperationsMarketPage stations={forCapability("market.read")} onOpenStation={onOpenStation} />}
-      {activeTab === "电价设置" && <section><label className="dispatch-toolbar">电价站点 <select aria-label="电价站点" value={tariffStation?.id ?? ""} onChange={event => setTariffStationId(event.target.value)}>{tariffStations.map(station => <option key={station.id} value={station.id}>{station.name}</option>)}</select></label>{tariffStation ? <StationPriceSettingsPage key={tariffStation.id} station={tariffStation} /> : <p className="operations-empty">暂无授权站点</p>}</section>}
+      {activeTab === "电价设置" && <section><label className="dispatch-toolbar">电价站点 <select aria-label="电价站点" value={tariffStation?.id ?? ""} onChange={event => { const id = event.target.value; void (async () => {
+        if (id !== tariffStation?.id && requestLeave && !(await requestLeave())) return
+        setTariffStationId(id)
+      })() }}>{tariffStations.map(station => <option key={station.id} value={station.id}>{station.name}</option>)}</select></label>{tariffStation ? <StationPriceSettingsPage key={tariffStation.id} station={tariffStation} registerLeaveGuard={registerLeaveGuard} /> : <p className="operations-empty">暂无授权站点</p>}</section>}
       {activeTab === "收益结算" && <OperationsSettlementPage stations={forCapability("revenue.read")} onOpenStation={onOpenStation} />}
     </main>
   )

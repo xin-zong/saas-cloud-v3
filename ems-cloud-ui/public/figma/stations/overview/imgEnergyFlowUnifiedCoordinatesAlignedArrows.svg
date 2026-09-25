@@ -1,0 +1,12 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="844" height="340" viewBox="0 0 844 340" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Energy flow / Unified coordinates / Aligned arrows">
+<path id="Vector" d="M244 158V169C244 176.333 247.667 180 255 180H389" stroke="#C7D9EB" stroke-width="1.6"/>
+<path id="Vector_2" d="M455 180H589C596.333 180 600 176.333 600 169V158" stroke="#C7D9EB" stroke-width="1.6"/>
+<path id="Vector_3" d="M244 228V214C244 206.667 247.667 203 255 203H389" stroke="#C7D9EB" stroke-width="1.6"/>
+<path id="Vector_4" d="M455 203H589C596.333 203 600 206.667 600 214V228" stroke="#C7D9EB" stroke-width="1.6"/>
+<path id="Vector_5" d="M304 180H327M323 183L327 180L323 177" stroke="#4B95E5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_6" d="M517 180H540M536 183L540 180L536 177" stroke="#4B95E5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_7" d="M304 203H327M323 206L327 203L323 200" stroke="#4B95E5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_8" d="M517 203H540M536 206L540 203L536 200" stroke="#4B95E5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

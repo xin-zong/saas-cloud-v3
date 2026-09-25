@@ -2,6 +2,7 @@ import { DEMO_MODE } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
 import { hasStationPermission } from "@/auth/apiPermissions"
 import StationStrategyPage from "./StationStrategyPage"
+import type { RegisterLeaveGuard } from "./useEditorLeaveGuard"
 import { useMemo, useState } from "react"
 import { ArrowRight } from "lucide-react"
 import type { Station } from "@/App"
@@ -21,9 +22,13 @@ const number = (value: number | null | undefined) =>
 export default function OperationsSchedulePage({
   stations,
   onOpenStation,
+  registerLeaveGuard,
+  requestLeave,
 }: {
   stations: Station[]
   onOpenStation: (id: string, subNav?: string) => void
+  registerLeaveGuard?: RegisterLeaveGuard
+  requestLeave?: () => Promise<boolean>
 }) {
   const {user} = useAuth()
   const [strategyId, setStrategyId] = useState("")
@@ -55,7 +60,10 @@ export default function OperationsSchedulePage({
   )
   const currentMinute = now.getHours() * 60 + now.getMinutes()
 
-  if (strategyStation) return <div className="dispatch-page"><button className="operations-button" onClick={() => setStrategyId("")}>返回策略执行</button><StationStrategyPage station={strategyStation} /></div>
+  if (strategyStation) return <div className="dispatch-page"><button className="operations-button" onClick={() => { void (async () => {
+    if (requestLeave && !(await requestLeave())) return
+    setStrategyId("")
+  })() }}>返回策略执行</button><StationStrategyPage station={strategyStation} registerLeaveGuard={registerLeaveGuard} /></div>
   return (
     <div className="dispatch-page">
       <section className="dispatch-toolbar" aria-label="策略执行筛选">

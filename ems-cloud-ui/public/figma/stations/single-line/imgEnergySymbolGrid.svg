@@ -1,0 +1,10 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Energy Symbol / Grid">
+<path d="M8 0.5H40C44.1421 0.500001 47.5 3.85786 47.5 8V40C47.5 44.1421 44.1421 47.5 40 47.5H8C3.85786 47.5 0.5 44.1421 0.5 40V8L0.509766 7.61426C0.704064 3.77915 3.77915 0.704063 7.61426 0.509766L8 0.5Z" fill="#F7F8F9"/>
+<path d="M8 0.5H40C44.1421 0.500001 47.5 3.85786 47.5 8V40C47.5 44.1421 44.1421 47.5 40 47.5H8C3.85786 47.5 0.5 44.1421 0.5 40V8L0.509766 7.61426C0.704064 3.77915 3.77915 0.704063 7.61426 0.509766L8 0.5Z" stroke="#DCE2E5"/>
+<g id="icon">
+<path id="Vector" d="M19 34L24 14L29 34M20.5 20H27.5M19.5 25H28.5M17 34H31" stroke="#26343E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M18.5 30L29.5 20M29.5 30L18.5 20" stroke="#26343E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+</svg>

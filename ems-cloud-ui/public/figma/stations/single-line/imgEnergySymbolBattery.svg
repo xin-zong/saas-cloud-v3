@@ -1,0 +1,10 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Energy Symbol / Battery">
+<path d="M8 0.5H40C44.1421 0.500001 47.5 3.85786 47.5 8V40C47.5 44.1421 44.1421 47.5 40 47.5H8C3.85786 47.5 0.5 44.1421 0.5 40V8L0.509766 7.61426C0.704064 3.77915 3.77915 0.704063 7.61426 0.509766L8 0.5Z" fill="#F7F8F9"/>
+<path d="M8 0.5H40C44.1421 0.500001 47.5 3.85786 47.5 8V40C47.5 44.1421 44.1421 47.5 40 47.5H8C3.85786 47.5 0.5 44.1421 0.5 40V8L0.509766 7.61426C0.704064 3.77915 3.77915 0.704063 7.61426 0.509766L8 0.5Z" stroke="#DCE2E5"/>
+<g id="icon">
+<path id="Vector" d="M31 14H17C16.4477 14 16 14.4477 16 15V33C16 33.5523 16.4477 34 17 34H31C31.5523 34 32 33.5523 32 33V15C32 14.4477 31.5523 14 31 14Z" stroke="#26343E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M16 20H32M16 27H32M20 17H28M20 23H28M20 30H28" stroke="#26343E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+</svg>

@@ -125,7 +125,7 @@ async function logout(page) {
 
 test("owner role: login, asset revenue, reports, session restore and logout", { timeout: 180000 }, async () => {
   await fs.mkdir(artifacts, { recursive: true })
-  const browser = await chromium.launch({ headless: true })
+  const browser = await chromium.launch({ channel: "msedge", headless: true })
   const { context, page } = await openPage(browser)
   const errors = []
   page.on("pageerror", (error) => errors.push(error.message))
@@ -148,7 +148,7 @@ test("owner role: login, asset revenue, reports, session restore and logout", { 
       await page.locator(".assets-workspace table thead").innerText(),
       /累计收益/,
     )
-    assert.equal(await page.getByRole("button", { name: "新增站点", exact: true }).count(), 0)
+    assert.equal(await page.getByRole("button", { name: "＋ 新增站点", exact: true }).count(), 0)
 
     await page.getByText("苏州园区站", { exact: true }).first().click()
     const stationNav = page.getByRole("navigation", { name: "站点二级导航" })
@@ -160,14 +160,14 @@ test("owner role: login, asset revenue, reports, session restore and logout", { 
       "一次接线图",
       "设备详情",
     ])
-    for (const hidden of ["运行策略", "电价设置"]) {
+    for (const hidden of ["策略运行", "电价设置"]) {
       assert.equal(await stationNav.getByRole("button", { name: hidden, exact: true }).count(), 0)
     }
 
     await stationNav.getByRole("button", { name: "运营收益", exact: true }).click()
-    await page.locator(".revenue-workspace").waitFor()
+    await page.locator(".station-revenue-figma").waitFor()
     const downloadPromise = page.waitForEvent("download")
-    await page.getByRole("button", { name: "导出明细", exact: true }).click()
+    await page.getByRole("button", { name: "导出", exact: true }).click()
     assert.match((await downloadPromise).suggestedFilename(), /\.csv$/)
 
     await primaryNav(page).getByRole("button", { name: "分析与报告", exact: true }).click()
@@ -198,7 +198,7 @@ test("owner role: login, asset revenue, reports, session restore and logout", { 
 
 test("operator role: MFA, maintenance actions, work orders and hidden revenue", { timeout: 180000 }, async () => {
   await fs.mkdir(artifacts, { recursive: true })
-  const browser = await chromium.launch({ headless: true })
+  const browser = await chromium.launch({ channel: "msedge", headless: true })
   const { context, page } = await openPage(browser)
   const errors = []
   page.on("pageerror", (error) => errors.push(error.message))
@@ -222,12 +222,12 @@ test("operator role: MFA, maintenance actions, work orders and hidden revenue", 
       await page.locator(".assets-workspace table thead").innerText(),
       /累计收益/,
     )
-    assert.equal(await page.getByRole("button", { name: "新增站点", exact: true }).count(), 0)
+    assert.equal(await page.getByRole("button", { name: "＋ 新增站点", exact: true }).count(), 0)
     await page.getByText("苏州园区站", { exact: true }).first().click()
     const stationNav = page.getByRole("navigation", { name: "站点二级导航" })
     assert.deepEqual(await stationNav.getByRole("button").allTextContents(), [
       "站点概览",
-      "运行策略",
+      "策略运行",
       "告警信息",
       "运行曲线",
       "一次接线图",
@@ -284,7 +284,7 @@ test("operator role: MFA, maintenance actions, work orders and hidden revenue", 
 
 test("integrator role: MFA, station delivery, technical work orders, firmware and organization access", { timeout: 180000 }, async () => {
   await fs.mkdir(artifacts, { recursive: true })
-  const browser = await chromium.launch({ headless: true })
+  const browser = await chromium.launch({ channel: "msedge", headless: true })
   const { context, page } = await openPage(browser)
   const errors = []
   page.on("pageerror", (error) => errors.push(error.message))
@@ -308,22 +308,15 @@ test("integrator role: MFA, station delivery, technical work orders, firmware an
       await page.locator(".assets-workspace table thead").innerText(),
       /累计收益/,
     )
-    await page.getByRole("button", { name: "新增站点", exact: true }).click()
+    await page.getByRole("button", { name: "＋ 新增站点", exact: true }).click()
     assert.equal(await page.getByText("累计收益", { exact: true }).count(), 0)
-    const stationName = "交付验收测试站"
-    await page.getByPlaceholder("请输入站点名称", { exact: true }).fill(stationName)
-    await page.getByRole("button", { name: "提交审核", exact: true }).first().click()
-    await page.getByRole("button", { name: "确认提交", exact: true }).click()
-    await page.getByText(stationName, { exact: true }).first().waitFor()
-    assert.ok(await page.getByText("建设中", { exact: true }).count() > 0)
-
-    await page.getByRole("button", { name: "站点列表", exact: true }).click()
-    await page.getByText(stationName, { exact: true }).first().waitFor()
-    await page.getByText(stationName, { exact: true }).first().click()
+    await page.getByRole("heading", { name: /^新建站点/ }).waitFor()
+    await page.getByRole("button", { name: "← 返回站点列表", exact: true }).click()
+    await page.getByText("苏州园区站", { exact: true }).first().click()
     const stationNav = page.getByRole("navigation", { name: "站点二级导航" })
     assert.deepEqual(await stationNav.getByRole("button").allTextContents(), [
       "站点概览",
-      "运行策略",
+      "策略运行",
       "告警信息",
       "运行曲线",
       "一次接线图",

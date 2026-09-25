@@ -8,6 +8,7 @@ export const SIGNALS = [
   { id: "dcVoltage", group: "PCS", name: "直流母线电压", unit: "V", color: "#317c9d" },
   { id: "pv", group: "其他设备", name: "光伏有功功率", unit: "kW", color: "#e08a16" },
   { id: "load", group: "其他设备", name: "负荷功率", unit: "kW", color: "#795bc8" },
+  { id: "grid", group: "其他设备", name: "电网功率", unit: "kW", color: "#9275b3" },
   { id: "gridVoltage", group: "其他设备", name: "并网电压", unit: "V", color: "#a06376" },
   { id: "generator", group: "其他设备", name: "发电机功率", unit: "kW", color: "#65774b" },
 ] as const;
@@ -15,10 +16,11 @@ export const SIGNALS = [
 export type SignalId = typeof SIGNALS[number]["id"];
 export type TelemetrySample = {
   timestamp: string;
+  intervalMinutes?: number;
   values: Partial<Record<SignalId, number | null>>;
   quality?: Partial<Record<SignalId, "good" | "bad">>;
 };
-export type TelemetryRow = { timestamp: number } & Partial<Record<SignalId, number | null>>;
+export type TelemetryRow = { timestamp: number; intervalMinutes?: number } & Partial<Record<SignalId, number | null>>;
 
 export function normalizeTelemetry(samples: TelemetrySample[]): TelemetryRow[] {
   const rows = new Map<number, TelemetryRow>();
@@ -26,6 +28,7 @@ export function normalizeTelemetry(samples: TelemetrySample[]): TelemetryRow[] {
     const timestamp = Date.parse(sample.timestamp);
     if (!Number.isFinite(timestamp)) return;
     const row = rows.get(timestamp) ?? { timestamp };
+    if (sample.intervalMinutes !== undefined) row.intervalMinutes = sample.intervalMinutes;
     SIGNALS.forEach(({ id }) => {
       if (id in sample.values) row[id] = sample.quality?.[id] !== "bad" && typeof sample.values[id] === "number" && Number.isFinite(sample.values[id]) ? sample.values[id] : null;
     });
