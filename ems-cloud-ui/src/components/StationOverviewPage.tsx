@@ -106,10 +106,12 @@ export default function StationOverviewPage({
   station,
   onSetSubNav,
   allowedSubNavs,
+  onOpenDevices,
 }: {
   station: Station
   onSetSubNav: (next: string) => void
   allowedSubNavs: readonly string[]
+  onOpenDevices?: (id?: string) => void
 }) {
   const { user } = useAuth()
   const canRead =
@@ -340,7 +342,7 @@ export default function StationOverviewPage({
           {allowedSubNavs.includes("设备详情") && (
             <button
               className="station-device-detail-link"
-              onClick={() => onSetSubNav("设备详情")}
+              onClick={() => onOpenDevices ? onOpenDevices(device?.id) : onSetSubNav("设备详情")}
             >
               设备详情 →
             </button>

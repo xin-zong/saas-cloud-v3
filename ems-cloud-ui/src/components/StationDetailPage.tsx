@@ -149,6 +149,7 @@ export default function StationDetailPage({
           station={station}
           onSetSubNav={selectSubNav}
           allowedSubNavs={visibleSubNavs}
+          onOpenDevices={(id) => { setDeviceId(id); selectSubNav("设备详情") }}
         />
       )}
       {subNav === "运营收益" && <StationRevenuePage key={station.id} station={station} />}

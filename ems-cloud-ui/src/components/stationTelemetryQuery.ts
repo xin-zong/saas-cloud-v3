@@ -70,6 +70,7 @@ export async function queryStationTelemetry(
       const sample = rows.get(row.timestamp) ?? {
         timestamp: new Date(row.timestamp).toISOString(),
         values: {},
+        intervalMinutes: minutes,
       }
       sample.values[batch.id] = row.value
       rows.set(row.timestamp, sample)

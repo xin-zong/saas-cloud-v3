@@ -19,7 +19,7 @@ test("Figma station shell, equipment selection, analysis navigation and responsi
   page.setDefaultTimeout(15000)
   const errors = []
   page.on("pageerror", (error) => errors.push(error.message))
-  await page.goto(process.env.STATIONS_DEMO_URL || "http://127.0.0.1:8450", {
+  await page.goto(process.env.STATIONS_DEMO_URL || process.env.DEMO_PREVIEW_URL || "http://127.0.0.1:8450", {
     waitUntil: "domcontentloaded",
     timeout: 45000,
   })
@@ -57,12 +57,19 @@ test("Figma station shell, equipment selection, analysis navigation and responsi
   })
   await page.getByRole("button", { name: "运行曲线", exact: true }).click()
   await page.getByRole("button", { name: "深入分析" }).first().click()
+  assert.deepEqual(await page.locator('.analysis-signal input:checked').evaluateAll(inputs => inputs.map(input => input.parentElement.querySelector('span').textContent)), ['充放电功率', '交流有功功率', '光伏有功功率', '负荷功率', '电网功率'])
   assert.equal(
     await page
       .getByRole("tab", { name: "历史趋势" })
       .getAttribute("aria-selected"),
     "true",
   )
+  await page.getByRole("button", { name: "返回运行曲线", exact: false }).click()
+  await page.getByRole("button", { name: "深入分析" }).nth(1).click()
+  assert.deepEqual(await page.locator('.analysis-signal input:checked').evaluateAll(inputs => inputs.map(input => input.parentElement.querySelector('span').textContent)), ['SOC'])
+  await page.getByRole("button", { name: "返回运行曲线", exact: false }).click()
+  await page.getByRole("button", { name: "深入分析" }).nth(2).click()
+  assert.deepEqual(await page.locator('.analysis-signal input:checked').evaluateAll(inputs => inputs.map(input => input.parentElement.querySelector('span').textContent)), ['充放电功率'])
   await page.getByRole("button", { name: "分屏", exact: true }).click()
   await page.getByRole("tab", { name: "实时分析" }).click()
   await page.getByRole("button", { name: "暂停", exact: true }).click()
@@ -71,7 +78,11 @@ test("Figma station shell, equipment selection, analysis navigation and responsi
   })
   await page.getByRole("button", { name: "返回运行曲线", exact: false }).click()
   await page.getByRole("button", { name: "站点概览", exact: true }).click()
-  await page.getByRole("button", { name: "设备详情", exact: true }).click()
+  await page.getByRole("combobox", { name: "选择概览设备" }).selectOption({ index: 1 })
+  const selectedDeviceCode = await page.locator('.station-device-identity strong').textContent()
+  await page.getByRole("button", { name: "设备详情 →", exact: true }).click()
+  await page.getByRole("heading", { name: "厂家额定参数", exact: true }).waitFor()
+  assert.ok((await page.getByRole('region', { name: '所选设备详情' }).textContent()).includes(selectedDeviceCode))
   await page.getByRole("tab", { name: "控制记录", exact: true }).click()
   await page.getByRole("button", { name: "选择 并网电表", exact: true }).click()
   await page
@@ -133,6 +144,7 @@ test("API station layouts retain empty states and query actual telemetry without
   page.on("pageerror", (error) => errors.push(error.message))
   let failHistory = false,
     historyCalls = 0
+  const historyQueries = []
   const permissions = [
     "asset.read",
     "telemetry.read",
@@ -166,9 +178,10 @@ test("API station layouts retain empty states and query actual telemetry without
         },
       ]
     else if (path === "/stations/12/points")
-      data = [{ id: 18, device_id: 4, name: "电池 SOC", unit: "%" }]
-    else if (path === "/points/18/history") {
+      data = [{ id: 18, device_id: 4, name: "电池 SOC", unit: "%" }, { id: 19, device_id: 5, name: "电池 SOC", unit: "%" }, { id: 27, device_id: 5, name: "柜内湿度", unit: "%RH" }]
+    else if (/^\/points\/\d+\/history$/.test(path)) {
       historyCalls++
+      historyQueries.push({ path, minutes: url.searchParams.get('minutes') })
       if (failHistory) {
         await route.fulfill({
           status: 500,
@@ -187,7 +200,7 @@ test("API station layouts retain empty states and query actual telemetry without
       body: JSON.stringify({ code: 0, msg: "ok", data }),
     })
   })
-  await page.goto(process.env.STATIONS_API_URL || "http://127.0.0.1:8451", {
+  await page.goto(process.env.STATIONS_API_URL || process.env.API_PREVIEW_URL || "http://127.0.0.1:8451", {
     waitUntil: "domcontentloaded",
     timeout: 45000,
   })
@@ -208,7 +221,7 @@ test("API station layouts retain empty states and query actual telemetry without
     true,
   )
   await page.getByRole("button", { name: "运行曲线", exact: true }).click()
-  await page.getByRole("button", { name: "深入分析" }).first().click()
+  await page.getByRole("button", { name: "深入分析" }).nth(1).click()
   await page.getByRole("tab", { name: "历史趋势" }).waitFor()
   assert.equal(
     await page
@@ -216,6 +229,19 @@ test("API station layouts retain empty states and query actual telemetry without
       .isDisabled(),
     true,
   )
+  await page.getByRole("combobox", { name: "采样粒度" }).selectOption("5")
+  await Promise.all([
+    page.waitForResponse(response => response.url().includes('/points/27/history') && response.url().includes('minutes=5')),
+    page.getByRole('checkbox', { name: /柜内湿度/ }).check(),
+  ])
+  assert.ok(historyQueries.some(query => query.path === '/points/18/history' && query.minutes === '5'))
+  assert.ok(historyQueries.some(query => query.path === '/points/19/history' && query.minutes === '5'))
+  assert.deepEqual(await page.getByRole('combobox', { name: '采样粒度' }).locator('option').evaluateAll(options => options.map(option => option.value)), ['1', '5', '15', '30', '60'])
+  await page.screenshot({ path: 'test-results/figma-stations/analysis-registered-points.png' })
+  await page.getByRole('tab', { name: '实时分析' }).click()
+  await page.getByRole('combobox', { name: '滚动窗口' }).selectOption('5')
+  assert.equal(await page.getByRole('combobox', { name: '采样粒度' }).inputValue(), '1')
+  await page.getByRole('tab', { name: '历史趋势' }).click()
   failHistory = true
   await page.getByRole("button", { name: "查询", exact: true }).click()
   await page

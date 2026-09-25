@@ -16,10 +16,11 @@ export const SIGNALS = [
 export type SignalId = typeof SIGNALS[number]["id"];
 export type TelemetrySample = {
   timestamp: string;
+  intervalMinutes?: number;
   values: Partial<Record<SignalId, number | null>>;
   quality?: Partial<Record<SignalId, "good" | "bad">>;
 };
-export type TelemetryRow = { timestamp: number } & Partial<Record<SignalId, number | null>>;
+export type TelemetryRow = { timestamp: number; intervalMinutes?: number } & Partial<Record<SignalId, number | null>>;
 
 export function normalizeTelemetry(samples: TelemetrySample[]): TelemetryRow[] {
   const rows = new Map<number, TelemetryRow>();
@@ -27,6 +28,7 @@ export function normalizeTelemetry(samples: TelemetrySample[]): TelemetryRow[] {
     const timestamp = Date.parse(sample.timestamp);
     if (!Number.isFinite(timestamp)) return;
     const row = rows.get(timestamp) ?? { timestamp };
+    if (sample.intervalMinutes !== undefined) row.intervalMinutes = sample.intervalMinutes;
     SIGNALS.forEach(({ id }) => {
       if (id in sample.values) row[id] = sample.quality?.[id] !== "bad" && typeof sample.values[id] === "number" && Number.isFinite(sample.values[id]) ? sample.values[id] : null;
     });

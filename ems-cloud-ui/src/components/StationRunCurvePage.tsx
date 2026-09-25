@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react"
+import { intervalEnergy, type AnalysisMetric } from "./stationAnalysisData"
 import StationAnalysisPage from "./StationAnalysisPage"
 import { queryStationTelemetry } from "./stationTelemetryQuery"
 import { hasStationPermission } from "@/auth/apiPermissions"
@@ -250,16 +251,10 @@ export function buildCurveData(
 
     const soc = socValue === null ? null : Math.max(0, Math.min(100, socValue))
 
-    const powerRows = bucketRows.filter(
-      (row) => typeof row.storage === "number" && Number.isFinite(row.storage),
-    )
-    const observedHours =
-      powerRows.length > 1
-        ? (powerRows[powerRows.length - 1].timestamp - powerRows[0].timestamp) /
-          3_600_000
-        : 0
-    const energy =
-      battery === null || !observedHours ? null : battery * observedHours
+    const energyRows = source === "calculated"
+      ? rows.map((row, index) => ({ ...row, intervalMinutes: index + 1 < rows.length ? (rows[index + 1].timestamp - row.timestamp) / 60000 : 0 }))
+      : rows
+    const energy = intervalEnergy(energyRows, bucket.start, bucket.end)
 
     return {
       time: bucket.label,
@@ -272,9 +267,9 @@ export function buildCurveData(
       grid: averageValue(bucketRows, "grid"),
       soc: soc === null ? null : Number(soc.toFixed(1)),
 
-      charge: energy === null ? null : energy < 0 ? Math.round(energy) : 0,
+      charge: energy.charge === null ? null : Math.round(energy.charge),
 
-      discharge: energy === null ? null : energy > 0 ? Math.round(energy) : 0,
+      discharge: energy.discharge === null ? null : Math.round(energy.discharge),
     }
   })
 
@@ -369,7 +364,7 @@ function DemoStationRunCurvePage({ station }: { station: Station }) {
   const { user } = useAuth()
   const canRead =
     DEMO_MODE || hasStationPermission(user, station.id, "telemetry.read")
-  const [analysis, setAnalysis] = useState(false)
+  const [analysis, setAnalysis] = useState<AnalysisMetric | null>(null)
   const [samples, setSamples] = useState<Station["telemetryHistory"]>([])
   const [loading, setLoading] = useState(false)
   const [range, setRange] = useState<CurveRange>("D")
@@ -426,8 +421,8 @@ function DemoStationRunCurvePage({ station }: { station: Station }) {
   const dayTicks =
     range === "D" ? ["00:00", "06:00", "12:00", "18:00", "24:00"] : undefined
 
-  function showDeepAnalysis() {
-    setAnalysis(true)
+  function showDeepAnalysis(metric: AnalysisMetric) {
+    setAnalysis(metric)
   }
 
   if (analysis)
@@ -435,13 +430,14 @@ function DemoStationRunCurvePage({ station }: { station: Station }) {
       <div className="station-analysis-container">
         <button
           className="station-analysis-back"
-          onClick={() => setAnalysis(false)}
+          onClick={() => setAnalysis(null)}
         >
           ← 返回运行曲线
         </button>
         <StationAnalysisPage
           station={curveStation}
           initialView="history"
+          initialMetric={analysis}
           initialRange={{ start: bounds.start, end: bounds.end }}
         />
       </div>
@@ -498,7 +494,7 @@ function DemoStationRunCurvePage({ station }: { station: Station }) {
         <ChartHeader
           title="功率曲线"
           unit="kW"
-          onDeepAnalysis={showDeepAnalysis}
+          onDeepAnalysis={() => showDeepAnalysis("power")}
         >
           {POWER_SERIES.map((series) => (
             <span key={series.key} className="run-curve-legend-item">
@@ -548,7 +544,7 @@ function DemoStationRunCurvePage({ station }: { station: Station }) {
       </section>
 
       <section className="run-curve-card" aria-label="SOC趋势">
-        <ChartHeader title="SOC趋势" unit="%" onDeepAnalysis={showDeepAnalysis}>
+        <ChartHeader title="SOC趋势" unit="%" onDeepAnalysis={() => showDeepAnalysis("soc")}>
           <span className="run-curve-legend-item">
             <i style={{ background: "#2f7c6a" }} />
             SOC
@@ -596,7 +592,7 @@ function DemoStationRunCurvePage({ station }: { station: Station }) {
         <ChartHeader
           title="充放电量"
           unit="kWh"
-          onDeepAnalysis={showDeepAnalysis}
+          onDeepAnalysis={() => showDeepAnalysis("energy")}
         >
           <span className="run-curve-legend-item">
             <i style={{ background: "#527990" }} />

@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react"
 import { DEMO_MODE } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
 import { hasStationPermission } from "@/auth/apiPermissions"
-import { queryStationTelemetry } from "./stationTelemetryQuery"
+import { loadPoints, type MeasurementPoint } from "./apiAnalytics"
+import { registeredChannels, queryRegisteredTelemetry, metricSignals, pointMatchesMetric, type AnalysisMetric, type AnalysisRow as TelemetryRow } from "./stationAnalysisData"
 import {
   Brush,
   CartesianGrid,
@@ -38,13 +39,12 @@ import type { Station } from "@/App"
 import { latestTelemetryTimestamp } from "@/data/dataClock"
 
 import {
-  SIGNALS,
+  SIGNALS as DEMO_SIGNALS,
   demoTelemetry,
   demoTelemetryRange,
   localDateTime,
   normalizeTelemetry,
   type SignalId,
-  type TelemetryRow,
 } from "@/data/stationTelemetry"
 
 const INITIAL_SIGNALS: SignalId[] = [
@@ -116,8 +116,10 @@ export default function StationAnalysisPage({
   station,
   initialView = "live",
   initialRange,
+  initialMetric,
 }: {
   station: Station
+  initialMetric?: AnalysisMetric
   initialView?: "live" | "history"
   initialRange?: { start: Date; end: Date }
 }) {
@@ -148,9 +150,13 @@ export default function StationAnalysisPage({
   const [sampleSource, setSampleSource] = useState(
     DEMO_MODE && station.telemetryHistory === undefined ? "demo" : "connected",
   )
-  const [selected, setSelected] = useState<SignalId[]>(INITIAL_SIGNALS)
+  const [points, setPoints] = useState<MeasurementPoint[]>([])
+  const [pointsReady, setPointsReady] = useState(false)
+  const SIGNALS = useMemo(() => DEMO_MODE ? [...DEMO_SIGNALS] : registeredChannels(points), [points])
+  const [minutes, setMinutes] = useState(initialView === "live" ? 1 : 15)
+  const [selected, setSelected] = useState<string[]>(DEMO_MODE ? initialMetric ? metricSignals(initialMetric) : INITIAL_SIGNALS : [])
 
-  const [visible, setVisible] = useState<SignalId[]>(INITIAL_CURVES)
+  const [visible, setVisible] = useState<string[]>(DEMO_MODE ? initialMetric ? metricSignals(initialMetric) : INITIAL_CURVES : [])
 
   const [search, setSearch] = useState("")
 
@@ -201,11 +207,32 @@ export default function StationAnalysisPage({
 
   useEffect(() => {
     if (DEMO_MODE) return
+    const controller = new AbortController()
+    setPoints([])
+    setPointsReady(false)
+    setSelected([])
+    setVisible([])
+    if (canRead) loadPoints(station.id, controller.signal).then(result => {
+      if (controller.signal.aborted) return
+      setPoints(result)
+      const ids = result.filter(point => !initialMetric || pointMatchesMetric(point, initialMetric)).map(point => `point:${point.id}`)
+      setSelected(ids)
+      setVisible(ids)
+      setPointsReady(true)
+    }).catch(error => {
+      if (!controller.signal.aborted) setQueryError(error instanceof Error ? error.message : "测点读取失败")
+    })
+    return () => controller.abort()
+  }, [station.id, canRead, initialMetric])
+
+  useEffect(() => {
+    if (DEMO_MODE) return
     if (!canRead) {
       setSamples([])
       setHistorySource([])
       return
     }
+    if (!pointsReady) return
     const controller = new AbortController()
     const start =
       view === "history"
@@ -215,10 +242,10 @@ export default function StationAnalysisPage({
       view === "history" ? (requestRange?.end ?? new Date()) : new Date()
     setQueryLoading(true)
     setQueryError("")
-    queryStationTelemetry(station, start, end, 15, controller.signal)
+    queryRegisteredTelemetry(points.filter(point => selected.includes(`point:${point.id}`)), start, end, minutes, controller.signal)
       .then((result) => {
         if (controller.signal.aborted) return
-        const normalized = normalizeTelemetry(result)
+        const normalized = result
         setHistorySource(normalized)
         setSamples(normalized)
         setHistoryIsDemo(false)
@@ -235,7 +262,7 @@ export default function StationAnalysisPage({
         if (!controller.signal.aborted) setQueryLoading(false)
       })
     return () => controller.abort()
-  }, [station.id, requestRange, canRead, poll, view, windowMinutes])
+  }, [station.id, requestRange, canRead, poll, view, windowMinutes, minutes, pointsReady, points, selected])
 
   useEffect(() => {
     if (!running || view !== "live") return
@@ -405,7 +432,7 @@ export default function StationAnalysisPage({
     }
   }, [displayedRows, statsSignal])
 
-  function toggleSignal(id: SignalId) {
+  function toggleSignal(id: string) {
     const removing = selected.includes(id)
 
     setSelected((current) =>
@@ -421,6 +448,7 @@ export default function StationAnalysisPage({
 
   function switchView(next: "live" | "history") {
     setView(next)
+    if (next === "live") setMinutes(1)
     setZoomRange(null)
     setCursors({ A: null, B: null })
     setNotice("")
@@ -748,7 +776,7 @@ export default function StationAnalysisPage({
               onChange={(event) => setOnlySelected(event.target.checked)}
             />
           </label>
-          {["电池系统", "PCS", "其他设备"].map((group) => {
+          {[...new Set(SIGNALS.map(signal => signal.group))].map((group) => {
             const signals = SIGNALS.filter(
               (signal) =>
                 signal.group === group &&
@@ -823,6 +851,12 @@ export default function StationAnalysisPage({
                 <option value={15}>15 min</option>
                 <option value={30}>30 min</option>
                 <option value={60}>60 min</option>
+              </select>
+            </label>
+            <label className="analysis-window">
+              采样粒度
+              <select aria-label="采样粒度" value={minutes} onChange={event => { setMinutes(Number(event.target.value)); setZoomRange(null) }}>
+                {[1, 5, 15, 30, 60].map(value => <option key={value} value={value}>{value} min</option>)}
               </select>
             </label>
             <span className="analysis-small">
