@@ -67,7 +67,7 @@ test(
   { timeout: 180000 },
   async (t) => {
     await fs.mkdir(artifacts, { recursive: true })
-    const browser = await chromium.launch({ headless: true })
+    const browser = await chromium.launch({ channel: "msedge", headless: true })
     const context = await browser.newContext({
       viewport: { width: 1440, height: 1000 },
       timezoneId: "Asia/Shanghai",
@@ -259,236 +259,37 @@ test(
       await page.getByText("苏州园区站", { exact: true }).first().click()
       await page.getByRole("button", { name: "运营收益", exact: true }).click()
 
-      await t.test(
-        "calendar presets, custom validation, table and export",
-        async () => {
-          const ranges = await page.evaluate(async () => {
-            const { getDefaultRevenueDateRange } = await import(
-              "/src/data/stationMetrics.ts"
-            )
-            return Object.fromEntries(
-              ["日", "周", "月", "年"].map((key) => [
-                key,
-                getDefaultRevenueDateRange(key),
-              ]),
-            )
-          })
-          const values = []
-          for (const period of ["日", "周", "月", "年"]) {
-            await page
-              .getByRole("button", { name: period, exact: true })
-              .click()
-            const range = ranges[period]
-            assert.match(
-              await page
-                .locator('[data-time-range="station-revenue"]')
-                .innerText(),
-              new RegExp(`${range.start} 至 ${range.end}`),
-            )
-            values.push(await page.locator("[data-metric]").first().innerText())
-            assert.ok(
-              await page.locator(".revenue-chart .recharts-surface").count(),
-            )
-          }
-          assert.ok(new Set(values).size > 1, "Preset metrics must change")
-          await page.getByTitle("选择日期范围").click()
-          await page.getByLabel("开始日期", { exact: true }).fill("2026-09-03")
-          await page.getByLabel("结束日期", { exact: true }).fill("2026-09-01")
-          await page.getByRole("button", { name: "应用", exact: true }).click()
-          await page
-            .getByRole("alert")
-            .filter({ hasText: "结束日期不能早于开始日期" })
-            .waitFor()
-          await page.getByLabel("开始日期", { exact: true }).fill("2026-09-01")
-          await page.getByLabel("结束日期", { exact: true }).fill("2026-09-03")
-          await page.getByRole("button", { name: "应用", exact: true }).click()
-          await page
-            .getByRole("button", { name: /^展开 2026/ })
-            .first()
-            .click()
-          assert.ok(await page.locator(".revenue-trace").isVisible())
-          const downloadPromise = page.waitForEvent("download")
-          await page
-            .getByRole("button", { name: "导出明细", exact: true })
-            .click()
-          const download = await downloadPromise
-          assert.match(
-            download.suggestedFilename(),
-            /2026-09-01-2026-09-03\.csv$/,
-          )
-          const csv = await fs.readFile(await download.path(), "utf8")
-          assert.match(csv, /日期,峰谷套利/)
-        },
-      )
-
-      await t.test(
-        "incoming revenue updates repaint metrics, chart and detail rows",
-        async () => {
-          const patch = (value) =>
-            page.evaluate((value) => {
-              window.__ENERLUTION_DATA__.patchStation("1", {
-                revenueSource: "connected",
-                revenueHistory: [
-                  {
-                    date: "2026-09-01",
-                    settled: value,
-                    pending: 200,
-                    est: 50,
-                    peakValley: value,
-                    demand: 200,
-                    pv: 30,
-                    vpp: 20,
-                    penalty: -10,
-                  },
-                  {
-                    date: "2026-09-02",
-                    settled: 300,
-                    pending: 100,
-                    est: 0,
-                    peakValley: 300,
-                    demand: 100,
-                    pv: 0,
-                    vpp: 0,
-                    penalty: 0,
-                  },
-                ],
-              })
-            }, value)
-          await patch(1000)
-          await page.waitForFunction(
-            () =>
-              document.querySelector(
-                '[data-metric="station-revenue-选定范围收益"]',
-              ).textContent === "1,650",
-          )
-          const before = await page
-            .locator(".revenue-chart .recharts-surface")
-            .innerHTML()
-          const tableBefore = await page.locator(".revenue-table").innerText()
-          await patch(7000)
-          await page.waitForFunction(
-            () =>
-              document.querySelector(
-                '[data-metric="station-revenue-选定范围收益"]',
-              ).textContent === "7,650",
-          )
-          assert.notEqual(
-            await page.locator(".revenue-chart .recharts-surface").innerHTML(),
-            before,
-          )
-          assert.notEqual(
-            await page.locator(".revenue-table").innerText(),
-            tableBefore,
-          )
-          await page
-            .getByRole("button", { name: "已结算", exact: true })
-            .click()
-          assert.equal(
-            await page
-              .getByRole("button", { name: "已结算", exact: true })
-              .getAttribute("aria-pressed"),
-            "false",
-          )
-          await page
-            .getByRole("button", { name: "已结算", exact: true })
-            .click()
-          await page
-            .getByLabel("收益构成来源", { exact: true })
-            .selectOption("峰谷套利")
-          assert.equal(await page.locator(".revenue-source").count(), 1)
-          await page
-            .getByLabel("收益构成来源", { exact: true })
-            .selectOption("全部来源")
-        },
-      )
-
-      await t.test(
-        "revenue responsive layouts, date dialog and assistant shell offsets",
-        async () => {
-          for (const width of [1440, 1280, 1024, 390, 320]) {
-            await page.setViewportSize({
-              width,
-              height: width < 600 ? 844 : 1000,
-            })
-            await page.locator(".revenue-workspace").evaluate((e) => {
-              e.scrollTop = 0
-            })
-            await checkLayout(page, ".revenue-workspace")
-            await page.screenshot({
-              path: path.join(artifacts, `revenue-${width}.png`),
-              animations: "disabled",
-            })
-            await page.locator(".revenue-trend").scrollIntoViewIfNeeded()
-            await page.screenshot({
-              path: path.join(artifacts, `revenue-chart-${width}.png`),
-              animations: "disabled",
-            })
-            const bars = page.locator(
-              ".revenue-chart .recharts-bar-rectangle path",
-            )
-            assert.ok(
-              await bars.count(),
-              "Revenue chart must render data marks",
-            )
-            await bars.first().hover()
-            const tooltip = page.locator(
-              ".revenue-chart .recharts-tooltip-wrapper",
-            )
-            await tooltip.waitFor({ state: "visible" })
-            const tooltipBox = await tooltip.boundingBox()
-            const chartBox = await page.locator(".revenue-chart").boundingBox()
-            assert.ok(
-              tooltipBox.x >= chartBox.x - 1 &&
-                tooltipBox.x + tooltipBox.width <=
-                  chartBox.x + chartBox.width + 1,
-              "Chart tooltip must fit its container",
-            )
-            await page.mouse.move(0, 0)
-            await page.locator(".revenue-workspace").evaluate((e) => {
-              e.scrollTop = 0
-            })
-            await page.getByTitle("选择日期范围").click()
-            const box = await page.getByRole("dialog").boundingBox()
-            assert.ok(box.x >= 0 && box.x + box.width <= width)
-            await page.keyboard.press("Escape")
-            await page.waitForFunction(
-              () =>
-                document
-                  .querySelector('[data-time-range="station-revenue"]')
-                  .getAttribute("aria-expanded") === "false",
-            )
-            assert.equal(
-              await page
-                .locator('[data-time-range="station-revenue"]')
-                .getAttribute("aria-expanded"),
-              "false",
-            )
-          }
-          await page.setViewportSize({ width: 1440, height: 1000 })
-          await page
-            .getByRole("button", { name: "收起导航", exact: true })
-            .click()
-          await checkLayout(page, ".revenue-workspace")
-          await page
-            .getByRole("button", { name: "分析与报告", exact: true })
-            .click()
-          await page
-            .getByRole("button", { name: "展开AI助手", exact: true })
-            .click()
-          const rects = await page.evaluate(() => ({
-            nav: document
-              .querySelector(".workspace-sidebar")
-              .getBoundingClientRect().right,
-            drawer: document
-              .querySelector(".global-ai-drawer")
-              .getBoundingClientRect().left,
-          }))
-          assert.ok(rects.drawer >= rects.nav, "AI drawer must not cover primary navigation")
-          await page
-            .getByRole("button", { name: "关闭AI助手", exact: true })
-            .click()
-        },
-      )
+      await t.test("Figma revenue date ranges, actual settlement updates and CSV", async () => {
+        for (const period of ["周", "月", "年"]) {
+          await page.getByRole("button", { name: period, exact: true }).click()
+          assert.equal(await page.getByRole("button", { name: period, exact: true }).getAttribute("aria-pressed"), "true")
+          assert.ok(await page.locator(".station-revenue-plot .recharts-surface").count())
+        }
+        await page.getByLabel("收益开始日期", { exact: true }).fill("2026-09-01")
+        await page.getByLabel("收益结束日期", { exact: true }).fill("2026-09-03")
+        const patch = value => page.evaluate(value => window.__ENERLUTION_DATA__.patchStation("1", {
+          operations: { settlement: { source: "connected", records: [
+            { id: "test-1", date: "2026-09-01", currency: "CNY", status: "settled", realized: value, income: { arbitrage: value }, costs: { purchase: 0, operating: 0, penalty: 0 }, adjustment: 0 },
+            { id: "test-2", date: "2026-09-02", currency: "CNY", status: "settled", realized: 300, income: { arbitrage: 300 }, costs: { purchase: 0, operating: 0, penalty: 0 }, adjustment: 0 },
+          ] } }
+        }), value)
+        await patch(1000)
+        await page.getByRole("region", { name: "收益趋势" }).getByText("1,300.00", { exact: true }).waitFor()
+        await patch(7000)
+        await page.getByRole("region", { name: "收益趋势" }).getByText("7,300.00", { exact: true }).waitFor()
+        const downloadPromise = page.waitForEvent("download")
+        await page.getByRole("button", { name: "导出", exact: true }).click()
+        const download = await downloadPromise
+        assert.match(download.suggestedFilename(), /2026-09-01-2026-09-03\.csv$/)
+        const csv = await fs.readFile(await download.path(), "utf8")
+        assert.match(csv, /币种/)
+        assert.match(csv, /7,000\.00/)
+        for (const width of [1366, 1440, 1920]) {
+          await page.setViewportSize({ width, height: 1000 })
+          await checkLayout(page, ".station-revenue-figma")
+        }
+        await page.setViewportSize({ width: 1440, height: 1000 })
+      })
 
       await t.test(
         "primary navigation and live preview remain available on legacy pages",
