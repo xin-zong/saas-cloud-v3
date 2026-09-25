@@ -16,17 +16,17 @@ function load(key: string): Workspace {
   } catch { /* Missing or obsolete local data opens an empty workspace. */ }
   return {templates:[],assignments:{}}
 }
-export default function TariffWorkspace({station,onOpenStrategy}: {station:Station;onOpenStrategy?:()=>void}) {
+export default function TariffWorkspace({station,onOpenStrategy,registerLeaveGuard}: {station:Station;onOpenStrategy?:()=>void;registerLeaveGuard?:(guard:null|(()=>Promise<boolean>))=>void}) {
   const {user}=useAuth()
   const canManage=DEMO_MODE || hasStationPermission(user,station.id,'tariff.manage')
   const canRead=canManage || hasStationPermission(user,station.id,'tariff.read')
   const key=`enerlution-tariff-workspace-v1:${DEMO_MODE?'demo':'api'}:${user?.id??'anonymous'}:${station.id}`
   const [workspace,setWorkspace]=useState<Workspace>(()=>load(key))
-  const [saved,setSaved]=useState(()=>JSON.stringify(load(key)))
+  const [saved,setSaved]=useState<Workspace>(()=>load(key))
   const [view,setView]=useState<'calendar'|'templates'|'editor'>('calendar')
   const [editor,setEditor]=useState<TariffTemplate|null>(null)
   const [editorBase,setEditorBase]=useState('')
-  const [pendingView,setPendingView]=useState<'calendar'|'templates'|null>(null)
+  const [pendingLeave,setPendingLeave]=useState<{target?:'calendar'|'templates';resolve?:(allowed:boolean)=>void}|null>(null)
   const [deleting,setDeleting]=useState<string|null>(null)
   const [notice,setNotice]=useState('')
   const [error,setError]=useState('')
@@ -37,13 +37,24 @@ export default function TariffWorkspace({station,onOpenStrategy}: {station:Stati
   const [until,setUntil]=useState('')
   const [busy,setBusy]=useState(false)
   const [revision,setRevision]=useState(0)
-  const dirty=JSON.stringify(workspace)!==saved || !!editor && JSON.stringify(editor)!==editorBase
+  const calendarDirty=JSON.stringify(workspace.assignments)!==JSON.stringify(saved.assignments)
+  const editorDirty=!!editor && JSON.stringify(editor)!==editorBase
+  const dirty=calendarDirty||editorDirty
+  const requestLeave=()=>{
+    if(!canManage || !dirty)return Promise.resolve(true)
+    return new Promise<boolean>(resolve=>setPendingLeave({resolve}))
+  }
 
   useEffect(()=>{
-    const handler=(event:BeforeUnloadEvent)=>{if(dirty){event.preventDefault();event.returnValue=''}}
+    const handler=(event:BeforeUnloadEvent)=>{if(dirty&&canManage){event.preventDefault();event.returnValue=''}}
     window.addEventListener('beforeunload',handler)
     return()=>window.removeEventListener('beforeunload',handler)
-  },[dirty])
+  },[dirty,canManage])
+  useEffect(()=>{
+    if(!registerLeaveGuard)return
+    registerLeaveGuard(requestLeave)
+    return()=>registerLeaveGuard(null)
+  },[registerLeaveGuard,canManage,dirty])
   useEffect(()=>{
     if(DEMO_MODE || !canRead) {setServerRows([]);setLoading(false);return}
     const controller=new AbortController()
@@ -61,12 +72,36 @@ export default function TariffWorkspace({station,onOpenStrategy}: {station:Stati
     if(!canManage)return false
     try{
       localStorage.setItem(key,JSON.stringify(next))
-      setWorkspace(next);setSaved(JSON.stringify(next));setNotice(message);setError('')
+      setWorkspace(next);setSaved(next);setNotice(message);setError('')
       return true
     } catch{setError('本机存储失败，内容仍在页面中，请重试');return false}
   }
+  function persistTemplate(nextTemplates:TariffTemplate[],message:string,nextAssignments=workspace.assignments,savedAssignments=saved.assignments) {
+    if(!canManage)return false
+    const persisted={templates:nextTemplates,assignments:savedAssignments}
+    try {
+      localStorage.setItem(key,JSON.stringify(persisted))
+      setWorkspace({templates:nextTemplates,assignments:nextAssignments});setSaved(persisted);setNotice(message);setError('')
+      return true
+    } catch {setError('本机存储失败，内容仍在页面中，请重试');return false}
+  }
+  function saveCalendar() {
+    return persist({templates:workspace.templates,assignments:workspace.assignments},'电价日历分配已保存到本机，尚未发布到服务器')
+  }
+  function discardDraft() {
+    if(calendarDirty)setWorkspace(current=>({...current,assignments:saved.assignments}))
+    if(editorDirty)setEditor(null)
+  }
+  function finishLeave(save:boolean) {
+    if(save && (editorDirty && !saveTemplate() || calendarDirty && !saveCalendar()))return
+    if(!save)discardDraft()
+    const target=pendingLeave?.target
+    pendingLeave?.resolve?.(true)
+    setPendingLeave(null)
+    if(target){setEditor(null);setView(target);setError('')}
+  }
   function navigate(next:'calendar'|'templates') {
-    if(editor && JSON.stringify(editor)!==editorBase){setPendingView(next);return}
+    if((view==='editor'&&editorDirty) || (view==='calendar'&&calendarDirty)){setPendingLeave({target:next});return}
     setEditor(null);setView(next);setError('')
   }
   function openEditor(template?:TariffTemplate) {
@@ -78,8 +113,8 @@ export default function TariffWorkspace({station,onOpenStrategy}: {station:Stati
     const problem=validateTemplate(editor)
     if(problem){setError(problem);return false}
     if(workspace.templates.some(item=>item.id!==editor.id && item.name.trim()===editor.name.trim())){setError('模板名称已存在');return false}
-    const next={...workspace,templates:[...workspace.templates.filter(item=>item.id!==editor.id),{...editor,name:editor.name.trim()}]}
-    if(!persist(next,'模板已保存到本机，尚未发布到服务器'))return false
+    const next=[...workspace.templates.filter(item=>item.id!==editor.id),{...editor,name:editor.name.trim()}]
+    if(!persistTemplate(next,'模板已保存到本机，尚未发布到服务器'))return false
     setEditor(null);setView('templates');return true
   }
   async function publish() {
@@ -103,11 +138,11 @@ export default function TariffWorkspace({station,onOpenStrategy}: {station:Stati
   }
   return <main className="tariff-workspace" data-tariff-view={view}>
     <nav className="tariff-breadcrumb" aria-label="电价导航">
-      <button onClick={onOpenStrategy}>策略运行</button><span>›</span><button onClick={()=>navigate('calendar')}>电价设置</button>
+      <button onClick={()=>{void requestLeave().then(allowed=>{if(allowed)onOpenStrategy?.()})}}>策略运行</button><span>›</span><button onClick={()=>navigate('calendar')}>电价设置</button>
       {view==='editor'&&<><span>›</span><button onClick={()=>navigate('templates')}>日模板管理</button></>}
     </nav>
     <header className="tariff-title"><h1>{view==='calendar'?'电价日历':view==='templates'?'日模板管理':'编辑日模板'}</h1><div>
-      {view==='calendar'?<><button onClick={()=>navigate('templates')}>日模板管理</button><button className="primary" disabled={!canManage} onClick={()=>persist(workspace,'电价日历分配已保存到本机，尚未发布到服务器')}>保存设置</button></>:
+      {view==='calendar'?<><button onClick={()=>navigate('templates')}>日模板管理</button><button className="primary" disabled={!canManage} onClick={saveCalendar}>保存设置</button></>:
         view==='templates'?<><button onClick={()=>navigate('calendar')}>返回日历</button><button className="primary" disabled={!canManage} onClick={()=>openEditor()}>＋ 新增模板</button></>:
           <><button onClick={()=>navigate('templates')}>取消</button><button className="primary" disabled={!canManage} onClick={saveTemplate}>保存模板</button></>}
     </div></header>
@@ -133,12 +168,12 @@ export default function TariffWorkspace({station,onOpenStrategy}: {station:Stati
       </section>}
     </>}
     {view==='editor'&&editor&&<TariffTemplateEditor value={editor} onChange={setEditor} disabled={!canManage}/>}
-    {pendingView&&<Dialog title="未保存的模板" onClose={()=>setPendingView(null)}><p>模板尚未保存，离开后本次修改将丢失。</p><div className="tariff-dialog-actions">
-      <button onClick={()=>setPendingView(null)}>继续编辑</button><button onClick={()=>{setEditor(null);setView(pendingView);setPendingView(null)}}>不保存离开</button>
-      <button className="primary" onClick={()=>{if(saveTemplate()){setView(pendingView);setPendingView(null)}}}>保存并离开</button>
+    {pendingLeave&&<Dialog title={editorDirty?'未保存的模板':'未保存的日历分配'} onClose={()=>{pendingLeave.resolve?.(false);setPendingLeave(null)}}><p>{editorDirty?'模板尚未保存':'日历分配尚未保存'}，离开后本次修改将丢失。</p><div className="tariff-dialog-actions">
+      <button onClick={()=>{pendingLeave.resolve?.(false);setPendingLeave(null)}}>继续编辑</button><button onClick={()=>finishLeave(false)}>不保存离开</button>
+      <button className="primary" disabled={!canManage} onClick={()=>finishLeave(true)}>保存并离开</button>
     </div></Dialog>}
     {deleting&&<Dialog title="删除日模板" onClose={()=>setDeleting(null)}><p>删除后，将同时移除本机日历对该模板的分配，不会删除服务器已生效电价。</p><div className="tariff-dialog-actions">
-      <button onClick={()=>setDeleting(null)}>取消</button><button disabled={!canManage} onClick={()=>{const next={templates:workspace.templates.filter(t=>t.id!==deleting),assignments:Object.fromEntries(Object.entries(workspace.assignments).filter(([,id])=>id!==deleting))};if(persist(next,'本地模板及相关日历分配已删除'))setDeleting(null)}}>确认删除</button>
+      <button onClick={()=>setDeleting(null)}>取消</button><button disabled={!canManage} onClick={()=>{const templates=workspace.templates.filter(t=>t.id!==deleting);const assignments=Object.fromEntries(Object.entries(workspace.assignments).filter(([,id])=>id!==deleting));const savedAssignments=Object.fromEntries(Object.entries(saved.assignments).filter(([,id])=>id!==deleting));if(persistTemplate(templates,'本地模板及相关日历分配已删除',assignments,savedAssignments))setDeleting(null)}}>确认删除</button>
     </div></Dialog>}
     {publishing&&<Dialog title="创建服务器电价生效期间" onClose={()=>{if(!busy)setPublishing(null)}}>
       <p>模板：{publishing.name}。只提交购电规则，不覆盖已有电价；独立售电及日历分配不会发布。</p>

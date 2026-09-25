@@ -58,7 +58,7 @@ function initialWorkspace(key: string, station: Station): Workspace {
     });
   return { plans: [plan], selected: plan.id };
 }
-function StrategyWorkspace({ station }: { station: Station }) {
+function StrategyWorkspace({ station, registerLeaveGuard }: { station: Station; registerLeaveGuard?: (guard: null | (() => Promise<boolean>)) => void }) {
   const { user } = useAuth();
   const demoAllowed =
     !!user && ROLE_CONFIG[user.role].stationSubNavs.includes("运行策略");
@@ -92,9 +92,18 @@ function StrategyWorkspace({ station }: { station: Station }) {
   } | null>(null);
   const [ai, setAi] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [externalLeave, setExternalLeave] = useState<((allowed:boolean)=>void)|null>(null);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const dirty = !!editor && JSON.stringify(editor) !== base;
+  useEffect(() => {
+    if (!registerLeaveGuard || view === "price") return;
+    registerLeaveGuard(() => {
+      if (view !== "editor" || !dirty || !canManage) return Promise.resolve(true);
+      return new Promise<boolean>(resolve => { setExternalLeave(() => resolve); setLeaving(true); });
+    });
+    return () => registerLeaveGuard(null);
+  }, [registerLeaveGuard, view, dirty, canManage]);
   useEffect(() => {
     if (!canManage) {
       setSlot(null);
@@ -131,11 +140,11 @@ function StrategyWorkspace({ station }: { station: Station }) {
     setError("");
   }
   function save() {
-    if (!editor || !canManage) return;
+    if (!editor || !canManage) return false;
     const issue = validateStrategy(editor, station.ratedPower);
     if (issue) {
       setError(issue);
-      return;
+      return false;
     }
     if (
       persist({
@@ -148,7 +157,9 @@ function StrategyWorkspace({ station }: { station: Station }) {
       setBase(JSON.stringify(editor));
       setError("");
       setNotice("本地草稿已保存；尚未提交审批或向 EMS 下发。");
+      return true;
     }
+    return false;
   }
   function saveForm() {
     if (!form || !canManage) return;
@@ -183,6 +194,7 @@ function StrategyWorkspace({ station }: { station: Station }) {
       <StationPriceSettingsPage
         station={station}
         onOpenStrategy={() => setView("overview")}
+        registerLeaveGuard={registerLeaveGuard}
       />
     );
   return (
@@ -558,28 +570,37 @@ function StrategyWorkspace({ station }: { station: Station }) {
         />
       )}
       {leaving && (
-        <Modal title="未保存的策略" onClose={() => setLeaving(false)}>
+        <Modal title="未保存的策略" onClose={() => { externalLeave?.(false); setExternalLeave(null); setLeaving(false); }}>
           <p>当前修改尚未保存，离开后会丢失。</p>
+          {error && <p className="strategy-error">{error}</p>}
           <div className="strategy-dialog-actions">
-            <button onClick={() => setLeaving(false)}>继续编辑</button>
+            <button onClick={() => { externalLeave?.(false); setExternalLeave(null); setLeaving(false); }}>继续编辑</button>
             <button
               onClick={() => {
                 setLeaving(false);
                 setEditor(null);
                 setView("overview");
+                externalLeave?.(true);
+                setExternalLeave(null);
               }}
             >
               放弃修改
             </button>
+            <button className="primary" disabled={!canManage} onClick={() => {
+              if (!save()) return;
+              setLeaving(false);
+              if (externalLeave) { externalLeave(true); setExternalLeave(null); }
+              else { setEditor(null); setView("overview"); }
+            }}>保存并离开</button>
           </div>
         </Modal>
       )}
     </main>
   );
 }
-export default function StationStrategyPage({ station }: { station: Station }) {
+export default function StationStrategyPage({ station, registerLeaveGuard }: { station: Station; registerLeaveGuard?: (guard: null | (() => Promise<boolean>)) => void }) {
   const { user } = useAuth();
   return (
-    <StrategyWorkspace key={`${user?.id}:${station.id}`} station={station} />
+    <StrategyWorkspace key={`${user?.id}:${station.id}`} station={station} registerLeaveGuard={registerLeaveGuard} />
   );
 }

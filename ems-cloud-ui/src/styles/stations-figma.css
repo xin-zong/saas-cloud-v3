@@ -24,13 +24,18 @@
 .station-header-popover section button { display:block; margin-top:12px; color:#1f7a68; cursor:pointer; }
 [data-design-area="stations"] .station-detail-shell { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
 .station-open-tabs { display:flex; height:44px; flex-shrink:0; border-bottom:1px solid #e2e6eb; background:white; }
-.station-open-tabs-list { display:flex; flex:1; min-width:0; overflow:auto; align-items:stretch; }
+.station-open-tabs-list { display:flex; flex:1; min-width:0; align-items:stretch; }
 .station-open-tab { display:flex; align-items:center; border-bottom:2px solid transparent; padding:0 10px 0 18px; gap:8px; }
 .station-open-tab[data-active="true"] { border-color:#1f7a68; color:#1f7a68; }
 .station-open-tab button { display:flex; align-items:center; gap:8px; border:0; background:none; font-size:13px; white-space:nowrap; cursor:pointer; }
 .station-open-tab i { width:6px; height:6px; border-radius:50%; }
 .station-open-tab img { width:12px; height:12px; }
 .station-open-tabs-count { align-self:center; white-space:nowrap; font-size:11px; padding:0 16px; color:#9ca3af; }
+.station-tabs-overflow { position:relative; align-self:center; flex-shrink:0; font-size:12px; color:#1f7a68; }
+.station-tabs-overflow summary { padding:7px 10px; cursor:pointer; white-space:nowrap; }
+.station-tabs-overflow > div { position:absolute; z-index:20; top:34px; right:0; min-width:150px; padding:6px; border:1px solid #e2e6eb; border-radius:8px; background:white; box-shadow:0 8px 24px #20252e14; }
+.station-tabs-overflow button { display:block; width:100%; padding:8px; border:0; border-radius:5px; background:white; text-align:left; white-space:nowrap; cursor:pointer; }
+.station-tabs-overflow button:hover { background:#eef8f4; }
 .station-list-return { display:flex; align-items:center; gap:8px; padding:0 20px; border:0; border-left:1px solid #e2e6eb; background:white; font-size:12px; cursor:pointer; }
 .station-list-return img { width:16px; height:16px; }
 [data-design-area="stations"] .station-detail-shell > .ui-tabs { height:48px; gap:0; padding:0 12px; }

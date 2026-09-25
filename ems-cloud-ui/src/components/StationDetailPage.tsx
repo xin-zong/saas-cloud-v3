@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import type { Station } from "@/App"
 import { DEMO_MODE } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
@@ -39,6 +39,9 @@ interface Props {
   initialSubNav?: string
   allowedSubNavs?: readonly StationSubNav[]
   role?: UserRole
+  onSubNavChange?: (stationId: string, subNav: string) => void
+  registerLeaveGuard?: (guard: null | (() => Promise<boolean>)) => void
+  requestLeave?: () => Promise<boolean>
 }
 function Placeholder({ nav }: { nav: string }) {
   return <div className="ui-page">{nav}暂无数据</div>
@@ -53,6 +56,9 @@ export default function StationDetailPage({
   initialSubNav = "站点概览",
   allowedSubNavs = SUB_NAVS,
   role = "operator",
+  onSubNavChange,
+  registerLeaveGuard,
+  requestLeave,
 }: Props) {
   const { user } = useAuth()
   const station = tabs.find((item) => item.id === activeId)
@@ -62,40 +68,39 @@ export default function StationDetailPage({
     allowedSubNavs.includes(item),
   )
   const allowedKey = visibleSubNavs.join("|")
-  const savedSubNavs = useRef<Record<string, string>>({})
-  const previousStation = useRef(activeId)
   const [deviceId, setDeviceId] = useState<string>()
   const [subNav, setSubNav] = useState<string>(
     visibleSubNavs.includes(normalizedInitialSubNav as StationSubNav)
       ? normalizedInitialSubNav
       : (visibleSubNavs[0] ?? ""),
   )
-  const selectSubNav = (next: string) => {
-    const valid = visibleSubNavs.includes(next as StationSubNav)
-      ? next
-      : (visibleSubNavs[0] ?? "")
-    savedSubNavs.current[activeId] = valid
-    setSubNav(valid)
+  const selectSubNav = (next: string, guardAlreadyPassed = false) => {
+    void (async () => {
+      const valid = visibleSubNavs.includes(next as StationSubNav)
+        ? next
+        : (visibleSubNavs[0] ?? "")
+      if (valid === subNav) return
+      if (!guardAlreadyPassed && requestLeave && !(await requestLeave())) return
+      onSubNavChange?.(activeId, valid)
+      setSubNav(valid)
+    })()
   }
   useEffect(() => {
-    const next =
-      previousStation.current !== activeId
-        ? (savedSubNavs.current[activeId] ?? normalizedInitialSubNav)
-        : normalizedInitialSubNav
-    previousStation.current = activeId
-    setDeviceId(undefined)
     setSubNav(
-      allowedKey.split("|").includes(next)
-        ? next
+      allowedKey.split("|").includes(normalizedInitialSubNav)
+        ? normalizedInitialSubNav
         : (allowedKey.split("|")[0] ?? ""),
     )
   }, [activeId, normalizedInitialSubNav, allowedKey])
+  useEffect(() => { setDeviceId(undefined) }, [activeId])
   if (!station) return null
+  const visibleTabs = tabs.length <= 5 ? tabs : tabs.slice(0, 4).concat(tabs.find(tab => tab.id === activeId && !tabs.slice(0, 4).some(item => item.id === tab.id)) ?? tabs[4])
+  const overflowTabs = tabs.filter(tab => !visibleTabs.some(item => item.id === tab.id))
   return (
     <div className="station-detail-shell">
       <div className="station-open-tabs">
         <div className="station-open-tabs-list" aria-label="已打开站点">
-          {tabs.map((tab) => (
+          {visibleTabs.map((tab) => (
             <div
               className="station-open-tab"
               data-active={tab.id === activeId}
@@ -118,6 +123,7 @@ export default function StationDetailPage({
               </button>
             </div>
           ))}
+          {overflowTabs.length > 0 && <details className="station-tabs-overflow"><summary>更多站点 · {overflowTabs.length}</summary><div>{overflowTabs.map(tab=><button key={tab.id} onClick={event=>{event.currentTarget.closest('details')?.removeAttribute('open');onSetActive(tab.id)}}>{tab.name}</button>)}</div></details>}
           <span className="station-open-tabs-count">已打开 {tabs.length}</span>
         </div>
         <button className="station-list-return" onClick={onBack}>
@@ -153,7 +159,7 @@ export default function StationDetailPage({
         />
       )}
       {subNav === "运营收益" && <StationRevenuePage key={station.id} station={station} />}
-      {subNav === "运行策略" && <StationStrategyPage key={station.id} station={station} />}
+      {subNav === "运行策略" && <StationStrategyPage key={station.id} station={station} registerLeaveGuard={registerLeaveGuard} />}
       {subNav === "告警信息" && (
         <StationAlarmsPage
           onRefresh={onRefresh}
@@ -190,7 +196,8 @@ export default function StationDetailPage({
         <StationPriceSettingsPage
           key={station.id}
           station={station}
-          onOpenStrategy={() => selectSubNav("运行策略")}
+          onOpenStrategy={() => selectSubNav("运行策略", true)}
+          registerLeaveGuard={registerLeaveGuard}
         />
       )}
       {subNav !== "站点概览" &&
