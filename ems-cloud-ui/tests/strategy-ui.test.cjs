@@ -90,7 +90,7 @@ test(
       }
       assert.equal(
         await dialog
-          .getByRole("button", { name: "暂不可用", exact: true })
+          .getByRole("button", { name: "下发（未接入）", exact: true })
           .isDisabled(),
         true,
       );
@@ -315,6 +315,197 @@ test(
       await page.screenshot({
         path: path.join(artifacts, "api-readonly-editor.png"),
       });
+    } finally {
+      await browser.close();
+    }
+  },
+);
+
+test(
+  "review fixes: Shanghai boundary, exclusive tariff expiry, native currency and external local draft persistence",
+  { timeout: 120000 },
+  async () => {
+    const browser = await chromium.launch({
+      channel: "msedge",
+      headless: true,
+    });
+    const page = await browser.newPage({
+      viewport: { width: 1440, height: 900 },
+      timezoneId: "America/Los_Angeles",
+    });
+    page.setDefaultTimeout(10000);
+    await page.clock.install({ time: new Date("2026-09-26T17:00:00Z") });
+    await page.addInitScript(() =>
+      sessionStorage.setItem("enerlution-api-token", "strategy-review"),
+    );
+    const permissions = [
+      "asset.read",
+      "strategy.read",
+      "strategy.manage",
+      "tariff.read",
+    ];
+    const user = {
+      id: "78",
+      name: "策略审查",
+      account: "review@test",
+      role: "integrator",
+      organization: "测试",
+      stationIds: ["12"],
+      permissions,
+      stationPermissions: { 12: permissions },
+      organizationPermissions: {},
+    };
+    const expired = {
+      id: 1,
+      valid_from: "2026-09-01",
+      valid_until: "2026-09-27",
+      currency: "CNY",
+      periods: [{ start_minute: 0, end_minute: 1440, price_per_kwh: 999 }],
+    };
+    let tariffs = [expired];
+    const writes = [];
+    await page.route("http://127.0.0.1:18090/api/**", async (route) => {
+      const req = route.request(),
+        endpoint = new URL(req.url()).pathname.slice(4);
+      if (req.method() !== "GET") writes.push(endpoint);
+      let data = [];
+      if (endpoint === "/auth/me") data = user;
+      else if (endpoint === "/stations")
+        data = [
+          {
+            id: 12,
+            name: "审查策略站点",
+            code: "REVIEW",
+            rated_power_kw: 100,
+            capacity_kwh: 200,
+          },
+        ];
+      else if (endpoint === "/stations/12/tariffs") data = tariffs;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ code: 0, data }),
+      });
+    });
+    const open = async () => {
+      await page.goto("http://127.0.0.1:8451", {
+        waitUntil: "domcontentloaded",
+      });
+      await page
+        .getByRole("button", { name: "资产与站点", exact: true })
+        .click();
+      await page
+        .getByRole("button", { name: "审查策略站点", exact: true })
+        .click();
+      await page.getByRole("button", { name: "策略运行", exact: true }).click();
+    };
+    try {
+      await open();
+      assert.equal(await page.getByLabel("运行模式生效日").inputValue(), "6");
+      await page.getByText("2026-09-27", { exact: true }).waitFor();
+      await page
+        .getByText("暂无当前日期的有效电价数据", { exact: true })
+        .waitFor();
+      assert.equal(
+        await page.locator(".strategy-chart .recharts-line-curve").count(),
+        0,
+      );
+      tariffs = [
+        expired,
+        {
+          id: 2,
+          valid_from: "2026-09-27",
+          valid_until: "2026-10-01",
+          currency: "EUR",
+          periods: [{ start_minute: 0, end_minute: 1440, price_per_kwh: 0.25 }],
+        },
+      ];
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await open();
+      await page.getByText("电价（EUR/kWh）", { exact: true }).waitFor();
+      await page
+        .locator(".strategy-chart .recharts-line-curve")
+        .waitFor({ state: "attached" });
+      await page
+        .getByRole("button", { name: "新增策略方案", exact: true })
+        .click();
+      await page
+        .getByLabel("方案名称", { exact: true })
+        .fill("外部模式本地草稿");
+      await page
+        .getByRole("button", { name: "创建并配置", exact: true })
+        .click();
+      await page.getByRole("button", { name: "新增时段", exact: true }).click();
+      let dialog = page.getByRole("dialog");
+      await dialog.getByRole("switch", { name: "高级模式设置" }).click();
+      await dialog
+        .getByRole("button", { name: "覆盖模式", exact: true })
+        .click();
+      const modes = [
+        ["VPP", "调度功率上限", "35"],
+        ["AGC", "跟踪功率上限", "25"],
+        ["调峰", "最大充电功率", "20"],
+        ["AVC", "目标电压", "10.5"],
+      ];
+      for (const [mode, label, value] of modes) {
+        await dialog.getByRole("button", { name: mode, exact: true }).click();
+        await dialog.getByLabel(label, { exact: true }).fill(value);
+        if (mode === "调峰")
+          await dialog.getByLabel("最大放电功率", { exact: true }).fill("30");
+        if (mode === "AVC")
+          await dialog.getByLabel("无功功率限值", { exact: true }).fill("50");
+        const connection = dialog.getByLabel(
+          mode === "VPP" ? "接入状态" : "BSP通信",
+          { exact: true },
+        );
+        assert.equal(await connection.inputValue(), "未接入");
+        assert.equal(await connection.isDisabled(), true);
+        await dialog
+          .getByRole("checkbox", { name: `纳入本地预览：${mode}`, exact: true })
+          .check();
+        assert.equal(
+          await dialog
+            .getByRole("button", { name: "下发（未接入）", exact: true })
+            .isDisabled(),
+          true,
+        );
+      }
+      await page.screenshot({
+        path: path.join(artifacts, "external-local-avc.png"),
+      });
+      await dialog
+        .getByRole("button", { name: "保存设置", exact: true })
+        .click();
+      await page.getByRole("button", { name: "保存策略", exact: true }).click();
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await open();
+      await page
+        .getByRole("button", { name: "编辑外部模式本地草稿", exact: true })
+        .click();
+      await page
+        .getByRole("button", { name: "编辑时段1", exact: true })
+        .click();
+      dialog = page.getByRole("dialog");
+      await dialog
+        .getByRole("button", { name: "覆盖模式", exact: true })
+        .click();
+      for (const [mode, label, value] of modes) {
+        await dialog.getByRole("button", { name: mode, exact: true }).click();
+        assert.equal(
+          await dialog.getByLabel(label, { exact: true }).inputValue(),
+          value,
+        );
+        assert.equal(
+          await dialog
+            .getByRole("checkbox", {
+              name: `纳入本地预览：${mode}`,
+              exact: true,
+            })
+            .isChecked(),
+          true,
+        );
+      }
+      assert.deepEqual(writes, []);
     } finally {
       await browser.close();
     }

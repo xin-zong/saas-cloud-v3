@@ -13,7 +13,15 @@ import { api, DEMO_MODE, type ApiRow } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
 import { hasStationPermission } from "@/auth/apiPermissions";
 import { StrategyIcon } from "./ModeEditor";
-import { minute, days, type Workspace, type Strategy } from "./model";
+import {
+  minute,
+  days,
+  shanghaiCalendar,
+  effectiveTariff,
+  tariffUnit,
+  type Workspace,
+  type Strategy,
+} from "./model";
 export default function StrategyOverview({
   station,
   workspace,
@@ -37,8 +45,9 @@ export default function StrategyOverview({
   const [tariffs, setTariffs] = useState<ApiRow[]>([]);
   const [error, setError] = useState("");
   const now = new Date();
-  const date = now.toLocaleDateString("en-CA", { timeZone: "Asia/Shanghai" });
-  const [weekday, setWeekday] = useState((now.getDay() + 6) % 7);
+  const calendar = shanghaiCalendar(now);
+  const date = calendar.date;
+  const [weekday, setWeekday] = useState(calendar.weekday);
   const readPrice =
     DEMO_MODE ||
     hasStationPermission(user, station.id, "tariff.read") ||
@@ -60,11 +69,8 @@ export default function StrategyOverview({
     return () => controller.abort();
   }, [station.id, readPrice]);
   const active = workspace.plans.find((p) => p.id === workspace.selected);
-  const tariff = tariffs.find(
-    (row) =>
-      String(row.valid_from).slice(0, 10) <= date &&
-      String(row.valid_until).slice(0, 10) >= date,
-  );
+  const tariff = effectiveTariff(tariffs, date);
+  const unit = tariffUnit(tariff);
   const rows = ((tariff?.periods ?? []) as ApiRow[])
     .flatMap((row) => [
       { minute: Number(row.start_minute), price: Number(row.price_per_kwh) },
@@ -90,7 +96,7 @@ export default function StrategyOverview({
             <StrategyIcon name="edit" />
           </button>
         </header>
-        <div className="strategy-chart-label">电价（元/kWh）</div>
+        <div className="strategy-chart-label">电价（{unit}）</div>
         <div className="strategy-chart">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
@@ -113,6 +119,7 @@ export default function StrategyOverview({
                 domain={rows.length ? ["auto", "auto"] : [0, 1.2]}
               />
               <Tooltip
+                formatter={(value) => [`${value} ${unit}`, "购电"]}
                 labelFormatter={(v) =>
                   `${String(Math.floor(Number(v) / 60)).padStart(2, "0")}:${String(Number(v) % 60).padStart(2, "0")}`
                 }

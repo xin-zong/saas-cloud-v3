@@ -42,3 +42,20 @@ Runtime: C:/Users/Laptop/.cache/codex-runtimes/codex-primary-runtime/dependencie
 - TypeScript noEmit passed after final implementation/formatting.
 - Screenshots: ignored ems-cloud-ui/.figma/strategy; overview/editor1440, all base and overlay modes, priority, API readonly, editor1366/1920. Compared layout with fetched Figma and corrected modal dimensions/placement, parameter fields, asset geometry, and checkboxes. 1366/1920 document-width overflow assertions passed.
 - Full shared api-ui.test.cjs + capabilities-api-ui.test.cjs: 18/18 passing (PREVIEW_URL=http://127.0.0.1:8451), including workorders, strategy, tariff, capability mutation/focus/timer refresh, firmware and device health regressions.
+
+## Review fix round 1 (2026-09-26)
+
+Addressed all four items in task-4-strategy-findings.md. This section supersedes the initial implementation's blanket external-mode editing restriction.
+
+- Purchase tariff selection now follows [valid_from, valid_until): an expiry-today tariff is excluded and a starts-today tariff is eligible. Caption and tooltip use the selected server currency (including EUR); missing currency is explicitly unknown, with no conversion or yuan assumption.
+- Date and default weekday now derive from the same Asia/Shanghai calendar date. The regression fixes time to 2026-09-26T17:00:00Z with America/Los_Angeles browser timezone and asserts Shanghai date 2026-09-27 / Sunday.
+- VPP, AGC, peak and AVC expose editable local parameters and local preview intent. Connection fields always remain readonly/unconnected; the explicit dispatch button remains disabled. External selections participate in local validation and persist only through the existing per-user/station browser draft store. The regression reloads all four configured modes and asserts their values/preview selections persist with zero API write requests.
+- Current Figma contexts and screenshots re-fetched for 2486:14630, 2486:15019, 2486:15411 and 2486:15804 before changing the form states. Enabled local fields intentionally follow the user's approved complete frontend interaction scope; they do not claim backend availability. Updated screenshot .figma/strategy/external-local-avc.png inspected for layout and clear state distinction.
+- Preserved a5a95a1 outer navigation guards: no StationStrategyPage, App, StationDetail, or tariff implementation files changed.
+
+Commands (cwd ems-cloud-ui; exact Node runtime path as above):
+
+1. `node.exe --test --test-concurrency=1 tests/strategy-model.test.cjs` before implementation: 3 pass, 3 expected failures for old external-mode rejection and missing date/tariff helpers.
+2. `node.exe --test --test-concurrency=1 --test-name-pattern='review fixes' tests/strategy-ui.test.cjs`: 1/1 pass after correcting the test's SVG assertion from visible to attached (a valid horizontal SVG path has zero bounding-box height).
+3. `node.exe node_modules/typescript/bin/tsc --noEmit`: exit 0, then the affected model/UI suites ran sequentially with `--test-concurrency=1`.
+4. Final `node.exe --test --test-concurrency=1 tests/strategy-model.test.cjs tests/strategy-ui.test.cjs`: 9/9 pass, 0 fail, duration 65.293s. No broader suites run in this fix round.

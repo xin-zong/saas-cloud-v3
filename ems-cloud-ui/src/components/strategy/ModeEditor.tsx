@@ -367,8 +367,12 @@ export default function ModeEditor({
                           {field.options ? (
                             <select
                               aria-label={field.label}
-                              value={slot.params[mode][field.key]}
-                              disabled={disabled || unavailable}
+                              value={
+                                field.readonly
+                                  ? field.initial
+                                  : slot.params[mode][field.key]
+                              }
+                              disabled={disabled}
                               onChange={(e) =>
                                 update({
                                   params: {
@@ -390,10 +394,12 @@ export default function ModeEditor({
                               aria-label={field.label}
                               type={field.readonly ? "text" : "number"}
                               step="any"
-                              value={slot.params[mode][field.key]}
-                              disabled={
-                                disabled || field.readonly || unavailable
+                              value={
+                                field.readonly
+                                  ? field.initial
+                                  : slot.params[mode][field.key]
                               }
+                              disabled={disabled || field.readonly}
                               onChange={(e) =>
                                 update({
                                   params: {
@@ -414,21 +420,23 @@ export default function ModeEditor({
                   </div>
                 </>
               )}
-              {tab === "覆盖模式" && !unavailable && (
+              {tab === "覆盖模式" && (
                 <label className="strategy-enable">
                   <input
                     type="checkbox"
-                    aria-label={`启用${mode}`}
+                    aria-label={
+                      unavailable ? `纳入本地预览：${mode}` : `启用${mode}`
+                    }
                     disabled={disabled}
                     checked={slot.overlays.includes(mode as Overlay)}
                     onChange={() => toggle(mode as Overlay)}
                   />
-                  启用{mode}
+                  {unavailable ? `纳入本地预览：${mode}` : `启用${mode}`}
                 </label>
               )}
               {unavailable && (
                 <p className="strategy-muted">
-                  外部调度服务未接入，参数仅供查看，暂不可用。
+                  外部调度服务未接入。参数和授权意向仅保存为本地草稿，不会连接服务或下发设备。
                 </p>
               )}
             </section>
@@ -440,13 +448,10 @@ export default function ModeEditor({
           </p>
         )}
         <div className="strategy-dialog-actions">
+          {unavailable && <button disabled>下发（未接入）</button>}
           <button onClick={onClose}>取消</button>
-          <button
-            className="primary"
-            disabled={disabled || unavailable}
-            onClick={save}
-          >
-            {unavailable ? "暂不可用" : isDefault ? "保存默认设置" : "保存设置"}
+          <button className="primary" disabled={disabled} onClick={save}>
+            {isDefault ? "保存默认设置" : "保存设置"}
           </button>
         </div>
       </Modal>

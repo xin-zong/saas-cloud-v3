@@ -213,55 +213,70 @@ export const fields: Record<Mode, Field[]> = {
   ],
   AGC: [
     { key: "connection", label: "BSP通信", initial: "未接入", readonly: true },
-    { key: "protocol", label: "通信协议", initial: "IEC 104", readonly: true },
+    {
+      key: "protocol",
+      label: "通信协议",
+      initial: "IEC 104",
+      options: ["IEC 104", "Modbus TCP"],
+    },
     {
       key: "power",
       label: "跟踪功率上限",
-      initial: "—",
+      initial: "0",
       unit: "kW",
-      readonly: true,
+      min: 0,
     },
     {
       key: "authorization",
       label: "内部授权",
       initial: "关闭",
-      readonly: true,
+      options: ["关闭", "开启（本地意向）"],
     },
   ],
   调峰: [
     { key: "connection", label: "BSP通信", initial: "未接入", readonly: true },
-    { key: "source", label: "计划来源", initial: "TSO / BSP", readonly: true },
+    {
+      key: "source",
+      label: "计划来源",
+      initial: "TSO / BSP",
+      options: ["TSO / BSP", "本地计划"],
+    },
     {
       key: "charge",
       label: "最大充电功率",
-      initial: "—",
+      initial: "0",
       unit: "kW",
-      readonly: true,
+      min: 0,
     },
     {
       key: "discharge",
       label: "最大放电功率",
-      initial: "—",
+      initial: "0",
       unit: "kW",
-      readonly: true,
+      min: 0,
     },
   ],
   AVC: [
     { key: "connection", label: "BSP通信", initial: "未接入", readonly: true },
-    { key: "control", label: "控制方式", initial: "Q-V 下垂", readonly: true },
+    {
+      key: "control",
+      label: "控制方式",
+      initial: "Q-V 下垂",
+      options: ["Q-V 下垂", "定无功"],
+    },
     {
       key: "voltage",
       label: "目标电压",
-      initial: "—",
+      initial: "",
       unit: "kV",
-      readonly: true,
+      min: 0.001,
     },
     {
       key: "reactive",
       label: "无功功率限值",
-      initial: "—",
+      initial: "0",
       unit: "kVar",
-      readonly: true,
+      min: 0,
     },
   ],
 };
@@ -357,10 +372,6 @@ export function validateSlot(
       return "所选生效日的策略时段重叠";
   }
   if (!bases.includes(slot.base)) return "请选择基础运行模式";
-  if (
-    slot.overlays.some((mode) => ["VPP", "AGC", "调峰", "AVC"].includes(mode))
-  )
-    return "外部调度服务未接入，不能启用";
   for (const mode of [slot.base, ...(slot.advanced ? slot.overlays : [])])
     for (const field of fields[mode]) {
       const value = slot.params[mode][field.key];
@@ -370,7 +381,11 @@ export function validateSlot(
         continue;
       }
       const n = Number(value);
-      const max = field.max ?? (field.key === "power" ? rated : Infinity);
+      const max =
+        field.max ??
+        (["power", "charge", "discharge"].includes(field.key)
+          ? rated
+          : Infinity);
       if (
         !value?.trim() ||
         !Number.isFinite(n) ||
@@ -502,4 +517,24 @@ export function summary(slot: Slot): string {
   if (slot.base === "动态电价优化")
     return `${slot.params[slot.base].cycle} 小时优化周期`;
   return `${slot.params[slot.base].window} 分钟平滑窗口`;
+}
+
+/** Date and weekday must share the station's Shanghai calendar, not the browser zone. */
+export function shanghaiCalendar(now: Date) {
+  const date = now.toLocaleDateString("en-CA", { timeZone: "Asia/Shanghai" });
+  return { date, weekday: (new Date(`${date}T00:00:00Z`).getUTCDay() + 6) % 7 };
+}
+export function effectiveTariff<T extends Record<string, unknown>>(
+  rows: T[],
+  date: string,
+): T | undefined {
+  return rows.find(
+    (row) =>
+      String(row.valid_from).slice(0, 10) <= date &&
+      date < String(row.valid_until).slice(0, 10),
+  );
+}
+export function tariffUnit(tariff?: Record<string, unknown>): string {
+  const currency = tariff?.currency;
+  return `${typeof currency === "string" && /^[A-Z]{3}$/.test(currency) ? currency : "币种未知"}/kWh`;
 }

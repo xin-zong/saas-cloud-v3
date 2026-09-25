@@ -62,10 +62,12 @@ test("mode parameters and charging rows validate before local persistence", () =
   ];
   assert.match(validateSlot(slot, [], 100), /重叠/);
 });
-test("disabled external dispatch cannot be saved as enabled; priority order is immutable", () => {
+test("local external intent and priority order remain independent of dispatch", () => {
   const slot = newSlot();
   slot.overlays = ["AGC"];
-  assert.match(validateSlot(slot, [], 100), /未接入/);
+  slot.advanced = true;
+  slot.params.AGC.power = "25";
+  assert.equal(validateSlot(slot, [], 100), "");
   const order = ["VPP", "需量控制", "容量保护"];
   assert.deepEqual(Array.from(movePriority(order, 0, 2)), [
     "需量控制",
@@ -88,4 +90,45 @@ test("invalid local persistence recovers empty, valid plans survive roundtrip", 
   );
   plan.name = "";
   assert.match(validateStrategy(plan, 100), /名称/);
+});
+
+test("external parameters validate as local intent without claiming a service connection", () => {
+  const slot = newSlot();
+  slot.advanced = true;
+  slot.overlays = ["VPP", "AGC", "调峰", "AVC"];
+  slot.params.AGC.power = "25";
+  slot.params["调峰"].charge = "20";
+  slot.params["调峰"].discharge = "30";
+  slot.params.AVC.voltage = "10.5";
+  slot.params.AVC.reactive = "50";
+  assert.equal(validateSlot(slot, [], 100), "");
+  assert.equal(slot.params.AGC.connection, "未接入");
+  slot.params["调峰"].charge = "101";
+  assert.match(validateSlot(slot, [], 100), /最大充电功率/);
+  slot.params["调峰"].charge = "20";
+  slot.params.AVC.voltage = "-1";
+  assert.match(validateSlot(slot, [], 100), /目标电压/);
+});
+test("Shanghai date and weekday use one calendar; tariff expiry is exclusive and currency stays native", () => {
+  const { shanghaiCalendar, effectiveTariff, tariffUnit } = exportsObject;
+  const calendar = shanghaiCalendar(new Date("2026-09-26T17:00:00Z"));
+  assert.equal(calendar.date, "2026-09-27");
+  assert.equal(calendar.weekday, 6);
+  const expired = {
+    id: 1,
+    valid_from: "2026-09-01",
+    valid_until: "2026-09-27",
+    currency: "CNY",
+  };
+  const current = {
+    id: 2,
+    valid_from: "2026-09-27",
+    valid_until: "2026-10-01",
+    currency: "EUR",
+  };
+  assert.equal(effectiveTariff([expired], calendar.date), undefined);
+  assert.equal(effectiveTariff([expired, current], calendar.date), current);
+  assert.equal(tariffUnit(current), "EUR/kWh");
+  assert.equal(tariffUnit({}), "币种未知/kWh");
+  assert.equal(tariffUnit(undefined), "币种未知/kWh");
 });
