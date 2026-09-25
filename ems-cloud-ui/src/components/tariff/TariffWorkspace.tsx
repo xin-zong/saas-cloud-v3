@@ -146,7 +146,7 @@ export default function TariffWorkspace({station,onOpenStrategy,registerLeaveGua
         view==='templates'?<><button onClick={()=>navigate('calendar')}>返回日历</button><button className="primary" disabled={!canManage} onClick={()=>openEditor()}>＋ 新增模板</button></>:
           <><button onClick={()=>navigate('templates')}>取消</button><button className="primary" disabled={!canManage} onClick={saveTemplate}>保存模板</button></>}
     </div></header>
-    {error&&<p role="alert" className="tariff-error">{error}</p>}{notice&&<p role="status" className="tariff-notice">{notice}</p>}
+    {error&&!pendingLeave&&<p role="alert" className="tariff-error">{error}</p>}{notice&&<p role="status" className="tariff-notice">{notice}</p>}
     {view==='calendar'&&<TariffCalendar workspace={workspace} onChange={setWorkspace} serverRows={serverRows} disabled={!canManage}/>}
     {view==='templates'&&<>
       <section className="tariff-card tariff-template-table"><table><thead><tr><th>模板名称</th><th>购电规则</th><th>售电规则</th><th>状态</th><th>操作</th></tr></thead><tbody>
@@ -167,8 +167,8 @@ export default function TariffWorkspace({station,onOpenStrategy,registerLeaveGua
         </tbody></table>
       </section>}
     </>}
-    {view==='editor'&&editor&&<TariffTemplateEditor value={editor} onChange={setEditor} disabled={!canManage}/>}
-    {pendingLeave&&<Dialog title={editorDirty?'未保存的模板':'未保存的日历分配'} onClose={()=>{pendingLeave.resolve?.(false);setPendingLeave(null)}}><p>{editorDirty?'模板尚未保存':'日历分配尚未保存'}，离开后本次修改将丢失。</p><div className="tariff-dialog-actions">
+    {view==='editor'&&editor&&<TariffTemplateEditor value={editor} onChange={next=>{setEditor(next);setError('')}} disabled={!canManage}/>}
+    {pendingLeave&&<Dialog title={editorDirty?'未保存的模板':'未保存的日历分配'} onClose={()=>{pendingLeave.resolve?.(false);setPendingLeave(null)}}><p>{editorDirty?'模板尚未保存':'日历分配尚未保存'}，离开后本次修改将丢失。</p>{error&&<p role="alert" className="tariff-error">{error}</p>}<div className="tariff-dialog-actions">
       <button onClick={()=>{pendingLeave.resolve?.(false);setPendingLeave(null)}}>继续编辑</button><button onClick={()=>finishLeave(false)}>不保存离开</button>
       <button className="primary" disabled={!canManage} onClick={()=>finishLeave(true)}>保存并离开</button>
     </div></Dialog>}
