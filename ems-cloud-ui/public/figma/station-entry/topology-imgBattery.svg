@@ -1,0 +1,6 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Battery">
+<path id="Vector" d="M38 4H10C8.89543 4 8 4.89543 8 6V42C8 43.1046 8.89543 44 10 44H38C39.1046 44 40 43.1046 40 42V6C40 4.89543 39.1046 4 38 4Z" stroke="#26343E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M8 16H40M8 30H40M16 10H32M16 22H32M16 36H32" stroke="#26343E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

@@ -1,0 +1,70 @@
+const test = require("node:test")
+const assert = require("node:assert/strict")
+const fs = require("node:fs")
+const ts = require("typescript")
+const source = fs.readFileSync(
+  require("node:path").join(
+    __dirname,
+    "../src/components/station-provision/model.ts",
+  ),
+  "utf8",
+)
+const output = ts.transpileModule(source, {
+  compilerOptions: { module: ts.ModuleKind.CommonJS },
+}).outputText
+const moduleResult = { exports: {} }
+new Function("exports", "module", output)(moduleResult.exports, moduleResult)
+const {
+  emptyProvision,
+  validateBasics,
+  validateTopology,
+  deploymentStages,
+  parseDraft,
+} = moduleResult.exports
+test("basic information blocks advancing with missing or invalid required values", () => {
+  assert.ok(validateBasics(emptyProvision()).length > 0)
+  const valid = {
+    ...emptyProvision(),
+    name: "园区储能站",
+    region: "华东",
+    address: "工业园",
+    ratedPower: "100",
+    storageCapacity: "200",
+  }
+  assert.deepEqual(validateBasics(valid), [])
+  assert.ok(validateBasics({ ...valid, ratedPower: "-1" }).length)
+})
+test("topology validation rejects empty devices and duplicate communication addresses", () => {
+  assert.ok(validateTopology([]).length)
+  const device = {
+    id: "a",
+    type: "PCS",
+    name: "PCS 1",
+    protocol: "Modbus TCP",
+    interface: "LAN 1",
+    ip: "192.168.1.1",
+    port: "502",
+    address: "1",
+    bus: "交流母线",
+    baud: "9600",
+    parity: "无校验",
+    bits: "8 / 1",
+  }
+  assert.deepEqual(validateTopology([device]), [])
+  assert.ok(
+    validateTopology([device, { ...device, id: "b" }]).some((x) =>
+      x.includes("冲突"),
+    ),
+  )
+  assert.ok(validateTopology([{ ...device, ip: "999.0.0.1" }]).length)
+})
+test("unconnected backend never reports deployment success", () => {
+  assert.ok(deploymentStages.every((x) => x.status === "unavailable"))
+  assert.equal(deploymentStages.length, 6)
+})
+test("corrupt or unrelated local drafts are discarded", () => {
+  assert.equal(parseDraft("{"), null)
+  assert.equal(parseDraft('{"name":"legacy"}'), null)
+  const draft = emptyProvision()
+  assert.equal(parseDraft(JSON.stringify(draft)).name, "")
+})
