@@ -1,0 +1,37 @@
+.workspace-shell[data-design-area="stations"] { --nav-width:176px; --ui-bg:#f7f8fa; --ui-surface-soft:#fff; --ui-border:#e2e6eb; --ui-text:#20252e; --ui-muted:#6b7280; --ui-primary:#1f7a68; --ui-selected:#eef8f4; --ui-radius:8px; display:grid; grid-template-columns:var(--nav-width) minmax(0,1fr); grid-template-rows:56px minmax(0,1fr); background:#f7f8fa; }
+.workspace-shell[data-design-area="stations"][data-nav-collapsed="true"] { --nav-width:56px; }
+[data-design-area="stations"] > .workspace-sidebar { grid-column:1; grid-row:2; }
+[data-design-area="stations"] > .workspace-sidebar + div { grid-column:2; grid-row:2; }
+[data-design-area="stations"] .workspace-brand,[data-design-area="stations"] .workspace-account { display:none; }
+[data-design-area="stations"] .workspace-nav { padding:16px 12px; }
+[data-design-area="stations"] .workspace-nav-item { height:44px; min-height:44px; padding:0 12px; font-size:13px; border:1px solid transparent; border-radius:8px; gap:10px; }
+[data-design-area="stations"] .workspace-nav-item[aria-current="page"] { border-color:#c9e8db; }
+[data-design-area="stations"] .workspace-nav-item img { width:20px; height:20px; flex-shrink:0; }
+[data-design-area="stations"] .workspace-nav-toggle { min-height:40px; font-size:12px; }
+.station-global-header { grid-column:1/-1; grid-row:1; display:flex; align-items:center; justify-content:space-between; padding:0 24px; border-bottom:1px solid #e2e6eb; background:white; z-index:60; }
+.station-global-brand { display:flex; align-items:center; gap:8px; color:#20252e; font-size:22px; font-weight:650; text-decoration:none; }
+.station-global-brand img { width:12px; height:12px; }
+.station-global-tools { display:flex; align-items:center; gap:20px; font-size:12px; color:#6b7280; }
+[data-design-area="stations"]:has(.global-ai-trigger) .station-global-tools time {margin-right:86px;}
+[data-design-area="stations"] .global-ai-shell[data-open="false"] .global-ai-trigger {top:12px; right:122px; transform:none; width:72px; min-height:32px; padding:4px 8px; flex-direction:row; gap:4px; border:1px solid #dce2e5; border-radius:6px; box-shadow:none;}
+[data-design-area="stations"] .global-ai-shell[data-open="false"] .global-ai-trigger span {writing-mode:horizontal-tb; font-size:10px;}
+.station-header-popover { position:relative; }
+.station-header-popover > button { display:grid; place-items:center; width:32px; height:32px; border:0; border-radius:50%; background:transparent; cursor:pointer; }
+.station-header-popover > button img { width:18px; height:18px; }
+.station-header-popover > .station-user-avatar { background:#eef8f4; color:#1f7a68; font-size:12px; }
+.station-header-popover section { position:absolute; top:42px; right:0; min-width:240px; padding:16px; border:1px solid #e2e6eb; border-radius:8px; background:white; box-shadow:0 8px 24px #20252e14; color:#20252e; }
+.station-header-popover section p { margin:12px 0; }
+.station-header-popover section button { display:block; margin-top:12px; color:#1f7a68; cursor:pointer; }
+[data-design-area="stations"] .station-detail-shell { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
+.station-open-tabs { display:flex; height:44px; flex-shrink:0; border-bottom:1px solid #e2e6eb; background:white; }
+.station-open-tabs-list { display:flex; flex:1; min-width:0; overflow:auto; align-items:stretch; }
+.station-open-tab { display:flex; align-items:center; border-bottom:2px solid transparent; padding:0 10px 0 18px; gap:8px; }
+.station-open-tab[data-active="true"] { border-color:#1f7a68; color:#1f7a68; }
+.station-open-tab button { display:flex; align-items:center; gap:8px; border:0; background:none; font-size:13px; white-space:nowrap; cursor:pointer; }
+.station-open-tab i { width:6px; height:6px; border-radius:50%; }
+.station-open-tab img { width:12px; height:12px; }
+.station-open-tabs-count { align-self:center; white-space:nowrap; font-size:11px; padding:0 16px; color:#9ca3af; }
+.station-list-return { display:flex; align-items:center; gap:8px; padding:0 20px; border:0; border-left:1px solid #e2e6eb; background:white; font-size:12px; cursor:pointer; }
+.station-list-return img { width:16px; height:16px; }
+[data-design-area="stations"] .station-detail-shell > .ui-tabs { height:48px; gap:0; padding:0 12px; }
+[data-design-area="stations"] .station-detail-shell > .ui-tabs button { min-width:96px; height:48px; font-size:13px; padding:0 12px; }

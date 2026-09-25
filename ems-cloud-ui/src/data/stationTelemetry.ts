@@ -8,6 +8,7 @@ export const SIGNALS = [
   { id: "dcVoltage", group: "PCS", name: "直流母线电压", unit: "V", color: "#317c9d" },
   { id: "pv", group: "其他设备", name: "光伏有功功率", unit: "kW", color: "#e08a16" },
   { id: "load", group: "其他设备", name: "负荷功率", unit: "kW", color: "#795bc8" },
+  { id: "grid", group: "其他设备", name: "电网功率", unit: "kW", color: "#9275b3" },
   { id: "gridVoltage", group: "其他设备", name: "并网电压", unit: "V", color: "#a06376" },
   { id: "generator", group: "其他设备", name: "发电机功率", unit: "kW", color: "#65774b" },
 ] as const;

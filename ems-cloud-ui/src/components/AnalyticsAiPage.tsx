@@ -55,6 +55,7 @@ const downloadSignalLabels: Record<SignalId, string> = {
   dcVoltage: "直流母线电压",
   pv: "光伏功率",
   load: "负载功率",
+  grid: "电网功率",
   gridVoltage: "并网电压",
   generator: "发电机功率",
 }

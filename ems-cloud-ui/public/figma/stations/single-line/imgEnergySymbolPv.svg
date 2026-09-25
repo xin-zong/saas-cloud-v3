@@ -1,0 +1,12 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Energy Symbol / PV">
+<path d="M8 0.5H40C44.1421 0.500001 47.5 3.85786 47.5 8V40C47.5 44.1421 44.1421 47.5 40 47.5H8C3.85786 47.5 0.5 44.1421 0.5 40V8L0.509766 7.61426C0.704064 3.77915 3.77915 0.704063 7.61426 0.509766L8 0.5Z" fill="#F7F8F9"/>
+<path d="M8 0.5H40C44.1421 0.500001 47.5 3.85786 47.5 8V40C47.5 44.1421 44.1421 47.5 40 47.5H8C3.85786 47.5 0.5 44.1421 0.5 40V8L0.509766 7.61426C0.704064 3.77915 3.77915 0.704063 7.61426 0.509766L8 0.5Z" stroke="#DCE2E5"/>
+<g id="icon">
+<path id="Vector" d="M29 20H16C15.4477 20 15 20.4477 15 21V29C15 29.5523 15.4477 30 16 30H29C29.5523 30 30 29.5523 30 29V21C30 20.4477 29.5523 20 29 20Z" stroke="#26343E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M20 20V30M25 20V30M15 25H30M22.5 30V33M19 33H26" stroke="#26343E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M31 18.5C32.1046 18.5 33 17.6046 33 16.5C33 15.3954 32.1046 14.5 31 14.5C29.8954 14.5 29 15.3954 29 16.5C29 17.6046 29.8954 18.5 31 18.5Z" stroke="#26343E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_4" d="M31 13V14M31 19V20M27.5 16.5H28.5M33.5 16.5H34.5M28.5 14L29.2 14.7M32.8 18.3L33.5 19M33.5 14L32.8 14.7" stroke="#26343E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+</svg>

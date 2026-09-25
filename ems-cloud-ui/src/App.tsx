@@ -5,6 +5,8 @@ import { apiRoleConfig, hasStationPermission, stationRoleConfig } from "@/auth/a
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import Sidebar from "@/components/Sidebar"
+import StationGlobalHeader from "@/components/StationGlobalHeader"
+import "@/styles/stations-figma.css"
 
 import Header from "@/components/Header"
 
@@ -464,7 +466,8 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
       setActiveDetailId((curr) => {
         if (curr !== id) return curr
 
-        return next[next.length - 1] ?? null
+        const closedIndex = prev.indexOf(id)
+        return next[closedIndex] ?? next[closedIndex - 1] ?? null
       })
 
       return next
@@ -862,7 +865,8 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
   }, [stations, user])
 
   return (
-    <div className="workspace-shell" data-nav-collapsed={sidebarCollapsed}>
+    <div className="workspace-shell" data-nav-collapsed={sidebarCollapsed} data-design-area={activeNav === "资产与站点" ? "stations" : undefined}>
+      {activeNav === "资产与站点" && <StationGlobalHeader user={user} onLogout={logout} status={DEMO_MODE ? undefined : apiError || (apiLoading ? "正在加载授权站点…" : `已连接业务服务 · ${stations.length} 个授权站点`)} loading={apiLoading} onRefresh={refreshApi} />}
       {!immersive && (
         <Sidebar
           collapsed={sidebarCollapsed}
@@ -884,7 +888,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
       )}
 
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        {!DEMO_MODE && (
+        {!DEMO_MODE && activeNav !== "资产与站点" && (
           <div
             role={apiError ? "alert" : "status"}
             style={{
@@ -910,6 +914,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
         {/* Station detail page — only within 资产与站点 nav */}
         {activeNav === "资产与站点" && activeDetailId !== null && (
           <StationDetailPage
+            onRefresh={refreshApi}
             tabs={detailTabs
 
               .map((id) => scopedStations.find((s) => s.id === id)!)
@@ -929,7 +934,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
           />
         )}
 
-        {!(activeNav === "资产与站点" && activeDetailId !== null) &&
+        {activeNav !== "资产与站点" &&
           ![
             "运营中心",
 
