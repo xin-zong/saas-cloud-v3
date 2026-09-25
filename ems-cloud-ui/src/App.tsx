@@ -502,8 +502,8 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
 
         await send(`/stations/${id}`, "PUT", {
           name: next.name,
-          ratedPowerKw: next.ratedPower,
-          capacityKwh: next.storageCapacity,
+          ratedPowerKw: Number.isFinite(next.ratedPower) ? next.ratedPower : undefined,
+          capacityKwh: Number.isFinite(next.storageCapacity) ? next.storageCapacity : undefined,
           region: next.region,
           address: next.address,
           longitude: next.lng ? Number(next.lng) : null,

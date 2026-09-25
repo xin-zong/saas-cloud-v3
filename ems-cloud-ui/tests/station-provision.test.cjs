@@ -57,6 +57,12 @@ test("topology validation rejects empty devices and duplicate communication addr
     ),
   )
   assert.ok(validateTopology([{ ...device, ip: "999.0.0.1" }]).length)
+  for (const interfaceName of ["COM 1", "LAN 1"]) {
+    assert.ok(validateTopology([
+      { ...device, interface: interfaceName },
+      { ...device, id: "b", interface: interfaceName, address: "01", port: "0502", ip: "192.168.001.001" },
+    ]).some(x => x.includes("冲突")))
+  }
 })
 test("unconnected backend never reports deployment success", () => {
   assert.ok(deploymentStages.every((x) => x.status === "unavailable"))

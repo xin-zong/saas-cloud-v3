@@ -176,3 +176,44 @@ test(
 )
 
 
+
+test('editor preserves requested tabs and unknown API capacities', {timeout:90000}, async () => {
+  const browser = await chromium.launch({channel:'msedge',headless:true})
+  const context = await browser.newContext()
+  await context.addInitScript(() => sessionStorage.setItem('enerlution-api-token','entry-test'))
+  const page = await context.newPage()
+  const writes=[]
+  const station={id:1,name:'未知容量站',code:'API-UNKNOWN',region:'华东',address:'真实地址'}
+  await page.route('http://127.0.0.1:18090/api/**',async route => {
+    const req=route.request(), p=new URL(req.url()).pathname.slice(4)
+    let data=[]
+    if(p==='/auth/me') data={id:'7',name:'权限用户',account:'entry@test',role:'integrator',organization:'测试',stationIds:['1'],permissions:['asset.read','asset.edit'],stationPermissions:{1:['asset.read','asset.edit']},organizationPermissions:{}}
+    else if(p==='/stations') data=[station]
+    else if(p==='/stations/1' && req.method()==='PUT') {writes.push(req.postDataJSON());data=null}
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({code:0,data})})
+  })
+  const click = name => page.getByRole('button',{name,exact:true}).click()
+  const edit = async () => {await click('列表查询');await click('编辑未知容量站')}
+  try {
+    await page.goto(process.env.API_PREVIEW_URL||'http://127.0.0.1:8451',{waitUntil:'domcontentloaded',timeout:60000})
+    await click('资产与站点');await edit()
+    await click('地图查询');await page.locator('.station-map').waitFor()
+    await edit();await page.getByLabel('详细地址 *',{exact:true}).fill('未保存地址')
+    await click('智能规则');await page.getByRole('dialog',{name:'未保存的更改'}).waitFor()
+    await click('取消');await page.locator('.station-editor').waitFor()
+    await click('智能规则');await click('不保存离开')
+    await page.locator('.station-editor').waitFor({state:'detached'})
+    assert.equal(await page.locator('.station-entry-tabs button[aria-current="page"]').textContent(),'智能规则')
+    await edit();await page.getByLabel('详细地址 *',{exact:true}).fill('保存真实地址')
+    await click('收藏站点');await click('保存并离开')
+    await page.getByRole('heading',{name:'暂无收藏站点'}).waitFor()
+    assert.equal(writes.length,1);assert.equal(writes[0].address,'保存真实地址')
+    assert.ok(!Object.hasOwn(writes[0],'ratedPowerKw'));assert.ok(!Object.hasOwn(writes[0],'capacityKwh'))
+    await edit();await page.getByLabel('额定功率 (kW)',{exact:true}).fill('-1')
+    await click('保存');await page.getByRole('alert').filter({hasText:'必须为非负数'}).waitFor()
+    assert.equal(writes.length,1)
+    await page.getByLabel('额定功率 (kW)',{exact:true}).fill('123')
+    await click('保存');await page.getByRole('status').filter({hasText:'已保存编辑'}).waitFor()
+    assert.equal(writes.length,2);assert.equal(writes[1].ratedPowerKw,123);assert.ok(!Object.hasOwn(writes[1],'capacityKwh'))
+  } finally { await browser.close() }
+})

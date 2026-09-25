@@ -109,6 +109,7 @@ export default function AssetsPage({
         readOnly={viewOnly || !allowedEdit}
         showRevenue={showRevenue}
         onBack={() => setEditing(null)}
+        onNavigate={(destination) => { setEditing(null); changeTab(destination) }}
         onSubmit={async (patch) => {
           if (!canEditStation(editing.id))
             throw new Error("没有编辑该站点的权限")

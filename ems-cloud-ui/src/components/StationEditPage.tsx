@@ -14,6 +14,7 @@ interface Props {
   showRevenue?: boolean
   readOnly?: boolean
   onBack: () => void
+  onNavigate?: (tab: string) => void
   onSubmit: (patch: Partial<Station>) => void | Promise<void>
 }
 export default function StationEditPage(props: Props) {
@@ -26,6 +27,7 @@ function StationEditor({
   showRevenue = true,
   readOnly = false,
   onBack,
+  onNavigate,
   onSubmit,
 }: Props) {
   const [draft, setDraft] = useState<Draft>(
@@ -43,6 +45,8 @@ function StationEditor({
     lng: draft.lng ?? "",
   })
   const file = useRef<HTMLInputElement>(null)
+  const destination = useRef<string | undefined>(undefined)
+  const initialNumbers = useRef({ ratedPower: draft.ratedPower, storageCapacity: draft.storageCapacity })
   const dirty = JSON.stringify(draft) !== snapshot
   useEffect(() => {
     const listener = (e: BeforeUnloadEvent) => {
@@ -59,9 +63,14 @@ function StationEditor({
     setNotice("")
     setError("")
   }
-  function leave() {
-    if (dirty && !readOnly) setModal("leave")
+  function finishLeave() {
+    if (destination.current && onNavigate) onNavigate(destination.current)
     else onBack()
+  }
+  function leave(tab?: string) {
+    destination.current = tab
+    if (dirty && !readOnly) setModal("leave")
+    else finishLeave()
   }
   async function save(exit = false) {
     if (readOnly || saving) return
@@ -70,10 +79,9 @@ function StationEditor({
       return
     }
     if (
-      !Number.isFinite(draft.ratedPower) ||
-      Number(draft.ratedPower) < 0 ||
-      !Number.isFinite(draft.storageCapacity) ||
-      Number(draft.storageCapacity) < 0
+      (["ratedPower", "storageCapacity"] as const).some(key =>
+        !Object.is(draft[key], initialNumbers.current[key]) &&
+        (!Number.isFinite(draft[key]) || Number(draft[key]) < 0))
     ) {
       setError("额定功率与储能容量必须为非负数")
       return
@@ -85,8 +93,8 @@ function StationEditor({
         ? draft
         : {
             name: draft.name.trim(),
-            ratedPower: draft.ratedPower,
-            storageCapacity: draft.storageCapacity,
+            ...(Number.isFinite(draft.ratedPower) ? { ratedPower: draft.ratedPower } : {}),
+            ...(Number.isFinite(draft.storageCapacity) ? { storageCapacity: draft.storageCapacity } : {}),
             region: draft.region,
             address: draft.address,
             lng: draft.lng,
@@ -94,9 +102,10 @@ function StationEditor({
           }
       await onSubmit(patch)
       setSnapshot(JSON.stringify(draft))
+      initialNumbers.current = { ratedPower: draft.ratedPower, storageCapacity: draft.storageCapacity }
       setNotice("已保存编辑")
       setModal(null)
-      if (exit) onBack()
+      if (exit) finishLeave()
     } catch (e) {
       setError(e instanceof Error ? e.message : "保存失败，请重试")
     } finally {
@@ -112,7 +121,7 @@ function StationEditor({
     <Field label={label} wide={extra.wide}>
       <input
         type={extra.type ?? "text"}
-        value={String(draft[key] ?? "")}
+        value={extra.type === "number" && !Number.isFinite(draft[key]) ? "" : String(draft[key] ?? "")}
         placeholder={key === 'address' ? '请输入详细地址' : undefined}
         disabled={readOnly || extra.disabled}
         onChange={(e) =>
@@ -155,7 +164,7 @@ function StationEditor({
         )}
         <header className="station-edit-heading">
           <div>
-            <button className="station-text-button" onClick={leave}>
+            <button className="station-text-button" onClick={() => leave()}>
               资产与站点 / 列表查询 / {station?.name} / 编辑
             </button>
             <h1>
@@ -414,7 +423,7 @@ function StationEditor({
           </Field>,
         )}
         <footer className="station-edit-footer">
-          <Button onClick={leave}>返回站点列表</Button>
+          <Button onClick={() => leave()}>返回站点列表</Button>
           {readOnly && <span>当前账户仅可查看此站点信息</span>}
         </footer>
       </main>
@@ -425,7 +434,7 @@ function StationEditor({
           actions={
             <>
               <Button onClick={() => setModal(null)}>取消</Button>
-              <Button disabled={saving} onClick={onBack}>
+              <Button disabled={saving} onClick={finishLeave}>
                 不保存离开
               </Button>
               <Button

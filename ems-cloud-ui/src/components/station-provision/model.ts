@@ -98,8 +98,8 @@ export function validateTopology(devices: Device[]) {
     }
     const key = [
       d.interface,
-      d.interface.startsWith("LAN") ? `${d.ip}:${d.port}` : "",
-      d.address,
+      d.interface.startsWith("LAN") ? `${d.ip.split(".").map(Number).join(".")}:${Number(d.port)}` : "",
+      Number(d.address),
     ].join("/")
     if (addresses.has(key)) errors.push(`${d.name}：通信地址冲突`)
     addresses.add(key)
