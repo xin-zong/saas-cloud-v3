@@ -40,20 +40,21 @@ const ChartTooltip = ({ active, payload, label }: any) => {
 
 const card = {
   background: "rgba(255,255,255,0.94)",
-  border: "1px solid #dbe6df",
-  borderRadius: 10,
+  border: "1px solid transparent",
+  borderRadius: 12,
   backdropFilter: "blur(12px)",
-  boxShadow: "0 10px 26px rgba(24,52,45,0.09)",
-  padding: "14px 14px 12px",
+  boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+  padding: "16px",
 } as const
 
 const label = { fontSize: 10, color: "#76857f" } as const
-const title = { fontSize: 11, fontWeight: 600, color: "#1d2f2a" } as const
+const title = { fontSize: 14, fontWeight: 700, color: "#18232d" } as const
 const mono = { fontFamily: "'JetBrains Mono',monospace" } as const
 
 interface Props {
   stations: Station[]
   role: UserRole
+  onViewStations?: () => void
 }
 
 function formatMwh(value: number) {
@@ -61,14 +62,12 @@ function formatMwh(value: number) {
 }
 
 function EnvironmentalIcon({ kind }: { kind: string }) {
-  if (kind === "coal") return <Flame size={14} />
-  if (kind === "tree") return <TreePine size={14} />
-  return <Leaf size={14} />
+  return <img src={`/figma/overview/map/${kind === "coal" ? "imgFlame" : kind === "tree" ? "imgTrees" : "imgLeaf"}.svg`} alt="" />
 }
 
-export default function LeftPanel({ stations, role }: Props) {
+export default function LeftPanel({ stations, role, onViewStations }: Props) {
   const [tab, setTab] = useState<"today" | "month">("today")
-  const statusItems = useMemo(() => buildStatusItems(stations), [stations])
+  const statusItems = useMemo(() => buildStatusItems(stations).map(item => ({ ...item, color: ({ online: "#2f875a", fault: "#ef4444", offline: "#94a3b8", building: "#4c6ef5" })[item.status] })), [stations])
   const deviceSummary = useMemo(() => buildDeviceSummary(stations), [stations])
   const data = useMemo(() => DEMO_MODE ? buildStorageTrend(stations, tab) : [], [stations, tab])
   const trendSummary = useMemo(() => summarizeTrend(data), [data])
@@ -101,110 +100,16 @@ export default function LeftPanel({ stations, role }: Props) {
 
   return (
     <div className="flex flex-col gap-2.5">
-      <div style={card}>
-        <div className="mb-3 flex items-center justify-between">
-          <span style={title}>站点运营概况</span>
-          <span style={{ ...label, fontSize: 9 }}>{roleScope}</span>
-        </div>
-
-        <div className="mb-3 flex items-end justify-between">
-          <div>
-            <div style={label}>站点总数</div>
-            <div
-              data-metric="station-total"
-              style={{
-                fontSize: 32,
-                fontWeight: 700,
-                color: "#1d2f2a",
-                lineHeight: 1,
-                marginTop: 2,
-              }}
-            >
-              {stations.length}
-            </div>
-          </div>
-          <div className="flex flex-col gap-1 pb-1 text-right">
-            {statusItems.map((item) => (
-              <div
-                key={item.status}
-                className="flex items-center justify-end gap-1.5"
-              >
-                <span style={{ fontSize: 10, color: "#61716b" }}>
-                  {item.label}
-                </span>
-                <span
-                  data-metric={`station-status-${item.status}`}
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 600,
-                    color: item.color,
-                    minWidth: 12,
-                    textAlign: "right",
-                  }}
-                >
-                  {DEMO_MODE ? item.count : "—"}
-                </span>
-                <div
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: "50%",
-                    background: DEMO_MODE ? item.color : "#e6eee9",
-                    flexShrink: 0,
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div
-          className="mb-3 flex overflow-hidden rounded-full"
-          style={{ height: 3 }}
-        >
-          {statusItems.map((item) => (
-            <div
-              key={item.status}
-              style={{
-                flex: DEMO_MODE ? item.count : 1,
-                minWidth: 2,
-                background: DEMO_MODE ? item.color : "#e6eee9",
-              }}
-            />
-          ))}
-        </div>
-
-        <div className="flex items-center justify-between">
-          <span style={label}>关联设备数</span>
-          <span
-            data-metric="device-total"
-            style={{
-              fontSize: 16,
-              fontWeight: 700,
-              color: "#1d2f2a",
-              ...mono,
-            }}
-          >
-            {DEMO_MODE ? deviceSummary.total : stations.reduce((sum, station) => sum + (station.deviceInventory?.length ?? 0), 0)}
-          </span>
-        </div>
-        <div
-          className="mt-1.5 overflow-hidden rounded-full"
-          style={{ height: 3, background: "#e6eee9" }}
-        >
-          <div
-            style={{
-              width: `${DEMO_MODE ? deviceSummary.onlinePct : 0}%`,
-              height: "100%",
-              background: "#1f7a68",
-              transition: "width 0.35s ease",
-            }}
-          />
-        </div>
-      </div>
-
+<div style={card} className="overview-status-card">
+<div className="overview-status-heading"><span style={title}>站点运营概况</span>{onViewStations ? <button aria-label="查看站点列表" onClick={onViewStations}><img src="/figma/overview/map/imgChevronRight.svg" alt="" /></button> : <span style={label}>{roleScope}</span>}</div>
+<div className="overview-status-total"><span style={label}>站点总数</span><strong data-metric="station-total">{stations.length}</strong></div>
+<div className="overview-status-bar">{statusItems.map(item => <span key={item.status} style={{ flex: DEMO_MODE ? item.count : 1, background: DEMO_MODE ? item.color : "#e6eee9" }} />)}</div>
+<div className="overview-status-counts">{statusItems.map(item => <span key={item.status}><i style={{ background: item.color }} />{item.label} <b data-metric={"station-status-" + item.status}>{DEMO_MODE ? item.count : "—"}</b></span>)}</div>
+<div className="overview-status-total"><span style={label}>关联设备数</span><strong data-metric="device-total">{DEMO_MODE ? deviceSummary.total : stations.reduce((sum, station) => sum + (station.deviceInventory?.length ?? 0), 0)}</strong></div>
+<div className="overview-status-bar"><span style={{ width: DEMO_MODE ? deviceSummary.onlinePct + "%" : "0%", background: "#2f875a" }} /></div>
+</div>
       {role !== "integrator" ? (
-        <div style={card}>
+        <div style={card} className="overview-storage-card">
           <div className="mb-3 flex items-center justify-between">
             <span style={title}>储能充放趋势</span>
             <div className="flex gap-3">
@@ -286,51 +191,26 @@ export default function LeftPanel({ stations, role }: Props) {
           <div style={{ height: 72, position: "relative" }} data-chart="storage-trend">
             {!DEMO_MODE && <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", borderBottom: "1px solid #e6eee9", background: "repeating-linear-gradient(to top, transparent 0 23px, #f0f5f2 23px 24px)", ...label }}>暂无充放电数据</div>}
             <BarChart
-              width={200}
-              height={72}
+              width={226}
+              height={120}
               data={data}
               barGap={1}
               barSize={tab === "today" ? 5 : 9}
-              margin={{ top: 0, right: 0, bottom: 0, left: -22 }}
+              margin={{ top: 48, right: 0, bottom: 0, left: 0 }}
             >
-              <XAxis
-                dataKey="h"
-                tick={{ fontSize: 7, fill: "#76857f" }}
-                axisLine={false}
-                tickLine={false}
-                interval={tab === "today" ? 2 : 0}
-              />
               <Tooltip
                 content={<ChartTooltip />}
                 cursor={{ fill: "rgba(148,163,184,0.07)" }}
               />
-              <Bar dataKey="charge" fill="#1f7a68" radius={[1, 1, 0, 0]} />
+              <Bar dataKey="charge" stackId="energy" fill="#2f875a" radius={[2, 2, 0, 0]} />
               <Bar
-                dataKey="discharge"
-                fill="#b7d4c9"
+                dataKey="discharge" stackId="energy"
+                fill="#4c6ef5"
                 radius={[1, 1, 0, 0]}
               />
             </BarChart>
           </div>
 
-          <div className="mt-2 flex gap-3">
-            {[
-              ["充电", "#1f7a68"],
-              ["放电", "#b7d4c9"],
-            ].map(([name, color]) => (
-              <div key={name} className="flex items-center gap-1">
-                <div
-                  style={{
-                    width: 8,
-                    height: 3,
-                    background: color,
-                    borderRadius: 1,
-                  }}
-                />
-                <span style={{ fontSize: 9, color: "#76857f" }}>{name}</span>
-              </div>
-            ))}
-          </div>
         </div>
       ) : (
         <div style={card} data-role-panel="delivery-progress">
@@ -416,7 +296,7 @@ export default function LeftPanel({ stations, role }: Props) {
                   {item.unit}
                 </div>
                 <div style={{ fontSize: 9, color: "#61716b", marginTop: 1 }}>
-                  {item.label}
+                  {item.label}{item.unit}
                 </div>
               </div>
             ))}

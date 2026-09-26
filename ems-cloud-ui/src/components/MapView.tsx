@@ -326,9 +326,9 @@ export default function MapView({ stations, selectedStation, onSelectStation, re
 
       {/* Zoom controls */}
       <div
-        className="absolute flex flex-col rounded-lg overflow-hidden"
+        className="map-zoom-controls absolute flex flex-col rounded-lg overflow-hidden"
         style={{
-          bottom: 20, right: 16, zIndex: 1200,
+          bottom: 164, right: 16, zIndex: 1200,
           boxShadow: "0 8px 20px rgba(24,52,45,0.12)",
           border: "1px solid #d8e3dc",
         }}
@@ -364,7 +364,7 @@ export default function MapView({ stations, selectedStation, onSelectStation, re
       <div
         className="absolute flex items-center gap-4 px-4 py-1.5 rounded-lg"
         style={{
-          bottom: 16, left: "50%", transform: "translateX(-50%)",
+          bottom: 122, left: 16,
           background: "rgba(255,255,255,0.9)",
           border: "1px solid #d8e3dc",
           backdropFilter: "blur(8px)",
@@ -374,7 +374,7 @@ export default function MapView({ stations, selectedStation, onSelectStation, re
       >
         {Object.entries(STATUS_LABEL).map(([status, label]) => (
           <div key={status} className="flex items-center gap-1.5">
-            <div className="rounded-full" style={{ width: 7, height: 7, background: STATUS_COLOR[status] }} />
+            <img src={`/figma/overview/map/${({ online: "imgEllipse13", fault: "imgEllipse12", offline: "imgEllipse14", building: "imgEllipse15" } as Record<string, string>)[status]}.svg`} alt="" />
             <span style={{ fontSize: 10, color: "#61716b" }}>{label}</span>
           </div>
         ))}

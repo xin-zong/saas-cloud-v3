@@ -182,6 +182,8 @@ test('revoking asset navigation cancels a pending new-station departure even whe
   await page.getByRole('dialog', { name: '未保存的更改' }).waitFor()
   await refreshUser({ permissions: ['asset.edit'], stationPermissions: { 12: ['asset.edit'], 13: ['asset.edit'] } })
   await page.locator('.station-provision').waitFor({ state: 'detached' })
+  // The role fallback is applied by the shell effect after the revoked editor unmounts.
+  await page.waitForFunction(() => document.querySelector('.workspace-nav button[aria-label="总览"]')?.getAttribute('aria-current') === 'page')
   assert.equal(await primary(page, '总览').getAttribute('aria-current'), 'page')
   await primary(page, '设置').click()
   await page.waitForFunction(() => document.querySelector('.workspace-nav button[aria-label="设置"]')?.getAttribute('aria-current') === 'page')

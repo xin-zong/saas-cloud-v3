@@ -1,6 +1,6 @@
 import { DEMO_MODE } from "@/api/client"
 import { useState, useEffect } from "react"
-import { Clock3, LogOut, Maximize2, Minimize2, User } from "lucide-react"
+import { LogOut } from "lucide-react"
 import { Button } from "./ui/Workspace"
 import { ROLE_CONFIG, type AuthUser } from "@/auth/roles"
 
@@ -9,12 +9,14 @@ interface Props {
   onToggleImmersive: () => void
   user: AuthUser
   onLogout: () => void
+  showImmersive?: boolean
 }
 export default function Header({
   immersive,
   onToggleImmersive,
   user,
   onLogout,
+  showImmersive = true,
 }: Props) {
   const [time, setTime] = useState(new Date())
   useEffect(() => {
@@ -22,24 +24,24 @@ export default function Header({
     return () => clearInterval(timer)
   }, [])
   return (
-    <header className="workspace-topbar">
-      <span className="workspace-topbar-context">{DEMO_MODE ? "演示环境" : "测试环境"} · {DEMO_MODE ? "华东集群" : "授权站点数据"}</span>
+    <header className="workspace-topbar global-platform-header">
+      <div className="global-platform-brand"><img src="/figma/overview/map/imgBrandMark.svg" alt="" /><strong>Enerlution</strong><span className="workspace-topbar-context">{DEMO_MODE ? "演示环境" : "测试环境"} · {DEMO_MODE ? "华东集群" : "授权站点数据"}</span></div>
       <div className="workspace-topbar-actions">
+        <span className="global-role-label">{ROLE_CONFIG[user.role].shortLabel} · 基础版 V1</span>
         <span className="workspace-clock">
-          <Clock3 size={14} />
           系统时间 {time.toLocaleTimeString("zh-CN", { hour12: false })}
         </span>
-        <Button
+        {showImmersive && <Button
           iconOnly
           variant="ghost"
           onClick={onToggleImmersive}
           title={immersive ? "退出沉浸模式" : "沉浸模式（隐藏导航）"}
           aria-label={immersive ? "退出沉浸模式" : "沉浸模式（隐藏导航）"}
         >
-          {immersive ? <Minimize2 /> : <Maximize2 />}
-        </Button>
+          <img src="/figma/overview/map/imgFullscreenIcon.svg" alt="" />
+        </Button>}
         <span className="workspace-user">
-          <User size={16} />
+          <span className="global-user-avatar">{user.name.slice(0, 1)}</span>
           <span>
             {user.name}
             <small>{ROLE_CONFIG[user.role].shortLabel}</small>

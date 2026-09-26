@@ -11,7 +11,7 @@ const STATUS_COLOR: Record<string, string> = {
   building: "#1f7a68",
 };
 
-const CARD_W = 268;
+const CARD_W = 320;
 
 interface Props {
   station: Station;
@@ -38,10 +38,17 @@ export default function StationPopup({ station, initialPos, onClose, onOpenStati
 
   function onDragStart(e: React.MouseEvent) {
     e.preventDefault();
-    const startX = e.clientX - (pos?.x ?? 0);
-    const startY = e.clientY - (pos?.y ?? 0);
+    const card = e.currentTarget.parentElement!;
+    const parent = card.parentElement!;
+    const cardBounds = card.getBoundingClientRect();
+    const parentBounds = parent.getBoundingClientRect();
+    const startX = e.clientX - (cardBounds.left - parentBounds.left);
+    const startY = e.clientY - (cardBounds.top - parentBounds.top);
     function onMove(ev: MouseEvent) {
-      setPos({ x: ev.clientX - startX, y: ev.clientY - startY });
+      setPos({
+        x: Math.max(8, Math.min(parent.clientWidth - cardBounds.width - 8, ev.clientX - startX)),
+        y: Math.max(8, Math.min(parent.clientHeight - cardBounds.height - 110, ev.clientY - startY)),
+      });
     }
     function onUp() {
       document.removeEventListener("mousemove", onMove);
@@ -62,17 +69,17 @@ export default function StationPopup({ station, initialPos, onClose, onOpenStati
 
   return (
     <div
-      className="rounded-xl overflow-hidden"
+      className="overview-station-popup rounded-xl overflow-hidden" data-positioned={positioned} role="dialog" aria-label="站点概况"
       style={{
         position: "absolute",
         ...(positioned
           ? { left: pos.x, top: pos.y }
           : { top: "50%", left: "50%", transform: "translate(-50%,-50%)" }),
         width: CARD_W,
-        background: "#20342f",
-        border: "1px solid rgba(104, 154, 139, 0.38)",
+        background: "rgba(255,255,255,0.93)",
+        border: "1px solid #dce2e5",
         boxShadow: "0 18px 42px rgba(20,45,38,0.24), 0 0 0 1px rgba(255,255,255,0.06) inset",
-        color: "#e8f2ee",
+        color: "#18232d",
         zIndex: 1500,
         animation: "popupIn 0.18s ease",
       }}
@@ -85,21 +92,22 @@ export default function StationPopup({ station, initialPos, onClose, onOpenStati
       <div
         onMouseDown={onDragStart}
         className="flex items-center justify-between px-4 py-3"
-        style={{ borderBottom: "1px solid rgba(216,227,220,0.12)", cursor: "grab", userSelect: "none" }}
+        style={{ borderBottom: "1px solid #e2e8ed", cursor: "grab", userSelect: "none" }}
       >
         <div>
-          <div className="font-semibold" style={{ fontSize: 13, color: "#f8fbf9" }}>
+          <div className="font-semibold" style={{ fontSize: 13, color: "#18232d" }}>
             {station.name}
           </div>
-          <div style={{ fontSize: 10, color: "#94aaa2", fontFamily: "'JetBrains Mono', monospace", marginTop: 1 }}>
+          <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono', monospace", marginTop: 1 }}>
             {station.code}
           </div>
         </div>
         <button
+          aria-label="关闭站点概况"
           onClick={onClose}
           onMouseDown={(e) => e.stopPropagation()}
           className="flex items-center justify-center rounded-full transition-colors"
-          style={{ width: 22, height: 22, color: "#94aaa2", background: "transparent" }}
+          style={{ width: 22, height: 22, color: "#64748b", background: "transparent" }}
         >
           <X size={13} />
         </button>
@@ -108,11 +116,12 @@ export default function StationPopup({ station, initialPos, onClose, onOpenStati
       {/* Device status donut */}
       <div
         className="flex items-center gap-3 px-4 py-3"
-        style={{ borderBottom: "1px solid rgba(216,227,220,0.12)" }}
+        style={{ borderBottom: "1px solid #e2e8ed" }}
       >
         <div className="relative flex-shrink-0" style={{ width: 68, height: 68 }}>
           <PieChart width={68} height={68}>
             <Pie
+              isAnimationActive={false}
               data={pieData}
               cx="50%"
               cy="50%"
@@ -130,8 +139,8 @@ export default function StationPopup({ station, initialPos, onClose, onOpenStati
             </Pie>
           </PieChart>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span style={{ fontSize: 15, fontWeight: 700, color: "#f8fbf9", lineHeight: 1 }}>{total}</span>
-            <span style={{ fontSize: 8, color: "#94aaa2", marginTop: 1 }}>Devices</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: "#18232d", lineHeight: 1 }}>{Number.isFinite(total) ? total : "—"}</span>
+            <span style={{ fontSize: 8, color: "#64748b", marginTop: 1 }}>Devices</span>
           </div>
         </div>
 
@@ -144,8 +153,8 @@ export default function StationPopup({ station, initialPos, onClose, onOpenStati
           ].map((item) => (
             <div key={item.label} className="flex items-center gap-1.5">
               <div className="rounded-full flex-shrink-0" style={{ width: 6, height: 6, background: item.color }} />
-              <span style={{ fontSize: 10, color: "#b8c7c1" }}>
-                {item.label} <span style={{ fontWeight: 600, color: "#edf6f2" }}>{Number.isFinite(item.value) ? item.value : "—"}</span>
+              <span style={{ fontSize: 10, color: "#64748b" }}>
+                {item.label} <span style={{ fontWeight: 600, color: "#18232d" }}>{Number.isFinite(item.value) ? item.value : "—"}</span>
               </span>
             </div>
           ))}
@@ -155,25 +164,25 @@ export default function StationPopup({ station, initialPos, onClose, onOpenStati
       {/* Power metrics row */}
       <div
         className="grid grid-cols-3 px-4 py-2.5"
-        style={{ borderBottom: "1px solid rgba(216,227,220,0.12)", gap: "0 8px" }}
+        style={{ borderBottom: "1px solid #e2e8ed", gap: "0 8px" }}
       >
         <div>
-          <div style={{ fontSize: 9, color: "#94aaa2", marginBottom: 1 }}>有功功率</div>
+          <div style={{ fontSize: 9, color: "#64748b", marginBottom: 1 }}>有功功率</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#10b981" }}>
             {Number.isFinite(station.activePower) ? station.activePower : "—"}
             <span style={{ fontSize: 9, fontWeight: 400, marginLeft: 2 }}>kW</span>
           </div>
         </div>
         <div>
-          <div style={{ fontSize: 9, color: "#94aaa2", marginBottom: 1 }}>额定功率</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#edf6f2" }}>
+          <div style={{ fontSize: 9, color: "#64748b", marginBottom: 1 }}>额定功率</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#18232d" }}>
             {station.ratedPower}
             <span style={{ fontSize: 9, fontWeight: 400, marginLeft: 2 }}>kW</span>
           </div>
         </div>
         <div>
-          <div style={{ fontSize: 9, color: "#94aaa2", marginBottom: 1 }}>负载率</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#edf6f2" }}>
+          <div style={{ fontSize: 9, color: "#64748b", marginBottom: 1 }}>负载率</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#18232d" }}>
             {Number.isFinite(station.loadRate) ? station.loadRate : "—"}
             <span style={{ fontSize: 9, fontWeight: 400, marginLeft: 1 }}>%</span>
           </div>
@@ -183,34 +192,34 @@ export default function StationPopup({ station, initialPos, onClose, onOpenStati
       {/* Sub-systems */}
       <div
         className="grid grid-cols-3 px-4 py-2.5"
-        style={{ borderBottom: "1px solid rgba(216,227,220,0.12)", gap: "0 8px" }}
+        style={{ borderBottom: "1px solid #e2e8ed", gap: "0 8px" }}
       >
         <div>
           <div className="flex items-center gap-1 mb-1">
-            <Sun size={9} style={{ color: "#94aaa2" }} />
-            <span style={{ fontSize: 9, color: "#94aaa2" }}>光伏出力</span>
+            <Sun size={9} style={{ color: "#64748b" }} />
+            <span style={{ fontSize: 9, color: "#64748b" }}>光伏出力</span>
           </div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#edf6f2" }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "#18232d" }}>
             {Number.isFinite(station.pvOutput) ? station.pvOutput : "—"} <span style={{ fontSize: 9, fontWeight: 400 }}>MWp</span>
           </div>
-          <div style={{ fontSize: 9, color: "#94aaa2", marginTop: 1 }}>{DEMO_MODE ? "可用率 91.2%" : "可用率 未知"}</div>
+          <div style={{ fontSize: 9, color: "#64748b", marginTop: 1 }}>{DEMO_MODE ? "可用率 91.2%" : "可用率 未知"}</div>
         </div>
         <div>
           <div className="flex items-center gap-1 mb-1">
             <Battery size={9} style={{ color: "#1f7a68" }} />
-            <span style={{ fontSize: 9, color: "#94aaa2" }}>储能容量</span>
+            <span style={{ fontSize: 9, color: "#64748b" }}>储能容量</span>
           </div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#edf6f2" }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "#18232d" }}>
             {station.storageCapacity} <span style={{ fontSize: 9, fontWeight: 400 }}>{DEMO_MODE ? "MWh" : "kWh"}</span>
           </div>
-          <div style={{ fontSize: 9, color: "#94aaa2", marginTop: 1 }}>SOC {Number.isFinite(station.soc) ? station.soc : "—"}%</div>
+          <div style={{ fontSize: 9, color: "#64748b", marginTop: 1 }}>SOC {Number.isFinite(station.soc) ? station.soc : "—"}%</div>
         </div>
         <div>
           <div className="flex items-center gap-1 mb-1">
             <Zap size={9} style={{ color: "#10b981" }} />
-            <span style={{ fontSize: 9, color: "#94aaa2" }}>发电机组</span>
+            <span style={{ fontSize: 9, color: "#64748b" }}>发电机组</span>
           </div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#edf6f2" }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "#18232d" }}>
             {Number.isFinite(station.generator) ? station.generator : "—"} <span style={{ fontSize: 9, fontWeight: 400 }}>MW</span>
           </div>
           <div style={{ fontSize: 9, color: "#10b981", marginTop: 1 }}>{DEMO_MODE ? "● 在线" : "状态 未知"}</div>
@@ -221,7 +230,7 @@ export default function StationPopup({ station, initialPos, onClose, onOpenStati
       {station.alerts.length > 0 && (
         <div
           className="px-4 py-2"
-          style={{ borderBottom: "1px solid rgba(216,227,220,0.12)" }}
+          style={{ borderBottom: "1px solid #e2e8ed" }}
         >
           {station.alerts.map((alert, i) => (
             <div key={i} className="flex items-center gap-2 mb-1 last:mb-0">
@@ -229,8 +238,8 @@ export default function StationPopup({ station, initialPos, onClose, onOpenStati
                 className="rounded-full flex-shrink-0"
                 style={{ width: 6, height: 6, background: alert.level === "critical" ? "#ef4444" : "#76857f" }}
               />
-              <span style={{ fontSize: 10, color: "#edf6f2", flex: 1 }}>{alert.msg}</span>
-              <span style={{ fontSize: 9, color: "#94aaa2", fontFamily: "'JetBrains Mono', monospace" }}>
+              <span style={{ fontSize: 10, color: "#18232d", flex: 1 }}>{alert.msg}</span>
+              <span style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono', monospace" }}>
                 {alert.time}
               </span>
               <span
@@ -251,13 +260,14 @@ export default function StationPopup({ station, initialPos, onClose, onOpenStati
       {/* CTA button */}
       <div className="px-4 py-3">
         <button
+          aria-label="进入站点详情"
           onClick={() => onOpenStation(station.id)}
           className="w-full rounded-lg text-xs font-medium transition-all"
           style={{
             padding: "8px 12px",
             background: "transparent",
-            border: "1px solid #24c8b0",
-            color: "#fff",
+            border: "1px solid #2f875a",
+            color: "#2f875a",
             cursor: "pointer",
           }}
           onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(36,200,176,0.12)"; }}

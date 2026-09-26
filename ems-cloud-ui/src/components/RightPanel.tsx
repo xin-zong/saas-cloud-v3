@@ -30,15 +30,15 @@ const RevTooltip = ({ active, payload }: any) => {
 
 const card = {
   background: "rgba(255,255,255,0.94)",
-  border: "1px solid #dbe6df",
-  borderRadius: 10,
+  border: "1px solid transparent",
+  borderRadius: 12,
   backdropFilter: "blur(12px)",
-  boxShadow: "0 10px 26px rgba(24,52,45,0.09)",
-  padding: "14px 14px 12px",
+  boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+  padding: "16px",
 } as const
 
 const label = { fontSize: 10, color: "#76857f" } as const
-const title = { fontSize: 11, fontWeight: 600, color: "#1d2f2a" } as const
+const title = { fontSize: 14, fontWeight: 700, color: "#18232d" } as const
 const mono = { fontFamily: "'JetBrains Mono',monospace" } as const
 
 interface Props {
@@ -48,7 +48,7 @@ interface Props {
 
 export default function RightPanel({ stations, role }: Props) {
   const capacityItems = useMemo(() => buildCapacityItems(stations), [stations])
-  const energyData = useMemo(() => buildEnergyMix(stations), [stations])
+  const energyData = useMemo(() => buildEnergyMix(stations).map((item, index) => ({ ...item, color: ["#4c6ef5", "#2f875a", "#f59e0b"][index] })), [stations])
   const revenueData = useMemo(() => DEMO_MODE ? buildRevenueSeries(stations) : [], [stations])
   const revenueSummary = useMemo(() => buildRevenueSummary(stations), [stations])
   const total = energyData.reduce((a, b) => a + b.value, 0)
@@ -85,7 +85,7 @@ export default function RightPanel({ stations, role }: Props) {
           <span style={{ ...label, fontSize: 9 }}>TODAY</span>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
           {capacityItems.map((item) => (
             <div key={item.label}>
               <div className="mb-1.5 flex items-center justify-between">
@@ -157,6 +157,7 @@ export default function RightPanel({ stations, role }: Props) {
           >
             <PieChart width={72} height={72}>
               <Pie
+                isAnimationActive={false}
                 data={DEMO_MODE ? energyData : [{ name: "暂无数据", value: 1, color: "#e6eee9" }]}
                 cx="50%"
                 cy="50%"
@@ -269,15 +270,15 @@ export default function RightPanel({ stations, role }: Props) {
             >
               <defs>
                 <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#1f7a68" stopOpacity={0.12} />
-                  <stop offset="95%" stopColor="#1f7a68" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#ff9800" stopOpacity={0.06} />
+                  <stop offset="95%" stopColor="#ff9800" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <Tooltip content={<RevTooltip />} />
               <Area
                 type="monotone"
                 dataKey="v"
-                stroke="#1f7a68"
+                stroke="#ff9800"
                 strokeWidth={1.5}
                 fill="url(#revGrad)"
                 dot={false}

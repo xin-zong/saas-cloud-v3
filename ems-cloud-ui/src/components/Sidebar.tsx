@@ -97,7 +97,7 @@ export default function Sidebar({
               aria-current={activeNav === item.label ? "page" : undefined}
               onClick={() => onNavChange(item.label)}
             >
-              {activeNav === "资产与站点" ? <img src={`/figma/stations/overview/${({ grid: "imgIconNavigationOverview", "map-pin": "imgIcon", activity: "imgIcon1", wrench: "imgIcon2", "file-text": "imgIcon3", "bar-chart-2": "imgIcon4", "settings-2": "imgIcon5", settings: "imgIcon6" } as Record<string, string>)[item.icon] || "imgIconNavigationOverview"}.svg`} alt="" /> : <Icon size={18} />}
+              {<img src={`/figma/overview/navigation/${({ grid: "imgIconNavigationOverview", "map-pin": "imgIcon", activity: "imgIcon1", wrench: "imgIcon2", "file-text": "imgIcon3", "bar-chart-2": "imgIcon4", "settings-2": "imgIcon5", settings: "imgIcon6" } as Record<string, string>)[item.icon] || "imgIconNavigationOverview"}.svg`} alt="" />}
               {!collapsed && (
                 <span className="workspace-nav-label">{item.label}</span>
               )}
@@ -137,10 +137,10 @@ export default function Sidebar({
         onClick={onCollapse}
       >
         {collapsed ? (
-          <ChevronRight size={16} />
+          <img src="/figma/overview/navigation/imgToggleIcon.svg" alt="" />
         ) : (
           <>
-            <ChevronLeft size={16} />
+            <img src="/figma/overview/navigation/imgToggleIcon.svg" alt="" style={{ transform: "rotate(180deg)" }} />
             <span>收起导航</span>
           </>
         )}

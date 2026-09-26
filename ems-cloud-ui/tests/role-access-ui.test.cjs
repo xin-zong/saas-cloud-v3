@@ -116,10 +116,13 @@ async function assertOverviewMap(page, role) {
 }
 
 async function logout(page) {
-  await page
-    .locator(".workspace-account")
-    .getByRole("button", { name: "退出登录", exact: true })
-    .click()
+  const stationHeader = page.locator(".station-global-header")
+  if (await stationHeader.isVisible()) {
+    await stationHeader.getByRole("button", { name: /账户菜单/ }).click()
+    await stationHeader.getByRole("button", { name: "退出登录", exact: true }).click()
+  } else {
+    await page.locator(".global-platform-header").getByRole("button", { name: "退出登录", exact: true }).click()
+  }
   await page.locator(".auth-page").waitFor()
 }
 
