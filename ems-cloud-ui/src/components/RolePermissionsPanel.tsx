@@ -133,6 +133,8 @@ const RolePermissionsPanel = forwardRef<RolePermissionsHandle, { onOpenMembers?:
     pendingResolve.current?.(allow)
     pendingResolve.current = null
   }
+  const dialogHandlers = useRef({ askLeave, finishLeave })
+  dialogHandlers.current = { askLeave, finishLeave }
   useEffect(() => {
     if (!dialog) return
     const container = document.querySelector<HTMLElement>(".role-permissions-panel [role=dialog]")
@@ -140,12 +142,28 @@ const RolePermissionsPanel = forwardRef<RolePermissionsHandle, { onOpenMembers?:
     const items = () => Array.from(container?.querySelectorAll<HTMLElement>("input:not(:disabled),textarea:not(:disabled),button:not(:disabled)") ?? [])
     ;(container?.querySelector<HTMLElement>("input") ?? items()[0])?.focus()
     const key = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { event.preventDefault(); if (dialog === "leave") finishLeave(false); else void askLeave(() => setDialog(null)) }
-      if (event.key === "Tab") { const nodes=items(); if (event.shiftKey && document.activeElement===nodes[0]) { event.preventDefault(); nodes.at(-1)?.focus() } else if (!event.shiftKey && document.activeElement===nodes.at(-1)) { event.preventDefault(); nodes[0]?.focus() } }
+      if (event.key === "Escape") {
+        event.preventDefault()
+        if (dialog === "leave") dialogHandlers.current.finishLeave(false)
+        else void dialogHandlers.current.askLeave(() => setDialog(null))
+      }
+      if (event.key === "Tab") {
+        const nodes = items()
+        if (event.shiftKey && document.activeElement === nodes[0]) {
+          event.preventDefault()
+          nodes.at(-1)?.focus()
+        } else if (!event.shiftKey && document.activeElement === nodes.at(-1)) {
+          event.preventDefault()
+          nodes[0]?.focus()
+        }
+      }
     }
-    container?.addEventListener("keydown",key)
-    return () => {container?.removeEventListener("keydown",key);previous?.focus()}
-  },[dialog,busy,createDirty])
+    container?.addEventListener("keydown", key)
+    return () => {
+      container?.removeEventListener("keydown", key)
+      if (previous?.isConnected) previous.focus()
+    }
+  }, [dialog])
   async function save(): Promise<boolean> {
     if (savePending.current || busy || !directoryReady || !selectedRole?.canEdit) return false
     if (!selectedRole || !dirty) return !dirty

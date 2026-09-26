@@ -16,7 +16,39 @@ const fields: Record<Tab, { title: string; fields: Field[] }[]> = {
  "接口接入": [{title:"API凭证申请（服务未接通）",fields:[{label:"凭证名称"},{label:"权限范围说明"},{label:"到期时间",type:"date"}]},{title:"第三方集成连接",fields:[{label:"集成类型",options:["电网调度自动化系统","气象数据服务","SAP ERP","SCADA中心","企业微信通知","自定义外部Webhook"]},{label:"接口地址",type:"url",secret:true},{label:"协议",options:["HTTPS JSON-RPC","HTTPS REST"]},{label:"推流频率（秒）",type:"number",min:1,max:86400},{label:"认证凭证（仅本次输入）",type:"password",secret:true}]}],
  "系统配置": [{title:"基本设置 (General)",fields:[{label:"平台管理名称"},{label:"默认展示语言",options:["简体中文","English"]},{label:"默认运行时区",options:["Asia/Shanghai","UTC"]},{label:"数据保留期（天）",type:"number",min:1,max:3650}]},{title:"安全设置 (Security & Auth)",fields:[{label:"管理员密码最小长度",type:"number",min:8,max:128},{label:"口令复杂度",options:["大小写、数字与特殊字符","字母与数字"]},{label:"静止超时（分钟）",type:"number",min:5,max:1440},{label:"高功率操作二次验证",options:["必须校验验证器令牌"]},{label:"IP信任网段（CIDR）"}]},{title:"数据管理与采集 (Data & Edge)",fields:[{label:"采集基准（秒）",type:"number",min:1,max:3600},{label:"协议无损压缩",options:["开启（草稿）","关闭（草稿）"]},{label:"本地计划备份",options:["开启（草稿）","关闭（草稿）"]},{label:"备份触发周期",options:["每天03:00","每周一03:00"]},{label:"备份保留天数",type:"number",min:1,max:365}]},{title:"可视化与显示偏好 (Display)",fields:[{label:"温度单位",options:["摄氏度 °C","华氏度 °F"]},{label:"本位币种",options:["CNY","USD","EUR"]},{label:"图表默认时段",options:["过去24小时","过去7天","过去30天"]},{label:"全局深色模式",options:["浅色","深色","跟随系统"]}]}],
 }
-const read = (key: string): Draft[] => { try { const rows = JSON.parse(localStorage.getItem(key) || "[]"); return Array.isArray(rows) ? rows.filter(r => r && typeof r.id === "string" && tabs.includes(r.tab) && r.values && typeof r.values === "object" && !Array.isArray(r.values)) : [] } catch { return [] } }
+const isSingleton = (tab: Tab) => tab === "安全策略" || tab === "系统配置"
+
+// Older saves appended random-ID copies. Array order records save order, so
+// the last saved copy wins when migrating each singleton business object.
+function normalizeDrafts(rows: Draft[]): Draft[] {
+  const normalized: Draft[] = []
+  for (const row of rows) {
+    if (isSingleton(row.tab)) {
+      const previous = normalized.findIndex(item => item.tab === row.tab)
+      if (previous >= 0) normalized.splice(previous, 1)
+      normalized.push({ ...row, id: row.tab, name: row.tab })
+    } else normalized.push(row)
+  }
+  return normalized
+}
+
+function read(key: string): Draft[] {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key) || "[]")
+    if (!Array.isArray(parsed)) return []
+    const valid = parsed.filter(row => row && typeof row.id === "string" && tabs.includes(row.tab) && row.values && typeof row.values === "object" && !Array.isArray(row.values)) as Draft[]
+    const normalized = normalizeDrafts(valid)
+    if (JSON.stringify(parsed) !== JSON.stringify(normalized)) {
+      try { localStorage.setItem(key, JSON.stringify(normalized)) } catch { /* Still expose the latest saved value when storage is unavailable. */ }
+    }
+    return normalized
+  } catch { return [] }
+}
+
+function singletonDraft(tab: Tab, drafts: Draft[]): Draft {
+  const saved = drafts.find(row => row.tab === tab)
+  return saved ? structuredClone({ ...saved, id: tab }) : { id: tab, tab, name: tab, values: {} }
+}
 export default forwardRef<RolePermissionsHandle, { onTemporaryGrants?: () => void }>(function PlatformConfigurationPanel({onTemporaryGrants}, ref) {
  const {user}=useAuth(); const identity=`${DEMO_MODE?"demo":"api"}:${user?.id ?? "anonymous"}`
  const storageKey=`enerlution:platform-config:${identity}`
@@ -27,10 +59,24 @@ export default forwardRef<RolePermissionsHandle, { onTemporaryGrants?: () => voi
  useImperativeHandle(ref,()=>({requestLeave}))
  useEffect(()=>{settleLeave(false);setLeave(false);setDrafts(read(storageKey));setEditor(null);setBaseline(null);setNotice("")},[storageKey,settleLeave])
  useEffect(()=>{if(!dirty)return;const prevent=(e:BeforeUnloadEvent)=>{e.preventDefault();e.returnValue=""};window.addEventListener("beforeunload",prevent);return()=>window.removeEventListener("beforeunload",prevent)},[dirty])
- async function change(next:Tab){if(!(await requestLeave()))return;setTab(next);const saved=drafts.find(d=>d.tab===next);const nextEditor=(next==="安全策略"||next==="系统配置")?(saved?structuredClone(saved):{id:next,tab:next,name:next,values:{}}):null;setEditor(nextEditor);setBaseline(nextEditor?structuredClone(nextEditor):null);setError("");setNotice("");setQuery("");setBusiness("")}
- function open(row?:Draft){const value=row?structuredClone(row):{id:crypto.randomUUID(),tab,name:"",values:{}};setEditor(value);setBaseline(structuredClone(value));setError("");setNotice("")}
+ async function change(next: Tab) {
+   if (!(await requestLeave())) return
+   setTab(next)
+   const nextEditor = isSingleton(next) ? singletonDraft(next, drafts) : null
+   setEditor(nextEditor)
+   setBaseline(nextEditor ? structuredClone(nextEditor) : null)
+   setError(""); setNotice(""); setQuery(""); setBusiness("")
+ }
+ function open(row?: Draft) {
+   const next = isSingleton(tab)
+     ? singletonDraft(tab, drafts)
+     : row ? structuredClone(row) : { id: crypto.randomUUID(), tab, name: "", values: {} }
+   setEditor(next)
+   setBaseline(structuredClone(next))
+   setError(""); setNotice("")
+ }
  function value(label:string,v:string){setEditor(current=>current?{...current,values:{...current.values,[label]:v}}:null)}
- function save(){if(!editor)return;const name=editor.values["规则名称"]||editor.values["凭证名称"]||tab;if(!name.trim()){setError("请输入名称");return} const clean={...editor,name,values:Object.fromEntries(Object.entries(editor.values).filter(([label])=>!fields[tab].flatMap(s=>s.fields).some(f=>f.label===label&&f.secret)))};const next=[...drafts.filter(d=>d.id!==clean.id),clean];try{localStorage.setItem(storageKey,JSON.stringify(next));setDrafts(next);setEditor(tab==="安全策略"||tab==="系统配置"?clean:null);setBaseline(tab==="安全策略"||tab==="系统配置"?structuredClone(clean):null);setNotice("本地草稿已保存，尚未提交或生效。")}catch{setError("本地存储不可用，输入仍保留，请重试。")}}
+ function save(){if(!editor)return;const name=editor.values["规则名称"]||editor.values["凭证名称"]||tab;if(!name.trim()){setError("请输入名称");return} const clean={...editor,id:isSingleton(tab)?tab:editor.id,name,values:Object.fromEntries(Object.entries(editor.values).filter(([label])=>!fields[tab].flatMap(s=>s.fields).some(f=>f.label===label&&f.secret)))};const next=normalizeDrafts([...drafts.filter(d=>isSingleton(tab)?d.tab!==tab:d.id!==clean.id),clean]);try{localStorage.setItem(storageKey,JSON.stringify(next));setDrafts(next);setEditor(tab==="安全策略"||tab==="系统配置"?clean:null);setBaseline(tab==="安全策略"||tab==="系统配置"?structuredClone(clean):null);setNotice("本地草稿已保存，尚未提交或生效。")}catch{setError("本地存储不可用，输入仍保留，请重试。")}}
  const rows=drafts.filter(d=>d.tab===tab&&(!business||d.values["业务类型"]===business)&&`${d.name} ${JSON.stringify(d.values)}`.includes(query))
  return <section className="platform-config" aria-label="配置中心"><nav className="orgv2-tabs" role="tablist">{tabs.map(t=><button key={t} role="tab" aria-selected={t===tab} onClick={()=>void change(t)}>{t}</button>)}</nav><p className="api-context-note">配置服务未接通。此处仅编写本账号、本模式的本地草稿，不能下发、生效或改变授权。</p>
  {tab==="审批规则"&&onTemporaryGrants&&<p className="orgv2-subtext">成员期限授权已连接业务服务。<button className="platform-text-button" onClick={async()=>{if(await requestLeave())onTemporaryGrants()}}>管理临时授权</button> 支持30天、90天、1年及长期；自定义小时、原因和审批尚未接通。</p>}

@@ -20,7 +20,37 @@ export default forwardRef<RolePermissionsHandle>(function PlatformCustomersPanel
  useEffect(()=>{const controller=new AbortController();setRows([]);setEditing(false);setSelected(null);setError("");setNotice("");setLeave(false);settleLeave(false);setLoading(true);if(!canRead){setLoading(false);return}api<Customer[]>("/platform/customers",{signal:controller.signal}).then(data=>{if(!controller.signal.aborted)setRows(data)}).catch(e=>{if(!controller.signal.aborted)setError(e.message)}).finally(()=>{if(!controller.signal.aborted)setLoading(false)});return()=>controller.abort()},[user?.id,canRead,canManage,JSON.stringify(user?.stationPermissions),settleLeave])
  useEffect(()=>{if(!dirty)return;const prevent=(e:BeforeUnloadEvent)=>{e.preventDefault();e.returnValue=""};window.addEventListener("beforeunload",prevent);return()=>window.removeEventListener("beforeunload",prevent)},[dirty])
  async function close(){if(pending.current||!(await requestLeave()))return;setEditing(false);setName(customer?.name??"");setProfile(savedProfile);setEntitlements(savedEntitlements);setFormError("")}
- useEffect(()=>{if(!editing)return;const previous=document.activeElement as HTMLElement;modal.current?.querySelector<HTMLElement>("input")?.focus();const key=(e:KeyboardEvent)=>{if(e.key==="Escape"&&!leave){e.preventDefault();void close()}if(e.key==="Tab"){const nodes=Array.from(modal.current?.querySelectorAll<HTMLElement>("input:not(:disabled),button:not(:disabled)")??[]);if(e.shiftKey&&document.activeElement===nodes[0]){e.preventDefault();nodes.at(-1)?.focus()}else if(!e.shiftKey&&document.activeElement===nodes.at(-1)){e.preventDefault();nodes[0]?.focus()}}};document.addEventListener("keydown",key);return()=>{document.removeEventListener("keydown",key);previous?.focus()}},[editing,leave,dirty])
+ const modalState = useRef({ leave, close })
+ modalState.current = { leave, close }
+ useEffect(() => {
+   if (!editing) return
+   const previous = document.activeElement as HTMLElement | null
+   modal.current?.querySelector<HTMLElement>("input")?.focus()
+   const onKey = (event: KeyboardEvent) => {
+     // The confirmation dialog owns keyboard focus while it is open.
+     if (modalState.current.leave) return
+     if (event.key === "Escape") {
+       event.preventDefault()
+       void modalState.current.close()
+     }
+     if (event.key === "Tab") {
+       const nodes = Array.from(modal.current?.querySelectorAll<HTMLElement>("input:not(:disabled),button:not(:disabled)") ?? [])
+       if (event.shiftKey && document.activeElement === nodes[0]) {
+         event.preventDefault()
+         nodes.at(-1)?.focus()
+       } else if (!event.shiftKey && document.activeElement === nodes.at(-1)) {
+         event.preventDefault()
+         nodes[0]?.focus()
+       }
+     }
+   }
+   document.addEventListener("keydown", onKey)
+   return () => {
+     document.removeEventListener("keydown", onKey)
+     if (previous?.isConnected) previous.focus()
+   }
+ }, [editing])
+
  async function save(){if(!customer||!canEdit||pending.current)return;if(editing==="entitlements"){if(entitlements["服务开始日期"]&&entitlements["服务结束日期"]&&entitlements["服务开始日期"]>entitlements["服务结束日期"]){setFormError("服务结束日期不能早于开始日期");return}try{localStorage.setItem(entitlementKey,JSON.stringify(entitlements));setSavedEntitlements({...entitlements});setEditing(false);setNotice("合同与权益仅保存为本地草稿，尚未提交，线上配额未更改。")}catch{setFormError("本地草稿保存失败，输入已保留")}return}if(!name.trim()){setFormError("请输入客户名称");return}pending.current=true;setBusy(true);setFormError("");try{await send(`/platform/customers/${customer.id}`,"PUT",{name:name.trim()});setRows(current=>current.map(c=>c.id===customer.id?{...c,name:name.trim()}:c));localStorage.setItem(profileKey,JSON.stringify(profile));setSavedProfile({...profile});setEditing(false);setNotice("客户名称已更新；主体与联系人仅保存为本地草稿，尚未提交。")}catch(e){setFormError(e instanceof Error?e.message:"保存失败，输入已保留")}finally{pending.current=false;setBusy(false)}}
  const visible=rows.filter(c=>`${c.name} ${c.id}`.toLowerCase().includes(search.toLowerCase())&&(!filter||(filter==="editable"?c.can_edit&&canManage:!c.can_edit||!canManage)))
  return <section className="platform-customers">{loading&&<p role="status">正在加载客户…</p>}{error&&<p role="alert" className="api-inline-error">{error}</p>}{notice&&<p role="status" className="api-context-note">{notice}</p>}{customer?<><button className="orgv2-outline" onClick={()=>setSelected(null)}>返回客户列表</button><div className="orgv2-heading"><h2>{customer.name}</h2><button className="orgv2-primary" disabled={!canEdit} onClick={()=>{setName(customer.name);const local=readProfile(profileKey);setProfile(local);setSavedProfile(local);setFormError("");setEditing("profile")}}>编辑客户资料</button></div><div className="platform-record-grid"><section className="platform-detail-card"><h3>客户资料</h3><dl>{[["客户名称",customer.name],["客户编号",String(customer.id)],["客户主体","未配置"],["租户标识","未配置"],["行业","未配置"],["服务联系人","未配置"],["数据区域","未配置"]].map(([k,v])=><div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl></section><section className="platform-detail-card"><h3>合同与权益</h3><dl>{[["合同编号","未配置"],["服务期限","未配置"],["服务套餐","未配置"],["授权站点",String(customer.station_count)],["站点配额","未配置"],["账号配额","未配置"],["API用量","未提供"],["SLA","未提供"]].map(([k,v])=><div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl><button className="orgv2-outline" disabled={!canEdit} onClick={()=>{const local=readEntitlements(entitlementKey);setEntitlements(local);setSavedEntitlements(local);setFormError("");setEditing("entitlements")}}>编辑权益</button></section></div><section className="platform-detail-card"><h3>授权站点</h3>{customer.stations.map(s=><p key={s.id}>{s.name} · {s.code||"—"}</p>)}</section><p className="orgv2-subtext">客户信息仅包含当前授权站点关联的客户。编辑需覆盖该客户全部站点。</p></>:<><div className="platform-toolbar"><input aria-label="搜索客户名称" placeholder="搜索客户名称 / 编号" value={search} onChange={e=>setSearch(e.target.value)}/><select aria-label="客户编辑权限" value={filter} onChange={e=>setFilter(e.target.value)}><option value="">权限：全部客户</option><option value="editable">可编辑</option><option value="readonly">仅查看</option></select><span className="api-toolbar-note">当前授权站点关联的客户</span></div><section className="platform-table-card"><table><thead><tr>{["客户名称","行业","站点数","服务到期","服务套餐","维护权限","操作"].map(t=><th key={t}>{t}</th>)}</tr></thead><tbody>{visible.map(c=><tr key={c.id}><td>{c.name}</td><td>—</td><td>{c.station_count}</td><td>—</td><td>—</td><td>{c.can_edit&&canManage?"可编辑":"仅查看"}</td><td><button className="platform-text-button" onClick={()=>setSelected(c.id)}>查看详情</button></td></tr>)}</tbody></table>{!loading&&!visible.length&&<p className="platform-empty">当前条件下暂无客户</p>}</section></>}

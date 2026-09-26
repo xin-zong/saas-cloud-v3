@@ -78,3 +78,5 @@
 
 .platform-page.platform-figma :where(th) { background:#f5f8f8 !important; }
 .platform-config .platform-config-grid .orgv2-table { min-width:0; width:100%; table-layout:fixed; }
+.platform-temporary td > small { display:block; margin-top:4px; color:var(--platform-muted); }
+.platform-temporary td .platform-text-button + .platform-text-button { margin-left:12px; }

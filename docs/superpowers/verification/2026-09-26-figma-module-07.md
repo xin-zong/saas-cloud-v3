@@ -122,3 +122,15 @@
 截图API数据由现有测试fixture提供，检验实际运行UI；不代表线上已有原型客户或权限。5个可见SVG实测槽位：plus/plus-dark/delete=16×16，close=18×18，warning=24×24。checkbox槽位18×18、选中背景16×16；删除确认图标24×24文件已核对，未在这69图中量取该分支。task7-assets.json列出8个源SVG及非空字节。
 
 库存对照task7-coverage-check.json：68行、68唯一ID、missing=[]、extra=[]。归档2001:21984只核对隐藏元数据，不声称已核对1px图像。
+
+## 独立审查修复轮1（917c07f之后）
+
+Important 1：客户/权益与角色新建弹窗不再因dirty变化重新聚焦；初始聚焦与恢复仅随弹窗生命周期，键盘事件经ref读取当前状态。新增实际keyboard.type逐键回归，验证ABC完整留在联系人/主体/套餐/角色说明且不会串入第一个字段。
+
+Important 2：安全策略/系统配置统一固定对象ID，取消后所有编辑入口重读同一保存对象；保存按对象替换。旧重复草稿按最后保存顺序去重迁移。两个tab都验证保存3、取消重开、改存5、切tab与reload恢复5，旧重复迁移和账号/模式隔离另有断言。
+
+原始日志在同一证据根目录：task7-fixround1-red.log（7失败/exit1）；task7-fixround1-green.log（相关15项14通过，角色续输测试未定位光标末尾）；补显式End后task7-fixround1-role-focus.log（1/1通过/exit0）。本轮所有15项相关行为有通过证据，原失败日志保留。tsc/build均exit0；完整命令在task7-fixround1-commands.txt。
+
+补充21图（7分支×1366/1440/1920）：角色删除确认、只读角色、成员受限授权、临时授权列表/过期/空态/详情。文件前缀task7-fixround1-，全部绝对路径见task7-fixround1-screenshots.json；三宽度汇总task7-fixround1-review-{width}.png。已实际查看汇总与主要原图；几何task7-fixround1-geometry.json确认0横向溢出、删除确认图标自然/实际24×24、图片非空。补图后微调临时授权账号分行及相邻按钮间距。
+
+本轮只补这些具名状态，不将其作为全部成功/权限撤销过渡的逐图证明；归档1px限制及Task9的04旧selector待办不变。
