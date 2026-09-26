@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { forwardRef, useImperativeHandle, useEffect, useMemo, useRef, useState } from "react"
 import type { FormEvent } from "react"
 import { ArrowLeft, ChevronDown, Plus, Search, Trash2, TriangleAlert, X } from "lucide-react"
 import type { Station } from "@/App"
 import "./organization-permissions.css"
+import {useEditorLeaveGuard} from "./useEditorLeaveGuard"
+import PlatformLeaveDialog from "./PlatformLeaveDialog"
+import type {RolePermissionsHandle} from "./RolePermissionsPanel"
 
 type View = "成员管理" | "组织管理" | "角色权限"
 type Assignment = { id: string; roleId: string; sites: string[]; term: string }
@@ -59,11 +62,7 @@ function GroupCheckbox({ checked, partial, onChange, label }: { checked: boolean
   return <label className="orgv2-group-toggle"><input ref={input} type="checkbox" checked={checked} onChange={onChange} aria-label={`${label}全部权限`} /><strong>{label}</strong></label>
 }
 
-export default function OrganizationPermissions({
-  stations = [],
-}: {
-  stations?: Station[]
-}) {
+export default forwardRef<RolePermissionsHandle, { stations?: Station[] }>(function OrganizationPermissions({ stations = [] }, ref) {
   const sites = stations.length
     ? stations.map((station) => station.name)
     : DEFAULT_SITES
@@ -91,6 +90,17 @@ export default function OrganizationPermissions({
   const [notice, setNotice] = useState("")
   const dialogRef = useRef<HTMLDivElement>(null)
 
+  const [modalDirty,setModalDirty]=useState(false),[leaveOpen,setLeaveOpen]=useState(false)
+  const assignBaseline=useRef({role:"",term:"",sites:[] as string[]})
+  const roleChanged=view==="角色权限" && JSON.stringify([...roleDraft].sort())!==JSON.stringify([...(roles.find(r=>r.id===selectedRoleId)?.permissions??[])].sort())
+  const assignChanged=memberPage==="assign" && JSON.stringify({role:assignRoleId,term:assignTerm,sites:assignSites})!==JSON.stringify(assignBaseline.current)
+  const dirty=roleChanged||assignChanged||!!(dialog&&modalDirty)
+  const {requestLeave,settleLeave}=useEditorLeaveGuard({dirty,onConfirm:()=>setLeaveOpen(true),onCancel:()=>setLeaveOpen(false)})
+  useImperativeHandle(ref,()=>({requestLeave}))
+  useEffect(()=>{setModalDirty(false)},[dialog])
+  useEffect(()=>{if(!dirty)return;const prevent=(e:BeforeUnloadEvent)=>{e.preventDefault();e.returnValue=""};window.addEventListener("beforeunload",prevent);return()=>window.removeEventListener("beforeunload",prevent)},[dirty])
+  const closeDialog=async()=>{if(await requestLeave())setDialog(null)}
+  const returnToMember=async()=>{if(await requestLeave())setMemberPage("detail")}
   const selectedMember = members.find((member) => member.id === selectedMemberId)
   const selectedOrg = orgs.find((org) => org.id === selectedOrgId)
   const selectedRole = roles.find((role) => role.id === selectedRoleId)
@@ -112,12 +122,13 @@ export default function OrganizationPermissions({
     if (!dialog) return
     const first = dialogRef.current?.querySelector<HTMLElement>("input:not([type=hidden]), select, textarea, button")
     first?.focus()
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setDialog(null) }
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") void closeDialog() }
     document.addEventListener("keydown", onKey)
     return () => document.removeEventListener("keydown", onKey)
-  }, [dialog])
+  }, [dialog,modalDirty])
 
-  const switchView = (next: View) => {
+  const switchView = async (next: View) => {
+    if(next===view||!(await requestLeave()))return
     setView(next)
     setDialog(null)
     if (next === "成员管理") setMemberPage("list")
@@ -128,6 +139,7 @@ export default function OrganizationPermissions({
     setAssignRoleId(assignment?.roleId ?? roles[0]?.id ?? "")
     setAssignTerm(assignment?.term ?? "长期")
     setAssignSites(assignment?.sites ?? [])
+    assignBaseline.current={role:assignment?.roleId??roles[0]?.id??"",term:assignment?.term??"长期",sites:assignment?.sites??[]}
     setSiteQuery("")
     setMemberPage("assign")
   }
@@ -230,7 +242,7 @@ export default function OrganizationPermissions({
     setDialog(null)
   }
 
-  return <section className="orgv2" aria-label="组织权限">
+  return <section className="orgv2" aria-label="组织权限" onChangeCapture={()=>{if(dialog)setModalDirty(true)}}>
     <nav className="orgv2-tabs" role="tablist" aria-label="组织权限功能">
       {(["成员管理", "组织管理", "角色权限"] as View[]).map((item) =>
         <button key={item} type="button" role="tab" aria-selected={view === item} onClick={() => switchView(item)}>{item}</button>
@@ -269,10 +281,10 @@ export default function OrganizationPermissions({
     </>}
 
     {view === "成员管理" && memberPage === "assign" && selectedMember && <>
-      <button className="orgv2-outline orgv2-back" type="button" onClick={() => setMemberPage("detail")}><ArrowLeft size={15} aria-hidden="true" />返回成员权限</button>
+      <button className="orgv2-outline orgv2-back" type="button" onClick={() => void returnToMember()}><ArrowLeft size={15} aria-hidden="true" />返回成员权限</button>
       <section className="orgv2-panel orgv2-assign"><h2>分配权限 · {selectedMember.name}</h2><div className="orgv2-assign-fields"><label>角色<select value={assignRoleId} onChange={(event) => setAssignRoleId(event.target.value)}>{roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}</select></label><label>有效期<select value={assignTerm} onChange={(event) => setAssignTerm(event.target.value)}><option>长期</option><option>30 天</option><option>90 天</option><option>1 年</option></select></label></div><div className="orgv2-role-summary"><p>{assignRole?.description || "请先选择角色"}</p><p>具体可执行操作由角色权限配置决定，请按实际工作范围选择站点。</p><button className="orgv2-outline" type="button" onClick={() => openRole(assignRoleId)}>查看完整权限</button></div></section>
       <section className="orgv2-panel orgv2-sites"><div className="orgv2-heading"><h2>站点范围 <small>已选 {assignSites.length} 个站点</small></h2><label className="orgv2-search"><Search size={15} aria-hidden="true" /><input aria-label="搜索站点" placeholder="搜索站点" value={siteQuery} onChange={(event) => setSiteQuery(event.target.value)} /></label></div>{sites.filter((site) => site.includes(siteQuery.trim())).map((site) => <label className="orgv2-site-option" key={site}><input type="checkbox" checked={assignSites.includes(site)} onChange={() => setAssignSites((previous) => previous.includes(site) ? previous.filter((item) => item !== site) : [...previous, site])} /><span>{site}<small>交付包站点</small></span></label>)}{sites.every((site) => !site.includes(siteQuery.trim())) && <p className="orgv2-empty">没有匹配的站点</p>}</section>
-      <div className="orgv2-submit"><button className="orgv2-outline" type="button" onClick={() => setMemberPage("detail")}>取消</button><button className="orgv2-primary" type="button" disabled={!assignSites.length} onClick={saveAssignment}>保存授权</button></div>
+      <div className="orgv2-submit"><button className="orgv2-outline" type="button" onClick={() => void returnToMember()}>取消</button><button className="orgv2-primary" type="button" disabled={!assignSites.length} onClick={saveAssignment}>保存授权</button></div>
     </>}
 
     {view === "组织管理" && <div className="orgv2-split">
@@ -281,19 +293,20 @@ export default function OrganizationPermissions({
       <section className="orgv2-panel orgv2-org-members"><div className="orgv2-heading"><h2>直属成员 · {members.filter((member) => selectedOrg ? member.orgId === selectedOrg.id : !!member.orgId).length} 人</h2><button className="orgv2-primary" type="button" disabled={!selectedOrg} onClick={() => { setAddMemberId(""); setDialog("org-add-member") }}>添加已有成员</button></div><div className="orgv2-table-scroll"><table className="orgv2-table"><thead><tr><th>姓名 / 账号</th><th>所属组织</th><th>角色</th><th>状态</th><th>操作</th></tr></thead><tbody>{members.filter((member) => selectedOrg ? member.orgId === selectedOrg.id : !!member.orgId).map((member) => <tr key={member.id}><td><strong>{member.name}</strong><span className="orgv2-subtext">{member.account}</span></td><td>{orgPath(member.orgId)}</td><td>{member.assignments.map((assignment) => roles.find((role) => role.id === assignment.roleId)?.name).filter(Boolean).join("、") || "未授权"}</td><td>{member.status}</td><td><button className="orgv2-text-button" type="button" onClick={() => { setTargetMemberId(member.id); setDialog("org-remove-member") }}>移出组织</button></td></tr>)}</tbody></table></div></section></div>
     </div>}
 
-    {view === "角色权限" && <div className="orgv2-split"><aside className="orgv2-panel orgv2-role-list"><div className="orgv2-heading"><h2>业务角色</h2><div className="orgv2-icon-actions"><button type="button" aria-label="新增角色" title="新增角色" onClick={() => setDialog("role-create")}><Plus size={17} /></button><button type="button" aria-label="删除当前角色" title="删除当前角色" disabled={!selectedRole} onClick={startDeleteRole}><Trash2 size={16} /></button></div></div>{roles.map((role) => <button key={role.id} type="button" className={role.id === selectedRoleId ? "is-active" : ""} onClick={() => selectRole(role)}>{role.name}</button>)}</aside>
+    {view === "角色权限" && <div className="orgv2-split"><aside className="orgv2-panel orgv2-role-list"><div className="orgv2-heading"><h2>业务角色</h2><div className="orgv2-icon-actions"><button type="button" aria-label="新增角色" title="新增角色" onClick={() => setDialog("role-create")}><Plus size={17} /></button><button type="button" aria-label="删除当前角色" title="删除当前角色" disabled={!selectedRole} onClick={startDeleteRole}><Trash2 size={16} /></button></div></div>{roles.map((role) => <button key={role.id} type="button" className={role.id === selectedRoleId ? "is-active" : ""} onClick={async () => {if(await requestLeave())selectRole(role)}}>{role.name}</button>)}</aside>
       <section className="orgv2-panel orgv2-role-matrix"><h2>{selectedRole?.name ?? "业务角色"}</h2>{GROUPS.map((group) => { const count = group.items.filter((item) => roleDraft.includes(item)).length; return <div className="orgv2-group" key={group.name}><GroupCheckbox label={group.name} checked={count === group.items.length} partial={count > 0 && count < group.items.length} onChange={() => setRoleDraft((previous) => count === group.items.length ? previous.filter((item) => !group.items.includes(item)) : [...new Set([...previous, ...group.items])])} /><div className="orgv2-check-grid">{group.items.map((item) => <label key={item}><input type="checkbox" checked={roleDraft.includes(item)} onChange={() => togglePermission(item)} />{item}</label>)}</div></div> })}
       <div className="orgv2-role-footer"><button className="orgv2-outline" type="button" onClick={() => setRoleDraft([...(selectedRole?.permissions ?? [])])}>取消修改</button><button className="orgv2-primary" type="button" onClick={saveRole}>保存修改</button></div></section>
     </div>}
 
     {notice && <div className="orgv2-notice" role="status">{notice}<button type="button" aria-label="关闭提示" onClick={() => setNotice("")}><X size={14} /></button></div>}
-    {dialog && <div className="orgv2-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) setDialog(null) }}><div className="orgv2-modal" role="dialog" aria-modal="true" aria-labelledby="orgv2-dialog-title" ref={dialogRef}>
-      <button className="orgv2-close" type="button" aria-label="关闭对话框" onClick={() => setDialog(null)}><X size={18} /></button>
-      {(dialog === "member-create" || dialog === "member-edit") && <form onSubmit={submitMember}><h2 id="orgv2-dialog-title">{dialog === "member-create" ? "新增成员" : "编辑成员"}</h2><div className="orgv2-form-body"><label>姓名 *<input name="name" required placeholder="请输入姓名" defaultValue={dialog === "member-edit" ? targetMember?.name : ""} /></label><label>账号 *<input name="account" required placeholder="请输入账号" defaultValue={dialog === "member-edit" ? targetMember?.account : ""} /></label><label>邮箱 *<input name="email" type="email" required placeholder="请输入邮箱" defaultValue={dialog === "member-edit" ? targetMember?.email : ""} /></label><label>所属组织<select name="orgId" defaultValue={dialog === "member-edit" ? targetMember?.orgId : ""}><option value="">未分配组织</option>{orgs.map((org) => <option key={org.id} value={org.id}>{orgPath(org.id)}</option>)}</select></label>{dialog === "member-edit" && <label>状态<select name="status" defaultValue={targetMember?.status}><option>启用</option><option>停用</option></select></label>}</div><div className="orgv2-modal-footer"><button className="orgv2-outline" type="button" onClick={() => setDialog(null)}>取消</button><button className="orgv2-primary" type="submit">{dialog === "member-create" ? "创建成员" : "保存修改"}</button></div></form>}
-      {(dialog === "org-create" || dialog === "org-edit") && <form onSubmit={submitOrg}><h2 id="orgv2-dialog-title">{dialog === "org-create" ? "新增子组织" : "编辑组织"}</h2><div className="orgv2-form-body"><label>组织名称 *<input name="name" required placeholder="请输入组织名称" defaultValue={dialog === "org-edit" ? selectedOrg?.name : ""} /></label><label>上级组织<select name="parentId" defaultValue={dialog === "org-edit" ? selectedOrg?.parentId : selectedOrgId}><option value="">无（顶级组织）</option>{orgs.filter((org) => dialog !== "org-edit" || (org.id !== selectedOrgId && !orgPath(org.id).includes(`${orgPath(selectedOrgId)} /`))).map((org) => <option key={org.id} value={org.id}>{orgPath(org.id)}</option>)}</select></label><label>组织负责人<select name="leadId" defaultValue={dialog === "org-edit" ? selectedOrg?.leadId : ""}><option value="">未指定</option>{members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}</select></label></div><div className="orgv2-modal-footer"><button className="orgv2-outline" type="button" onClick={() => setDialog(null)}>取消</button><button className="orgv2-primary" type="submit">{dialog === "org-create" ? "创建组织" : "保存修改"}</button></div></form>}
-      {dialog === "org-add-member" && <div><h2 id="orgv2-dialog-title">添加成员到「{selectedOrg?.name}」</h2><div className="orgv2-form-body"><label>选择已有成员<select value={addMemberId} onChange={(event) => setAddMemberId(event.target.value)}><option value="">请选择成员</option>{members.filter((member) => member.orgId !== selectedOrgId).map((member) => <option key={member.id} value={member.id}>{member.name} / {member.account} · {orgPath(member.orgId)}</option>)}</select></label></div><div className="orgv2-modal-footer"><button className="orgv2-outline" type="button" onClick={() => setDialog(null)}>取消</button><button className="orgv2-primary" type="button" disabled={!addMemberId} onClick={() => { setMembers((previous) => previous.map((member) => member.id === addMemberId ? { ...member, orgId: selectedOrgId } : member)); setDialog(null); setNotice("成员已添加到组织") }}>添加 1 位成员</button></div></div>}
-      {dialog === "role-create" && <form onSubmit={submitRole}><h2 id="orgv2-dialog-title">新增角色</h2><div className="orgv2-form-body"><label>角色名称 *<input name="name" required placeholder="请输入角色名称" /></label><label>角色说明<textarea name="description" rows={3} placeholder="说明该角色的工作范围" /></label></div><div className="orgv2-modal-footer"><button className="orgv2-outline" type="button" onClick={() => setDialog(null)}>取消</button><button className="orgv2-primary" type="submit">创建并配置权限</button></div></form>}
-      {(["member-delete", "org-remove-member", "role-delete", "role-in-use", "revoke"] as Dialog[]).includes(dialog) && <div className="orgv2-confirm"><TriangleAlert size={24} aria-hidden="true" /><h2 id="orgv2-dialog-title">{dialog === "member-delete" ? `删除成员「${targetMember?.name}」？` : dialog === "org-remove-member" ? `移出成员「${targetMember?.name}」？` : dialog === "role-delete" ? "删除当前角色？" : dialog === "role-in-use" ? "该角色仍有成员使用" : "移除这条授权？"}</h2><p>{dialog === "member-delete" ? "删除后，该成员将无法登录，已有访问权限将被移除。历史操作记录保留。" : dialog === "org-remove-member" ? "成员将退出当前组织，已有角色授权保持不变。" : dialog === "role-delete" ? "确认删除后，该角色将不再出现在成员授权选项中。此操作不可恢复。" : dialog === "role-in-use" ? "请先为相关成员更换角色，再删除当前角色。不会自动移除成员已有权限。" : `${targetMember?.name}将失去「${roles.find((role) => role.id === targetAssignment?.roleId)?.name ?? ""}」授予的站点访问权限。`}</p><div className="orgv2-modal-footer"><button className="orgv2-outline" type="button" onClick={() => setDialog(null)}>取消</button>{dialog === "role-in-use" ? <button className="orgv2-primary" type="button" onClick={() => { setDialog(null); switchView("成员管理") }}>返回成员管理</button> : <button className={dialog === "member-delete" || dialog === "role-delete" ? "orgv2-danger" : "orgv2-primary"} type="button" onClick={confirmDialog}>{dialog === "member-delete" ? "删除成员" : dialog === "role-delete" ? "确认删除" : dialog === "org-remove-member" ? "移出组织" : "确认移除"}</button>}</div></div>}
+    {dialog && <div className="orgv2-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) void closeDialog() }}><div className="orgv2-modal" role="dialog" aria-modal="true" aria-labelledby="orgv2-dialog-title" ref={dialogRef}>
+      <button className="orgv2-close" type="button" aria-label="关闭对话框" onClick={() => void closeDialog()}><X size={18} /></button>
+      {(dialog === "member-create" || dialog === "member-edit") && <form onSubmit={submitMember}><h2 id="orgv2-dialog-title">{dialog === "member-create" ? "新增成员" : "编辑成员"}</h2><div className="orgv2-form-body"><label>姓名 *<input name="name" required placeholder="请输入姓名" defaultValue={dialog === "member-edit" ? targetMember?.name : ""} /></label><label>账号 *<input name="account" required placeholder="请输入账号" defaultValue={dialog === "member-edit" ? targetMember?.account : ""} /></label><label>邮箱 *<input name="email" type="email" required placeholder="请输入邮箱" defaultValue={dialog === "member-edit" ? targetMember?.email : ""} /></label><label>所属组织<select name="orgId" defaultValue={dialog === "member-edit" ? targetMember?.orgId : ""}><option value="">未分配组织</option>{orgs.map((org) => <option key={org.id} value={org.id}>{orgPath(org.id)}</option>)}</select></label>{dialog === "member-edit" && <label>状态<select name="status" defaultValue={targetMember?.status}><option>启用</option><option>停用</option></select></label>}</div><div className="orgv2-modal-footer"><button className="orgv2-outline" type="button" onClick={() => void closeDialog()}>取消</button><button className="orgv2-primary" type="submit">{dialog === "member-create" ? "创建成员" : "保存修改"}</button></div></form>}
+      {(dialog === "org-create" || dialog === "org-edit") && <form onSubmit={submitOrg}><h2 id="orgv2-dialog-title">{dialog === "org-create" ? "新增子组织" : "编辑组织"}</h2><div className="orgv2-form-body"><label>组织名称 *<input name="name" required placeholder="请输入组织名称" defaultValue={dialog === "org-edit" ? selectedOrg?.name : ""} /></label><label>上级组织<select name="parentId" defaultValue={dialog === "org-edit" ? selectedOrg?.parentId : selectedOrgId}><option value="">无（顶级组织）</option>{orgs.filter((org) => dialog !== "org-edit" || (org.id !== selectedOrgId && !orgPath(org.id).includes(`${orgPath(selectedOrgId)} /`))).map((org) => <option key={org.id} value={org.id}>{orgPath(org.id)}</option>)}</select></label><label>组织负责人<select name="leadId" defaultValue={dialog === "org-edit" ? selectedOrg?.leadId : ""}><option value="">未指定</option>{members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}</select></label></div><div className="orgv2-modal-footer"><button className="orgv2-outline" type="button" onClick={() => void closeDialog()}>取消</button><button className="orgv2-primary" type="submit">{dialog === "org-create" ? "创建组织" : "保存修改"}</button></div></form>}
+      {dialog === "org-add-member" && <div><h2 id="orgv2-dialog-title">添加成员到「{selectedOrg?.name}」</h2><div className="orgv2-form-body"><label>选择已有成员<select value={addMemberId} onChange={(event) => setAddMemberId(event.target.value)}><option value="">请选择成员</option>{members.filter((member) => member.orgId !== selectedOrgId).map((member) => <option key={member.id} value={member.id}>{member.name} / {member.account} · {orgPath(member.orgId)}</option>)}</select></label></div><div className="orgv2-modal-footer"><button className="orgv2-outline" type="button" onClick={() => void closeDialog()}>取消</button><button className="orgv2-primary" type="button" disabled={!addMemberId} onClick={() => { setMembers((previous) => previous.map((member) => member.id === addMemberId ? { ...member, orgId: selectedOrgId } : member)); setDialog(null); setNotice("成员已添加到组织") }}>添加 1 位成员</button></div></div>}
+      {dialog === "role-create" && <form onSubmit={submitRole}><h2 id="orgv2-dialog-title">新增角色</h2><div className="orgv2-form-body"><label>角色名称 *<input name="name" required placeholder="请输入角色名称" /></label><label>角色说明<textarea name="description" rows={3} placeholder="说明该角色的工作范围" /></label></div><div className="orgv2-modal-footer"><button className="orgv2-outline" type="button" onClick={() => void closeDialog()}>取消</button><button className="orgv2-primary" type="submit">创建并配置权限</button></div></form>}
+      {(["member-delete", "org-remove-member", "role-delete", "role-in-use", "revoke"] as Dialog[]).includes(dialog) && <div className="orgv2-confirm"><TriangleAlert size={24} aria-hidden="true" /><h2 id="orgv2-dialog-title">{dialog === "member-delete" ? `删除成员「${targetMember?.name}」？` : dialog === "org-remove-member" ? `移出成员「${targetMember?.name}」？` : dialog === "role-delete" ? "删除当前角色？" : dialog === "role-in-use" ? "该角色仍有成员使用" : "移除这条授权？"}</h2><p>{dialog === "member-delete" ? "删除后，该成员将无法登录，已有访问权限将被移除。历史操作记录保留。" : dialog === "org-remove-member" ? "成员将退出当前组织，已有角色授权保持不变。" : dialog === "role-delete" ? "确认删除后，该角色将不再出现在成员授权选项中。此操作不可恢复。" : dialog === "role-in-use" ? "请先为相关成员更换角色，再删除当前角色。不会自动移除成员已有权限。" : `${targetMember?.name}将失去「${roles.find((role) => role.id === targetAssignment?.roleId)?.name ?? ""}」授予的站点访问权限。`}</p><div className="orgv2-modal-footer"><button className="orgv2-outline" type="button" onClick={() => void closeDialog()}>取消</button>{dialog === "role-in-use" ? <button className="orgv2-primary" type="button" onClick={() => { setDialog(null); switchView("成员管理") }}>返回成员管理</button> : <button className={dialog === "member-delete" || dialog === "role-delete" ? "orgv2-danger" : "orgv2-primary"} type="button" onClick={confirmDialog}>{dialog === "member-delete" ? "删除成员" : dialog === "role-delete" ? "确认删除" : dialog === "org-remove-member" ? "移出组织" : "确认移除"}</button>}</div></div>}
     </div></div>}
+    {leaveOpen&&<PlatformLeaveDialog onDecide={allow=>{if(allow){setRoleDraft([...(selectedRole?.permissions??[])]);setAssignRoleId(assignBaseline.current.role);setAssignTerm(assignBaseline.current.term);setAssignSites([...assignBaseline.current.sites]);setDialog(null);setModalDirty(false)}setLeaveOpen(false);settleLeave(allow)}}/>}
   </section>
-}
+})

@@ -1,0 +1,80 @@
+/* Figma 07: 1995–2016 member/role flows and 1673 customer/audit pages. */
+.platform-page.platform-figma { background:#fff; --ui-bg:#fff; --platform-ink:#24333f; --platform-muted:#647481; --platform-border:#e1e7eb; --platform-green:#1e6656; --ui-border:#e1e7eb; --ui-text:#24333f; --ui-muted:#647481; --ui-primary:#1e6656; --ui-subtle:#f5f8f8; }
+.platform-figma .platform-content { padding:20px; gap:20px; }
+.platform-figma .platform-tabs { min-height:48px; gap:12px; padding:0 20px; border-bottom:0; }
+.platform-figma .platform-tabs button { width:96px; min-width:96px; font-size:13px; border-bottom:0; }
+.platform-figma .platform-tabs button[aria-current=page]::after { content:""; height:2px; background:#1e6656; position:absolute; bottom:12px; width:52px; }
+.platform-figma .platform-tabs .platform-config-entry { margin-left:auto; }
+.platform-figma .orgv2-tabs { gap:12px; border:0; padding:0; }
+.platform-figma .orgv2-tabs button { min-height:36px; min-width:116px; padding:6px 16px; border:1px solid #e1e7eb; border-radius:5px; color:#1e6656; font-size:13px; }
+.platform-figma .orgv2-tabs button[aria-selected=true] { background:#1e6656; color:#fff; border-color:#1e6656; }
+.platform-figma .orgv2-panel { padding:16px; border-radius:8px; }
+.platform-figma .orgv2-panel h2 { font-size:16px; }
+.platform-figma .orgv2-members { min-height:520px; }
+.platform-figma .orgv2-table th { height:40px; font-size:12px; background:#f5f8f8; }
+.platform-figma .orgv2-member-table td { height:80px; font-size:12px; }
+.platform-figma .orgv2-member-table th:first-child { width:17%; }
+.platform-figma .orgv2-member-table th:nth-child(2) { width:24%; }
+.platform-figma .orgv2-member-table th:nth-child(3) { width:16%; }
+.platform-figma .orgv2-member-table th:nth-child(4) { width:17%; }
+.platform-figma .orgv2-member-table th:nth-child(5) { width:8%; }
+.platform-figma .orgv2-member-table th:last-child { width:18%; }
+.platform-figma .orgv2-table td,.platform-figma .platform-table-card td { border-bottom:1px solid #edf0f2; }
+.platform-figma .orgv2-split { grid-template-columns:236px minmax(0,1fr); gap:24px; }
+.platform-figma .orgv2-tree { min-height:704px; }
+.platform-figma .role-permissions-panel .orgv2-role-list { min-height:650px; }
+.platform-figma .orgv2-role-list > button { min-height:48px; border:1px solid #e1e7eb; justify-content:center; font-size:12px; }
+.platform-figma .orgv2-role-list > button.is-active { background:#1e6656; color:white; }
+.platform-figma .orgv2-role-list > button.is-active small { color:#e0eeea; }
+.platform-figma .role-permissions-panel .orgv2-role-groups { gap:6px; }
+.platform-figma .role-permissions-panel .orgv2-group { border:1px solid #e1e7eb; border-radius:5px; padding:12px; }
+.platform-figma .role-permissions-panel .orgv2-check-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px 12px; }
+.platform-figma .role-permissions-panel .orgv2-check-grid label { font-size:12px; }
+.platform-customers,.platform-audit,.platform-config,.platform-temporary { display:grid; gap:20px; min-width:0; }
+.platform-customers > .orgv2-outline,.platform-audit > .orgv2-outline { justify-self:start; }
+.platform-record-grid,.platform-config-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; align-items:start; }
+.platform-record-grid .platform-detail-card { min-height:260px; }
+.platform-figma .platform-detail-card { padding:20px; border-color:#e1e7eb; background:#fff; }
+.platform-figma .platform-detail-card h3 { font-size:15px; margin:0 0 20px; }
+.platform-figma .platform-detail-card dl { display:grid; gap:18px; }
+.platform-figma .platform-detail-card dl > div { display:grid; grid-template-columns:110px minmax(0,1fr); gap:16px; }
+.platform-figma .platform-detail-card dd { margin:0; overflow-wrap:anywhere; }
+.platform-figma .platform-detail-card dt { color:#647481; }
+.platform-figma .platform-table-card table { width:100%; table-layout:fixed; }
+.platform-figma .platform-table-card th { background:#f6f8f9; height:44px; font-size:12px; }
+.platform-figma .platform-table-card td { height:52px; font-size:13px; overflow-wrap:anywhere; }
+.platform-figma .platform-table-card th,.platform-figma .platform-table-card td { padding:10px 12px; text-align:left; }
+.platform-figma .platform-toolbar { gap:12px; margin:0; flex-wrap:wrap; }
+.platform-figma :is(.platform-toolbar,.platform-config-fields,.platform-config .orgv2-filters) :is(input,select) { height:38px; border:1px solid #e1e7eb; border-radius:5px; padding:0 12px; background:#fff; min-width:0; color:#334651; }
+.platform-audit-date { display:grid; gap:4px; color:#647481; font-size:12px; }
+.platform-config-channels { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+.platform-config h3 { font-size:14px; font-weight:600; margin:0 0 16px; }
+.platform-config p { font-size:12px; line-height:1.7; }
+.platform-config-fields { display:grid; gap:16px; }
+.platform-config-fields label,.platform-local-logo { display:grid; gap:8px; font-size:12px; }
+.platform-config form { display:grid; gap:20px; }
+.platform-config .orgv2-filters > button { margin-left:auto; }
+.platform-local-logo { margin-top:16px; }
+.platform-figma .platform-customer-modal { width:min(560px,calc(100vw - 40px)); }
+.platform-figma .platform-customer-modal .orgv2-form-body { grid-template-columns:1fr; }
+.platform-figma .platform-leave-dialog { padding:24px; width:min(480px,calc(100vw - 40px)); }
+.platform-leave-dialog .orgv2-modal-footer { padding:16px 0 0; background:#fff; border:0; }
+@media(max-width:1100px){.platform-figma .role-permissions-panel .orgv2-check-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.platform-config-channels{grid-template-columns:1fr}.platform-figma .orgv2-split{grid-template-columns:210px minmax(0,1fr)}}
+@media(max-width:750px){.platform-record-grid,.platform-config-grid{grid-template-columns:1fr}.platform-figma .orgv2-split{grid-template-columns:1fr}.platform-figma .orgv2-tree{min-height:0}.platform-figma .platform-tabs{overflow:auto}.platform-figma .platform-content{padding:16px}}
+
+.platform-figma .platform-table-card th:nth-child(n) { width:auto; }
+.platform-figma .platform-table-card td { white-space:normal; }
+.platform-figma .platform-confirm-icon { display:block; margin:8px auto 18px; }
+.platform-figma input[type=checkbox] { appearance:none; width:18px; height:18px; flex:0 0 18px; background:url('/figma/platform/unchecked.svg') center/18px 18px no-repeat; border:0; border-radius:2px; }
+.platform-figma input[type=checkbox]:checked { background-image:url('/figma/platform/checked.svg'); background-size:16px 16px; }
+.platform-figma input[type=checkbox]:indeterminate { appearance:auto; background:none; }
+.platform-figma input[type=checkbox]:focus-visible { outline:2px solid #1e6656; outline-offset:3px; }
+.platform-figma .orgv2-notice { top:112px; bottom:auto; right:28px; pointer-events:none; }
+.platform-figma .orgv2-notice button { pointer-events:auto; }
+.platform-demo-tools {display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:8px 20px 0; font-size:12px;color:#647481;}
+.platform-demo-tools button:first-child {margin-left:auto;}
+.platform-figma .orgv2-group {border:1px solid #e1e7eb;border-radius:5px;padding:12px;}
+.platform-figma .orgv2-check-grid {grid-template-columns:repeat(4,minmax(0,1fr));}
+
+.platform-page.platform-figma :where(th) { background:#f5f8f8 !important; }
+.platform-config .platform-config-grid .orgv2-table { min-width:0; width:100%; table-layout:fixed; }

@@ -67,7 +67,7 @@ async function checkLayout(page, expectedNavCount) {
       sidebarRight: sidebar.right,
       viewport: innerWidth,
       background: getComputedStyle(main).backgroundColor,
-      maintenance: main.classList.contains("maintenance-page") || main.classList.contains("work-orders-page") || Boolean(main.querySelector('[aria-label="运营中心二级导航"]')),
+      maintenance: main.classList.contains("platform-page") || main.classList.contains("maintenance-page") || main.classList.contains("work-orders-page") || Boolean(main.querySelector('[aria-label="运营中心二级导航"]')),
     }
   })
   assert.ok(geometry.scroll <= geometry.width + 1, JSON.stringify(geometry))

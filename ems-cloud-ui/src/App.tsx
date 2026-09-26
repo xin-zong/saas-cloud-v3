@@ -432,6 +432,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
     if (activeNav === "运营中心") return requestOperationsLeave()
     if (activeNav === "运维中心") return maintenanceLeaveGuard.current?.() ?? Promise.resolve(true)
     if (activeNav === "工单与审批") return workOrdersLeaveGuard.current?.() ?? Promise.resolve(true)
+    if (activeNav === "平台管理") return platformLeaveGuard.current?.() ?? Promise.resolve(true)
     return Promise.resolve(true)
   }
 
@@ -809,7 +810,6 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
             if (sidebarTransitionPending.current) return
             sidebarTransitionPending.current = true
             try {
-              if (activeNav === "平台管理" && nav !== activeNav && platformLeaveGuard.current && !(await platformLeaveGuard.current())) return
               if (nav !== activeNav && !(await requestActiveEditorLeave())) return
               if (nav === "工单与审批") setWorkOrderFocus(null)
               setActiveNav(nav as NavLabel)

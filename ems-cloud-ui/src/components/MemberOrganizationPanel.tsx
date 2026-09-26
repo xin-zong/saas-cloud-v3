@@ -33,7 +33,7 @@ type Organization = {
   lead_restricted?: boolean
   can_reparent?: boolean
 }
-type Dialog = "create" | "edit" | "membership" | "delete" | "org-create" | "org-edit" | "add" | "remove"
+type Dialog = "create" | "edit" | "membership" | "delete" | "org-create" | "org-edit" | "org-delete" | "add" | "remove"
 type DirectoryPurpose = "read" | "profiles" | "grants" | "organizations"
 const emptyAccess = (): Record<DirectoryPurpose, Set<number>> => ({
   read: new Set(),
@@ -476,6 +476,7 @@ export default forwardRef<RolePermissionsHandle, {
     delete: "删除成员",
     "org-create": "新增子组织",
     "org-edit": "编辑组织",
+    "org-delete": "无法删除组织",
     add: "添加已有成员",
     remove: "移出组织",
   }
@@ -563,7 +564,7 @@ export default forwardRef<RolePermissionsHandle, {
                   disabled={!profileOrgs.length}
                   onClick={() => open("create")}
                 >
-                  <Plus size={16} />
+                  <img src="/figma/platform/plus.svg" alt="" />
                   新增成员
                 </button>
               )}
@@ -625,7 +626,7 @@ export default forwardRef<RolePermissionsHandle, {
                 className="orgv2-outline member-workflow-add-org"
                 onClick={() => open("org-create")}
               >
-                <Plus size={15} />
+                <img src="/figma/platform/plus.svg" alt="" />
                 新增组织
               </button>
             )}
@@ -640,7 +641,7 @@ export default forwardRef<RolePermissionsHandle, {
                       className="orgv2-outline"
                       onClick={() => open("org-create")}
                     >
-                      <Plus size={15} />
+                      <img src="/figma/platform/plus.svg" alt="" />
                       新增子组织
                     </button>
                     <button
@@ -649,6 +650,7 @@ export default forwardRef<RolePermissionsHandle, {
                     >
                       编辑组织
                     </button>
+                    <button className="orgv2-outline" onClick={() => open("org-delete")}>删除组织</button>
                   </div>
                 )}
               </div>
@@ -681,7 +683,7 @@ export default forwardRef<RolePermissionsHandle, {
                 <h2>直属成员</h2>
                 {editableOrg && (
                   <button className="orgv2-primary" onClick={() => open("add")}>
-                    <Plus size={15} />
+                    <img src="/figma/platform/plus.svg" alt="" />
                     添加已有成员
                   </button>
                 )}
@@ -722,7 +724,7 @@ export default forwardRef<RolePermissionsHandle, {
               disabled={busy}
               onClick={close}
             >
-              <X size={18} />
+              <img src="/figma/platform/close.svg" alt="" />
             </button>
             <form
               onSubmit={(e) => void save(e)}
@@ -1001,6 +1003,7 @@ export default forwardRef<RolePermissionsHandle, {
                       ？已有授权将保留，管理组织不变；不再合法的负责人关系会清除。
                     </p>
                   )}
+                  {dialog === "org-delete" && <div className="orgv2-confirm"><img className="platform-confirm-icon" src="/figma/platform/warning.svg" alt="" /><h3>无法删除“{org?.name}”</h3><p>{orgs.some(o => o.parent_id === org?.id) || members.some(m => m.organization_id === org?.id) ? "该组织包含子组织或成员，请先迁移。" : "当前组织没有可见直属成员。"}组织删除服务尚未接通，请联系管理员处理；此处不会删除组织。</p></div>}
                   {dialog === "delete" && (
                     <p>
                       确认删除成员 {target?.display_name}
@@ -1025,7 +1028,7 @@ export default forwardRef<RolePermissionsHandle, {
                 </button>
                 <button
                   className="orgv2-primary"
-                  disabled={busy || (dialog === "add" && !eligible.length)}
+                  disabled={busy || dialog === "org-delete" || (dialog === "add" && !eligible.length)}
                 >
                   {busy ? "正在保存…" : submitLabel}
                 </button>

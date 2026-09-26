@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import type { FormEvent } from "react"
 import {
   Check,
@@ -19,6 +19,11 @@ import OrganizationPermissions from "./OrganizationPermissions"
 import ApiPlatformManagement from "./ApiPlatformManagement"
 import { DEMO_MODE } from "@/api/client"
 import "./platform-management.css"
+import "./platform-figma.css"
+import PlatformConfigurationPanel from "./PlatformConfigurationPanel"
+import PlatformLeaveDialog from "./PlatformLeaveDialog"
+import {useEditorLeaveGuard} from "./useEditorLeaveGuard"
+import type {RolePermissionsHandle} from "./RolePermissionsPanel"
 
 type PlatformTab = "客户管理" | "组织权限" | "安全审计"
 type CustomerStatus = "正常" | "配额预警" | "试用中" | "即将到期"
@@ -1039,9 +1044,11 @@ function parseFlow(value: string) {
 function DemoPlatformManagementPage({
   stations = [],
   allowedTabs = TABS,
+  registerLeaveGuard,
 }: {
   stations?: Station[]
   allowedTabs?: readonly PlatformTab[]
+  registerLeaveGuard?: (guard:null|(()=>Promise<boolean>))=>void
 }) {
   const visibleTabs = TABS.filter((tab) => allowedTabs.includes(tab))
   const dataNow = useMemo(() => stationsDataNow(stations), [stations])
@@ -1152,6 +1159,15 @@ function DemoPlatformManagementPage({
   const [dialogKind, setDialogKind] = useState<DialogKind>(null)
   const [notice, setNotice] = useState("")
 
+  const [legacyGrants,setLegacyGrants]=useState(false)
+  const [configOpen,setConfigOpen]=useState(false),[dialogDirty,setDialogDirty]=useState(false),[leaveOpen,setLeaveOpen]=useState(false)
+  const organizationRef=useRef<RolePermissionsHandle>(null),configurationRef=useRef<RolePermissionsHandle>(null)
+  const {requestLeave,settleLeave}=useEditorLeaveGuard({dirty:!!dialogKind&&dialogDirty,onConfirm:()=>setLeaveOpen(true),onCancel:()=>setLeaveOpen(false)})
+  const requestDemoLeave=async()=>{if(!(await requestLeave()))return false;return (configOpen?configurationRef.current:activeTab==="组织权限"?organizationRef.current:null)?.requestLeave()??true}
+  useEffect(()=>{registerLeaveGuard?.(requestDemoLeave);return()=>registerLeaveGuard?.(null)},[registerLeaveGuard,activeTab,configOpen])
+  useEffect(()=>{setDialogDirty(false)},[dialogKind])
+  useEffect(()=>{if(!dialogKind||!dialogDirty)return;const prevent=(e:BeforeUnloadEvent)=>{e.preventDefault();e.returnValue=""};window.addEventListener("beforeunload",prevent);return()=>window.removeEventListener("beforeunload",prevent)},[dialogKind,dialogDirty])
+  const closeDemoDialog=async()=>{if(await requestLeave())setDialogKind(null)}
   const filteredCustomers = useMemo(() => {
     const keyword = search.trim().toLowerCase()
     return customers.filter((customer) => {
@@ -3010,7 +3026,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               aria-label={`关闭${title}`}
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               <X size={16} aria-hidden="true" />
             </button>
@@ -3092,7 +3108,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               className="platform-outline-button"
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               取消
             </button>
@@ -3120,7 +3136,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               aria-label="关闭编辑权益"
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               <X size={16} aria-hidden="true" />
             </button>
@@ -3171,7 +3187,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               className="platform-outline-button"
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               取消
             </button>
@@ -3205,7 +3221,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               aria-label={`关闭${title}`}
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               <X size={16} aria-hidden="true" />
             </button>
@@ -3237,7 +3253,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               className="platform-outline-button"
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               取消
             </button>
@@ -3262,7 +3278,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               aria-label="关闭删除组织"
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               <X size={16} aria-hidden="true" />
             </button>
@@ -3277,7 +3293,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               className="platform-outline-button"
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               取消
             </button>
@@ -3324,7 +3340,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               aria-label={`关闭${title}`}
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               <X size={16} aria-hidden="true" />
             </button>
@@ -3398,7 +3414,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               className="platform-outline-button"
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               取消
             </button>
@@ -3429,7 +3445,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               aria-label="关闭权限预览"
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               <X size={16} aria-hidden="true" />
             </button>
@@ -3490,7 +3506,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               className="platform-outline-button"
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               关闭
             </button>
@@ -3530,7 +3546,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               aria-label={`关闭${title}`}
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               <X size={16} aria-hidden="true" />
             </button>
@@ -3626,7 +3642,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               className="platform-outline-button"
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               取消
             </button>
@@ -3652,7 +3668,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               aria-label="关闭新增授权"
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               <X size={16} aria-hidden="true" />
             </button>
@@ -3723,7 +3739,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               className="platform-outline-button"
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               取消
             </button>
@@ -3748,7 +3764,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               aria-label="关闭撤销临时授权"
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               <X size={16} aria-hidden="true" />
             </button>
@@ -3763,7 +3779,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               className="platform-outline-button"
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               取消
             </button>
@@ -3797,7 +3813,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               aria-label={`关闭${title}`}
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               <X size={16} aria-hidden="true" />
             </button>
@@ -3884,7 +3900,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               className="platform-outline-button"
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               取消
             </button>
@@ -3912,7 +3928,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               aria-label="关闭编辑策略"
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               <X size={16} aria-hidden="true" />
             </button>
@@ -3929,7 +3945,7 @@ function DemoPlatformManagementPage({
             <button
               type="button"
               className="platform-outline-button"
-              onClick={() => setDialogKind(null)}
+              onClick={() => void closeDemoDialog()}
             >
               取消
             </button>
@@ -3944,7 +3960,7 @@ function DemoPlatformManagementPage({
   }
 
   return (
-    <main className="platform-page">
+    <main className="platform-page platform-figma" onChangeCapture={event=>{if((event.target as HTMLElement).closest(".platform-dialog"))setDialogDirty(true)}}>
       <h1 className="platform-sr-title">平台管理</h1>
       {visibleTabs.length > 1 && (
         <nav className="platform-tabs" aria-label="平台管理二级导航">
@@ -3953,7 +3969,7 @@ function DemoPlatformManagementPage({
               key={tab}
               type="button"
               aria-current={activeTab === tab ? "page" : undefined}
-              onClick={() => setActiveTab(tab)}
+              onClick={async () => {if(await requestDemoLeave()){setActiveTab(tab);setConfigOpen(false)}}}
             >
               {tab}
             </button>
@@ -3961,14 +3977,16 @@ function DemoPlatformManagementPage({
         </nav>
       )}
 
+      {visibleTabs.includes("组织权限")&&<div className="platform-demo-tools">{(configOpen||legacyGrants)&&<button className="orgv2-outline" onClick={async()=>{if(await requestDemoLeave()){setConfigOpen(false);setLegacyGrants(false)}}}>组织权限</button>}<button className="orgv2-outline" onClick={async()=>{if(await requestDemoLeave()){setLegacyGrants(true);setConfigOpen(false)}}}>临时授权</button><button className="orgv2-outline" onClick={async()=>{if(await requestDemoLeave()){setConfigOpen(true);setLegacyGrants(false)}}}>配置中心</button><span>演示模式 · 成员与角色修改仅用于本次演示</span></div>}
       <div className={`platform-content${activeTab === "组织权限" ? " platform-content--orgv2" : ""}`}>
-        {activeTab === "客户管理"
+        {configOpen ? <PlatformConfigurationPanel ref={configurationRef} /> : legacyGrants ? renderTemporaryGrants() : activeTab === "客户管理"
           ? renderCustomerManagement()
           : activeTab === "组织权限"
-            ? <OrganizationPermissions stations={stations} />
+            ? <OrganizationPermissions ref={organizationRef} stations={stations} />
             : renderSecurityAudit()}
       </div>
 
+      {leaveOpen&&<PlatformLeaveDialog onDecide={allow=>{if(allow){setDialogKind(null);setDialogDirty(false)}setLeaveOpen(false);settleLeave(allow)}}/>}
       {notice && (
         <div className="platform-notice" role="status">
           {notice}
