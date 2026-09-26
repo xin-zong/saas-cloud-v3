@@ -7,6 +7,8 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -15,19 +17,25 @@ import {
 import type { Station } from "@/App"
 import {
   buildOperationsStation,
+  portfolioPower,
+  powerToEnergy,
+  POWER_SERIES,
+  minuteLabel,
   exportOperationsCsv,
   finite,
   operationsDate,
   sumKnown,
 } from "@/data/operations"
 import { stationsDataNow } from "@/data/dataClock"
-import { PageHeader } from "./ui/Workspace"
+import OperationsOverviewPage from "./OperationsOverviewPage"
 import "./operations-center.css"
 import StationPriceSettingsPage from "./StationPriceSettingsPage"
 import OperationsSchedulePage from "./OperationsSchedulePage"
 import OperationsMarketPage from "./OperationsMarketPage"
 import OperationsSettlementPage from "./OperationsSettlementPage"
 import type { RegisterLeaveGuard } from "./useEditorLeaveGuard"
+
+import "./operations-module03.css"
 
 const TABS = ["运营总览", "策略执行", "市场服务", "收益结算", "电价设置"] as const
 type Tab = (typeof TABS)[number]
@@ -63,6 +71,7 @@ function OperationsOverview({
 }) {
   const [now] = useState(() => stationsDataNow(stations))
   const today = operationsDate(now)
+  const [powerUnit,setPowerUnit] = useState<"功率" | "能量">("功率")
   const [region, setRegion] = useState("")
   const [type, setType] = useState("")
   const [query, setQuery] = useState("")
@@ -93,6 +102,8 @@ function OperationsOverview({
     () => scoped.map((station) => buildOperationsStation(station, today, now)),
     [scoped, today, now],
   )
+  const powerRows = portfolioPower(todayRows)
+  const powerCurve = powerUnit === "能量" ? powerToEnergy(powerRows) : powerRows
   const monthRows = useMemo(
     () => scoped.map((station) => buildOperationsStation(station, end, now)),
     [scoped, end, now],
@@ -170,6 +181,13 @@ function OperationsOverview({
         </div>
       </section>
 
+      <section className="ops-panel" aria-label="组合功率与能量走势">
+        <div className="ops-panel-heading"><h2>组合功率与能量走势 · 今日</h2><div className="operations-segment">{(["功率","能量"] as const).map(unit=><button key={unit} aria-pressed={powerUnit===unit} onClick={()=>setPowerUnit(unit)}>{unit}</button>)}</div></div>
+        <p className="market-boundary">负载、光伏、储能与电网；跨站任一测点缺失保留缺口。{powerUnit==="功率"?"kW":"kWh"}</p>
+        <div className="ops-chart">{powerCurve.some(p=>POWER_SERIES.some(s=>p[s.key]!==null))?<ResponsiveContainer width="100%" height="100%" minWidth={0}><LineChart data={powerCurve}><CartesianGrid vertical={false} stroke="#e6eaec"/><XAxis dataKey="minute" tickFormatter={minuteLabel} tick={{fontSize:11}}/><YAxis tick={{fontSize:11}}/><Tooltip labelFormatter={value=>minuteLabel(Number(value))}/>{POWER_SERIES.map(series=><Line key={series.key} dataKey={series.key} name={series.name} stroke={series.color} dot={false} isAnimationActive={false}/>)}</LineChart></ResponsiveContainer>:<div className="operations-empty">暂无完整组合测点数据</div>}</div>
+        <div className="operations-legend">{POWER_SERIES.map(series=><span key={series.key} style={{color:series.color}}>{series.name}</span>)}</div>
+      </section>
+      <section className="ops-panel" aria-label="SOC 分布"><h2>站点 SOC 分布</h2><div className="ops-state-counts">{[0,20,40,60,80].map(lower=><div key={lower}><span>{lower}–{lower+20}%</span><strong>{todayRows.filter(row=>row.soc!==null&&row.soc>=lower&&(row.soc<lower+20||(lower===80&&row.soc===100))).length} 站</strong></div>)}<div><span>未知</span><strong>{todayRows.filter(row=>row.soc===null).length} 站</strong></div></div></section>
       <section className="ops-summary" aria-label="收益指标">
         {[
           ["今日收益", amount(sumKnown(todayRows.map((row) => row.day.total))), today],
@@ -273,6 +291,7 @@ export default function OperationsCenterPage({
   const forCapability = (code: string) => DEMO_MODE ? stations : stations.filter(station => hasStationPermission(user, station.id, code))
   const visibleTabs = TABS.filter((item) => allowedTabs.includes(item))
   const [tab, setTab] = useState<Tab>(visibleTabs[0] ?? "运营总览")
+  const [history, setHistory] = useState(false)
   const [tariffStationId, setTariffStationId] = useState("")
   const tariffStations = forCapability("tariff.manage")
   const tariffStation = tariffStations.find(station => station.id === tariffStationId) ?? tariffStations[0]
@@ -281,24 +300,19 @@ export default function OperationsCenterPage({
     : (visibleTabs[0] ?? "运营总览")
   return (
     <main className="operations-page">
-      <PageHeader
-        title="运营中心"
-        description="统一查看站点收益、策略执行、市场服务和收益结算。"
-      />
-      {!DEMO_MODE && <p style={{padding: "8px 24px", fontSize:12}}>计划、市场服务与结算来自业务服务器。内部草稿、审批及复核不触发设备控制、外部市场交易或付款；执行数据缺失时显示未知。</p>}
       <nav className="ui-tabs ops-tabs" aria-label="运营中心二级导航">
         {visibleTabs.map((item) => (
           <button key={item} aria-current={activeTab === item ? "page" : undefined} onClick={() => { void (async () => {
             if (item !== activeTab && requestLeave && !(await requestLeave())) return
             setTab(item)
           })() }}>
-            {item}
+            {item === "市场服务" ? "市场响应" : item === "收益结算" ? "收益核算" : item}
           </button>
         ))}
       </nav>
-      {activeTab === "运营总览" && <OperationsOverview stations={stations} onOpenStation={onOpenStation} />}
+      {activeTab === "运营总览" && (history ? <><button className="operations-button ops-history-back" onClick={() => setHistory(false)}>返回运营总览</button><OperationsOverview stations={forCapability("revenue.read")} onOpenStation={onOpenStation} /></> : <OperationsOverviewPage stations={stations} onOpenStation={onOpenStation} onHistory={() => setHistory(true)} onSchedule={visibleTabs.includes("策略执行") ? () => setTab("策略执行") : undefined} onMarket={visibleTabs.includes("市场服务") ? () => setTab("市场服务") : undefined} onSettlement={visibleTabs.includes("收益结算") ? () => setTab("收益结算") : undefined} />)}
       {activeTab === "策略执行" && <OperationsSchedulePage stations={forCapability("strategy.read")} onOpenStation={onOpenStation} registerLeaveGuard={registerLeaveGuard} requestLeave={requestLeave} />}
-      {activeTab === "市场服务" && <OperationsMarketPage stations={forCapability("market.read")} onOpenStation={onOpenStation} />}
+      {activeTab === "市场服务" && <OperationsMarketPage stations={forCapability("market.read")} onOpenStation={onOpenStation} registerLeaveGuard={registerLeaveGuard} />}
       {activeTab === "电价设置" && <section><label className="dispatch-toolbar">电价站点 <select aria-label="电价站点" value={tariffStation?.id ?? ""} onChange={event => { const id = event.target.value; void (async () => {
         if (id !== tariffStation?.id && requestLeave && !(await requestLeave())) return
         setTariffStationId(id)

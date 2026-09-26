@@ -8,6 +8,8 @@ import { api, allRows, send, type ApiRow } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
 import './operations-market.css'
 import './api-market.css'
+import { useEditorLeaveGuard, type RegisterLeaveGuard } from './useEditorLeaveGuard'
+import { Modal } from './station-provision/Common'
 
 const statuses: Record<string, string> = {
   draft: "内部草稿",
@@ -19,7 +21,7 @@ const statuses: Record<string, string> = {
   cancelled: "已取消记录",
 }
 
-export default function ApiMarketPage({ stations }: { stations: Station[] }) {
+export default function ApiMarketPage({ stations, registerLeaveGuard }: { stations: Station[]; registerLeaveGuard?: RegisterLeaveGuard }) {
   const { user } = useAuth()
   stations = stations.filter(station => hasStationPermission(user, station.id, "market.read"))
 
@@ -39,6 +41,17 @@ export default function ApiMarketPage({ stations }: { stations: Station[] }) {
     [start, setStart] = useState(""),
     [end, setEnd] = useState(""),
     [capacity, setCapacity] = useState("")
+
+  const [dirty, setDirty] = useState(false)
+  const [leaving, setLeaving] = useState(false)
+  const enabled = hasStationPermission(user, stationId, "market.manage")
+  const { requestLeave, settleLeave } = useEditorLeaveGuard({dirty:creating && dirty, enabled, registerLeaveGuard, onConfirm:()=>setLeaving(true),onCancel:()=>setLeaving(false)})
+  useEffect(()=>{if(!enabled){setCreating(false);setDirty(false)}},[enabled])
+  useEffect(()=>{
+    const beforeUnload=(e:BeforeUnloadEvent)=>{if(creating&&dirty){e.preventDefault();e.returnValue=""}}
+    window.addEventListener("beforeunload",beforeUnload)
+    return()=>window.removeEventListener("beforeunload",beforeUnload)
+  },[creating,dirty])
 
   useEffect(() => {
     if (!stations.some((s) => s.id === stationId)) {
@@ -90,7 +103,7 @@ export default function ApiMarketPage({ stations }: { stations: Station[] }) {
       kw = Number(capacity)
 
     if (
-      !q ||
+      !name.trim() || !code.trim() || !q || q.status !== "valid" ||
       !Number.isFinite(from.getTime()) ||
       !Number.isFinite(to.getTime()) ||
       to <= from ||
@@ -116,6 +129,7 @@ export default function ApiMarketPage({ stations }: { stations: Station[] }) {
         capacityKw: kw,
       })
       setCreating(false)
+      setDirty(false)
       setName("")
       setCode("")
       setRevision((v) => v + 1)
@@ -150,8 +164,8 @@ export default function ApiMarketPage({ stations }: { stations: Station[] }) {
             value={stationId}
             disabled={!stations.length}
             onChange={(e) => {
-              setStationId(e.target.value)
-              setCreating(false)
+              const id = e.target.value
+              void(async()=>{if(await requestLeave()){setStationId(id);setCreating(false);setDirty(false)}})()
             }}
           >
             {!stations.length && <option value="">暂无授权站点</option>}
@@ -173,7 +187,7 @@ export default function ApiMarketPage({ stations }: { stations: Station[] }) {
           <button
             className="operations-button market-primary"
             disabled={!stationId}
-            onClick={() => setCreating(!creating)}
+            onClick={() => {void(async()=>{if(await requestLeave()){setCreating(!creating);setDirty(false)}})()}}
           >
             新建内部草稿
           </button>
@@ -186,7 +200,7 @@ export default function ApiMarketPage({ stations }: { stations: Station[] }) {
       {loading && <p role="status">正在加载服务记录…</p>}
       <section className="market-surface" aria-label="服务资格列表"><div className="market-heading"><h2>服务资格</h2><span>{loading || error ? "—" : qualifications.length} 项</span></div><div className="operations-table-scroll"><table className="operations-table"><thead><tr>{["服务区域", "服务类型", "资格状态", "有效期至"].map((heading) => <th scope="col" key={heading}>{heading}</th>)}</tr></thead><tbody>{!loading && !error && qualifications.length ? qualifications.map((q) => <tr key={String(q.id)}><td>{String(q.area_name)}</td><td>{String(q.kind)}</td><td><span className="api-market-status">{q.status === "valid" ? "有效" : String(q.status)}</span></td><td>{String(q.valid_until)}</td></tr>) : <tr><td colSpan={4} className="api-market-empty">{loading ? "正在加载服务资格…" : error ? "服务资格加载失败" : "暂无已登记资格"}</td></tr>}</tbody></table></div></section>
       {creating && (
-        <form onSubmit={save} className="market-create-form">
+        <form onSubmit={save} onChange={()=>setDirty(true)} className="market-create-form">
           <h3>新建内部服务草稿</h3>
           <label>
             服务资格
@@ -302,6 +316,7 @@ export default function ApiMarketPage({ stations }: { stations: Station[] }) {
           </tbody>
         </table>
       </div><footer>共 {loading || error ? "—" : services.length} 条服务记录</footer></section>
+      {leaving && <Modal title="放弃未保存修改？" onClose={()=>{setLeaving(false);settleLeave(false)}} actions={<><button className="operations-button" onClick={()=>{setLeaving(false);settleLeave(false)}}>继续编辑</button><button className="operations-button market-primary" onClick={()=>{setLeaving(false);setDirty(false);settleLeave(true)}}>放弃修改</button></>}><p>内部服务草稿尚未保存。</p></Modal>}
     </section>
   )
 }

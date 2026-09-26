@@ -50,7 +50,7 @@ for (const role of ['operator', 'owner']) test(`overview immersive alarm departu
     else await page.locator('.overview-workspace').waitFor({ state: 'detached' })
     assert.equal(await page.locator('.workspace-shell').getAttribute('data-immersive'), 'false')
     assert.equal(await page.locator('.workspace-sidebar').isVisible(), true)
-    assert.equal(await page.locator(role === 'owner' ? '.station-global-header' : '.global-platform-header').isVisible(), true)
+    assert.equal(await page.locator('.station-global-header').isVisible(), true)
     await page.getByRole('navigation', { name: '一级导航' }).getByRole('button', { name: '总览', exact: true }).click()
     await page.getByRole('button', { name: '经营看板', exact: true }).waitFor()
   } finally { await browser.close() }

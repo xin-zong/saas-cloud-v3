@@ -790,9 +790,9 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
   }, [stations, user])
 
   return (
-    <div className="workspace-shell" data-immersive={immersive} data-nav-collapsed={sidebarCollapsed} data-design-area={activeNav === "资产与站点" ? "stations" : undefined}>
-      {activeNav === "资产与站点" && <StationGlobalHeader user={user} onLogout={logout} status={DEMO_MODE ? undefined : apiError || (apiLoading ? "正在加载授权站点…" : `已连接业务服务 · ${stations.length} 个授权站点`)} loading={apiLoading} onRefresh={refreshApi} />}
-      {!immersive && activeNav !== "资产与站点" && <Header showImmersive={activeNav === "总览"} immersive={immersive} onToggleImmersive={async () => { if (await requestActiveEditorLeave()) { setActiveNav("总览"); setImmersive(true) } }} user={user} onLogout={async () => { if (await requestActiveEditorLeave()) logout() }} />}
+    <div className="workspace-shell" data-immersive={immersive} data-nav-collapsed={sidebarCollapsed} data-design-area={activeNav === "资产与站点" ? "stations" : activeNav !== "总览" ? "business" : undefined}>
+      {activeNav !== "总览" && <StationGlobalHeader user={user} onLogout={async () => { if (await requestActiveEditorLeave()) logout() }} status={DEMO_MODE ? undefined : apiError || (apiLoading ? "正在加载授权站点…" : `已连接业务服务 · ${stations.length} 个授权站点`)} loading={apiLoading} onRefresh={refreshApi} />}
+      {!immersive && activeNav === "总览" && <Header showImmersive={activeNav === "总览"} immersive={immersive} onToggleImmersive={async () => { if (await requestActiveEditorLeave()) { setActiveNav("总览"); setImmersive(true) } }} user={user} onLogout={async () => { if (await requestActiveEditorLeave()) logout() }} />}
       {!immersive && (
         <Sidebar
           collapsed={sidebarCollapsed}
@@ -815,7 +815,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
       )}
 
       <div className="workspace-content flex flex-col flex-1 min-w-0 overflow-hidden">
-        {!DEMO_MODE && activeNav !== "资产与站点" && (
+        {!DEMO_MODE && activeNav === "总览" && (
           <div
             role={apiError ? "alert" : "status"}
             style={{

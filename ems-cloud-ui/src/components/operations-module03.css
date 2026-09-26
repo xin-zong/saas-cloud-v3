@@ -1,0 +1,104 @@
+/* Module 03, current Figma 1983:2704 / 1966:1845 / 1971:1934. */
+.workspace-shell[data-design-area="business"] { --ui-primary:#1e6656; --ui-selected:#e8f1ee; --ui-text:#18232d; --ui-muted:#4e5c68; --ui-border:#dce2e5; --ui-subtle:#f5f9f8; --ui-chart-primary:#19776d; }
+.workspace-shell .operations-page { background:#fff!important; --ui-page-space:20px; font-size:13px; }
+.operations-page .ops-tabs { height:48px; min-height:48px; gap:0; padding:0 20px; border-bottom:1px solid #dce2e5; }
+.operations-page .ops-tabs button { min-height:48px; height:48px; padding:0 12px; min-width:96px; font-size:13px; font-weight:400; }
+.operations-page .ops-tabs button[aria-current] { font-weight:500; color:#1e6656; }
+.operations-page .ops-tabs button[aria-current]::after { bottom:11px; left:12px; right:12px; height:2px; }
+.operations-page table { font-size:12px; }
+.operations-page th { background:#f5f9f8; height:40px; font-size:12px; font-weight:500; }
+.operations-page td { height:50px; border-color:#e6eaec; font-weight:400; }
+.operations-page input,.operations-page select,.operations-page .operations-button { height:36px; min-height:36px; font-size:13px; border-radius:6px; }
+.operations-page .operations-button { padding:6px 16px; }
+.operations-page h2 { font-size:15px; font-weight:500; margin:0 0 12px; }
+.ops-current-overview { gap:16px; padding-top:16px; }
+.ops-current-toolbar { display:flex; align-items:center; gap:16px; min-height:36px; }
+.ops-current-toolbar select { width:180px; color:#1e6656; }
+.ops-current-toolbar > span { color:#4e5c68; font-size:12px; }
+.ops-current-toolbar > button { margin-left:auto; width:152px; color:#1e6656; }
+.ops-current-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
+.ops-current-kpis > div { border:1px solid #dce2e5; border-radius:12px; min-height:104px; padding:18px 20px; }
+.ops-current-kpis span { display:block; color:#4e5c68; font-size:13px; }
+.ops-current-kpis strong { display:block; font-size:24px; font-weight:500; margin-top:10px; font-variant-numeric:tabular-nums; }
+.ops-current-middle { display:grid; grid-template-columns:minmax(0, .395fr) minmax(0,.605fr); gap:16px; }
+.ops-current-overview .ops-panel { border-radius:12px; padding:16px; }
+.ops-current-middle > .ops-panel { min-height:214px; }
+.ops-state-bar { display:flex; gap:3px; height:18px; margin:14px 0 18px; overflow:hidden; border-radius:3px; background:#f5f9f8; }
+.ops-state-counts { display:flex; justify-content:space-between; gap:16px; }
+.ops-state-counts span { display:block; font-size:12px; color:#4e5c68; }
+.ops-state-counts strong { display:block; font-size:21px; margin-top:8px; font-weight:500; }
+.ops-action-row { display:flex; justify-content:space-between; align-items:center; gap:16px; min-height:66px; }
+.ops-action-row strong { font-size:14px; font-weight:500; }
+.ops-action-row small { display:block; color:#4e5c68; font-size:12px; margin-top:4px; }
+.ops-action-row button { color:#1e6656; min-width:140px; }
+.ops-quiet-empty { min-height:72px; display:flex; align-items:center; color:#7c8994; font-size:12px; }
+.ops-current-overview .ops-panel-heading { margin-bottom:12px; min-height:28px; }
+.ops-current-overview .ops-panel-heading h2 { margin:0; }
+.ops-current-overview .ops-panel-heading > span { color:#4e5c68; font-size:12px; margin-left:auto; }
+.ops-current-overview .ops-panel-heading input { width:150px; height:30px; min-height:30px; font-size:12px; }
+.ops-current-overview .ops-station-name { color:#18232d; }
+.ops-history-actions { display:flex; justify-content:space-between; gap:12px; font-size:12px; color:#7c8994; }
+.ops-history-back,.ops-subview-toolbar { margin:16px 20px 0; }
+.operations-page .dispatch-page,.operations-page .market-page { padding-top:18px; gap:20px; }
+.operations-page .dispatch-surface,.operations-page .market-surface { border-radius:12px; border-color:#dce2e5; }
+.operations-page .dispatch-surface:first-of-type { min-height:330px; }
+.operations-page .dispatch-timeline-row { min-height:42px; }
+.operations-page .dispatch-timeline { min-width:790px; }
+.operations-page .dispatch-axis,.operations-page .dispatch-timeline-row { grid-template-columns:230px minmax(0,1fr); }
+.operations-page .dispatch-block--charge { background:#dbeaf2; color:#18232d; }
+.operations-page .dispatch-block--discharge { background:#d5e9e4; color:#18232d; }
+.operations-page .dispatch-block--standby { background:#edf0f1; color:#18232d; }
+.operations-page .market-event-list { min-height:510px; }
+.market-boundary { margin:0; padding:0; color:#7c8994; font-size:12px; line-height:1.7; }
+.operations-page .market-heading h2 { margin:0; }
+.operations-page .market-toolbar .market-new { margin-left:0; }
+.operations-page .market-detail-page { padding-top:16px; }
+.operations-page .market-event-info { padding:20px 16px; min-height:174px; }
+.operations-page .market-event-info dl { row-gap:26px; }
+.operations-page .market-participation-total { color:#1e6656; }
+.operations-page .market-delivery-chart { height:220px; }
+.operations-page .station-modal-backdrop { z-index:120; }
+.operations-page .station-modal { max-height:85vh; overflow:auto; }
+.operations-page .market-create-fields { padding:12px 0; }
+.operations-page .market-create-fields fieldset label { display:inline-flex; align-items:center; gap:8px; }
+.operations-page .market-create-fields input[type="checkbox"] { height:16px; min-height:16px; }
+.operations-page .market-detail-actions { justify-content:flex-end; }
+@media(max-width:1000px) { .ops-current-middle {grid-template-columns:1fr;} .ops-current-kpis {grid-template-columns:repeat(2,minmax(0,1fr));} }
+@media(max-width:600px) { .ops-current-toolbar {flex-wrap:wrap;} .ops-current-toolbar > button {margin-left:0;} .ops-history-actions {flex-wrap:wrap;} .ops-current-kpis strong {font-size:20px;} .ops-current-overview .ops-panel-heading {flex-wrap:wrap;} }
+.ops-dispatch-grid {display:grid;grid-template-columns:minmax(0,1.4fr) minmax(320px,1fr);gap:16px;}
+.ops-dispatch-grid > div {display:grid;gap:16px;align-content:start;}
+.ops-dispatch-form {display:grid;gap:16px;margin-top:16px;}
+.ops-dispatch-form label {display:grid;gap:8px;color:#4e5c68;font-size:13px;}
+.ops-dispatch-form small {font-size:11px;}
+.ops-dispatch-form textarea {border:1px solid #dce2e5;border-radius:6px;min-height:88px;padding:10px;resize:vertical;}
+.ops-dispatch-tools .ops-state-counts strong {font-size:17px;}
+.ops-dispatch-tools .market-boundary {margin-top:16px;}
+.ops-dispatch-tools td {white-space:normal;overflow-wrap:anywhere;max-width:320px;}
+@media(max-width:1000px){.ops-dispatch-grid{grid-template-columns:1fr;}}
+.market-selection {display:inline-flex;position:relative;width:18px;height:18px;vertical-align:middle;}
+.operations-page .market-selection input[type="checkbox"] {position:absolute;inset:0;margin:0;width:18px;height:18px;min-height:18px;opacity:0;z-index:1;cursor:pointer;}
+.market-selection img {width:auto;height:auto;pointer-events:none;max-width:none;}
+.market-selection:has(input:focus-visible) {outline:2px solid #1e6656;outline-offset:3px;}
+.market-selection:has(input:disabled) {opacity:.45;}
+.market-confirm-dialog {width:min(520px,calc(100vw - 28px));padding:52px 32px 30px;border-radius:16px;}
+.market-dialog-icon {width:44px;height:44px;border-radius:12px;background:#fbf5e7;}
+.market-confirm-dialog > div {margin-top:42px;}
+.market-dialog-close {width:32px;height:32px;border-radius:8px;top:18px;right:20px;}
+.market-dialog-close img,.market-dialog-icon img {width:auto;height:auto;max-width:none;}
+.market-event-info dl > div {display:flex;gap:8px;align-items:baseline;}
+.market-event-info dd {margin:0;font-size:12px;}
+.operations-page .ops-tabs button {position:relative;border-bottom-color:transparent!important;}
+.operations-page .ops-tabs button[aria-current]::after {content:"";position:absolute;left:50%;right:auto;transform:translateX(-50%);width:52px;background:#1e6656;}
+.ops-current-overview .ops-detail {min-height:362px;}
+.operations-page .dispatch-surface[aria-label="当天时段安排"] {min-height:336px;}
+.operations-page .market-participation-total:has(+ *) {line-height:22px;}
+.operations-page .settlement-toolbar {border:1px solid #dce2e5;border-radius:8px;padding:8px 12px;margin:16px 0 12px;}
+.operations-page .settlement-kpis {border:1px solid #dce2e5;border-radius:10px;padding:12px 16px;margin-bottom:16px;}
+.operations-page .settlement-kpi strong {font-size:22px;margin:4px 0;font-weight:500;}
+.operations-page .settlement-middle {gap:16px;border:0;grid-template-columns:minmax(0,1.65fr) minmax(300px,1fr);}
+.operations-page .settlement-composition,.operations-page .settlement-progress {border:1px solid #dce2e5;border-radius:10px;padding:16px;}
+.operations-page .settlement-table-section {border:1px solid #dce2e5;border-radius:10px;padding:16px;margin-top:16px;}
+.operations-page .settlement-income-row {min-height:34px;}
+.operations-page .settlement-costs {margin-top:8px;padding-top:12px;}
+.operations-page .settlement-progress-list {gap:22px;margin:24px 0;}
+@media(max-width:1000px){.operations-page .settlement-middle{grid-template-columns:1fr;}}

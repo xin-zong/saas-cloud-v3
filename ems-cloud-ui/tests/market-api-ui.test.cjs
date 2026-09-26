@@ -24,8 +24,9 @@ test('market drafts persist through API and withdrawal is not external cancellat
   await route.fulfill({contentType:'application/json',body:JSON.stringify({code:0,data})})
  })
  try{
-  await page.goto(process.env.PREVIEW_URL || 'http://127.0.0.1:8445')
+  await page.goto(process.env.PREVIEW_URL || 'http://127.0.0.1:8445',{waitUntil:'domcontentloaded'})
   await page.getByRole('button',{name:'运营中心',exact:true}).click()
+  await page.getByRole('button',{name:'市场响应',exact:true}).click()
   await page.getByRole('button',{name:'市场服务',exact:true}).click()
   await page.getByText('暂无服务记录',{exact:true}).waitFor()
   await page.getByRole('button',{name:'新建内部草稿',exact:true}).click()

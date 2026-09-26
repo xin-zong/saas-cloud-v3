@@ -43,7 +43,7 @@ test("API settlement period loads historical currency and persists review histor
   try {
     await page.goto(process.env.PREVIEW_URL || "http://127.0.0.1:8443", { waitUntil: "domcontentloaded", timeout: 30000 })
     await page.getByRole("button", { name: "运营中心", exact: true }).click()
-    await page.getByRole("button", { name: "收益结算", exact: true }).click()
+    await page.getByRole("button", { name: "收益核算", exact: true }).click()
     await page.getByRole("button", { name: "选择核算周期" }).click()
     await page.getByLabel("核算开始日期").fill("2025-04-01")
     await page.getByLabel("核算结束日期").fill("2025-04-30")

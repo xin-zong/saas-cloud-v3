@@ -1,6 +1,7 @@
 import { DEMO_MODE } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
 import { hasStationPermission } from "@/auth/apiPermissions"
+import OperationsDispatchTools from "./OperationsDispatchTools"
 import StationStrategyPage from "./StationStrategyPage"
 import type { RegisterLeaveGuard } from "./useEditorLeaveGuard"
 import { useMemo, useState } from "react"
@@ -31,6 +32,8 @@ export default function OperationsSchedulePage({
   requestLeave?: () => Promise<boolean>
 }) {
   const {user} = useAuth()
+  const [toolsId, setToolsId] = useState("")
+  const toolsStation = stations.find(s=>s.id===toolsId)
   const [strategyId, setStrategyId] = useState("")
   const strategyStation = stations.find(station => station.id === strategyId)
   function openStrategy(id: string) {
@@ -60,6 +63,7 @@ export default function OperationsSchedulePage({
   )
   const currentMinute = now.getHours() * 60 + now.getMinutes()
 
+  if (toolsStation) return <OperationsDispatchTools key={toolsStation.id} station={toolsStation} onBack={()=>setToolsId("")} onStrategy={()=>{setToolsId("");openStrategy(toolsStation.id)}} onOpenStation={onOpenStation} registerLeaveGuard={registerLeaveGuard} />
   if (strategyStation) return <div className="dispatch-page"><button className="operations-button" onClick={() => { void (async () => {
     if (requestLeave && !(await requestLeave())) return
     setStrategyId("")
@@ -84,6 +88,7 @@ export default function OperationsSchedulePage({
           <option value="completed">已结束</option>
           <option value="attention">需关注</option>
         </select>
+        {visible.length > 0 && <button className="operations-button" onClick={()=>setToolsId(visible[0].station.id)}>偏差与交接</button>}
         <button className="operations-button dispatch-reset" onClick={() => { setDate(today); setScope(""); setStatus("") }}>
           重置
         </button>
@@ -106,7 +111,7 @@ export default function OperationsSchedulePage({
             </div>
             <div className="dispatch-timeline-body">
               {date === today && (
-                <div className="dispatch-now" style={{ left: `calc(160px + (100% - 160px) * ${currentMinute / 1440})` }} aria-hidden="true" />
+                <div className="dispatch-now" style={{ left: `calc(230px + (100% - 230px) * ${currentMinute / 1440})` }} aria-hidden="true" />
               )}
               {visible.map((row) => (
                 <div className="dispatch-timeline-row" key={row.station.id}>
@@ -169,9 +174,9 @@ export default function OperationsSchedulePage({
                     <td>{next ? `${next.start} · ${PERIOD_NAMES[next.mode]}` : "--"}</td>
                     <td>
                       <span className={["需关注", "计划冲突", "数据缺失"].includes(row.status) ? "dispatch-result is-attention" : "dispatch-result"}>
-                        {row.status}
+                        未接入回执
                       </span>
-                      {row.current.actual !== null && <small> · {number(row.current.actual)} kW</small>}
+
                     </td>
                     <td>
                       <button className="operations-link" onClick={() => openStrategy(row.station.id)}>

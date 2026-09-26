@@ -37,7 +37,7 @@ async function checkMainLayout(page, label, width) {
 
 test("operations redesign: owner tabs, responsive layout and settlement export", { timeout: 120000 }, async () => {
   await fs.mkdir(artifacts, { recursive: true })
-  const browser = await chromium.launch({ headless: true })
+  const browser = await chromium.launch({ channel: "msedge", headless: true })
   const context = await browser.newContext({
     timezoneId: "Asia/Shanghai",
     viewport: { width: 1440, height: 900 },
@@ -59,14 +59,14 @@ test("operations redesign: owner tabs, responsive layout and settlement export",
     const tabs = page.getByRole("navigation", { name: "运营中心二级导航" })
     assert.deepEqual(await tabs.getByRole("button").allTextContents(), [
       "运营总览",
-      "收益结算",
+      "收益核算",
     ])
 
     for (const width of [1440, 390, 320]) {
       await page.setViewportSize({ width, height: width < 600 ? 844 : 900 })
       for (const [name, file] of [
         ["运营总览", "overview"],
-        ["收益结算", "settlement"],
+        ["收益核算", "settlement"],
       ]) {
         await tabs.getByRole("button", { name, exact: true }).click()
         await checkMainLayout(page, name, width)
@@ -74,7 +74,7 @@ test("operations redesign: owner tabs, responsive layout and settlement export",
           path: path.join(artifacts, `${file}-${width}.png`),
           animations: "disabled",
         })
-        if (name === "收益结算" && width < 600) {
+        if (name === "收益核算" && width < 600) {
           for (const value of await page.locator(".settlement-kpi strong").all()) {
             assert.equal(
               await value.evaluate((element) => {
@@ -96,7 +96,7 @@ test("operations redesign: owner tabs, responsive layout and settlement export",
     assert.equal(await page.locator(".ops-detail tbody tr").count(), 1)
     await page.getByRole("searchbox", { name: "搜索经营站点" }).fill("")
 
-    await tabs.getByRole("button", { name: "收益结算", exact: true }).click()
+    await tabs.getByRole("button", { name: "收益核算", exact: true }).click()
     const download = page.waitForEvent("download")
     await page.getByRole("button", { name: "导出对账表", exact: true }).click()
     assert.match((await download).suggestedFilename(), /\.csv$/)

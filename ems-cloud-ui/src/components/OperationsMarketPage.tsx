@@ -1,6 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { DEMO_MODE } from "@/api/client"
 import ApiMarketPage from "./ApiMarketPage"
+import OperationsMarketResources from "./OperationsMarketResources"
+import { useAuth } from "@/auth/AuthContext"
+import { hasStationPermission } from "@/auth/apiPermissions"
+import { ROLE_CONFIG } from "@/auth/roles"
+import { useEditorLeaveGuard, type RegisterLeaveGuard } from "./useEditorLeaveGuard"
+import { Modal } from "./station-provision/Common"
 import { ArrowLeft, ArrowRight, Plus, TriangleAlert, X } from "lucide-react"
 import {
   CartesianGrid,
@@ -96,7 +102,7 @@ function initialStart(now: Date) {
 const power = (value: number | null | undefined) =>
   value == null ? "--" : `${Math.round(value).toLocaleString("zh-CN")} kW`
 const statusName = (value: string) =>
-  value === "等待开始" ? "待响应" : value === "正在交付" ? "执行中" : value
+  value === "等待开始" ? "待回复" : value === "正在交付" ? "执行中" : value
 
 function ConfirmDialog({
   event,
@@ -130,10 +136,10 @@ function ConfirmDialog({
         aria-label="关闭确认窗口"
         onClick={onClose}
       >
-        <X size={17} />
+        <img src="/figma/operations/imgIconActionClose.svg" alt="" />
       </button>
       <span className="market-dialog-icon">
-        <TriangleAlert size={19} />
+        <img src="/figma/operations/imgIconStatusWarning.svg" alt="" />
       </span>
       <h2>{accepted ? "确认参与本次响应?" : "拒绝本次邀约?"}</h2>
       <p>
@@ -162,30 +168,39 @@ function ConfirmDialog({
   )
 }
 
-export default function OperationsMarketPage({
-  stations,
-  onOpenStation,
-}: {
+export default function OperationsMarketPage({ stations, onOpenStation, registerLeaveGuard }: {
   stations: Station[]
   onOpenStation: (id: string, subNav?: string) => void
+  registerLeaveGuard?: RegisterLeaveGuard
 }) {
-  return DEMO_MODE ? (
-    <DemoMarketPage stations={stations} onOpenStation={onOpenStation} />
-  ) : (
-    <ApiMarketPage stations={stations} />
-  )
+  const { user } = useAuth()
+  return <ResponseWorkspace key={`${DEMO_MODE ? "demo" : "api"}:${user?.id}`} stations={stations} onOpenStation={onOpenStation} registerLeaveGuard={registerLeaveGuard} />
 }
-function DemoMarketPage({
-  stations,
-  onOpenStation,
-}: {
+function ResponseWorkspace({ stations, onOpenStation, registerLeaveGuard }: {
   stations: Station[]
   onOpenStation: (id: string, subNav?: string) => void
+  registerLeaveGuard?: RegisterLeaveGuard
 }) {
+  const { user } = useAuth()
+  const servicesGuard = useRef<null | (() => Promise<boolean>)>(null)
+  const registerServicesGuard = useCallback((guard: null | (() => Promise<boolean>)) => {servicesGuard.current = guard;registerLeaveGuard?.(guard)},[registerLeaveGuard])
+  const [resourcesOpen,setResourcesOpen]=useState(false)
+  const [servicesOpen, setServicesOpen] = useState(false)
+  const permitted = (id: string) => DEMO_MODE ? !!user && ROLE_CONFIG[user.role].operationsTabs.includes("市场服务") : hasStationPermission(user, id, "market.manage")
+  const manageable = stations.filter(s => permitted(s.id))
+  const canManage = manageable.length > 0
+  const decisionsKey = `${DECISIONS_KEY}:${DEMO_MODE ? "demo" : "api"}:${user?.id}`
+  const eventsKey = `${EVENTS_KEY}:${DEMO_MODE ? "demo" : "api"}:${user?.id}`
+  const [dirty, setDirty] = useState(false)
+  const [leaving, setLeaving] = useState(false)
+  const { requestLeave, settleLeave } = useEditorLeaveGuard({dirty, enabled:canManage, registerLeaveGuard:servicesOpen ? undefined : registerLeaveGuard, onConfirm:()=>setLeaving(true), onCancel:()=>setLeaving(false)})
+  const leaveDialog = leaving && <Modal title="放弃未保存修改？" onClose={()=>{setLeaving(false);settleLeave(false)}} actions={<><button className="operations-button" onClick={()=>{setLeaving(false);settleLeave(false)}}>继续编辑</button><button className="operations-button market-primary" onClick={()=>{setLeaving(false);setDirty(false);settleLeave(true)}}>放弃修改</button></>}><p>参与功率或邀约草稿尚未保存。离开会丢失本次修改。</p></Modal>
   const [now] = useState(() => stationsDataNow(stations))
   const today = operationsDate(now)
   const [start, setStart] = useState(() => initialStart(now))
   const [end, setEnd] = useState(today)
+  const [platform,setPlatform] = useState("")
+  const [extraFilter,setExtraFilter] = useState(false)
   const [kind, setKind] = useState("")
   const [status, setStatus] = useState("")
   const [detailKey, setDetailKey] = useState<string | null>(null)
@@ -193,12 +208,12 @@ function DemoMarketPage({
   const [creating, setCreating] = useState(false)
   const [notice, setNotice] = useState("")
   const [decisions, setDecisions] = useState<Record<string, Decision>>(() =>
-    readStored(DECISIONS_KEY, {}),
+    readStored(decisionsKey, {}),
   )
   const [localEvents, setLocalEvents] = useState<LocalEvent[]>(() => {
-    const saved = readStored<unknown>(EVENTS_KEY, [])
+    const saved = readStored<unknown>(eventsKey, [])
     return Array.isArray(saved)
-      ? saved.filter((event) => event && typeof event.id === "string")
+      ? saved.filter((event) => event && typeof event.id === "string" && typeof event.name === "string" && /^\d{4}-\d{2}-\d{2}$/.test(event.date) && typeof event.start === "string" && typeof event.end === "string" && finite(event.capacity) && event.capacity > 0 && Array.isArray(event.stationIds) && event.stationIds.every((id: unknown) => typeof id === "string"))
       : []
   })
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -215,7 +230,7 @@ function DemoMarketPage({
   const [formError, setFormError] = useState("")
   const days = useMemo(() => rangeDays(start, end), [start, end])
   const events = useMemo(() => {
-    const fromServices: ResponseEvent[] = days.flatMap((date) => {
+    const fromServices: ResponseEvent[] = (DEMO_MODE ? days : []).flatMap((date) => {
       const rows = stations.map((station) => marketStation(station, date, now))
       return marketServices(rows).map((service) => ({
         key: service.key,
@@ -249,7 +264,7 @@ function DemoMarketPage({
       }))
     })
     const fromLocal: ResponseEvent[] = localEvents
-      .filter((event) => event.date >= start && event.date <= end)
+      .filter((event) => event.date >= start && event.date <= end && event.stationIds.some(id => stations.some(s => s.id === id)))
       .map((event) => ({
         key: event.id,
         reference: `LOCAL-${event.id.slice(0, 8)}`,
@@ -260,7 +275,7 @@ function DemoMarketPage({
         end: timeMinute(event.end),
         capacity: event.capacity,
         status: "等待开始",
-        source: "本地预览 · VPP",
+        source: "本地邀约草稿 · 未接入市场",
         participants: event.stationIds.flatMap((id) => {
           const station = stations.find((item) => item.id === id)
           if (!station) return []
@@ -269,7 +284,7 @@ function DemoMarketPage({
             {
               station,
               capacity: event.capacity / event.stationIds.length,
-              available: row.capacity?.up ?? null,
+              available: DEMO_MODE ? row.capacity?.up ?? null : null,
               actual: null,
               status: "待响应",
             },
@@ -288,19 +303,29 @@ function DemoMarketPage({
         : decisions[event.key]?.state === "rejected"
           ? "已拒绝"
           : statusName(event.status)
-    return (!kind || event.kind === kind) && (!status || eventStatus === status)
+    return (!platform || event.source===platform) && (!kind || event.kind === kind) && (!status || eventStatus === status)
   })
   const detail = events.find((event) => event.key === detailKey)
   const selectedTotal = selectedIds.reduce(
     (total, id) => total + (capacities[id] ?? 0),
     0,
   )
-  const canRespond = detail?.status === "等待开始" && !decisions[detail.key]
+  const canRespond = canManage && detail?.status === "等待开始" && !decisions[detail.key]
   const detailTimeline = detail?.service
     ? marketTimeline([], [detail.service], detail.date, now)
     : []
 
+  useEffect(() => {
+    const invalidate = !canManage || (detail && detail.participants.some(p => !permitted(p.station.id)))
+    if (invalidate) { setDialog(null); setCreating(false); setDirty(false); setSelectedIds([]); setCapacities({}); setDetailKey(null) }
+  }, [canManage, stations.map(s=>`${s.id}:${permitted(s.id)}`).join("|")])
+  useEffect(() => {
+    const beforeUnload = (event: BeforeUnloadEvent) => { if (dirty) {event.preventDefault();event.returnValue=""} }
+    window.addEventListener("beforeunload",beforeUnload)
+    return () => window.removeEventListener("beforeunload",beforeUnload)
+  }, [dirty])
   function openDetail(event: ResponseEvent) {
+    setDirty(false)
     setDetailKey(event.key)
     setNotice("")
     const available = event.participants.filter(
@@ -317,7 +342,7 @@ function DemoMarketPage({
     )
   }
   function decide(value: "accepted" | "rejected") {
-    if (!detail) return
+    if (!detail || !canRespond || detail.participants.some(p => !permitted(p.station.id))) return
     const next = {
       ...decisions,
       [detail.key]: {
@@ -332,7 +357,8 @@ function DemoMarketPage({
       },
     } satisfies Record<string, Decision>
     try {
-      localStorage.setItem(DECISIONS_KEY, JSON.stringify(next))
+      localStorage.setItem(decisionsKey, JSON.stringify(next))
+      setDirty(false)
       setDecisions(next)
       setNotice(
         value === "accepted"
@@ -347,7 +373,9 @@ function DemoMarketPage({
   function createEvent() {
     const capacity = Number(draft.capacity)
     if (
+      !canManage ||
       !draft.name.trim() ||
+      draft.stationIds.some(id => !permitted(id)) ||
       !draft.date ||
       draft.date < today ||
       (draft.date === today &&
@@ -372,7 +400,8 @@ function DemoMarketPage({
     }
     try {
       const next = [...localEvents, event]
-      localStorage.setItem(EVENTS_KEY, JSON.stringify(next))
+      localStorage.setItem(eventsKey, JSON.stringify(next))
+      setDirty(false)
       setLocalEvents(next)
       setStart((current) => (current > event.date ? event.date : current))
       setEnd((current) => (current < event.date ? event.date : current))
@@ -391,14 +420,12 @@ function DemoMarketPage({
       <div className="market-page market-detail-page">
         <button
           className="operations-button market-back"
-          onClick={() => {
-            setDetailKey(null)
-            setNotice("")
-          }}
+          onClick={() => { void (async()=>{if(await requestLeave()){setDetailKey(null);setNotice("");setDirty(false)}})() }}
         >
           <ArrowLeft size={15} />
           返回事件列表
         </button>
+        <p className="market-boundary">邀约参与与拒绝接口尚未接通。当前仅保存本地意向，不代表平台已确认或设备已执行。</p>
         <section
           className="market-surface market-event-info"
           aria-label="响应事件信息"
@@ -412,8 +439,8 @@ function DemoMarketPage({
             >
               {decision
                 ? decision.state === "accepted"
-                  ? "已确认 · 本地"
-                  : "已拒绝 · 本地"
+                  ? "参与意向草稿 · 未提交"
+                  : "拒绝意向草稿 · 未提交"
                 : statusName(detail.status)}
             </span>
           </div>
@@ -432,7 +459,7 @@ function DemoMarketPage({
               </dd>
             </div>
             <div>
-              <dt>需求容量</dt>
+              <dt>{active ? "目标放电功率" : "请求功率"}</dt>
               <dd>{power(detail.capacity)}</dd>
             </div>
             <div>
@@ -440,8 +467,8 @@ function DemoMarketPage({
               <dd>{detail.kind ? MARKET_KINDS[detail.kind] : "--"}</dd>
             </div>
             <div>
-              <dt>参与站点</dt>
-              <dd>{detail.participants.length} 个站点</dd>
+              <dt>{active ? "设备回执" : "回复截止"}</dt>
+              <dd>未提供</dd>
             </div>
             <div>
               <dt>事件编号</dt>
@@ -519,6 +546,7 @@ function DemoMarketPage({
           </section>
         )}
 
+        {decision?.state === "rejected" ? <section className="market-surface"><h2>已保存拒绝意向</h2><p>本地保存时间 {new Date(decision.savedAt).toLocaleString()}</p><p className="market-boundary">未发送来源平台，邀约状态尚未改变。</p></section> : <>
         <section
           className="market-surface market-participants"
           aria-label={active ? "参与站点" : "参与站点与功率"}
@@ -533,7 +561,7 @@ function DemoMarketPage({
                     "站点",
                     active ? "目标响应需求" : "当前 SOC",
                     active ? "实际响应功率" : "可调度功率",
-                    active ? "执行结果" : "参与功率",
+                    ...(active ? ["设备回执", "执行状态"] : ["参与功率"]),
                   ].map((label) => (
                     <th key={label}>{label}</th>
                   ))}
@@ -546,6 +574,7 @@ function DemoMarketPage({
                     <tr key={member.station.id}>
                       {!active && !decision && (
                         <td>
+                          <label className="market-selection">
                           <input
                             type="checkbox"
                             aria-label={`选择${member.station.name}`}
@@ -555,7 +584,7 @@ function DemoMarketPage({
                               member.available === null ||
                               member.available <= 0
                             }
-                            onChange={(event) =>
+                            onChange={(event) => {setDirty(true);
                               setSelectedIds((current) =>
                                 event.target.checked
                                   ? [...current, member.station.id]
@@ -563,14 +592,16 @@ function DemoMarketPage({
                                       (id) => id !== member.station.id,
                                     ),
                               )
-                            }
+                            }}
                           />
+                          <img alt="" src={`/figma/operations/${checked ? "imgSelectionCheckedStateDefault" : "imgSelectionUncheckedStateDefault"}.svg`} />
+                          </label>
                         </td>
                       )}
                       <td>
                         <button
                           className="operations-link market-station-link"
-                          onClick={() => onOpenStation(member.station.id)}
+                          onClick={() => {void(async()=>{if(await requestLeave()) onOpenStation(member.station.id)})()}}
                         >
                           {member.station.name}
                         </button>
@@ -585,6 +616,7 @@ function DemoMarketPage({
                           ? power(member.actual)
                           : power(member.available)}
                       </td>
+                      {active && <td>未接入</td>}
                       <td>
                         {active ? (
                           statusName(member.status)
@@ -600,12 +632,12 @@ function DemoMarketPage({
                             value={capacities[member.station.id] ?? 0}
                             disabled={!canRespond || !checked}
                             step="1"
-                            onChange={(event) =>
+                            onChange={(event) => {setDirty(true);
                               setCapacities((current) => ({
                                 ...current,
                                 [member.station.id]: Number(event.target.value),
                               }))
-                            }
+                            }}
                           />
                         )}
                       </td>
@@ -622,11 +654,14 @@ function DemoMarketPage({
             <div className="market-participation-total">
               已选 {selectedIds.length} 个站点{" "}
               <span>
-                参与合计 {power(selectedTotal)} / 需求 {power(detail.capacity)}
+                参与合计 {power(selectedTotal)} / 请求 {power(detail.capacity)}
+                {detail.capacity !== null && selectedTotal < detail.capacity && `，还需分配 ${power(detail.capacity - selectedTotal)}`}
               </span>
             </div>
           )}
         </section>
+        </>}
+        {canRespond && detail.participants.some(p => p.available === null) && <p className="market-notice">可用功率未知，不能确认参与；额定功率不能代替实时可用功率。</p>}
         {canRespond && (
           <div className="market-detail-actions">
             <button
@@ -640,7 +675,7 @@ function DemoMarketPage({
               disabled={
                 !selectedIds.length ||
                 selectedTotal <= 0 ||
-                (detail.capacity !== null && selectedTotal > detail.capacity) ||
+                (detail.capacity === null || selectedTotal < detail.capacity || selectedTotal > detail.capacity) ||
                 selectedIds.some(
                   (id) =>
                     !finite(capacities[id]) ||
@@ -662,6 +697,7 @@ function DemoMarketPage({
             {notice}
           </p>
         )}
+        {leaveDialog}
         {dialog && (
           <ConfirmDialog
             event={detail}
@@ -675,6 +711,8 @@ function DemoMarketPage({
     )
   }
 
+  if (resourcesOpen) return <OperationsMarketResources stations={stations} onBack={()=>setResourcesOpen(false)} />
+  if (servicesOpen) return <div><div className="ops-subview-toolbar"><button className="operations-button" onClick={()=>{void(async()=>{if(await (servicesGuard.current?.() ?? Promise.resolve(true)))setServicesOpen(false)})()}}>返回市场响应</button></div><ApiMarketPage stations={stations} registerLeaveGuard={registerServicesGuard} /></div>
   return (
     <div className="market-page">
       <section className="market-toolbar" aria-label="响应事件筛选">
@@ -695,38 +733,43 @@ function DemoMarketPage({
             onChange={(event) => setEnd(event.target.value)}
           />
         </div>
+        <select aria-label="来源平台" value={platform} onChange={e=>setPlatform(e.target.value)}><option value="">全部来源平台</option>{[...new Set(events.map(e=>e.source))].map(p=><option key={p}>{p}</option>)}</select>
         <select
           aria-label="响应事件类型"
           value={kind}
           onChange={(event) => setKind(event.target.value)}
         >
-          <option value="">全部来源平台</option>
+          <option value="">全部事件类型</option>
           {Object.entries(MARKET_KINDS).map(([value, label]) => (
             <option key={value} value={value}>
               {label}
             </option>
           ))}
         </select>
-        <select
+        <button className="operations-button" onClick={()=>{setExtraFilter(!extraFilter);setStatus("")}} aria-expanded={extraFilter}>＋ 新增筛选条件</button>
+        {extraFilter && <select
           aria-label="响应事件状态"
           value={status}
           onChange={(event) => setStatus(event.target.value)}
         >
           <option value="">全部事件状态</option>
-          {["待响应", "执行中", "已完成", "已取消", "已确认", "已拒绝"].map(
+          {["待回复", "执行中", "已完成", "已取消", "已确认", "已拒绝"].map(
             (value) => (
               <option key={value}>{value}</option>
             ),
           )}
-        </select>
-        <button
+        </select>}
+        {canManage && <button
           className="operations-button market-new"
           onClick={() => setCreating(true)}
         >
           <Plus size={15} />
-          新增响应事件
-        </button>
+          新建本地邀约草稿
+        </button>}
+        <button className="operations-button" onClick={()=>setResourcesOpen(true)}>资源与交付</button>
+        {!DEMO_MODE && <button className="operations-button" onClick={()=>setServicesOpen(true)}>市场服务</button>}
       </section>
+      <p className="market-boundary">{DEMO_MODE ? "演示数据与本地草稿，均不提交外部市场。" : "市场邀约接口尚未接通；响应事件为空。可手动准备本地草稿，既有市场服务与资格由业务服务器提供。"}</p>
       <section
         className="market-surface market-event-list"
         aria-label="响应事件"
@@ -734,7 +777,7 @@ function DemoMarketPage({
         <div className="market-heading">
           <h2>响应事件</h2>
           <span>
-            全部 {events.length}　待响应{" "}
+            全部 {events.length}　待回复{" "}
             {
               events.filter(
                 (event) => event.status === "等待开始" && !decisions[event.key],
@@ -752,7 +795,7 @@ function DemoMarketPage({
                   "事件 / 类型",
                   "来源平台",
                   "执行时间",
-                  "响应容量",
+                  "请求功率",
                   "参与站点",
                   "状态",
                   "操作",
@@ -782,8 +825,8 @@ function DemoMarketPage({
                   <td>
                     {decisions[event.key]
                       ? decisions[event.key].state === "accepted"
-                        ? "已确认 · 本地"
-                        : "已拒绝 · 本地"
+                        ? "参与意向草稿 · 未提交"
+                        : "拒绝意向草稿 · 未提交"
                       : statusName(event.status)}
                   </td>
                   <td>
@@ -791,7 +834,7 @@ function DemoMarketPage({
                       className="operations-link"
                       onClick={() => openDetail(event)}
                     >
-                      查看详情 <ArrowRight size={13} />
+                      {event.status === "等待开始" && !decisions[event.key] ? "处理邀约" : event.status === "正在交付" ? "查看执行" : "查看详情"} <ArrowRight size={13} />
                     </button>
                   </td>
                 </tr>
@@ -809,22 +852,21 @@ function DemoMarketPage({
           {notice}
         </p>
       )}
-      {creating && (
+      {creating && canManage && (
         <NewEventDialog
-          stations={stations}
+          stations={manageable}
           draft={draft}
           error={formError}
           onChange={(patch) => {
+            setDirty(true)
             setDraft((current) => ({ ...current, ...patch }))
             setFormError("")
           }}
-          onClose={() => {
-            setCreating(false)
-            setFormError("")
-          }}
+          onClose={() => { void(async()=>{if(await requestLeave()){setCreating(false);setFormError("");setDirty(false);setDraft({name:"",date:today,kind:"response",start:"14:00",end:"16:00",capacity:"",stationIds:[]})}})() }}
           onSave={createEvent}
         />
       )}
+      {leaveDialog}
     </div>
   )
 }
@@ -852,29 +894,9 @@ function NewEventDialog({
   onClose: () => void
   onSave: () => void
 }) {
-  const ref = useRef<HTMLDialogElement>(null)
-  useEffect(() => {
-    const dialog = ref.current
-    dialog?.showModal()
-    return () => dialog?.close()
-  }, [])
   return (
-    <dialog
-      ref={ref}
-      className="market-create-dialog"
-      aria-label="新增响应事件"
-      onCancel={onClose}
-    >
-      <header>
-        <h2>新增响应事件</h2>
-        <button
-          className="operations-icon"
-          aria-label="关闭新建事件"
-          onClick={onClose}
-        >
-          <X size={17} />
-        </button>
-      </header>
+    <Modal title="新建本地邀约草稿" onClose={onClose} actions={<><button className="operations-button" onClick={onClose}>取消</button><button className="operations-button market-primary" onClick={onSave}>保存本地草稿</button></>}>
+      <p className="market-boundary">手动记录，仅保存在当前账号的本机浏览器，不发布市场事件。</p>
       <div className="market-create-fields">
         <label>
           事件名称
@@ -899,7 +921,7 @@ function NewEventDialog({
           </select>
         </label>
         <label>
-          服务日期
+          响应日期
           <input
             type="date"
             value={draft.date}
@@ -907,7 +929,7 @@ function NewEventDialog({
           />
         </label>
         <label>
-          需求容量（kW）
+          需求容量 kW
           <input
             type="number"
             min="1"
@@ -958,14 +980,6 @@ function NewEventDialog({
           </p>
         )}
       </div>
-      <footer>
-        <button className="operations-button" onClick={onClose}>
-          取消
-        </button>
-        <button className="operations-button market-primary" onClick={onSave}>
-          保存本地事件
-        </button>
-      </footer>
-    </dialog>
+    </Modal>
   )
 }
