@@ -35,7 +35,29 @@ export function WorkHandling({stationId,objectId,kind,canEdit,registerLeaveGuard
  useEffect(()=>{if(!canEdit){leave.cancelPending();setConfirm(false)}},[canEdit])
  const change=(patch:Partial<Draft>)=>{setDraft(d=>({...d,...patch}));setError('');setNotice('')}
  function validate(){if(!draft.result.trim()){setError(kind==='order'?'请填写处理结果':'请填写巡检记录');return false}if(kind==='inspection'&&(!draft.appearance||!draft.communication||!draft.parameters)){setError('请完成全部三项检查');return false}return true}
- async function save(){if(!canEdit||!validate())return;setBusy(true);try{localStorage.setItem(key,JSON.stringify(draft));setConfirm(false);if(kind==='inspection'&&onComplete){const ok=await onComplete(`设备外观：${draft.appearance}；通信状态：${draft.communication}；运行参数：${draft.parameters}。${draft.result}`);if(!ok){setError('巡检提交失败，已保留本地草稿');return}setBaseline(draft);setNotice(DEMO_MODE?'巡检记录已保存为本地预览，未提交服务器':'巡检记录已由服务器保存；附件仅保存本地文件名')}else {setBaseline(draft);setNotice('验收草稿已保存至本机；验收接口未接通，工单状态未改变')}}catch{setError('保存失败：本地存储不可用')}finally{setBusy(false)}}
+ async function save() {
+   if (!canEdit || !validate()) return
+   setBusy(true)
+   setConfirm(false)
+   try {
+     if (kind === 'inspection' && onComplete) {
+       const ok = await onComplete(`设备外观：${draft.appearance}；通信状态：${draft.communication}；运行参数：${draft.parameters}。${draft.result}`)
+       if (!ok) {
+         // Failed input stays editable, without replacing the last saved baseline.
+         setError('巡检提交失败，已保留当前输入供重试；放弃修改将恢复此前草稿')
+         return
+       }
+       localStorage.setItem(key, JSON.stringify(draft))
+       setBaseline(draft)
+       setNotice(DEMO_MODE ? '巡检记录已保存为本地预览，未提交服务器' : '巡检记录已由服务器保存；附件仅保存本地文件名')
+     } else {
+       localStorage.setItem(key, JSON.stringify(draft))
+       setBaseline(draft)
+       setNotice('验收草稿已保存至本机；验收接口未接通，工单状态未改变')
+     }
+   } catch { setError('保存失败：本地存储不可用') }
+   finally { setBusy(false) }
+ }
  return <section className="wo-handling"><h3>{kind==='order'?'处理与验收':'巡检办理'}</h3>{kind==='inspection'&&<div className="wo-check-grid">{[['appearance','设备外观'],['communication','通信状态'],['parameters','运行参数']].map(([field,label])=><label key={field}>{label}<select disabled={!canEdit} aria-label={label} value={draft[field as keyof Draft] as string} onChange={e=>change({[field]:e.target.value})}><option value="">请选择</option><option>正常</option><option>异常</option><option>不适用</option></select></label>)}</div>}
  <label>{kind==='order'?'处理结果':'巡检记录'}<textarea aria-label={kind==='order'?'处理结果':'巡检记录'} value={draft.result} disabled={!canEdit} onChange={e=>change({result:e.target.value})} maxLength={2000}/></label>
  <label className="wo-upload">上传附件<input type="file" aria-label="上传附件" multiple disabled={!canEdit} onChange={e=>change({files:Array.from(e.target.files||[]).map(f=>f.name)})}/></label>{draft.files.length>0&&<p>{draft.files.join('、')} <button onClick={()=>change({files:[]})} disabled={!canEdit}>移除附件</button></p>}

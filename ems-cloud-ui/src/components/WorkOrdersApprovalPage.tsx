@@ -2034,7 +2034,7 @@ export default function WorkOrdersApprovalPage({
                 setNotice("")
               }}
               onSaveNote={saveNote}
-              onLocalSaved={()=>{noteBaseline.current=reviewNote;setNoteDirty(false)}}
+              registerLeaveGuard={registerChildGuard}
               onDecide={decide}
               onClose={() => go(() => {
                 setSelectedKey("closed")
@@ -2404,7 +2404,7 @@ function InspectionDetailDialog({row,inspection,onClose,onTransition,notice,regi
 }
 
 function ApprovalDetail({
-  onLocalSaved,
+  registerLeaveGuard,
   row,
   approval,
   reviewState,
@@ -2416,7 +2416,7 @@ function ApprovalDetail({
   onDecide,
   onClose,
 }: {
-  onLocalSaved:()=>void
+  registerLeaveGuard?: RegisterLeaveGuard
   row?: MaintenanceStation
   approval?: MaintenanceApproval
   reviewState?: ReviewState
@@ -2431,6 +2431,27 @@ function ApprovalDetail({
   const {user}=useAuth()
   const [confirm,setConfirm]=useState<'approved'|'rejected'|'supplement'|null>(null)
   const [localNotice,setLocalNotice]=useState('')
+  const [supplement, setSupplement] = useState('')
+  const [savedSupplement, setSavedSupplement] = useState('')
+  const supplementKey = workflowKey(user?.id || '', row?.station.id || '', 'supplement', approval?.id || '')
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(supplementKey) || 'null')?.note || ''
+      setSupplement(saved)
+      setSavedSupplement(saved)
+    } catch {
+      setSupplement('')
+      setSavedSupplement('')
+      setLocalNotice('本地补充要求草稿读取失败')
+    }
+  }, [supplementKey])
+  const supplementLeave = useWorkflowLeave(
+    supplement !== savedSupplement,
+    registerLeaveGuard,
+    () => { setSupplement(savedSupplement); setConfirm(null) },
+    `${supplementKey}:${canDecide}`,
+    canDecide,
+  )
   useEffect(()=>{setConfirm(null);setLocalNotice('')},[approval?.id,canDecide])
   if (!approval || !row)
     return (
@@ -2521,6 +2542,13 @@ function ApprovalDetail({
           </div>
         </section>
       </div>
+      <section className="work-orders-comment wo-detail-card">
+        <label>本地补充要求草稿
+          <textarea aria-label="本地补充要求草稿" value={supplement} disabled={!canDecide}
+            onChange={event => {setSupplement(event.target.value);setLocalNotice('')}} maxLength={2000} />
+        </label>
+        <p className="wo-boundary">与审批意见独立保存，仅当前账号可在本机恢复；尚未发送给申请人。</p>
+      </section>
       <footer>
         {reviewState === "pending" ? (
           <>
@@ -2548,7 +2576,33 @@ function ApprovalDetail({
         )}
       </footer>
       {localNotice&&<p role="status">{localNotice}</p>}
-      {confirm&&<WorkflowConfirm title={confirm==='approved'?'批准这项申请？':confirm==='rejected'?'驳回申请':'要求补充材料'} label={confirm==='approved'?'确认批准':confirm==='rejected'?'确认驳回':'保存补充要求草稿'} onClose={()=>setConfirm(null)} onConfirm={()=>{if(!note.trim()){setLocalNotice('请填写审批意见或补充要求');return}if(confirm==='supplement'){try{localStorage.setItem(workflowKey(user?.id||'',row.station.id,'supplement',approval.id),JSON.stringify({note}));onLocalSaved();setLocalNotice('补充要求草稿已保存；发送接口尚未接通，审批状态未改变');setConfirm(null)}catch{setLocalNotice('保存失败：本地存储不可用')}}else{onDecide(confirm);setConfirm(null)}}}><p>{approval.id} · {approval.title}</p><label>{confirm==='rejected'?'驳回原因':confirm==='supplement'?'补充要求':'审批意见'}<textarea aria-label={confirm==='rejected'?'驳回原因':confirm==='supplement'?'补充要求':'确认审批意见'} value={note} onChange={e=>onNote(e.target.value)} maxLength={2000}/></label>{confirm==='supplement'?<p>当前只能保存本地草稿，不会发送给申请人。</p>:<p>本次决定仅针对当前提交的内容。</p>}</WorkflowConfirm>}
+      {confirm && <WorkflowConfirm
+        title={confirm === 'approved' ? '批准这项申请？' : confirm === 'rejected' ? '驳回申请' : '要求补充材料'}
+        label={confirm === 'approved' ? '确认批准' : confirm === 'rejected' ? '确认驳回' : '保存补充要求草稿'}
+        onClose={() => setConfirm(null)}
+        onConfirm={() => {
+          if (!(confirm === 'supplement' ? supplement : note).trim()) {
+            setLocalNotice('请填写审批意见或补充要求')
+            return
+          }
+          if (confirm === 'supplement') {
+            try {
+              localStorage.setItem(supplementKey, JSON.stringify({note: supplement}))
+              setSavedSupplement(supplement)
+              setLocalNotice('补充要求草稿已保存；发送接口尚未接通，审批状态未改变')
+              setConfirm(null)
+            } catch { setLocalNotice('保存失败：本地存储不可用') }
+          } else { onDecide(confirm); setConfirm(null) }
+        }}>
+        <p>{approval.id} · {approval.title}</p>
+        <label>{confirm === 'rejected' ? '驳回原因' : confirm === 'supplement' ? '补充要求' : '审批意见'}
+          <textarea aria-label={confirm === 'rejected' ? '驳回原因' : confirm === 'supplement' ? '补充要求' : '确认审批意见'}
+            value={confirm === 'supplement' ? supplement : note}
+            onChange={event => confirm === 'supplement' ? setSupplement(event.target.value) : onNote(event.target.value)} maxLength={2000}/>
+        </label>
+        {confirm === 'supplement' ? <p>当前只能保存本地草稿，不会发送给申请人。</p> : <p>本次决定仅针对当前提交的内容。</p>}
+      </WorkflowConfirm>}
+      {supplementLeave.dialog}
     </aside>
   )
 }
