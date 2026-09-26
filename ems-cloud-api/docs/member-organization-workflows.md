@@ -32,7 +32,7 @@ Reparenting computes current and proposed role-owner descendant closures **befor
 
 ## UI
 
-The organization tree and two white cards remain; the member table retains name/account, organization, role, station, status and action columns. Missing grant summaries display `— / 详情中查看`, never inferred zero grants or zero sites. Dedicated grant and role panels remain authoritative.
+The organization tree and two white cards remain; the member table retains name/account, organization, role, station, status and action columns. Role and station summaries use each member's existing scoped grant endpoint and show deduplicated names from active visible grants. Restricted grants, missing read access, and failed requests have explicit labels and are never interpreted as empty authorization. Returning from grant details reloads the directory. Dedicated grant and role panels remain authoritative.
 
 Member profile, membership and organization dialogs are 620px wide with two columns. Creation adds a required initial password because no invitation service exists; unassigned creation shows an explicit management-owner picker. Create succeeds before the separate `现在分配权限` action. Organization actions support searchable existing-member selection, legal lead choices, removal confirmation, and reference-conflict errors. Forms protect unsaved changes through the shared parent leave-guard contract and lock writes/navigation while saving.
 

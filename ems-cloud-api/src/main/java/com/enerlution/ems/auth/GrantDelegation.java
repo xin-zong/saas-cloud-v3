@@ -87,6 +87,45 @@ SELECT EXISTS(SELECT 1 FROM active_member_grant g JOIN role_permission rp ON rp.
             code));
   }
 
+  /** Read-directory batch equivalent of configurable; never cached across requests or writes. */
+  public Set<String> configurableCodes(long organization) {
+    long actor = access.userId();
+    Set<String> result = new HashSet<>();
+    for (var row :
+        db.queryForList(
+            """
+WITH RECURSIVE target_branch(id) AS (
+  SELECT id FROM organization WHERE id=?
+  UNION SELECT o.id FROM organization o JOIN target_branch b ON o.parent_id=b.id
+), source_branch(grant_id,organization_id) AS (
+  SELECT g.id,r.organization_id FROM active_member_grant g JOIN app_role r ON r.id=g.role_id
+  WHERE g.user_id=? AND r.organization_id IS NOT NULL
+  UNION SELECT b.grant_id,o.id FROM source_branch b JOIN organization o ON o.parent_id=b.organization_id
+)
+SELECT DISTINCT rp.permission_code, 'organization' AS scope
+FROM active_member_grant g JOIN role_permission rp ON rp.role_id=g.role_id
+JOIN source_branch b ON b.grant_id=g.id WHERE g.user_id=? AND b.organization_id=?
+UNION
+SELECT DISTINCT rp.permission_code, 'station' AS scope
+FROM active_member_grant g JOIN role_permission rp ON rp.role_id=g.role_id
+JOIN member_grant_station gs ON gs.grant_id=g.id JOIN station s ON s.id=gs.station_id
+JOIN target_branch b ON b.id=s.organization_id WHERE g.user_id=?
+AND (rp.permission_code<>'customer.manage' OR EXISTS(
+  SELECT 1 FROM source_branch source WHERE source.grant_id=g.id AND source.organization_id=s.organization_id))
+""",
+            organization,
+            actor,
+            actor,
+            organization,
+            actor)) {
+      String code = (String) row.get("permission_code");
+      var entry = PermissionCatalog.find(code);
+      if (entry != null && entry.available() && entry.scope().equals(row.get("scope")))
+        result.add(code);
+    }
+    return result;
+  }
+
   /**
    * Validate only added capabilities over the target's remaining/future interval, under the lock.
    */

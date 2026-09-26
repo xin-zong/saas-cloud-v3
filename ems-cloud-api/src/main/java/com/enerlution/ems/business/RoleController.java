@@ -63,9 +63,10 @@ public class RoleController {
       @RequestParam(required = false) Long organizationId) {
     long org = selectedOrganization(organizationId, "catalog");
     boolean canManage = s.access.organizationIds("role.manage").contains(org);
+    Set<String> configurableCodes = canManage ? delegation.configurableCodes(org) : Set.of();
     List<PermissionItem> result = new ArrayList<>();
     for (var entry : PermissionCatalog.entries()) {
-      boolean configurable = canManage && delegation.configurable(org, entry.code());
+      boolean configurable = configurableCodes.contains(entry.code());
       String reason = !entry.available() ? entry.reason() : configurable ? null : "超出当前组织的可配置权限范围";
       result.add(
           new PermissionItem(
@@ -89,12 +90,7 @@ public class RoleController {
       throw new BusinessException(400, "无效的角色目录用途");
     long org = selectedOrganization(organizationId, purpose);
     return ApiResponse.ok(
-        s
-            .db
-            .queryForList("SELECT * FROM app_role WHERE organization_id=? ORDER BY id", org)
-            .stream()
-            .map(row -> dto(row, purpose))
-            .toList());
+        new RoleDirectory(s).read(org, purpose, delegation.configurableCodes(org)));
   }
 
   @PostMapping("/platform/roles")

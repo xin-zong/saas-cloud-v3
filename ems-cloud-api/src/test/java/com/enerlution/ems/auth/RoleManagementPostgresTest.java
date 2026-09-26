@@ -385,6 +385,42 @@ INSERT INTO member_grant_station VALUES(123,131);
   }
 
   @Test
+  void batchedDirectoryMatchesIndividualChecksAcrossRetainedGrantScopes() throws Exception {
+    SessionTokens tokens = mock(SessionTokens.class);
+    when(tokens.userId()).thenReturn(107L);
+    var controller = new RoleController(new DomainSupport(db, new AccessControl(db, tokens)));
+    var individual = RoleController.class.getDeclaredMethod("dto", Map.class, String.class);
+    individual.setAccessible(true);
+    customerDelegationFixture();
+    db.execute("INSERT INTO role_permission VALUES(112,'customer.manage')");
+    for (String change :
+        List.of(
+            "SELECT 1",
+            "UPDATE member_grant SET valid_from=now()+interval '1 day' WHERE id=122",
+            "UPDATE app_user SET enabled=false,organization_id=103 WHERE id=108",
+            "UPDATE app_user SET organization_id=NULL WHERE id=108",
+            "UPDATE app_user SET management_organization_id=NULL WHERE id=108",
+            "UPDATE app_user SET management_organization_id=102 WHERE id=108",
+            "INSERT INTO member_grant_station VALUES(122,132)",
+            "UPDATE app_role SET organization_id=101 WHERE id=113",
+            "DELETE FROM member_grant_station WHERE grant_id=122 AND station_id=132",
+            "UPDATE member_grant SET valid_from=now()-interval '2 days',valid_until=now()-interval"
+                + " '1 day' WHERE id=122")) {
+      db.execute(change);
+      for (String purpose : List.of("manage", "assign")) {
+        var actual = controller.roles(purpose, 102L).data();
+        var row = db.queryForMap("SELECT * FROM app_role WHERE id=112");
+        assertEquals(
+            List.of(individual.invoke(controller, row, purpose)), actual, change + " / " + purpose);
+      }
+      var catalog = controller.permissions(102L).data();
+      for (var item : catalog)
+        assertEquals(
+            actorDelegation().configurable(102, item.code()), item.configurable(), item.code());
+    }
+  }
+
+  @Test
   void migrationSeedsRoleManagementWithoutAssigningAnyExistingRole() throws Exception {
     db.update("DELETE FROM role_permission WHERE permission_code='role.manage'");
     db.update("DELETE FROM permission WHERE code='role.manage'");
