@@ -292,6 +292,8 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
   const platformLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
   const stationLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
   const assetsLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
+  const maintenanceLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
+  const registerMaintenanceLeaveGuard = useCallback((guard: null | (() => Promise<boolean>)) => { maintenanceLeaveGuard.current = guard }, [])
   const operationsLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
   const sidebarTransitionPending = useRef(false)
   const registerPlatformLeaveGuard = useCallback((guard: null | (() => Promise<boolean>)) => { platformLeaveGuard.current = guard }, [])
@@ -426,6 +428,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
     if (activeNav === "总览") return overviewLeaveGuard.current?.() ?? Promise.resolve(true)
     if (activeNav === "资产与站点") return activeDetailId ? requestStationLeave() : assetsLeaveGuard.current?.() ?? Promise.resolve(true)
     if (activeNav === "运营中心") return requestOperationsLeave()
+    if (activeNav === "运维中心") return maintenanceLeaveGuard.current?.() ?? Promise.resolve(true)
     return Promise.resolve(true)
   }
 
@@ -912,6 +915,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
         )}
         {activeNav === "运维中心" && (
           <MaintenanceCenterPage
+            registerLeaveGuard={registerMaintenanceLeaveGuard}
             onServerChange={refreshApi}
             stations={operationalStations}
             onOpenStation={handleOpenStation}

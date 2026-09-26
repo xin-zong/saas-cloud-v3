@@ -67,12 +67,13 @@ async function checkLayout(page, expectedNavCount) {
       sidebarRight: sidebar.right,
       viewport: innerWidth,
       background: getComputedStyle(main).backgroundColor,
+      maintenance: main.classList.contains("maintenance-page"),
     }
   })
   assert.ok(geometry.scroll <= geometry.width + 1, JSON.stringify(geometry))
   assert.ok(geometry.left >= geometry.sidebarRight - 1, JSON.stringify(geometry))
   assert.ok(geometry.right <= geometry.viewport + 1, JSON.stringify(geometry))
-  assert.equal(geometry.background, "rgb(237, 243, 239)")
+  assert.equal(geometry.background, geometry.maintenance ? "rgb(255, 255, 255)" : "rgb(237, 243, 239)")
   assert.equal(await nav(page).getByRole("button").count(), expectedNavCount)
 }
 
@@ -90,7 +91,7 @@ async function screenshotWidths(page, role, section, expectedNavCount) {
 
 test("role-scoped centers: responsive layouts, tabs and role-specific actions", { timeout: 180000 }, async (t) => {
   await fs.mkdir(artifacts, { recursive: true })
-  const browser = await chromium.launch({ headless: true })
+  const browser = await chromium.launch({ channel: "msedge", headless: true })
 
   await t.test("owner sees operations and reports only", async () => {
     const context = await browser.newContext({
@@ -119,12 +120,12 @@ test("role-scoped centers: responsive layouts, tabs and role-specific actions", 
           .getByRole("navigation", { name: "运营中心二级导航" })
           .getByRole("button")
           .allTextContents(),
-        ["运营总览", "收益结算"],
+        ["运营总览", "收益核算"],
       )
       await screenshotWidths(page, "owner", "operations", 5)
       await page
         .getByRole("navigation", { name: "运营中心二级导航" })
-        .getByRole("button", { name: "收益结算", exact: true })
+        .getByRole("button", { name: "收益核算", exact: true })
         .click()
       await checkLayout(page, 5)
 
@@ -162,6 +163,7 @@ test("role-scoped centers: responsive layouts, tabs and role-specific actions", 
         "告警事件",
         "设备健康",
         "固件升级",
+        "运维工具",
       ])
       await screenshotWidths(page, "operator", "maintenance", 6)
       await maintenanceTabs
@@ -220,12 +222,14 @@ test("role-scoped centers: responsive layouts, tabs and role-specific actions", 
         "告警事件",
         "设备健康",
         "固件升级",
+        "运维工具",
       ])
       await screenshotWidths(page, "integrator", "delivery", 6)
       await maintenanceTabs
         .getByRole("button", { name: "固件升级", exact: true })
         .click()
-      assert.ok(await page.getByText("项目交付与技术支持范围", { exact: true }).isVisible())
+      assert.ok(await page.getByRole("heading", { name: "选择站点", exact: true }).isVisible())
+      assert.equal(await page.getByRole("button", { name: "开始升级", exact: true }).isEnabled(), false)
 
       await open(page, "工单与审批")
       await page.getByRole("button", { name: "新建工单", exact: true }).click()

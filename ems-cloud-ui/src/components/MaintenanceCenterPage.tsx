@@ -2,7 +2,7 @@ import { hasStationPermission } from "@/auth/apiPermissions"
 import { DEMO_MODE, send, api, type ApiRow } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 
 import {
   AlertTriangle,
@@ -60,6 +60,9 @@ import "./operations-center.css"
 import "./maintenance-center.css"
 
 import { PageHeader } from "./ui/Workspace"
+import MaintenanceWorkbench from "./maintenance/MaintenanceWorkbench"
+import MaintenanceFirmware from "./maintenance/MaintenanceFirmware"
+import type { RegisterLeaveGuard } from "./useEditorLeaveGuard"
 
 const TABS = ["运维总览", "告警事件", "设备健康", "固件升级"] as const
 
@@ -114,6 +117,7 @@ type HealthDeviceCategory = "pcs" | "battery" | "bms" | "hvac" | "pv" | "meter"
 type HealthCondition = "all" | "fault" | "normal"
 
 type HealthFault = {
+  date: string
   occurredAt: string
 
   title: string
@@ -141,6 +145,7 @@ type HealthMetric = {
 
 type HealthDeviceRecord = {
   id: string
+  code: string
 
   category: HealthDeviceCategory
 
@@ -170,6 +175,7 @@ type HealthDeviceRecord = {
     statusTone: "success" | "danger" | "neutral"
 
     sampledAt: string
+    sampledDate: string
 
     metrics: HealthMetric[]
 
@@ -178,405 +184,6 @@ type HealthDeviceRecord = {
     maintenance: HealthMaintenance[]
   }
 }
-
-const HEALTH_DEVICE_SEEDS: Omit<HealthDeviceRecord, "stationId" | "stationName">[] =
-  [
-    {
-      id: "PCS-02",
-
-      category: "pcs",
-
-      categoryLabel: "储能变流器",
-
-      title: "储能变流器",
-
-      status: "异常",
-
-      runtime: "13,246 h",
-
-      faultCount: 1,
-
-      responseCount: 3,
-
-      latestFault: "09-18 13:46",
-
-      latestMaintenance: "2026-08-29",
-
-      detail: {
-        statusLabel: "在线 · 1项故障未恢复",
-
-        statusTone: "danger",
-
-        sampledAt: "09-18 14:32",
-
-        metrics: [
-          { label: "母线温度 · PCS上报", value: "42.6 °C" },
-
-          { label: "散热器温度 · PCS上报", value: "38.2 °C" },
-
-          { label: "运行状态 · PCS上报", value: "故障停机" },
-
-          { label: "瞬时功率 · PCS上报", value: "—" },
-        ],
-
-        faults: [
-          {
-            occurredAt: "09-18 13:46",
-
-            title: "直流过压告警",
-
-            status: "未恢复",
-          },
-
-          {
-            occurredAt: "09-05 13:46",
-
-            title: "直流过压告警",
-
-            recoveredAt: "09-05 14:02",
-
-            status: "已恢复",
-          },
-
-          {
-            occurredAt: "08-29 11:20",
-
-            title: "散热器温度高",
-
-            recoveredAt: "08-29 12:10",
-
-            status: "已恢复",
-          },
-        ],
-
-        maintenance: [
-          {
-            completedAt: "2026-08-29 15:34",
-
-            title: "风道清洁与风扇检查",
-
-            owner: "金伟",
-
-            workOrder: "WO-0829-006",
-          },
-
-          {
-            completedAt: "2026-07-21 09:41",
-
-            title: "端子紧固与绝缘检查",
-
-            owner: "王工",
-
-            workOrder: "WO-0721-005",
-          },
-        ],
-      },
-    },
-
-    {
-      id: "BAT-03",
-
-      category: "battery",
-
-      categoryLabel: "电池簇",
-
-      title: "电池簇",
-
-      status: "在线",
-
-      runtime: "18,236 h",
-
-      faultCount: 0,
-
-      responseCount: 2,
-
-      latestFault: "09-16 21:30",
-
-      latestMaintenance: "2026-08-18",
-
-      detail: {
-        statusLabel: "在线 · 无未恢复故障",
-
-        statusTone: "success",
-
-        sampledAt: "09-18 14:32",
-
-        metrics: [
-          { label: "SOH · BMS上报", value: "96.8%" },
-
-          { label: "循环次数 · BMS上报", value: "628 次" },
-
-          { label: "单体压差 · BMS上报", value: "18 mV" },
-
-          { label: "温度差 · BMS上报", value: "3.2 °C" },
-        ],
-
-        faults: [
-          {
-            occurredAt: "09-16 21:30",
-
-            title: "电池簇温度过高",
-
-            recoveredAt: "09-16 21:45",
-
-            status: "已恢复",
-          },
-
-          {
-            occurredAt: "08-14 14:05",
-
-            title: "单体电压过低",
-
-            recoveredAt: "08-14 14:12",
-
-            status: "已恢复",
-          },
-        ],
-
-        maintenance: [
-          {
-            completedAt: "2026-08-18 14:20",
-
-            title: "冷却系统检查与清洁",
-
-            owner: "王虹",
-
-            workOrder: "WO-0818-012",
-          },
-
-          {
-            completedAt: "2026-07-12 10:00",
-
-            title: "电芯均衡与采样校准",
-
-            owner: "李峰",
-
-            workOrder: "WO-0712-008",
-          },
-        ],
-      },
-    },
-
-    {
-      id: "BMS-02",
-
-      category: "bms",
-
-      categoryLabel: "电池管理系统",
-
-      title: "电池管理系统",
-
-      status: "异常",
-
-      runtime: "—",
-
-      faultCount: 1,
-
-      responseCount: 2,
-
-      latestFault: "09-18 13:18",
-
-      latestMaintenance: "2026-08-24",
-
-      detail: {
-        statusLabel: "在线 · 1项故障未恢复",
-
-        statusTone: "danger",
-
-        sampledAt: "09-18 14:31",
-
-        metrics: [
-          { label: "系统状态 · BMS上报", value: "异常" },
-
-          { label: "在线电池簇 · BMS上报", value: "3 / 4" },
-
-          { label: "最高单体温度 · BMS上报", value: "35.8 °C" },
-
-          { label: "单体压差 · BMS上报", value: "24 mV" },
-        ],
-
-        faults: [
-          {
-            occurredAt: "09-18 13:18",
-
-            title: "电池簇通讯异常",
-
-            status: "未恢复",
-          },
-        ],
-
-        maintenance: [
-          {
-            completedAt: "2026-08-24 16:10",
-
-            title: "BMS通讯链路检查",
-
-            owner: "周宁",
-
-            workOrder: "WO-0824-004",
-          },
-        ],
-      },
-    },
-
-    {
-      id: "HVAC-02",
-
-      category: "hvac",
-
-      categoryLabel: "温控系统",
-
-      title: "温控系统",
-
-      status: "在线",
-
-      runtime: "9,624 h",
-
-      faultCount: 0,
-
-      responseCount: 3,
-
-      latestFault: "09-02 10:20",
-
-      latestMaintenance: "2026-08-30",
-
-      detail: {
-        statusLabel: "在线 · 无未恢复故障",
-
-        statusTone: "success",
-
-        sampledAt: "09-18 14:32",
-
-        metrics: [
-          { label: "送风温度 · HVAC上报", value: "22.4 °C" },
-
-          { label: "回风温度 · HVAC上报", value: "27.2 °C" },
-
-          { label: "相对湿度 · HVAC上报", value: "48%" },
-
-          { label: "运行状态 · HVAC上报", value: "自动制冷" },
-        ],
-
-        faults: [],
-
-        maintenance: [
-          {
-            completedAt: "2026-08-30 10:20",
-
-            title: "滤网更换与冷媒检查",
-
-            owner: "张凯",
-
-            workOrder: "WO-0830-003",
-          },
-        ],
-      },
-    },
-
-    {
-      id: "PV-INV-03",
-
-      category: "pv",
-
-      categoryLabel: "光伏逆变器",
-
-      title: "光伏逆变器",
-
-      status: "在线",
-
-      runtime: "9,230 h",
-
-      faultCount: 0,
-
-      responseCount: 0,
-
-      latestMaintenance: "2026-08-12",
-
-      detail: {
-        statusLabel: "在线 · 无未恢复故障",
-
-        statusTone: "success",
-
-        sampledAt: "09-18 14:32",
-
-        metrics: [
-          { label: "直流输入 · INV上报", value: "—" },
-
-          { label: "交流输出 · INV上报", value: "—" },
-
-          { label: "转换效率 · INV上报", value: "—" },
-
-          { label: "运行状态 · INV上报", value: "待机" },
-        ],
-
-        faults: [],
-
-        maintenance: [
-          {
-            completedAt: "2026-08-12 09:20",
-
-            title: "逆变器巡检与接线检查",
-
-            owner: "赵磊",
-
-            workOrder: "WO-0812-002",
-          },
-        ],
-      },
-    },
-
-    {
-      id: "METER-01",
-
-      category: "meter",
-
-      categoryLabel: "电能表",
-
-      title: "电能表",
-
-      status: "在线",
-
-      runtime: "—",
-
-      faultCount: 0,
-
-      responseCount: 0,
-
-      latestMaintenance: "2026-08-20",
-
-      detail: {
-        statusLabel: "在线 · 无未恢复故障",
-
-        statusTone: "success",
-
-        sampledAt: "09-18 14:32",
-
-        metrics: [
-          { label: "有功功率 · METER上报", value: "—" },
-
-          { label: "电网频率 · METER上报", value: "—" },
-
-          { label: "功率因数 · METER上报", value: "—" },
-
-          { label: "运行状态 · METER上报", value: "正常" },
-        ],
-
-        faults: [],
-
-        maintenance: [
-          {
-            completedAt: "2026-08-20 11:10",
-
-            title: "电能表校验与封印检查",
-
-            owner: "陈工",
-
-            workOrder: "WO-0820-001",
-          },
-        ],
-      },
-    },
-  ]
 
 const HEALTH_CATEGORY_LABELS: Record<HealthDeviceCategory | "all", string> = {
   all: "设备类型",
@@ -602,7 +209,7 @@ function buildHealthDeviceRecords(stations: Station[]) {
 
     if (/BMS/i.test(device.id)) return "bms"
 
-    if (/RACK|电池/i.test(device.id) || /储能/i.test(device.group))
+    if (/RACK|BAT|电池/i.test(device.code) || /储能|电池|battery/i.test(device.group))
       return "battery"
 
     if (/HVAC|温控/i.test(device.id) || /环境/i.test(device.group))
@@ -662,9 +269,9 @@ function buildHealthDeviceRecords(stations: Station[]) {
         .sort((left, right) => Date.parse(right.at) - Date.parse(left.at))[0]
 
       const workOrders =
-        station.maintenance?.workOrders?.filter((order) =>
+        (DEMO_MODE ? station.maintenance?.workOrders?.filter((order) =>
           order.title.includes(device.id),
-        ) ?? []
+        ) : []) ?? []
 
       const latestWorkOrder = workOrders
 
@@ -695,18 +302,16 @@ function buildHealthDeviceRecords(stations: Station[]) {
           )
         : null
 
-      const metrics = device.points.slice(0, 4).map((point) => ({
-        label: `${point.label} · 设备上报`,
-
-        value: formatPoint(point),
-      }))
+      const metricLabels = category === "battery" ? ["SOH", "循环次数", "单体压差", "单体温差"] : category === "pcs" ? ["模块温度", "散热器温度", "设备运行状态", "降额状态"] : ["设备状态", "运行时长", "告警状态", "采样时间"]
+      const metrics = metricLabels.map(label => ({label: `${label} · ${category === "battery" ? "BMS" : category === "pcs" ? "PCS" : "设备"}上报`, value: formatPoint(device.points.find(p => p.label.toLowerCase().includes(label.toLowerCase())))}))
 
       const faults: HealthFault[] = alarms.map((alarm) => ({
+        date: alarm.at.slice(0,10),
         occurredAt: dateLabel(alarm.at),
 
         title: alarm.title,
 
-        recoveredAt: alarm.active ? undefined : dateLabel(alarm.at),
+        recoveredAt: undefined,
 
         status: alarm.active ? "未恢复" : "已恢复",
       }))
@@ -726,6 +331,7 @@ function buildHealthDeviceRecords(stations: Station[]) {
 
       return {
         id: `${station.id}-${device.id}`,
+        code: device.code || device.id,
 
         category,
 
@@ -742,9 +348,9 @@ function buildHealthDeviceRecords(stations: Station[]) {
         runtime:
           !DEMO_MODE || runtimeHours === null ? "—" : `${runtimeHours.toLocaleString()} h`,
 
-        faultCount: DEMO_MODE ? alarms.length : null,
+        faultCount: DEMO_MODE ? activeAlarms.length : null,
 
-        responseCount: DEMO_MODE ? device.logs?.length ?? 0 : null,
+        responseCount: DEMO_MODE ? alarms.length : null,
 
         latestFault: latestAlarm ? dateLabel(latestAlarm.at) : undefined,
 
@@ -761,6 +367,7 @@ function buildHealthDeviceRecords(stations: Station[]) {
           statusTone,
 
           sampledAt: dateLabel(device.updatedAt),
+          sampledDate: device.updatedAt.slice(0,10),
 
           metrics: metrics.length
             ? metrics
@@ -898,39 +505,14 @@ function HealthDeviceDetail({
 
   onBack: () => void
 }) {
-  const faultDates = record.detail.faults
-
-    .map((fault) => `2026-${fault.occurredAt.slice(0, 5)}`)
-
-    .filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value))
-
-    .sort()
-
-  const sampledDate = /^\d{2}-\d{2}/.test(record.detail.sampledAt)
-    ? `2026-${record.detail.sampledAt.slice(0, 5)}`
-    : ""
-
-  const defaultEndDate = (faultDates.at(-1) ?? sampledDate) || "2026-09-19"
-
+  const defaultRange = dateRangeEndingAt(new Date(/^\d{4}-\d{2}-\d{2}$/.test(record.detail.sampledDate) ? `${record.detail.sampledDate}T12:00:00` : Date.now()), 30)
   const [rangeOpen, setRangeOpen] = useState(false)
-
-  const [startDate, setStartDate] = useState("2026-03-20")
-
-  const [endDate, setEndDate] = useState(defaultEndDate)
-
+  const [startDate, setStartDate] = useState(defaultRange.start)
+  const [endDate, setEndDate] = useState(defaultRange.end)
   const [draftStartDate, setDraftStartDate] = useState(startDate)
-
-  const [draftEndDate, setDraftEndDate] = useState(defaultEndDate)
-
+  const [draftEndDate, setDraftEndDate] = useState(endDate)
   const [rangeNotice, setRangeNotice] = useState("")
-
-  const faults = record.detail.faults
-
-  const visibleFaults = faults.filter((fault) => {
-    const faultDate = `2026-${fault.occurredAt.slice(0, 5)}`
-
-    return faultDate >= startDate && faultDate <= endDate
-  })
+  const visibleFaults = record.detail.faults.filter(fault => fault.date >= startDate && fault.date <= endDate)
 
   function toggleRange() {
     setRangeOpen((open) => {
@@ -947,7 +529,7 @@ function HealthDeviceDetail({
   }
 
   function applyRange() {
-    if (draftStartDate > draftEndDate) {
+    if (!draftStartDate || !draftEndDate || draftStartDate > draftEndDate) {
       setRangeNotice("开始日期不能晚于结束日期")
 
       return
@@ -975,7 +557,7 @@ function HealthDeviceDetail({
       <section className="maintenance-health-device-head">
         <div>
           <h2>
-            {record.id} · {record.title}
+            {record.code} · {record.title}
           </h2>
           <p>所属站点 {record.stationName}</p>
           <p>时序来源 设备健康监控</p>
@@ -1097,7 +679,7 @@ function HealthDeviceDetail({
           </table>
         </div>
         {!visibleFaults.length && (
-          <div className="operations-empty">该日期范围内暂无历史故障</div>
+          <div className="operations-empty">{DEMO_MODE ? "该日期范围内暂无历史故障" : "设备级故障历史尚未接通，暂无可展示记录"}</div>
         )}
       </section>
       <section className="maintenance-health-detail-panel">
@@ -1458,6 +1040,7 @@ export default function MaintenanceCenterPage({
   allowedTabs = TABS,
 
   role = "operator",
+  registerLeaveGuard,
 }: {
   stations: Station[]
 
@@ -1480,14 +1063,19 @@ export default function MaintenanceCenterPage({
   allowedTabs?: readonly Tab[]
 
   role?: UserRole
+  registerLeaveGuard?: RegisterLeaveGuard
 }) {
   const { user } = useAuth()
+  const [toolsOpen,setToolsOpen] = useState(false)
+  const toolGuard=useRef<null|(()=>Promise<boolean>)>(null)
+  const registerToolGuard=useCallback<RegisterLeaveGuard>(guard=>{toolGuard.current=guard;registerLeaveGuard?.(guard)},[registerLeaveGuard])
+  const leaveTools=(next:()=>void)=>{void(async()=>{if(await(toolGuard.current?.()??Promise.resolve(true)))next()})()}
 
   const visibleTabs = TABS.filter((item) => allowedTabs.includes(item))
 
   const initialDataNow = stationsDataNow(stations)
 
-  const initialHealthRange = dateRangeEndingAt(initialDataNow, 184)
+  const initialHealthRange = dateRangeEndingAt(initialDataNow, 30)
 
   const [tab, setTab] = useState<Tab>(visibleTabs[0] ?? "运维总览")
 
@@ -1548,31 +1136,9 @@ export default function MaintenanceCenterPage({
   const [healthConditionPanelOpen, setHealthConditionPanelOpen] =
     useState(false)
 
-  const [firmwareStationId, setFirmwareStationId] = useState(
-    initialFocus?.stationId ?? "",
-  )
-
-  const [firmwareStationQuery, setFirmwareStationQuery] = useState("")
-
-  const [firmwareDeviceType, setFirmwareDeviceType] = useState("PCS")
-
-  const [firmwareQuery, setFirmwareQuery] = useState("")
-
-  const [selectedFirmwareKey, setSelectedFirmwareKey] = useState("")
-
   const [followedAlarmKeys, setFollowedAlarmKeys] = useState<string[]>([])
 
   const [viewSavedAt, setViewSavedAt] = useState("")
-
-  const [firmwareUploadName, setFirmwareUploadName] = useState("")
-
-  const [firmwareJob, setFirmwareJob] = useState<{
-    key: string
-
-    status: "ready" | "running" | "stopped"
-
-    progress: number
-  } | null>(null)
 
   const [interactionNotice, setInteractionNotice] =
     useState<InteractionNotice | null>(null)
@@ -1609,30 +1175,21 @@ export default function MaintenanceCenterPage({
   )
 
   const healthRecords = useMemo(
-    () => buildHealthDeviceRecords(eligible),
+    () => buildHealthDeviceRecords(eligible.filter(s=>DEMO_MODE||hasStationPermission(user,s.id,"asset.read"))),
 
     [eligible],
   )
 
   const healthRows = healthRecords.filter((record) => {
-    const latestFaultDate = record.latestFault
-      ? `2026-${record.latestFault.slice(0, 5)}`
-      : ""
-
-    const withinDate =
-      !latestFaultDate ||
-      (latestFaultDate >= healthDateStart && latestFaultDate <= healthDateEnd)
-
     return (
       (!healthStationId || record.stationId === healthStationId) &&
       (healthDeviceType === "all" || record.category === healthDeviceType) &&
       (healthCondition === "all" ||
         (healthCondition === "fault"
           ? (record.faultCount ?? 0) > 0 || record.status === "异常"
-          : record.faultCount === 0 && record.status === "在线")) &&
-      withinDate
+          : record.faultCount === 0 && record.status === "在线"))
     )
-  })
+  }).map(record => ({...record, responseCount: DEMO_MODE ? record.detail.faults.filter(fault => fault.date >= healthDateStart && fault.date <= healthDateEnd).length : null}))
 
   const selectedHealthDevice =
     healthRecords.find((record) => record.id === selectedHealthDeviceId) ?? null
@@ -1734,256 +1291,6 @@ export default function MaintenanceCenterPage({
     selectedAlarmResolvedKey,
   )
 
-  const healthItems = sorted
-
-    .map((row, index) => {
-      const leadingAlarm = row.active[0] ?? row.alarms[0]
-
-      const score =
-        row.health ??
-        (row.communication === "offline"
-          ? 54
-          : Math.max(68, 94 - row.station.devices.fault * 5))
-
-      const trendDelta =
-        row.communication === "offline"
-          ? -8
-          : row.active.length
-            ? -Math.max(1, row.active.length * 3)
-            : index % 2 === 0
-              ? 2
-              : 0
-
-      const repeatCount = row.active.length + row.station.devices.fault
-
-      return {
-        key: `${row.station.id}:${leadingAlarm?.device ?? "PCS-01"}`,
-
-        row,
-
-        device: leadingAlarm?.device ?? row.firmware[0]?.device ?? "PCS-01",
-
-        score,
-
-        trendDelta,
-
-        repeatCount,
-
-        latest: row.healthObservedAt ?? row.station.updateTime,
-
-        action:
-          score < 70
-            ? "需诊断"
-            : score < 80
-              ? "需关注"
-              : score < 90
-                ? "观察"
-                : "良好",
-      }
-    })
-
-    .filter(
-      (item) =>
-        !healthRating ||
-        (healthRating === "risk" ? item.score < 80 : item.score >= 80),
-    )
-
-  const selectedHealth =
-    healthItems.find((item) => item.key === selectedHealthKey) ?? healthItems[0]
-
-  const selectedHealthResolvedKey = selectedHealth?.key ?? ""
-
-  const healthRiskFactors = selectedHealth
-    ? [
-        {
-          label: "效率偏差",
-
-          value: Math.min(
-            100,
-
-            Math.max(
-              12,
-
-              100 - selectedHealth.score + selectedHealth.repeatCount * 9,
-            ),
-          ),
-
-          note: `近30天低于基线 ${Math.max(1, Math.round((100 - selectedHealth.score) / 4))}%`,
-        },
-
-        {
-          label: "直流母线波动",
-
-          value: Math.min(100, 42 + selectedHealth.repeatCount * 13),
-
-          note: "近7日出现 3 次越限",
-        },
-
-        {
-          label: "散热性能",
-
-          value: Math.min(
-            100,
-
-            36 + selectedHealth.row.station.devices.fault * 11,
-          ),
-
-          note: "同负载温升高于同型设备",
-        },
-
-        {
-          label: "通讯质量",
-
-          value: selectedHealth.row.communication === "offline" ? 82 : 18,
-
-          note:
-            selectedHealth.row.communication === "offline"
-              ? "采集链路存在断连"
-              : "丢包率稳定",
-        },
-      ]
-    : []
-
-  const failurePatterns = rows
-
-    .flatMap((row) =>
-      row.active.map((alarm) => ({
-        key: `${row.station.id}:${alarm.id}`,
-
-        stationId: row.station.id,
-
-        mode: alarm.title,
-
-        devices: alarm.device,
-
-        severity: alarm.severity,
-
-        count:
-          row.active.filter((item) => item.device === alarm.device).length + 2,
-
-        latest: alarm.occurredAt,
-
-        suggestion:
-          alarm.severity === "critical"
-            ? "建立诊断工单"
-            : alarm.severity === "warning"
-              ? "检查链路"
-              : "安排均衡",
-      })),
-    )
-
-    .slice(0, 3)
-
-  const firmwareStations = allRows.filter(
-    (row) => row.station.status !== "building",
-  )
-
-  const activeFirmwareStationId = firmwareStations.some(
-    (row) => row.station.id === firmwareStationId,
-  )
-    ? firmwareStationId
-    : (firmwareStations[0]?.station.id ?? "")
-
-  const selectedFirmwareStation = firmwareStations.find(
-    (row) => row.station.id === activeFirmwareStationId,
-  )
-
-  const firmwareDeviceRows = !DEMO_MODE
-    ? (selectedFirmwareStation?.station.deviceInventory ?? [])
-        .filter(device => `${device.code} ${device.group}`.toUpperCase().includes(firmwareDeviceType))
-        .map(device => {
-          const task = selectedFirmwareStation?.firmware.find(item => item.device === device.id)
-          return { key: `${activeFirmwareStationId}:${device.id}`, device: device.name || device.code, model: device.model,
-            connection: device.status === "online" ? "在线" : device.status === "offline" ? "离线" : "未知",
-            task, condition: task ? FIRMWARE_STATUS[task.status] : "暂无升级任务" }
-        }).filter(item => !firmwareQuery.trim() || `${item.device} ${item.model} ${item.condition}`.toLowerCase().includes(firmwareQuery.trim().toLowerCase()))
-    : selectedFirmwareStation
-    ? ["PCS-01", "PCS-02", "PCS-03", "PCS-04"]
-
-        .map((device, index) => {
-          const task =
-            selectedFirmwareStation.firmware.find(
-              (item) => item.device === device,
-            ) ?? (index === 0 ? selectedFirmwareStation.firmware[0] : undefined)
-
-          const onlineCount = selectedFirmwareStation.station.devices.online
-
-          const connection =
-            index < Math.max(1, Math.min(3, onlineCount)) ? "在线" : "离线"
-
-          return {
-            key: `${selectedFirmwareStation.station.id}:${device}`,
-
-            device,
-
-            model: firmwareDeviceType === "BMS" ? "BMS-200" : "EPC-100",
-
-            connection,
-
-            task,
-
-            condition: task
-              ? FIRMWARE_STATUS[task.status]
-              : connection === "离线"
-                ? "离线，暂不可升级"
-                : "未选择",
-          }
-        })
-
-        .filter(
-          (item) =>
-            !firmwareQuery.trim() ||
-            `${item.device} ${item.model} ${item.condition}`
-
-              .toLowerCase()
-
-              .includes(firmwareQuery.trim().toLowerCase()),
-        )
-    : []
-
-  const selectedFirmwareDevice =
-    firmwareDeviceRows.find((item) => item.key === selectedFirmwareKey) ??
-    firmwareDeviceRows[0]
-
-  const selectedFirmwareResolvedKey = selectedFirmwareDevice?.key ?? ""
-
-  const selectedFirmwareJob =
-    firmwareJob?.key === selectedFirmwareResolvedKey ? firmwareJob : null
-
-  const firmwareProgress = !DEMO_MODE ? null : selectedFirmwareJob
-    ? selectedFirmwareJob.progress
-    : selectedFirmwareDevice?.task
-      ? {
-          pending: 0,
-
-          running: 80,
-
-          succeeded: 100,
-
-          failed: 36,
-        }[selectedFirmwareDevice.task.status]
-      : 0
-
-  const firmwareProgressText = !DEMO_MODE ? (selectedFirmwareDevice?.task ? FIRMWARE_STATUS[selectedFirmwareDevice.task.status] : "暂无升级任务") : selectedFirmwareJob
-    ? selectedFirmwareJob.status === "running"
-      ? "传输中"
-      : selectedFirmwareJob.status === "stopped"
-        ? "已停止"
-        : "待升级"
-    : selectedFirmwareDevice?.task
-      ? selectedFirmwareDevice.task.status === "running"
-        ? "传输中"
-        : FIRMWARE_STATUS[selectedFirmwareDevice.task.status]
-      : selectedFirmwareDevice?.connection === "离线"
-        ? "等待设备在线"
-        : "待选择固件"
-
-  const selectedFirmwareReady = Boolean(
-    selectedFirmwareDevice &&
-      selectedFirmwareDevice.connection !== "离线" &&
-      (selectedFirmwareDevice.task || firmwareUploadName),
-  )
-
   const peakCount = trend.peak.critical + trend.peak.warning + trend.peak.info
 
   const newest = rows
@@ -2027,7 +1334,7 @@ export default function MaintenanceCenterPage({
   }
 
   function reset() {
-    const healthRange = dateRangeEndingAt(now, 184)
+    const healthRange = dateRangeEndingAt(now, 30)
 
     setScope("")
 
@@ -2037,9 +1344,7 @@ export default function MaintenanceCenterPage({
 
     setQuery("")
 
-    setFirmwareStationQuery("")
 
-    setFirmwareQuery("")
 
     setAttentionOnly(false)
 
@@ -2083,7 +1388,7 @@ export default function MaintenanceCenterPage({
   }
 
   function applyHealthDateRange() {
-    if (healthDraftDateStart > healthDraftDateEnd) {
+    if (!healthDraftDateStart || !healthDraftDateEnd || healthDraftDateStart > healthDraftDateEnd) {
       announce("健康记录的开始日期不能晚于结束日期", "warning")
 
       return
@@ -2158,105 +1463,6 @@ export default function MaintenanceCenterPage({
     ])
 
     announce(`已关注当前 ${alarmRows.length} 条告警事件`)
-  }
-
-  function prioritizeHealthRisk() {
-    setSort("health")
-
-    setHealthRating("")
-
-    setSelectedHealthKey("")
-
-    announce("已切换为健康度最低优先")
-  }
-
-  function handleFailurePatternAction(item: typeof failurePatterns[number]) {
-    setSelectedHealthKey(`${item.stationId}:${item.devices}`)
-
-    if (item.severity === "critical") {
-      onOpenOrders?.(item.stationId)
-
-      announce(`已定位 ${item.devices} 的诊断工单入口`, "info")
-
-      return
-    }
-
-    onOpenStation(
-      item.stationId,
-
-      item.suggestion === "检查链路" ? "设备详情" : "运行曲线",
-    )
-  }
-
-  function uploadFirmware() {
-    if (!DEMO_MODE) {
-      announce("固件操作尚未接入服务器", "warning")
-      return
-    }
-
-    if (!selectedFirmwareDevice) {
-      announce("请先选择要升级的设备", "warning")
-
-      return
-    }
-
-    const fileName = `${firmwareDeviceType.toLowerCase()}_firmware.bin`
-
-    setFirmwareUploadName(fileName)
-
-    setFirmwareJob({
-      key: selectedFirmwareResolvedKey,
-
-      status: "ready",
-
-      progress: 0,
-    })
-
-    announce(`已选择目标固件 ${fileName}`)
-  }
-
-  function startFirmwareUpgrade() {
-    if (!DEMO_MODE) {
-      announce("固件操作尚未接入服务器", "warning")
-      return
-    }
-
-    if (!selectedFirmwareReady || !selectedFirmwareDevice) {
-      announce("当前设备不满足升级条件", "warning")
-
-      return
-    }
-
-    setFirmwareJob({
-      key: selectedFirmwareResolvedKey,
-
-      status: "running",
-
-      progress: 80,
-    })
-
-    announce(`${selectedFirmwareDevice.device} 已进入升级传输`)
-  }
-
-  function stopFirmwareUpgrade() {
-    if (!DEMO_MODE) {
-      announce("固件操作尚未接入服务器", "warning")
-      return
-    }
-
-    if (!selectedFirmwareJob || selectedFirmwareJob.status !== "running") {
-      announce("当前没有正在传输的升级任务", "warning")
-
-      return
-    }
-
-    setFirmwareJob({
-      ...selectedFirmwareJob,
-
-      status: "stopped",
-    })
-
-    announce("升级任务已停止，设备状态未下发变更", "warning")
   }
 
   function exportCurrent() {
@@ -2438,12 +1644,13 @@ export default function MaintenanceCenterPage({
           {visibleTabs.map((value) => (
             <button
               key={value}
-              aria-current={tab === value ? "page" : undefined}
-              onClick={() => switchTab(value)}
+              aria-current={!toolsOpen && tab === value ? "page" : undefined}
+              onClick={() => leaveTools(()=>{setToolsOpen(false);switchTab(value)})}
             >
               {value}
             </button>
           ))}
+          <button aria-current={toolsOpen?"page":undefined} onClick={()=>leaveTools(()=>setToolsOpen(true))}>运维工具</button>
           {liveStatus}
         </nav>
       )}
@@ -2455,7 +1662,7 @@ export default function MaintenanceCenterPage({
             : "责任站点运维范围"}
         </p>
       )}
-      <div className="maintenance-content">
+      {toolsOpen&&!ordersOnly ? <div className="maintenance-content"><MaintenanceWorkbench stations={eligible} registerLeaveGuard={registerToolGuard} onServerChange={onServerChange} onOpenOrders={onOpenOrders} onHealthDevice={(stationId,deviceId)=>{setToolsOpen(false);setTab("设备健康");setSelectedHealthDeviceId(`${stationId}-${deviceId}`)}}/></div> : <div className="maintenance-content">
         {(ordersOnly || tab === "运维总览") && (
           <section className="maintenance-toolbar" aria-label="运维筛选">
             <label>
@@ -2834,6 +2041,13 @@ export default function MaintenanceCenterPage({
                 },
 
                 {
+                  id: "inspections", label: "今日到期巡检", icon: ClipboardList, tone: "neutral",
+                  value: number(summary.dueToday),
+                  note: summary.dueToday && summary.completedToday !== null ? `完成率 ${Math.round(summary.completedToday / summary.dueToday * 100)}%` : "按已接入计划时间统计",
+                  action: () => setToolsOpen(true),
+                },
+
+                {
                   id: "communication",
 
                   label: "通信异常",
@@ -2881,7 +2095,7 @@ export default function MaintenanceCenterPage({
                 >
                   <div className="maintenance-metric-heading">
                     <span>{item.label}</span>
-                    <item.icon size={15} aria-hidden="true" />
+
                   </div>
                   {item.action ? (
                     <button
@@ -3466,12 +2680,9 @@ export default function MaintenanceCenterPage({
                         <span
                           key={label}
                           data-active={
-                            index <
-                            (selectedAlarm.alarm.status === "recovered"
-                              ? 4
-                              : selectedAlarm.alarm.acknowledged
-                                ? 3
-                                : 2)
+                            index === 0 ||
+                            (index === 1 && selectedAlarm.alarm.acknowledged) ||
+                            (index === 3 && selectedAlarm.alarm.status === "recovered")
                           }
                         >
                           <i />
@@ -3493,8 +2704,7 @@ export default function MaintenanceCenterPage({
                       <div>
                         <dt>触发值</dt>
                         <dd>
-                          设备采样异常 · 健康度{" "}
-                          {number(selectedAlarm.row.health)}
+                          触发测点与阈值未提供
                         </dd>
                       </div>
                       <div>
@@ -3516,28 +2726,8 @@ export default function MaintenanceCenterPage({
                       </div>
                     </dl>
                   </div>
-                  <div className="maintenance-inline-trend" hidden={!DEMO_MODE}>
-                    <h3>事件前后趋势</h3>
-                    <svg
-                      viewBox="0 0 260 82"
-                      role="img"
-                      aria-label="事件前后趋势"
-                    >
-                      <polyline
-                        points="8,58 44,54 80,51 116,44 152,26 188,34 224,41 252,43"
-                        fill="none"
-                        stroke="var(--ui-primary)"
-                        strokeWidth="3"
-                      />
-                      <polyline
-                        points="8,60 44,57 80,55 116,48 152,24 188,32 224,39 252,42"
-                        fill="none"
-                        stroke="var(--ui-danger)"
-                        strokeWidth="3"
-                        strokeDasharray="0 0"
-                      />
-                    </svg>
-                  </div>
+                  <div className="maintenance-inline-trend"><h3>事件前后趋势</h3><div className="maintenance-empty-chart"><span>事件采样与触发阈值尚未接通</span></div></div>
+                  <div className="maintenance-evidence"><h3>智能 AI 根因诊断</h3><p className="maintenance-boundary">当前选中：{selectedAlarm.alarm.id}</p><h4>疑似根因分析</h4><p className="maintenance-boundary">AI 诊断服务尚未接通，暂无根因或置信度。</p><h4>推荐处理步骤</h4><p className="maintenance-boundary">暂无已验证的自动建议。可查看原始事件并创建现场核查工单。</p><button className="operations-button" disabled title="远程诊断执行接口未接通">远程诊断未接通</button></div>
                   <div className="maintenance-disposal-log">
                     <h3>处置记录</h3>
                     <p>
@@ -3604,7 +2794,7 @@ export default function MaintenanceCenterPage({
             >
               <div className="maintenance-health-list-heading">
                 <h2>设备运行与故障记录</h2>
-                <span>监控统计 · 近30天</span>
+                <span>故障统计 · 近 30 天</span>
               </div>
               <div className="operations-table-scroll">
                 <table className="maintenance-health-list-table">
@@ -3614,10 +2804,10 @@ export default function MaintenanceCenterPage({
                       <th>所属站点</th>
                       <th>状态</th>
                       <th>累计运行时长</th>
-                      <th>设备故障数</th>
-                      <th>远程响应次数</th>
+                      <th>未恢复故障</th>
+                      <th>区间故障次数</th>
                       <th>最近故障时间</th>
-                      <th>最近维护时间</th>
+                      <th>最近维护日期</th>
                       <th>操作</th>
                     </tr>
                   </thead>
@@ -3625,7 +2815,7 @@ export default function MaintenanceCenterPage({
                     {healthRows.map((record) => (
                       <tr key={record.id}>
                         <td>
-                          <strong>{record.id}</strong>
+                          <strong>{record.code}</strong>
                           <small>{record.categoryLabel}</small>
                         </td>
                         <td>{record.stationName}</td>
@@ -3670,187 +2860,7 @@ export default function MaintenanceCenterPage({
               </footer>
             </section>
           ))}
-        {!ordersOnly && tab === "固件升级" && (
-          <div className="maintenance-firmware-layout">
-            <aside className="maintenance-reference-panel maintenance-firmware-sidebar">
-              <h2>选择站点</h2>
-              <label className="maintenance-search">
-                <Search size={13} />
-                <input
-                  aria-label="搜索升级站点"
-                  type="search"
-                  placeholder="搜索站点"
-                  value={firmwareStationQuery}
-                  onChange={(event) =>
-                    setFirmwareStationQuery(event.target.value)
-                  }
-                />
-              </label>
-              <div>
-                {firmwareStations
-
-                  .filter((row) =>
-                    row.station.name
-
-                      .toLowerCase()
-
-                      .includes(firmwareStationQuery.trim().toLowerCase()),
-                  )
-
-                  .map((row) => (
-                    <button
-                      key={row.station.id}
-                      className={
-                        row.station.id === activeFirmwareStationId
-                          ? "is-active"
-                          : ""
-                      }
-                      onClick={() => {
-                        setFirmwareStationId(row.station.id)
-
-                        setSelectedFirmwareKey("")
-
-                        setFirmwareUploadName("")
-
-                        setFirmwareJob(null)
-                      }}
-                    >
-                      {row.station.name}
-                    </button>
-                  ))}
-              </div>
-            </aside>
-            <div className="maintenance-firmware-main">
-              <section className="maintenance-reference-panel">
-                <h2>{selectedFirmwareStation?.station.name ?? "未选择站点"}</h2>
-                <div className="maintenance-firmware-filters">
-                  <label>
-                    设备类型：
-                    <select
-                      aria-label="固件设备类型"
-                      value={firmwareDeviceType}
-                      onChange={(event) => {
-                        setFirmwareDeviceType(event.target.value)
-
-                        setFirmwareUploadName("")
-
-                        setFirmwareJob(null)
-
-                        setSelectedFirmwareKey("")
-                      }}
-                    >
-                      <option value="PCS">PCS</option>
-                      <option value="BMS">BMS</option>
-                      <option value="EMS">EMS</option>
-                    </select>
-                  </label>
-                  <label className="maintenance-search">
-                    <Search size={13} />
-                    <input
-                      aria-label="搜索设备名称或编号"
-                      type="search"
-                      placeholder="搜索设备名称 / 编号"
-                      value={firmwareQuery}
-                      onChange={(event) => setFirmwareQuery(event.target.value)}
-                    />
-                  </label>
-                </div>
-                <Table
-                  headers={["设备", "型号", "连接状态", "升级条件"]}
-                  empty={!firmwareDeviceRows.length}
-                >
-                  {firmwareDeviceRows.map((item) => (
-                    <tr
-                      key={item.key}
-                      className={
-                        item.key === selectedFirmwareResolvedKey
-                          ? "is-selected"
-                          : ""
-                      }
-                    >
-                      <td>
-                        <button
-                          className="maintenance-radio-row"
-                          onClick={() => {
-                            setSelectedFirmwareKey(item.key)
-
-                            setFirmwareUploadName("")
-
-                            setFirmwareJob(null)
-                          }}
-                        >
-                          <i aria-hidden="true" />
-                          {item.device}
-                        </button>
-                      </td>
-                      <td>{item.model}</td>
-                      <td>{item.connection}</td>
-                      <td>{item.condition}</td>
-                    </tr>
-                  ))}
-                </Table>
-              </section>
-              <section className="maintenance-reference-panel maintenance-target-firmware">
-                <div>
-                  <h2>目标固件</h2>
-                  <span>
-                    {firmwareUploadName
-                      ? `已选择 ${firmwareUploadName}`
-                      : (selectedFirmwareDevice?.task?.targetVersion ??
-                        "等待选择目标版本")}
-                  </span>
-                </div>
-                <div className="maintenance-card-actions">
-                  <button
-                    className="operations-button"
-                    type="button"
-                    disabled={!DEMO_MODE || !selectedFirmwareDevice}
-                    title={!DEMO_MODE ? "固件操作尚未接入服务器" : undefined}
-                    onClick={uploadFirmware}
-                  >
-                    上传固件
-                  </button>
-                  <button
-                    className="operations-button is-active"
-                    type="button"
-                    disabled={!DEMO_MODE || !selectedFirmwareReady}
-                    title={!DEMO_MODE ? "固件操作尚未接入服务器" : undefined}
-                    onClick={startFirmwareUpgrade}
-                  >
-                    {selectedFirmwareJob?.status === "running" ||
-                    selectedFirmwareDevice?.task?.status === "running"
-                      ? "升级中"
-                      : "开始升级"}
-                  </button>
-                </div>
-                <p>
-                  {DEMO_MODE ? `E:\\固件升级\\${firmwareDeviceType}\\EPC-100\\${firmwareUploadName || `${firmwareDeviceType.toLowerCase()}_firmware.bin`}` : "未选择固件文件"}
-                </p>
-              </section>
-              <section className="maintenance-reference-panel maintenance-upgrade-progress">
-                <h2>升级进度</h2>
-                <div>
-                  <span>
-                    {firmwareProgress !== null && <i style={{ width: `${firmwareProgress}%` }} />}
-                  </span>
-                  <b>{firmwareProgress === null ? "—" : `${firmwareProgress}%`}</b>
-                  <strong>{firmwareProgressText}</strong>
-                  <button
-                    className="operations-button"
-                    type="button"
-                    disabled={
-                      !DEMO_MODE || selectedFirmwareJob?.status !== "running"
-                    }
-                    title={!DEMO_MODE ? "固件操作尚未接入服务器" : undefined}
-                    onClick={stopFirmwareUpgrade}
-                  >
-                    停止
-                  </button>
-                </div>
-              </section>
-            </div>
-          </div>
-        )}
+        {!ordersOnly && tab === "固件升级" && <MaintenanceFirmware stations={eligible} registerLeaveGuard={registerToolGuard}/>}
         {ordersOnly && (
           <section className="maintenance-records">
             <div className="operations-section-heading">
@@ -3943,7 +2953,7 @@ export default function MaintenanceCenterPage({
                 : "SLA 按接入截止时间计算"}
           </span>
         </footer>
-      </div>
+      </div>}
       {detail && selected && (
         <MaintenanceDetail
           key={JSON.stringify(detail)}
