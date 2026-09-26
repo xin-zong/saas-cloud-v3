@@ -2027,7 +2027,8 @@ export default function WorkOrdersApprovalPage({
               }
               note={reviewNote}
               notice={pageLevelNotice ? "" : notice}
-              canDecide={canAt(selectedApproval.row.station.id, "approval.review") && !serverBusy && (DEMO_MODE || Boolean(serverApprovals.find(item => String(item.id) === selectedApproval.approval.id)?.plan_id) && serverApprovals.find(item => String(item.id) === selectedApproval.approval.id)?.submitter_id !== Number(user?.id))}
+              canDecide={canAt(selectedApproval.row.station.id, "approval.review") && (DEMO_MODE || Boolean(serverApprovals.find(item => String(item.id) === selectedApproval.approval.id)?.plan_id) && serverApprovals.find(item => String(item.id) === selectedApproval.approval.id)?.submitter_id !== Number(user?.id))}
+              busy={serverBusy}
               onNote={(value) => {
                 setNoteDirty(true)
                 setReviewNote(value)
@@ -2411,6 +2412,7 @@ function ApprovalDetail({
   note,
   notice,
   canDecide,
+  busy,
   onNote,
   onSaveNote,
   onDecide,
@@ -2423,6 +2425,7 @@ function ApprovalDetail({
   note: string
   notice: string
   canDecide: boolean
+  busy: boolean
   onNote: (value: string) => void
   onSaveNote: () => void
   onDecide: (state: ReviewState) => void
@@ -2449,6 +2452,7 @@ function ApprovalDetail({
     supplement !== savedSupplement,
     registerLeaveGuard,
     () => { setSupplement(savedSupplement); setConfirm(null) },
+    // Only object/authorization changes invalidate this editor; submission busy state does not.
     `${supplementKey}:${canDecide}`,
     canDecide,
   )
@@ -2526,7 +2530,7 @@ function ApprovalDetail({
             <textarea
               aria-label="审批意见"
               value={note}
-              readOnly={!DEMO_MODE && (!canDecide || reviewState !== "pending")}
+              readOnly={busy || (!DEMO_MODE && (!canDecide || reviewState !== "pending"))}
               maxLength={2000}
               onChange={(event) => onNote(event.target.value)}
               placeholder="请输入审批意见或驳回原因..."
@@ -2544,25 +2548,27 @@ function ApprovalDetail({
       </div>
       <section className="work-orders-comment wo-detail-card">
         <label>本地补充要求草稿
-          <textarea aria-label="本地补充要求草稿" value={supplement} disabled={!canDecide}
+          <textarea aria-label="本地补充要求草稿" value={supplement} disabled={!canDecide || busy}
             onChange={event => {setSupplement(event.target.value);setLocalNotice('')}} maxLength={2000} />
         </label>
         <p className="wo-boundary">与审批意见独立保存，仅当前账号可在本机恢复；尚未发送给申请人。</p>
+        {reviewState !== 'pending' && <button className="operations-button" disabled={!canDecide || busy}
+          onClick={() => setConfirm('supplement')}>保存本地补充草稿</button>}
       </section>
       <footer>
         {reviewState === "pending" ? (
           <>
             <button
               className="operations-button work-orders-reject"
-              disabled={!canDecide}
+              disabled={!canDecide || busy}
               onClick={() => setConfirm('rejected')}
             >
               驳回
             </button>
-            <button className="operations-button" disabled={!canDecide} onClick={()=>setConfirm('supplement')}>要求补充</button>
+            <button className="operations-button" disabled={!canDecide || busy} onClick={()=>setConfirm('supplement')}>要求补充</button>
             <button
               className="operations-button work-orders-approve"
-              disabled={!canDecide}
+              disabled={!canDecide || busy}
               onClick={() => setConfirm('approved')}
             >
               {DEMO_MODE ? "同意（预览）" : "同意"}
@@ -2577,10 +2583,12 @@ function ApprovalDetail({
       </footer>
       {localNotice&&<p role="status">{localNotice}</p>}
       {confirm && <WorkflowConfirm
+        busy={busy}
         title={confirm === 'approved' ? '批准这项申请？' : confirm === 'rejected' ? '驳回申请' : '要求补充材料'}
         label={confirm === 'approved' ? '确认批准' : confirm === 'rejected' ? '确认驳回' : '保存补充要求草稿'}
         onClose={() => setConfirm(null)}
         onConfirm={() => {
+          if (!canDecide || busy) return
           if (!(confirm === 'supplement' ? supplement : note).trim()) {
             setLocalNotice('请填写审批意见或补充要求')
             return

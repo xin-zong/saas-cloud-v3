@@ -32,7 +32,7 @@ async function setup({withInspection=false,withUnauthorized=false}={}){
   else if(p==='/approvals')data=approvals
   else if(p==='/stations/12/inspections')data=inspections
   else if(p==='/inspections/55/complete'){if(!fail)inspections[0].status='completed';data=null}
-  else if(p==='/approvals/22/decision'){approvals[0].status=req.postDataJSON().decision;data=null}
+  else if(p==='/approvals/22/decision'){if(!fail)approvals[0].status=req.postDataJSON().decision;data=null}
   else if(p==='/work-orders/61/transition'){if(!fail)orders[0].status=req.postDataJSON().status;data=null}
   if(fail&&req.method()!=='GET'){await route.fulfill({status:500,contentType:'application/json',body:JSON.stringify({code:500,msg:'工单服务暂时不可用'})});return}
   await route.fulfill({contentType:'application/json',body:JSON.stringify({code:0,data})})
@@ -391,5 +391,73 @@ test('review I3 legacy API draft recovery excludes demo namespace and exception 
   await page.getByLabel('草稿对象',{exact:true}).selectOption({label:'异常 A'})
   await page.waitForFunction(()=>document.querySelector('textarea[aria-label="异常原因及复核意见"]')?.value==='异常 A原因')
   assert.equal(await page.getByLabel('异常任务编号',{exact:true}).isDisabled(),true)
+ }finally{await browser.close()}
+})
+
+async function openApprovalWithSupplementBaseline(page){
+ await page.evaluate(()=>localStorage.setItem('enerlution-workflow-v1:api:7:12:supplement:22',JSON.stringify({note:'此前已保存的补充基线'})))
+ await page.getByRole('button',{name:'审批中心',exact:true}).click()
+ await page.getByRole('button',{name:'办理审批',exact:true}).first().click()
+ await page.getByLabel('本地补充要求草稿',{exact:true}).fill('应保留的未保存补充编辑')
+ await page.getByLabel('审批意见',{exact:true}).fill('独立服务器审批意见')
+}
+test('review R1 failed decision retains unsaved supplement and server note over saved local baseline',async()=>{
+ const {browser,page,writes,setFail}=await setup()
+ try{
+  await openApprovalWithSupplementBaseline(page);setFail(true)
+  await page.getByRole('button',{name:'同意',exact:true}).click()
+  await page.getByRole('button',{name:'确认批准',exact:true}).click()
+  await page.getByRole('status').filter({hasText:'工单服务暂时不可用'}).waitFor()
+  assert.equal(await page.getByLabel('本地补充要求草稿',{exact:true}).inputValue(),'应保留的未保存补充编辑')
+  assert.equal(await page.getByLabel('审批意见',{exact:true}).inputValue(),'独立服务器审批意见')
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('enerlution-workflow-v1:api:7:12:supplement:22')).note),'此前已保存的补充基线')
+  await page.getByRole('button',{name:'工单中心',exact:true}).click()
+  await page.getByRole('dialog',{name:'放弃未保存修改？'}).waitFor()
+  await page.getByRole('button',{name:'继续编辑',exact:true}).click()
+  assert.equal(await page.getByLabel('本地补充要求草稿',{exact:true}).inputValue(),'应保留的未保存补充编辑')
+  assert.deepEqual(writes,[{path:'/approvals/22/decision',body:{decision:'approved',note:'独立服务器审批意见'}}])
+ }finally{await browser.close()}
+})
+test('review R1 successful decision retains unrelated dirty supplement with explicit local save afterwards',async()=>{
+ const {browser,page,writes}=await setup()
+ try{
+  await openApprovalWithSupplementBaseline(page)
+  await page.getByRole('button',{name:'同意',exact:true}).click()
+  await page.getByRole('button',{name:'确认批准',exact:true}).click()
+  await page.getByText('审批已由服务器确认通过',{exact:true}).waitFor()
+  assert.equal(await page.getByLabel('本地补充要求草稿',{exact:true}).inputValue(),'应保留的未保存补充编辑')
+  await page.getByRole('button',{name:'工单中心',exact:true}).click()
+  await page.getByRole('dialog',{name:'放弃未保存修改？'}).waitFor()
+  await page.getByRole('button',{name:'继续编辑',exact:true}).click()
+  await page.getByRole('button',{name:'保存本地补充草稿',exact:true}).click()
+  await page.getByRole('button',{name:'保存补充要求草稿',exact:true}).click()
+  await page.getByRole('status').filter({hasText:'补充要求草稿已保存'}).waitFor()
+  await page.getByRole('button',{name:'工单中心',exact:true}).click()
+  await page.getByRole('button',{name:'审批中心',exact:true}).click()
+  await page.getByRole('button',{name:'查看详情',exact:true}).first().click()
+  assert.equal(await page.getByLabel('本地补充要求草稿',{exact:true}).inputValue(),'应保留的未保存补充编辑')
+  assert.equal(writes.length,1)
+ }finally{await browser.close()}
+})
+test('review R1 actual approval permission revocation cancels pending leave and clears unsaved editor',async()=>{
+ const {browser,page,user,writes}=await setup()
+ try{
+  await openApprovalWithSupplementBaseline(page)
+  await page.getByRole('navigation',{name:'一级导航'}).getByRole('button',{name:'总览',exact:true}).click()
+  await page.getByRole('dialog',{name:'放弃未保存修改？'}).waitFor()
+  user.stationPermissions['12']=user.stationPermissions['12'].filter(permission=>permission!=='approval.review')
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')))
+  await page.getByRole('dialog',{name:'放弃未保存修改？'}).waitFor({state:'hidden'})
+  await page.getByLabel('本地补充要求草稿',{exact:true}).waitFor({state:'hidden'})
+  assert.equal(await page.locator('main.work-orders-page').count(),1)
+  user.stationPermissions['12']=[...user.permissions]
+  const restored=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/auth/me')
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')))
+  await restored
+  await page.getByRole('button',{name:'办理审批',exact:true}).first().click()
+  await page.waitForFunction(()=>document.querySelector('textarea[aria-label="本地补充要求草稿"]')?.value==='此前已保存的补充基线')
+  assert.equal(await page.getByLabel('本地补充要求草稿',{exact:true}).inputValue(),'此前已保存的补充基线')
+  assert.equal(await page.getByLabel('审批意见',{exact:true}).inputValue(),'')
+  assert.deepEqual(writes,[])
  }finally{await browser.close()}
 })
