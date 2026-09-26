@@ -43,6 +43,10 @@ export default function OverviewDashboard({ stations, user, nav, onNavigate, onO
     return () => { registerLeaveGuard(null); window.removeEventListener("beforeunload", unload) }
   }, [dirty, registerLeaveGuard])
   useEffect(() => () => { resolveLeave.current?.(false) }, [])
+  const finishLeave = (ok: boolean) => { setLeave(false); if (ok) setEditing(false); resolveLeave.current?.(ok); resolveLeave.current = null }
+  function cancelEdit() { if (dirty) { setLeave(true); resolveLeave.current = ok => { if (ok) setEditing(false) } } else setEditing(false) }
+  const dialogHandlers = useRef({ finishLeave, cancelEdit })
+  dialogHandlers.current = { finishLeave, cancelEdit }
   useEffect(() => {
     if (!editing && !custom && !leave) return
     const dialogs = document.querySelectorAll<HTMLElement>(".overview-modal")
@@ -51,7 +55,7 @@ export default function OverviewDashboard({ stations, user, nav, onNavigate, onO
     const controls = () => [...dialog.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled)')]
     controls()[0]?.focus()
     const key = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { event.preventDefault(); if (leave) finishLeave(false); else if (custom) { setCustom(false); setError("") } else cancelEdit() }
+      if (event.key === "Escape") { event.preventDefault(); if (leave) dialogHandlers.current.finishLeave(false); else if (custom) { setCustom(false); setError("") } else dialogHandlers.current.cancelEdit() }
       if (event.key === "Tab") {
         const items = controls(); const first = items[0]; const last = items[items.length - 1]
         if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
@@ -60,9 +64,7 @@ export default function OverviewDashboard({ stations, user, nav, onNavigate, onO
     }
     dialog.addEventListener("keydown", key)
     return () => { dialog.removeEventListener("keydown", key); if (previous?.isConnected) previous.focus() }
-  }, [editing, custom, leave, dirty])
-  const finishLeave = (ok: boolean) => { setLeave(false); if (ok) setEditing(false); resolveLeave.current?.(ok); resolveLeave.current = null }
-  function cancelEdit() { if (dirty) { setLeave(true); resolveLeave.current = ok => { if (ok) setEditing(false) } } else setEditing(false) }
+  }, [editing, custom, leave])
   function save() {
     if (!draft.length) { setError("请至少保留一个看板模块"); return }
     try { localStorage.setItem(scopeKey, JSON.stringify(draft)); setVisible([...draft]); setEditing(false); setError(""); setNotice("布局已保存至本机") }

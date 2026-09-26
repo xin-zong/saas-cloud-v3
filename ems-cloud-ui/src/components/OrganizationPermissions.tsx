@@ -100,6 +100,8 @@ export default forwardRef<RolePermissionsHandle, { stations?: Station[] }>(funct
   useEffect(()=>{setModalDirty(false)},[dialog])
   useEffect(()=>{if(!dirty)return;const prevent=(e:BeforeUnloadEvent)=>{e.preventDefault();e.returnValue=""};window.addEventListener("beforeunload",prevent);return()=>window.removeEventListener("beforeunload",prevent)},[dirty])
   const closeDialog=async()=>{if(await requestLeave())setDialog(null)}
+  const closeDialogRef=useRef(closeDialog)
+  closeDialogRef.current=closeDialog
   const returnToMember=async()=>{if(await requestLeave())setMemberPage("detail")}
   const selectedMember = members.find((member) => member.id === selectedMemberId)
   const selectedOrg = orgs.find((org) => org.id === selectedOrgId)
@@ -122,10 +124,10 @@ export default forwardRef<RolePermissionsHandle, { stations?: Station[] }>(funct
     if (!dialog) return
     const first = dialogRef.current?.querySelector<HTMLElement>("input:not([type=hidden]), select, textarea, button")
     first?.focus()
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") void closeDialog() }
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") void closeDialogRef.current() }
     document.addEventListener("keydown", onKey)
     return () => document.removeEventListener("keydown", onKey)
-  }, [dialog,modalDirty])
+  }, [dialog])
 
   const switchView = async (next: View) => {
     if(next===view||!(await requestLeave()))return

@@ -1,5 +1,5 @@
 import { hasStationPermission } from "@/auth/apiPermissions"
-import { useEffect, useState, type FormEvent } from "react"
+import { useCallback, useEffect, useState, type FormEvent } from "react"
 
 import type { Station } from "@/App"
 
@@ -44,9 +44,19 @@ export default function ApiMarketPage({ stations, registerLeaveGuard }: { statio
 
   const [dirty, setDirty] = useState(false)
   const [leaving, setLeaving] = useState(false)
+  const resetDraft = useCallback(() => {
+    setQualification("")
+    setName("")
+    setCode("")
+    setStart("")
+    setEnd("")
+    setCapacity("")
+    setDirty(false)
+  }, [])
   const enabled = hasStationPermission(user, stationId, "market.manage")
   const { requestLeave, settleLeave } = useEditorLeaveGuard({dirty:creating && dirty, enabled, registerLeaveGuard, onConfirm:()=>setLeaving(true),onCancel:()=>setLeaving(false)})
-  useEffect(()=>{if(!enabled){setCreating(false);setDirty(false)}},[enabled])
+  useEffect(()=>{if(!enabled){setCreating(false);resetDraft()}},[enabled,resetDraft])
+  useEffect(()=>{setCreating(false);resetDraft()},[stationId,resetDraft])
   useEffect(()=>{
     const beforeUnload=(e:BeforeUnloadEvent)=>{if(creating&&dirty){e.preventDefault();e.returnValue=""}}
     window.addEventListener("beforeunload",beforeUnload)
@@ -129,9 +139,7 @@ export default function ApiMarketPage({ stations, registerLeaveGuard }: { statio
         capacityKw: kw,
       })
       setCreating(false)
-      setDirty(false)
-      setName("")
-      setCode("")
+      resetDraft()
       setRevision((v) => v + 1)
     } catch (e) {
       setError(e instanceof Error ? e.message : "保存失败")
@@ -165,7 +173,7 @@ export default function ApiMarketPage({ stations, registerLeaveGuard }: { statio
             disabled={!stations.length}
             onChange={(e) => {
               const id = e.target.value
-              void(async()=>{if(await requestLeave()){setStationId(id);setCreating(false);setDirty(false)}})()
+              void(async()=>{if(await requestLeave()){setStationId(id);setCreating(false);resetDraft()}})()
             }}
           >
             {!stations.length && <option value="">暂无授权站点</option>}
@@ -187,7 +195,7 @@ export default function ApiMarketPage({ stations, registerLeaveGuard }: { statio
           <button
             className="operations-button market-primary"
             disabled={!stationId}
-            onClick={() => {void(async()=>{if(await requestLeave()){setCreating(!creating);setDirty(false)}})()}}
+            onClick={() => {void(async()=>{if(await requestLeave()){resetDraft();setCreating(!creating)}})()}}
           >
             新建内部草稿
           </button>
@@ -316,7 +324,7 @@ export default function ApiMarketPage({ stations, registerLeaveGuard }: { statio
           </tbody>
         </table>
       </div><footer>共 {loading || error ? "—" : services.length} 条服务记录</footer></section>
-      {leaving && <Modal title="放弃未保存修改？" onClose={()=>{setLeaving(false);settleLeave(false)}} actions={<><button className="operations-button" onClick={()=>{setLeaving(false);settleLeave(false)}}>继续编辑</button><button className="operations-button market-primary" onClick={()=>{setLeaving(false);setDirty(false);settleLeave(true)}}>放弃修改</button></>}><p>内部服务草稿尚未保存。</p></Modal>}
+      {leaving && <Modal title="放弃未保存修改？" onClose={()=>{setLeaving(false);settleLeave(false)}} actions={<><button className="operations-button" onClick={()=>{setLeaving(false);settleLeave(false)}}>继续编辑</button><button className="operations-button market-primary" onClick={()=>{setLeaving(false);resetDraft();settleLeave(true)}}>放弃修改</button></>}><p>内部服务草稿尚未保存。</p></Modal>}
     </section>
   )
 }

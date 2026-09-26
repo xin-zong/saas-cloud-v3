@@ -1070,6 +1070,9 @@ export default function WorkOrdersApprovalPage({
     try {
       const result = await send<{id:number}>("/inspections", "POST", {stationId:Number(inspectionDraft.stationId), title:inspectionDraft.title.trim(), dueAt:due.toISOString(), assignedTo:Number(user?.id)})
       try{localStorage.setItem(workflowKey(user?.id||'',inspectionDraft.stationId,'inspection-fields',String(result.id)),JSON.stringify(inspectionDraft));setFieldNotice('巡检设备、等级与检查内容已另存本地，未提交服务器')}catch{setFieldNotice('巡检已创建，扩展字段本地保存失败')}
+      setCreateDirty(false)
+      setInspectionDraft({stationId:"", title:"", dueAt:""})
+      setInspectionCreateError("")
       setInspectionCreateOpen(false)
       setNotice(`巡检 ${result.id} 已由服务器创建`)
       const dueDay = dateOnly(due)
