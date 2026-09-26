@@ -22,13 +22,19 @@ async function setup(role = 'owner') {
       if (state.failPoints) return route.fulfill({ status: 500, json: { msg: '测点读取失败' } })
       data = p.includes('/12/') ? [{ id: 17, device_id: 4, name: '有功功率', unit: 'kW' }, { id: 18, device_id: 4, name: '电池 SOC', unit: '%' }, { id: 27, device_id: 5, name: '柜内湿度', unit: '%RH' }] : [{ id: 99, device_id: 9, name: '乙站电流', unit: 'A' }]
     } else if (/\/points\/\d+\/history/.test(p)) {
+      if (state.delayHistory) await state.delayHistory
+      if (state.failHistory) return route.fulfill({ status: 500, json: { msg: '历史查询不可用' } })
       const time = +new Date(url.searchParams.get('from'))
       data = [{ timestamp: time, value: 0, samples: 1 }, { timestamp: time + Number(url.searchParams.get('minutes')) * 120000, value: 42, samples: 2 }]
+      if (state.historyMode === 'complete') {
+        const step = Number(url.searchParams.get('minutes')) * 60000
+        data = Array.from({ length: Math.ceil((Date.parse(url.searchParams.get('to')) - time) / step) }, (_, i) => ({ timestamp: time + i * step, value: i, samples: 1 }))
+      } else if (state.historyMode === 'empty') data = []
     } else if (/\/reports\//.test(p)) {
       if (state.delayReport) await state.delayReport
       if (state.failReport) return route.fulfill({ status: 500, json: { msg: '报告服务暂不可用' } })
       return route.fulfill({ contentType: 'text/csv', body: 'date,amount\n2026-09-20,125\n' })
-    } else if (p === '/audit') data = [{ id: 8, actor_id: 7, occurred_at: '2026-09-26T08:00:00Z', action: 'report.export', detail: 'station=12,kind=revenue' }]
+    } else if (p === '/audit') data = state.audits ?? [{ id: 8, actor_id: 7, occurred_at: '2026-09-26T08:00:00Z', action: 'report.export', detail: 'station=12,kind=revenue' }]
     await route.fulfill({ json: { code: 0, data } })
   })
   await page.goto(process.env.API_PREVIEW_URL || 'http://127.0.0.1:8461', { waitUntil: 'domcontentloaded' })
@@ -119,6 +125,102 @@ test('report station permissions, retries, validation and late revoked responses
   } finally { await browser.close() }
 })
 module.exports = { setup, evidence }
+
+async function completeHistory(page, state) {
+  state.historyMode = 'complete'
+  await page.getByRole('tab', { name: '历史趋势', exact: true }).click()
+  await page.getByLabel('开始时间', { exact: true }).fill('2026-09-25T00:00')
+  await page.getByLabel('结束时间', { exact: true }).fill('2026-09-25T01:00')
+  await page.getByRole('button', { name: '查询', exact: true }).click()
+  const completeness = page.locator('.analytics-trend-summary > div').filter({ hasText: '数据完整度' }).locator('strong')
+  await completeness.getByText('100.0%', { exact: true }).waitFor()
+  return completeness
+}
+
+test('review completeness stays full-query under pan zoom Y-only and fit', async () => {
+  const { browser, page, state } = await setup()
+  try {
+    const completeness = await completeHistory(page, state)
+    await page.getByRole('button', { name: '平移', exact: true }).click()
+    assert.equal(await completeness.innerText(), '100.0%')
+    await page.getByLabel('缩放坐标', { exact: true }).selectOption('Y')
+    assert.equal(await completeness.innerText(), '100.0%')
+    await page.getByLabel('缩放坐标', { exact: true }).selectOption('XY')
+    await page.getByRole('button', { name: '缩放时间范围', exact: true }).click()
+    assert.equal(await completeness.innerText(), '100.0%')
+    await page.getByRole('button', { name: '还原视图', exact: true }).click()
+    assert.equal(await completeness.innerText(), '100.0%')
+    await page.getByRole('button', { name: '缩放时间范围', exact: true }).click()
+    const handle = await page.locator('.recharts-brush-traveller').last().boundingBox()
+    await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(handle.x - 150, handle.y + handle.height / 2, { steps: 8 })
+    await page.mouse.up()
+    assert.equal(await completeness.innerText(), '100.0%')
+    assert.doesNotMatch(await page.locator('.analysis-chart-summary').innerText(), /60 时间点/)
+    await completeness.scrollIntoViewIfNeeded()
+    await page.screenshot({ path: path.join(evidence, 'task6-fix-completeness-1440.png') })
+    await page.getByRole('button', { name: '今日', exact: true }).click()
+    await completeness.getByText('100.0%', { exact: true }).waitFor()
+  } finally { await browser.close() }
+})
+
+test('review completeness requires a successful matching query and preserves unknown on failure', async () => {
+  const { browser, page, state } = await setup()
+  let release
+  try {
+    const completeness = await completeHistory(page, state)
+    await page.getByLabel('结束时间', { exact: true }).fill('2026-09-25T02:00')
+    assert.doesNotMatch(await completeness.innerText(), /%/)
+    state.delayHistory = new Promise(resolve => { release = resolve })
+    await page.getByRole('button', { name: '查询', exact: true }).click()
+    await completeness.getByText('查询中…', { exact: true }).waitFor()
+    release(); state.delayHistory = null
+    await completeness.getByText('100.0%', { exact: true }).waitFor()
+    state.failHistory = true
+    await page.getByRole('button', { name: '查询', exact: true }).click()
+    await page.getByRole('alert').getByText('历史查询不可用', { exact: false }).waitFor()
+    assert.equal(await completeness.innerText(), '不可用')
+    state.failHistory = false; state.historyMode = 'empty'
+    await page.getByRole('button', { name: '查询', exact: true }).click()
+    await completeness.getByText('0.0%', { exact: true }).waitFor()
+    state.historyMode = 'complete'
+    state.delayHistory = new Promise(resolve => { release = resolve })
+    await page.getByLabel('采样粒度', { exact: true }).selectOption('5')
+    await completeness.getByText('查询中…', { exact: true }).waitFor()
+    release(); state.delayHistory = null
+    await completeness.getByText('100.0%', { exact: true }).waitFor()
+    state.delayHistory = new Promise(resolve => { release = resolve })
+    await page.locator('.analysis-signal').filter({ hasText: '柜内湿度' }).getByRole('checkbox').uncheck()
+    await completeness.getByText('查询中…', { exact: true }).waitFor()
+    release(); state.delayHistory = null
+    await completeness.getByText('100.0%', { exact: true }).waitFor()
+  } finally { release?.(); await browser.close() }
+})
+
+test('review audit action multi-selection filters and exports the union of actual actions', async () => {
+  const { browser, page, state } = await setup()
+  try {
+    state.audits = ['report.export', 'plan.create', 'alarm.note'].map((action, index) => ({ id: index + 8, actor_id: 7, occurred_at: '2026-09-26T08:00:00Z', action, detail: `station=12,action=${action}` }))
+    await page.getByRole('button', { name: '事件审计', exact: true }).click()
+    await page.getByRole('button', { name: '查看事件 10' }).waitFor()
+    await page.getByRole('button', { name: '事件类型', exact: true }).click()
+    await page.getByRole('checkbox', { name: 'report.export', exact: true }).check()
+    await page.getByRole('checkbox', { name: 'plan.create', exact: true }).check()
+    assert.equal(await page.getByRole('button', { name: '查看事件 8' }).count(), 1)
+    assert.equal(await page.getByRole('button', { name: '查看事件 9' }).count(), 1)
+    assert.equal(await page.getByRole('button', { name: '查看事件 10' }).count(), 0)
+    assert.equal(await page.getByRole('checkbox', { name: '控制指令（未接通）', exact: true }).isDisabled(), true)
+    await page.screenshot({ path: path.join(evidence, 'task6-fix-audit-filter-1440.png') })
+    await page.keyboard.press('Escape')
+    const wait = page.waitForEvent('download')
+    await page.getByRole('button', { name: '导出审计日志 CSV' }).click()
+    const csv = await fs.readFile(await (await wait).path(), 'utf8')
+    assert.match(csv, /report.export/); assert.match(csv, /plan.create/); assert.doesNotMatch(csv, /alarm.note/)
+    await page.getByRole('button', { name: '重置', exact: true }).click()
+    await page.getByRole('button', { name: '查看事件 10' }).waitFor()
+  } finally { await browser.close() }
+})
 
 test('pan viewport exports only the visible interval and fit restores the full sparse series', async () => {
   const { browser, page } = await setup()

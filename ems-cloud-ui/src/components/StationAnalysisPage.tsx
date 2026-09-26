@@ -59,6 +59,14 @@ const INITIAL_SIGNALS: SignalId[] = [
 
 const INITIAL_CURVES: SignalId[] = ["pv", "load", "storage", "soc"]
 
+const historyQueryKey = (
+  stationId: Station["id"],
+  start: number,
+  end: number,
+  minutes: number,
+  selected: string[],
+) => JSON.stringify([stationId, start, end, minutes, [...selected].sort()])
+
 const clockTime = (timestamp: number) =>
   new Date(timestamp).toLocaleTimeString("zh-CN", { hour12: false })
 
@@ -199,6 +207,15 @@ export default function StationAnalysisPage({
     end: localDateTime(initialRange?.end.getTime() ?? now),
   })
   const [historyRange, setHistoryRange] = useState(range)
+  const [historyQuery, setHistoryQuery] = useState<{
+    key: string
+    status: "loading" | "success" | "error"
+  } | null>(() => DEMO_MODE ? {
+    key: historyQueryKey(
+      station.id, Date.parse(range.start), Date.parse(range.end), minutes, selected,
+    ),
+    status: "success",
+  } : null)
 
   const [historySource, setHistorySource] = useState<TelemetryRow[]>(samples)
 
@@ -222,6 +239,7 @@ export default function StationAnalysisPage({
     setQueryError("")
     setSamples([])
     setHistorySource([])
+    setHistoryQuery(null)
     if (canRead) loadPoints(station.id, controller.signal).then(result => {
       if (controller.signal.aborted) return
       setPoints(result)
@@ -251,6 +269,8 @@ export default function StationAnalysisPage({
         : new Date(Date.now() - windowMinutes * 60000)
     const end =
       view === "history" ? (requestRange?.end ?? new Date()) : new Date()
+    const key = historyQueryKey(station.id, start.getTime(), end.getTime(), minutes, selected)
+    setHistoryQuery({ key, status: "loading" })
     setQueryLoading(true)
     setQueryError("")
     queryRegisteredTelemetry(points.filter(point => selected.includes(`point:${point.id}`)), start, end, minutes, controller.signal)
@@ -261,12 +281,14 @@ export default function StationAnalysisPage({
         setSamples(normalized)
         setHistoryIsDemo(false)
         setSampleSource("connected")
+        setHistoryQuery({ key, status: "success" })
       })
       .catch((error) => {
         if (!controller.signal.aborted) {
           setHistorySource([])
           setSamples([])
           setQueryError(error instanceof Error ? error.message : "查询失败")
+          setHistoryQuery({ key, status: "error" })
         }
       })
       .finally(() => {
@@ -444,6 +466,49 @@ export default function StationAnalysisPage({
     }
   }, [displayedRows, statsSignal])
 
+  const currentHistoryKey = historyQueryKey(
+    station.id, Date.parse(range.start), Date.parse(range.end), minutes, selected,
+  )
+  const matchingHistoryQuery = canRead && historyQuery?.key === currentHistoryKey
+  const expectedSamples =
+    Math.ceil((historyEnd - historyStart) / (minutes * 60000)) * activeSignals.length
+  const availableSamples = rows.reduce(
+    (count, row) => row.timestamp < historyEnd
+      ? count + activeSignals.filter(signal => typeof row[signal.id] === "number").length
+      : count,
+    0,
+  )
+  const completeness = !matchingHistoryQuery
+    ? "待查询"
+    : historyQuery.status === "loading"
+      ? "查询中…"
+      : historyQuery.status === "error"
+        ? "不可用"
+        : expectedSamples > 0
+          ? `${Math.min(100, availableSamples / expectedSamples * 100).toFixed(1)}%`
+          : "—"
+  const powerSignal = plottedSignals.find(signal => signal.unit === "kW")
+  const powerValues = matchingHistoryQuery && historyQuery.status === "success" && powerSignal
+    ? displayedRows
+        .map(row => row[powerSignal.id])
+        .filter((value): value is number => typeof value === "number")
+    : []
+  const trendSummary = [
+    ["平均功率输出", powerValues.length ? `${valueText(powerValues.reduce((sum, value) => sum + value, 0) / powerValues.length)} kW` : "—"],
+    ["数据完整度", completeness],
+    ["异常标记统计", "未提供"],
+    ["通信中断频率", "未提供"],
+  ]
+
+  function markDemoHistory(nextRange: typeof range) {
+    setHistoryQuery({
+      key: historyQueryKey(
+        station.id, Date.parse(nextRange.start), Date.parse(nextRange.end), minutes, selected,
+      ),
+      status: "success",
+    })
+  }
+
   function toggleSignal(id: string) {
     const removing = selected.includes(id)
 
@@ -477,7 +542,7 @@ export default function StationAnalysisPage({
       setHistoryRange(initial)
       if (!DEMO_MODE) {
         setRequestRange({ start: new Date(initial.start), end: new Date(initial.end) })
-      }
+      } else markDemoHistory(initial)
       setHistorySource(samples)
       setHistoryIsDemo(sampleSource === "demo")
     } else setNow(stationNow())
@@ -490,6 +555,7 @@ export default function StationAnalysisPage({
     }
 
     setHistoryRange(range)
+    if (DEMO_MODE) markDemoHistory(range)
     setZoomRange(null)
     setCursors({ A: null, B: null })
     if (!DEMO_MODE) {
@@ -754,8 +820,17 @@ export default function StationAnalysisPage({
             if (index === 0) start.setHours(0, 0, 0, 0)
             else start.setDate(start.getDate() - (index === 1 ? 7 : 30))
             const next = { start: localDateTime(+start), end: localDateTime(+end) }
-            setRange(next); setHistoryRange(next); setRequestRange({ start, end }); setZoomRange(null)
-            if (DEMO_MODE) { setHistorySource(station.telemetryHistory === undefined ? demoTelemetryRange(station, +start, +end) : normalizeTelemetry(station.telemetryHistory)); setHistoryIsDemo(station.telemetryHistory === undefined) }
+            setRange(next)
+            setHistoryRange(next)
+            setRequestRange({ start: new Date(next.start), end: new Date(next.end) })
+            setZoomRange(null)
+            if (DEMO_MODE) {
+              setHistorySource(station.telemetryHistory === undefined
+                ? demoTelemetryRange(station, Date.parse(next.start), Date.parse(next.end))
+                : normalizeTelemetry(station.telemetryHistory))
+              setHistoryIsDemo(station.telemetryHistory === undefined)
+              markDemoHistory(next)
+            }
           }}>{label}</button>)}<span>自定义</span></div>}
           <label>
             开始时间
@@ -1131,13 +1206,14 @@ export default function StationAnalysisPage({
           </footer>
         </section>
       </div>
-      {analyticsFeatures && view === "history" && <section className="analytics-trend-summary" aria-label="趋势对照摘要">{(() => {
-        const power = plottedSignals.find(signal => signal.unit === "kW")
-        const values = power ? displayedRows.map(row => row[power.id]).filter((v): v is number => typeof v === "number") : []
-        const expected = Math.ceil((historyEnd - historyStart) / (minutes * 60000)) * activeSignals.length
-        const available = displayedRows.reduce((count, row) => count + activeSignals.filter(signal => typeof row[signal.id] === "number").length, 0)
-        return [["平均功率输出", values.length ? valueText(values.reduce((sum, v) => sum + v, 0) / values.length) + " kW" : "—"], ["数据完整度", expected > 0 ? Math.min(100, available / expected * 100).toFixed(1) + "%" : "—"], ["异常标记统计", "未提供"], ["通信中断频率", "未提供"]].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)
-      })()}<p>功率均值对应首个已显示 kW 测点；完整度按查询粒度及所选通道计算。缺失区间不代表设备故障。</p></section>}
+      {analyticsFeatures && view === "history" && (
+        <section className="analytics-trend-summary" aria-label="趋势对照摘要">
+          {trendSummary.map(([label, value]) => (
+            <div key={label}><span>{label}</span><strong>{value}</strong></div>
+          ))}
+          <p>功率均值对应当前视窗首个已显示 kW 测点；完整度统计完整查询区间，按查询粒度及所选通道计算，不随视图缩放变化。缺失区间不代表设备故障。</p>
+        </section>
+      )}
       <section className="analysis-channels" aria-label="监测通道">
         <header>
           <h2>监测通道</h2>

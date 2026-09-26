@@ -22,6 +22,8 @@
 - 下载组件按账号和资源授权集合隔离；部分撤权使当前测点、弹窗选择、生成中请求和本地下载结果一起失效，保留另一个有权限的站点可用。时间查询条件属于临时筛选，不是持久化编辑器；没有新增无需兑现的“已保存”或草稿。参数弹窗取消不修改已应用选择，故无需把筛选动作注册为跨页面未保存业务编辑。
 - 历史接口继续保留真实零值，拒绝 `null` 数值被 `Number(null)` 变为零；未知/无效采样数量不伪造成有效样本。API 通道表标“有效时间点/聚合粒度”，不把区间数当原始样本数或频率。
 - X 轴缩放/平移导出当前时间视窗；Y 轴缩放保留完整时间轴；适配恢复全范围。缺口始终断开，不为了截图补线。
+- 修复审查 P2：趋势摘要的完整度固定统计完整查询区间（不含结束端点），分子与分母使用同一范围、粒度和所选通道，不随平移/缩放/Y 模式/适配变化。只有匹配当前站点、输入时间、粒度、通道的成功查询才展示百分比；未提交条件显示待查询，加载显示查询中，失败显示不可用，成功空响应允许 0%。功率均值仍明确属于当前视窗。
+- 修复审查 P2：审计事件类型恢复多选，实际 `action` 按 OR 匹配，表格与 CSV 使用相同筛选并集。尚未接通的设备事件类别禁用且标注未接通，重置恢复全部真实 action。
 - `StationAnalysisPage` 的原有 props 原样保留，只增加可选 `analyticsFeatures` / `stationSelector`。模块 02 不传新选项，页面行为与原选择器保持兼容；分析模块 CSS 全部限制在 `.analytics-ai-page`。
 
 ## 验证
@@ -38,6 +40,10 @@
 | `node node_modules/vite/bin/vite.js build` | exit 0；已有大 chunk 提示 | `task6-build.log` |
 
 原始日志均在忽略目录 `.superpowers/sdd/2026-09-26-all-modules-figma/`。先失败后实现的证据：`task6-red.log`（缺实时工作台、设备选择、报告站点）；`task6-data-red.log`（null 被转为 0）；`task6-pan-red.log`（缺平移控件）。对应功能都纳入最终通过测试。
+
+审查修复轮的 `task6-fix-red.log` 记录三个预期失败：平移后完整度 100%→50%、未提交时间变化仍显示旧百分比、缺少多选控件。`task6-fix-green.log` 记录三项定向回归通过；最终覆盖套件另包含实际拖动 Brush 缩放，检查完整度仍为 100%，视窗时间点已经减少。新增实际截图 `task6-fix-completeness-1440.png` 与 `task6-fix-audit-filter-1440.png` 已人工查看，前者是专用于完整度回归的完整桶 fixture，后者展示两种真实 action 多选及未接通类别禁用。
+
+修复轮最终证据：上述四文件覆盖命令 16/16（`task6-fix-final-tests.log`）；最后快捷日期分钟精度校正后，以 `--test-name-pattern='review '` 重跑模块测试 3/3（`task6-fix-final-focused.log`，含今日快捷查询）；共享 `tests/stations-figma-shell-ui.test.cjs` 2/2（`task6-fix-shared.log`）；`tsc --noEmit` exit 0（`task6-fix-tsc.log`）。本轮未扩大到全仓测试，未改变后台和原有共享图表 props。
 
 旧 `analytics-ui` / `capabilities-api-ui` 只把旧“单点表单”选择器迁移到新的工作台/下载配置，保留稀疏数据、真实报告、403 不造文件、部分站点撤权、既有报告权限等业务断言。
 
