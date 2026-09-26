@@ -293,6 +293,8 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
   const stationLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
   const assetsLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
   const maintenanceLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
+  const workOrdersLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
+  const registerWorkOrdersLeaveGuard = useCallback((guard: null | (() => Promise<boolean>)) => { workOrdersLeaveGuard.current = guard }, [])
   const registerMaintenanceLeaveGuard = useCallback((guard: null | (() => Promise<boolean>)) => { maintenanceLeaveGuard.current = guard }, [])
   const operationsLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
   const sidebarTransitionPending = useRef(false)
@@ -429,6 +431,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
     if (activeNav === "资产与站点") return activeDetailId ? requestStationLeave() : assetsLeaveGuard.current?.() ?? Promise.resolve(true)
     if (activeNav === "运营中心") return requestOperationsLeave()
     if (activeNav === "运维中心") return maintenanceLeaveGuard.current?.() ?? Promise.resolve(true)
+    if (activeNav === "工单与审批") return workOrdersLeaveGuard.current?.() ?? Promise.resolve(true)
     return Promise.resolve(true)
   }
 
@@ -930,6 +933,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
         )}
         {activeNav === "工单与审批" && (
           <WorkOrdersApprovalPage
+            registerLeaveGuard={registerWorkOrdersLeaveGuard}
             stations={operationalStations}
             onServerChange={refreshApi}
             initialFocus={workOrderFocus}

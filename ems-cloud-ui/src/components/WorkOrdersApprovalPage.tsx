@@ -1,7 +1,11 @@
 import { hasStationPermission } from "@/auth/apiPermissions"
 import { DEMO_MODE, send, api, allRows, type ApiRow } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react"
+import {type RegisterLeaveGuard} from './useEditorLeaveGuard'
+import {WorkHandling, WorkflowConfirm, useWorkflowLeave, workflowKey, LocalWorkflowFields} from './work-orders/WorkflowEditor'
+import {TaskWorkbench} from './work-orders/TaskWorkbench'
+import {WorkflowFilters,matchesWorkflowFilters,orderFilters,approvalFilters,todoFilters,type WorkflowFilterValues} from './work-orders/WorkflowFilters'
 import {
   CalendarDays,
   Check,
@@ -82,6 +86,7 @@ type WorkOrderDraft = {
   dueAt: string
   description: string
 }
+type InspectionDraft={stationId:string;title:string;dueAt:string;device?:string;priority?:string;description?:string}
 type OrderOverride = {
   status: WorkOrderState
   updatedAt: string
@@ -575,6 +580,7 @@ function Stat({
 }
 
 export default function WorkOrdersApprovalPage({
+  registerLeaveGuard,
   stations,
   onServerChange,
   initialFocus,
@@ -582,6 +588,7 @@ export default function WorkOrdersApprovalPage({
   allowedViews = PAGE_TABS,
   role = "operator",
 }: {
+  registerLeaveGuard?: RegisterLeaveGuard
   stations: Station[]
   onServerChange?: () => void
   initialFocus?: {
@@ -593,6 +600,7 @@ export default function WorkOrdersApprovalPage({
   role?: UserRole
 }) {
   const { user } = useAuth()
+  const storageScope=(key:string)=>`${key}:${DEMO_MODE?'demo':'api'}:${user?.id||role}`
   const [serverBusy, setServerBusy] = useState(false)
   const initialNow = DEMO_MODE ? stationsDataNow(stations) : new Date()
   const requestedInitialView: View = initialFocus?.orderId
@@ -615,6 +623,8 @@ export default function WorkOrdersApprovalPage({
     defaultQuickFilter(initialVisibleView),
   )
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [repairQueue,setRepairQueue]=useState(false)
+  const [extendedFilters,setExtendedFilters]=useState<WorkflowFilterValues>({})
   const [selectedKey, setSelectedKey] = useState("")
   const [orderDetailKey, setOrderDetailKey] = useState("")
   const [inspectionDetailKey, setInspectionDetailKey] = useState("")
@@ -625,7 +635,7 @@ export default function WorkOrdersApprovalPage({
     useState<Record<string, InspectionOverride>>({})
   const [createOpen, setCreateOpen] = useState(false)
   const [inspectionCreateOpen, setInspectionCreateOpen] = useState(false)
-  const [inspectionDraft, setInspectionDraft] = useState({stationId:"", title:"", dueAt:""})
+  const [inspectionDraft, setInspectionDraft] = useState<InspectionDraft>({stationId:"", title:"", dueAt:""})
   const [inspectionCreateError, setInspectionCreateError] = useState("")
   const [orderDraft, setOrderDraft] =
     useState<WorkOrderDraft>(EMPTY_ORDER_DRAFT)
@@ -639,6 +649,20 @@ export default function WorkOrdersApprovalPage({
   const [approvalLoading, setApprovalLoading] = useState(false)
   const [approvalError, setApprovalError] = useState("")
   const [notice, setNotice] = useState("")
+  const [fieldNotice,setFieldNotice]=useState('')
+  const [toolsOpen,setToolsOpen]=useState(false)
+  const [createDirty,setCreateDirty]=useState(false)
+  const [noteDirty,setNoteDirty]=useState(false)
+  const noteBaseline=useRef('')
+  const childGuard=useRef<null|(()=>Promise<boolean>)>(null)
+  const registerChildGuard=useCallback<RegisterLeaveGuard>(guard=>{childGuard.current=guard},[])
+  const parentGuard=useRef<null|(()=>Promise<boolean>)>(null)
+  const registerParentGuard=useCallback<RegisterLeaveGuard>(guard=>{parentGuard.current=guard},[])
+  const requestLeave=useCallback(async()=>{if(childGuard.current&&!(await childGuard.current()))return false;return parentGuard.current?.()??true},[])
+  useEffect(()=>{registerLeaveGuard?.(requestLeave);return()=>registerLeaveGuard?.(null)},[registerLeaveGuard,requestLeave])
+  const discardForms=()=>{setCreateDirty(false);setNoteDirty(false);setOrderDraft(EMPTY_ORDER_DRAFT);setInspectionDraft({stationId:'',title:'',dueAt:''});setReviewNote(noteBaseline.current)}
+  const leave=useWorkflowLeave(createDirty||noteDirty,registerParentGuard,discardForms,user?.id||'')
+  const go=(action:()=>void)=>{void requestLeave().then(ok=>{if(ok)action()})}
   const canReview = DEMO_MODE || Boolean(user?.permissions.includes("approval.review"))
   const currentActor = DEMO_MODE ? (role === "integrator" ? "林启明" : "陈明") : (user?.id ?? "")
   const workOrderSourceOptions =
@@ -648,18 +672,26 @@ export default function WorkOrdersApprovalPage({
   const rows = useMemo(
     () =>
       stations
-        .filter((station) => station.status !== "building")
+        .filter((station) => station.status !== "building" && (DEMO_MODE || ['workorder.read','workorder.create','inspection.manage','approval.read','strategy.manage'].some(permission=>hasStationPermission(user,station.id,permission))))
         .map((station) => buildMaintenanceStation(station, now)),
-    [stations, now],
+    [stations, now, user],
   )
   const canAt = (id: string, permission: string) => DEMO_MODE || hasStationPermission(user, id, permission)
   const createRows = rows.filter(row => canAt(row.station.id, "workorder.create"))
   const inspectionRows = rows.filter(row => canAt(row.station.id, "inspection.manage"))
+  const capabilityIdentity=JSON.stringify([user?.permissions,user?.stationPermissions,rows.map(r=>r.station.id)])
+  useEffect(()=>{
+    if(createOpen&&!createRows.some(r=>r.station.id===orderDraft.stationId)){leave.cancelPending();discardForms();setCreateOpen(false)}
+    if(inspectionCreateOpen&&!inspectionRows.some(r=>r.station.id===inspectionDraft.stationId)){leave.cancelPending();discardForms();setInspectionCreateOpen(false)}
+    if(scope&&!rows.some(r=>r.station.id===scope))setScope('')
+    const approval=serverApprovals.find(item=>String(item.id)===selectedKey)
+    if(approval&&!DEMO_MODE&&(!canAt(String(approval.station_id),'approval.review')||(!canAt(String(approval.station_id),'approval.read')&&approval.submitter_id!==Number(user?.id)))){leave.cancelPending();setReviewNote('');setNoteDirty(false);setSelectedKey('')}
+  },[capabilityIdentity])
   const allApprovals = DEMO_MODE
     ? rows.flatMap((row) => row.approvals.map((approval) => ({ row, approval })))
     : serverApprovals.flatMap((item) => {
         const row = rows.find((candidate) => candidate.station.id === String(item.station_id))
-        if (!row) return []
+        if (!row || (!canAt(row.station.id,'approval.read') && item.submitter_id!==Number(user?.id))) return []
         const approval: MaintenanceApproval = {
           id: String(item.id),
           submittedAt: item.submitted_at,
@@ -675,7 +707,7 @@ export default function WorkOrdersApprovalPage({
         }
         return [{row, approval}]
       })
-  const allInspections = rows.flatMap((row) =>
+  const allInspections = rows.filter(row=>canAt(row.station.id,'inspection.manage')).flatMap((row) =>
     row.inspections.map(
       (inspection): {
         row: MaintenanceStation
@@ -696,7 +728,7 @@ export default function WorkOrdersApprovalPage({
       },
     ),
   )
-  const allOrders = rows.flatMap((row) => {
+  const allOrders = rows.filter(row=>canAt(row.station.id,'workorder.read')).flatMap((row) => {
     const stationOrders: DisplayWorkOrder[] = [
       ...localOrders.filter((order) => order.stationId === row.station.id),
       ...row.workOrders,
@@ -727,6 +759,7 @@ export default function WorkOrdersApprovalPage({
   const keyword = search.trim()
   const orderBase = allOrders.filter(
     ({ row, order }) =>
+      matchesWorkflowFilters(view==='工单中心'?extendedFilters:{},{站点:row.station.name,设备:orderDevice(row,order),工单类型:orderSource(order),状态:ORDER_DISPLAY_STATUS[order.status],负责人:order.owner,优先级:DEMO_MODE?orderPriority(order,nowTime):undefined,来源:orderSource(order),创建人:order.createdBy,创建时间:order.createdAt,完成期限:order.dueAt,是否超时:isOrderRisk(order,nowTime)?'是':'否'})&&
       inRange(order.createdAt) &&
       (!scope || row.station.id === scope) &&
       rowSearchText(
@@ -736,6 +769,7 @@ export default function WorkOrdersApprovalPage({
   )
   const approvalBase = allApprovals.filter(
     ({ row, approval }) =>
+      matchesWorkflowFilters(view==='审批中心'?extendedFilters:{},{审批类型:APPROVAL_TYPE_LABEL[approval.type],审批状态:REVIEW_STATUS[getReviewState(approval)],关联站点:row.station.name,申请人:approval.submitter,当前审批人:approval.reviewer,申请时间:approval.submittedAt})&&
       inRange(approval.submittedAt) &&
       (!scope || row.station.id === scope) &&
       (view === "我的待办" || !type || approval.type === type) &&
@@ -847,6 +881,7 @@ export default function WorkOrdersApprovalPage({
       group: "pending", actionLabel: "办理审批", approval,
     })) : []),
   ].filter((item) => {
+    if(view==='我的待办'&&!matchesWorkflowFilters(extendedFilters,{事项类型:item.typeLabel,处理状态:item.statusLabel,关联站点:item.row.station.name,优先级:DEMO_MODE&&item.order?orderPriority(item.order,nowTime):undefined,发起人:item.approval?.submitter,创建时间:item.order?.createdAt||item.approval?.submittedAt,截止时间:item.dueAt,是否超时:item.dueAt&&Date.parse(item.dueAt)<nowTime?'是':'否'}))return false
     if (
       !rowSearchText(
         `${item.sourceId} ${item.typeLabel} ${item.title} ${stationName(item.row)} ${item.row.station.name} ${item.device}`,
@@ -884,11 +919,11 @@ export default function WorkOrdersApprovalPage({
   const [serverEvents, setServerEvents] = useState<ApiRow[]>([])
   useEffect(() => {
     setServerEvents([])
-    if (DEMO_MODE || !orderDetailKey) return
+    if (DEMO_MODE || !orderDetailKey || !allOrders.some(item=>item.order.id===orderDetailKey)) return
     const controller = new AbortController()
     api<ApiRow[]>(`/work-orders/${orderDetailKey}/events`, {signal: controller.signal}).then(setServerEvents).catch(error => {if (!controller.signal.aborted) setNotice(error.message)})
     return () => controller.abort()
-  }, [orderDetailKey, stations])
+  }, [orderDetailKey, stations, capabilityIdentity])
   useEffect(() => {
     if (DEMO_MODE || !user || !user.permissions.some(code => ["approval.read", "strategy.manage"].includes(code))) return
     let active = true
@@ -919,22 +954,22 @@ export default function WorkOrdersApprovalPage({
     try {
       setLocalOrders(
         storedLocalOrders(
-          JSON.parse(localStorage.getItem(LOCAL_ORDER_KEY) ?? "[]"),
+          JSON.parse(localStorage.getItem(storageScope(LOCAL_ORDER_KEY)) ?? "[]"),
         ),
       )
       setOrderOverrides(
         storedOrderOverrides(
-          JSON.parse(localStorage.getItem(ORDER_OVERRIDE_KEY) ?? "{}"),
+          JSON.parse(localStorage.getItem(storageScope(ORDER_OVERRIDE_KEY)) ?? "{}"),
         ),
       )
       setInspectionOverrides(
         storedInspectionOverrides(
-          JSON.parse(localStorage.getItem(INSPECTION_OVERRIDE_KEY) ?? "{}"),
+          JSON.parse(localStorage.getItem(storageScope(INSPECTION_OVERRIDE_KEY)) ?? "{}"),
         ),
       )
       setReviewStates(
         storedReviewStates(
-          JSON.parse(localStorage.getItem(REVIEW_STATE_KEY) ?? "{}"),
+          JSON.parse(localStorage.getItem(storageScope(REVIEW_STATE_KEY)) ?? "{}"),
         ),
       )
     } catch {
@@ -950,9 +985,11 @@ export default function WorkOrdersApprovalPage({
       setReviewNote("")
       return
     }
-    if (!DEMO_MODE) { setReviewNote(item.note ?? ""); return }
+    setNoteDirty(false)
+    if (!DEMO_MODE) { noteBaseline.current=item.note??''; setReviewNote(item.note ?? ""); return }
     try {
-      const saved = JSON.parse(localStorage.getItem(NOTE_KEY) ?? "{}")
+      const saved = JSON.parse(localStorage.getItem(storageScope(NOTE_KEY)) ?? "{}")
+      noteBaseline.current=typeof saved[item.id]?.note==='string'?saved[item.id].note:(item.note??'')
       setReviewNote(
         typeof saved[item.id]?.note === "string"
           ? saved[item.id].note
@@ -969,20 +1006,21 @@ export default function WorkOrdersApprovalPage({
     setSelectedKey(initialFocus.orderId)
   }, [initialFocus?.orderId])
   function persistLocalOrders(next: LocalWorkOrder[]) {
-    localStorage.setItem(LOCAL_ORDER_KEY, JSON.stringify(next))
+    localStorage.setItem(storageScope(LOCAL_ORDER_KEY), JSON.stringify(next))
   }
   function persistOrderOverrides(next: Record<string, OrderOverride>) {
-    localStorage.setItem(ORDER_OVERRIDE_KEY, JSON.stringify(next))
+    localStorage.setItem(storageScope(ORDER_OVERRIDE_KEY), JSON.stringify(next))
   }
   function persistInspectionOverrides(
     next: Record<string, InspectionOverride>,
   ) {
-    localStorage.setItem(INSPECTION_OVERRIDE_KEY, JSON.stringify(next))
+    localStorage.setItem(storageScope(INSPECTION_OVERRIDE_KEY), JSON.stringify(next))
   }
   function persistReviewStates(next: Record<string, ReviewState>) {
-    localStorage.setItem(REVIEW_STATE_KEY, JSON.stringify(next))
+    localStorage.setItem(storageScope(REVIEW_STATE_KEY), JSON.stringify(next))
   }
   function reset() {
+    setExtendedFilters({})
     setScope("")
     setType("")
     setStatus("")
@@ -1007,6 +1045,7 @@ export default function WorkOrdersApprovalPage({
     }
   }
   function openCreateDialog() {
+    setCreateDirty(false)
     setView("工单中心")
     setQuickFilter("all")
     setCreateError("")
@@ -1017,6 +1056,7 @@ export default function WorkOrdersApprovalPage({
     setCreateOpen(true)
   }
   function openInspectionCreateDialog() {
+    setCreateDirty(false)
     setInspectionDraft({stationId:inspectionRows.find(row => row.station.id === scope)?.station.id || inspectionRows[0]?.station.id || "", title:"", dueAt:dueFromPriority("P2", now)})
     setInspectionCreateError("")
     setInspectionCreateOpen(true)
@@ -1029,6 +1069,7 @@ export default function WorkOrdersApprovalPage({
     setServerBusy(true)
     try {
       const result = await send<{id:number}>("/inspections", "POST", {stationId:Number(inspectionDraft.stationId), title:inspectionDraft.title.trim(), dueAt:due.toISOString(), assignedTo:Number(user?.id)})
+      try{localStorage.setItem(workflowKey(user?.id||'',inspectionDraft.stationId,'inspection-fields',String(result.id)),JSON.stringify(inspectionDraft));setFieldNotice('巡检设备、等级与检查内容已另存本地，未提交服务器')}catch{setFieldNotice('巡检已创建，扩展字段本地保存失败')}
       setInspectionCreateOpen(false)
       setNotice(`巡检 ${result.id} 已由服务器创建`)
       const dueDay = dateOnly(due)
@@ -1038,6 +1079,7 @@ export default function WorkOrdersApprovalPage({
     finally {setServerBusy(false)}
   }
   function updateOrderDraft(patch: Partial<WorkOrderDraft>) {
+    setCreateDirty(true)
     if (!DEMO_MODE && patch.stationId && !hasStationPermission(user, patch.stationId, "workorder.handle")) patch.owner = ""
     setOrderDraft((current) => ({ ...current, ...patch }))
     setCreateError("")
@@ -1055,10 +1097,14 @@ export default function WorkOrdersApprovalPage({
       if (serverBusy || !hasStationPermission(user, orderDraft.stationId, "workorder.create")) return
       setServerBusy(true)
       try {
+        if(orderDraft.title.trim().length<4)throw new Error('工单标题至少需要 4 个字符')
+        if(!Number.isFinite(new Date(orderDraft.dueAt).getTime())||new Date(orderDraft.dueAt).getTime()<=Date.now())throw new Error('处理时限必须晚于当前时间')
         if (!orderDraft.description.trim()) throw new Error('请填写工单描述')
         if (orderDraft.owner && !/^\d+$/.test(orderDraft.owner)) throw new Error('负责人请输入已授权的用户编号')
         const result = await send<{id: number}>('/work-orders', 'POST', {stationId: Number(orderDraft.stationId), title: orderDraft.title.trim(), description: orderDraft.description.trim(), assignedTo: orderDraft.owner ? Number(orderDraft.owner) : null, dueAt: new Date(orderDraft.dueAt).toISOString()})
-        setCreateOpen(false); setNotice(`工单 ${result.id} 已由服务器创建`); onServerChange?.()
+        let extra=''
+        try{localStorage.setItem(workflowKey(user?.id||'',orderDraft.stationId,'order-fields',String(result.id)),JSON.stringify({source:orderDraft.source,device:orderDraft.device,priority:orderDraft.priority}));extra='来源、设备和等级已另存本地草稿，未提交服务器'}catch{extra='来源、设备和等级未保存：本地存储不可用'}
+        setCreateDirty(false);setCreateOpen(false); setNotice(`工单 ${result.id} 已由服务器创建`); setFieldNotice(extra); onServerChange?.()
       } catch(error) {setCreateError(error instanceof Error ? error.message : '创建失败')}
       finally {setServerBusy(false)}
       return
@@ -1156,13 +1202,14 @@ export default function WorkOrdersApprovalPage({
     if (selectedKey === orderId) setSelectedKey("")
     setNotice(`${orderId} 已从本地工单移除`)
   }
-  async function transitionWorkOrder(orderId: string, nextStatus: WorkOrderState) {
+  async function transitionWorkOrder(orderId: string, nextStatus: WorkOrderState, suppliedNote?:string) {
     if (!DEMO_MODE) {
       if (serverBusy) return
       const entry = allOrders.find(item => item.order.id === orderId)
       const order = entry?.order
       if (!order || !hasStationPermission(user, entry?.row.station.id, "workorder.handle")) return
-      const note = window.prompt('请输入本次状态变更说明')
+      if((nextStatus==='completed'&&order.owner!==user?.id)||(nextStatus==='processing'&&order.owner&&order.owner!==user?.id)){setNotice('仅当前负责人可以接单或完成工单');return}
+      const note = suppliedNote ?? window.prompt('请输入本次状态变更说明')
       if (!note?.trim()) return
       setServerBusy(true)
       try {await send(`/work-orders/${orderId}/transition`, 'POST', {expectedStatus: order.status, status: nextStatus, note}); setNotice('服务器已更新工单'); onServerChange?.()}
@@ -1208,15 +1255,18 @@ export default function WorkOrdersApprovalPage({
   async function transitionInspection(
     inspectionId: string,
     nextStatus: InspectionState,
+    suppliedNote?:string,
   ) {
     if (!DEMO_MODE) {
       if (nextStatus !== 'completed' && nextStatus !== 'cancelled') return
       if (serverBusy) return
-      const note = window.prompt(nextStatus === 'cancelled' ? '请输入取消原因' : '请输入巡检结果')
+      const entry=allInspections.find(item=>item.inspection.id===inspectionId)
+      if(!entry||!canAt(entry.row.station.id,'inspection.manage'))return false
+      const note = suppliedNote ?? window.prompt(nextStatus === 'cancelled' ? '请输入取消原因' : '请输入巡检结果')
       if (!note?.trim()) return
       setServerBusy(true)
-      try {await send(`/inspections/${inspectionId}/${nextStatus === 'cancelled' ? 'cancel' : 'complete'}`,'POST',{note:note.trim()});setNotice(nextStatus === 'cancelled' ? '巡检已由服务器取消' : '巡检已由服务器确认完成');onServerChange?.()}
-      catch(error) {setNotice(error instanceof Error ? error.message : '巡检操作失败')}
+      try {await send(`/inspections/${inspectionId}/${nextStatus === 'cancelled' ? 'cancel' : 'complete'}`,'POST',{note:note.trim()});setNotice(nextStatus === 'cancelled' ? '巡检已由服务器取消' : '巡检已由服务器确认完成');onServerChange?.();return true}
+      catch(error) {setNotice(error instanceof Error ? error.message : '巡检操作失败');return false}
       finally {setServerBusy(false)}
       return
     }
@@ -1248,16 +1298,17 @@ export default function WorkOrdersApprovalPage({
     setNotice(
       `${inspectionId} 已更新为${INSPECTION_DISPLAY_STATUS[nextStatus]}（本地预览）`,
     )
+    return true
   }
   function saveNote() {
     if (!DEMO_MODE) {setNotice("审批意见将在提交审核决定时保存至服务器"); return}
     if (!selectedApproval) return
     try {
-      const saved = JSON.parse(localStorage.getItem(NOTE_KEY) ?? "{}")
+      const saved = JSON.parse(localStorage.getItem(storageScope(NOTE_KEY)) ?? "{}")
       const base =
         saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {}
       localStorage.setItem(
-        NOTE_KEY,
+        storageScope(NOTE_KEY),
         JSON.stringify({
           ...base,
           [selectedApproval.approval.id]: {
@@ -1269,6 +1320,7 @@ export default function WorkOrdersApprovalPage({
       setNotice(
         `${approvalCode(selectedApproval.approval)} 审核意见已保存至本机`,
       )
+      noteBaseline.current=reviewNote;setNoteDirty(false)
     } catch {
       setNotice("保存失败：本地存储不可用")
     }
@@ -1276,11 +1328,13 @@ export default function WorkOrdersApprovalPage({
   async function decide(next: ReviewState) {
     if (!DEMO_MODE) {
       if (!selectedApproval || !canAt(selectedApproval.row.station.id, "approval.review") || serverBusy || getReviewState(selectedApproval.approval) !== "pending") return
+      if(!serverApprovals.find(item=>String(item.id)===selectedApproval.approval.id)?.plan_id){setNotice('当前接口仅支持运行计划审批');return}
       if (serverApprovals.find(item => String(item.id) === selectedApproval.approval.id)?.submitter_id === Number(user?.id)) {setNotice("不能审批自己的申请"); return}
       if (!reviewNote.trim()) {setNotice("请填写审批意见"); return}
       setServerBusy(true)
       try {
         await send(`/approvals/${selectedApproval.approval.id}/decision`, "POST", {decision: next, note: reviewNote.trim()})
+        noteBaseline.current=reviewNote;setNoteDirty(false)
         const fresh = await allRows<ServerApproval>("/approvals")
         setServerApprovals(fresh)
         setNotice(next === "approved" ? "审批已由服务器确认通过" : "审批已由服务器确认驳回")
@@ -1315,6 +1369,7 @@ export default function WorkOrdersApprovalPage({
         ? `${approvalCode(selectedApproval.approval)} 已记录同意（本地预览），未向设备下发`
         : `${approvalCode(selectedApproval.approval)} 已驳回（本地预览），未连接后台`,
     )
+    noteBaseline.current=reviewNote;setNoteDirty(false)
   }
   function exportCurrent() {
     if (view === "审批中心") {
@@ -1385,7 +1440,7 @@ export default function WorkOrdersApprovalPage({
           order.id,
           orderSource(order),
           orderDevice(row, order),
-          orderPriority(order, nowTime),
+          DEMO_MODE ? orderPriority(order, nowTime) : "未提供",
           order.title,
           ORDER_DISPLAY_STATUS[order.status],
           order.owner || row.station.manager,
@@ -1396,9 +1451,11 @@ export default function WorkOrdersApprovalPage({
       setNotice(`已导出工单中心 ${orders.length} 条记录`)
     }
   }
+  const repairItems=todoBase.filter(item=>item.kind!=='approval'&&matchesWorkflowFilters(extendedFilters,{站点:item.row.station.name,设备:item.device,工单类型:item.kind==='inspection'?'巡检':'检修',状态:item.statusLabel,负责人:item.order?.owner||item.inspection?.owner,完成期限:item.dueAt,是否超时:item.statusTone==='danger'?'是':'否'}))
+  const visibleRepairItems=repairItems.filter(item=>quickFilter==='all'||quickFilter===item.group||(quickFilter==='risk'&&item.statusTone==='danger'))
   const currentCount =
     view === "工单中心"
-      ? orders.length
+      ? repairQueue?visibleRepairItems.length:orders.length
       : view === "审批中心"
         ? approvals.length
         : todos.length
@@ -1409,7 +1466,12 @@ export default function WorkOrdersApprovalPage({
     tone?: "neutral" | "danger"
   }[] =
     view === "工单中心"
-      ? [
+      ? repairQueue?[
+          {key:'all',label:'全部',count:repairItems.length},
+          {key:'pending',label:'待处理',count:repairItems.filter(i=>i.group==='pending').length},
+          {key:'processing',label:'处理中',count:repairItems.filter(i=>i.group==='processing').length},
+          {key:'done',label:'已办结',count:repairItems.filter(i=>i.group==='done').length},
+        ]:[
           { key: "all", label: "全部工单", count: orderBase.length },
           { key: "pending", label: "待处理", count: pendingOrders.length },
           {
@@ -1507,8 +1569,11 @@ export default function WorkOrdersApprovalPage({
             <button
               key={item}
               aria-current={view === item ? "page" : undefined}
-              onClick={() => {
+              onClick={() => go(() => {
                 setView(item)
+                setRepairQueue(false)
+                setExtendedFilters({})
+                setToolsOpen(false)
                 setStatus("")
                 setType("")
                 setSubmitter("")
@@ -1517,17 +1582,20 @@ export default function WorkOrdersApprovalPage({
                 setOrderDetailKey("")
                 setInspectionDetailKey("")
                 setNotice("")
-              }}
+              })}
             >
               {item}
             </button>
           ))}
         </nav>
+        <button className="operations-button" aria-pressed={toolsOpen} onClick={()=>go(()=>{setToolsOpen(!toolsOpen);setSelectedKey('');setOrderDetailKey('');setInspectionDetailKey('')})}>任务协作</button>
         <span className="work-orders-sync">
           {ROLE_CONFIG[role].shortLabel}范围 · 更新 {timeLabel(now.toISOString())}
         </span>
       </header>
       <div className="work-orders-content">
+        {toolsOpen&&<TaskWorkbench stations={rows.map(r=>({id:r.station.id,name:r.station.name}))} tasks={[...allOrders.map(({row,order})=>({id:order.id,title:order.title,domain:'工单',status:ORDER_DISPLAY_STATUS[order.status],owner:order.owner||'',due:order.dueAt,stationId:row.station.id})),...allApprovals.map(({row,approval})=>({id:approval.id,title:approval.title,domain:'审批',status:REVIEW_STATUS[getReviewState(approval)],owner:approval.reviewer||'',due:undefined,stationId:row.station.id}))]} registerLeaveGuard={registerChildGuard} onClose={()=>setToolsOpen(false)} onOpen={(id,domain)=>{setToolsOpen(false);if(domain==='工单'){setView('工单中心');setOrderDetailKey(id)}else{setView('审批中心');setSelectedKey(id)}}}/>}
+        {fieldNotice&&<p role="status" className="wo-boundary">{fieldNotice}</p>}
         <section className="work-orders-summary" aria-label="工单审批状态筛选">
           <div className="work-orders-chips">
             {quickChips.map((chip) => (
@@ -1578,9 +1646,11 @@ export default function WorkOrdersApprovalPage({
             添加筛选
             {activeFilterCount > 0 && <span>{activeFilterCount}</span>}
           </button>
+          {view==='工单中心'&&inspectionRows.length>0&&<button className="operations-button" aria-pressed={repairQueue} onClick={()=>{setRepairQueue(!repairQueue);setQuickFilter('all')}}>巡检与检修</button>}
         </section>
         {filtersOpen && (
           <section className="work-orders-scope" aria-label="高级筛选">
+            <WorkflowFilters fields={view==='工单中心'?orderFilters:view==='审批中心'?approvalFilters:todoFilters} values={extendedFilters} onChange={setExtendedFilters} options={{站点:rows.map(r=>r.station.name),关联站点:rows.map(r=>r.station.name),负责人:[...new Set(allOrders.map(i=>i.order.owner||'').filter(Boolean))],工单类型:[...new Set(allOrders.map(i=>orderSource(i.order)))],来源:[...new Set(allOrders.map(i=>orderSource(i.order)))],优先级:['P1','P2','P3'],状态:Object.values(ORDER_DISPLAY_STATUS),审批状态:Object.values(REVIEW_STATUS),审批类型:Object.values(APPROVAL_TYPE_LABEL),事项类型:['工单','巡检','审批'],处理状态:['待处理','处理中','已办结','待审批','已通过','已驳回'],是否超时:['是','否']}}/>
             <label>
               责任范围
               <select
@@ -1701,7 +1771,7 @@ export default function WorkOrdersApprovalPage({
         {!DEMO_MODE && view === "审批中心" && approvalError && <div className="work-orders-notice" role="alert">{approvalError}</div>}
         <section className="work-orders-table-panel work-orders-orders-panel">
           <div className="work-orders-table-scroll">
-            {view === "工单中心" ? (
+            {view==='工单中心'&&repairQueue?<table className="work-orders-sub-table"><thead><tr>{['工单编号','工单类型','工单标题','站点','设备','截止时间','状态','操作'].map(label=><th key={label}>{label}</th>)}</tr></thead><tbody>{visibleRepairItems.map(item=><tr key={item.key}><td>{item.sourceId}</td><td>{item.kind==='inspection'?'巡检':'检修'}</td><td>{item.title}</td><td>{item.row.station.name}</td><td>{item.device}</td><td>{deadlineDateLabel(item.dueAt,now)}</td><td>{item.statusLabel}</td><td><button className="work-orders-action-link" onClick={()=>{if(item.kind==='inspection')setInspectionDetailKey(item.sourceId);else setOrderDetailKey(item.sourceId)}}>处理工单</button></td></tr>)}</tbody></table>:view === "工单中心" ? (
               <table>
                 <thead>
                   <tr>
@@ -1751,7 +1821,7 @@ export default function WorkOrdersApprovalPage({
                           <span
                             className={`work-orders-priority work-orders-priority--${priority.toLowerCase()}`}
                           >
-                            {priority}
+                            {DEMO_MODE?priority:'未提供'}
                           </span>
                         </td>
                         <td
@@ -1775,7 +1845,7 @@ export default function WorkOrdersApprovalPage({
                               setNotice("")
                             }}
                           >
-                            {orderActionLabel(order.status)}
+                            查看详情
                           </button>
                         </td>
                       </tr>
@@ -1957,29 +2027,31 @@ export default function WorkOrdersApprovalPage({
               }
               note={reviewNote}
               notice={pageLevelNotice ? "" : notice}
-              canDecide={canAt(selectedApproval.row.station.id, "approval.review") && !serverBusy && (DEMO_MODE || serverApprovals.find(item => String(item.id) === selectedApproval.approval.id)?.submitter_id !== Number(user?.id))}
+              canDecide={canAt(selectedApproval.row.station.id, "approval.review") && !serverBusy && (DEMO_MODE || Boolean(serverApprovals.find(item => String(item.id) === selectedApproval.approval.id)?.plan_id) && serverApprovals.find(item => String(item.id) === selectedApproval.approval.id)?.submitter_id !== Number(user?.id))}
               onNote={(value) => {
+                setNoteDirty(true)
                 setReviewNote(value)
                 setNotice("")
               }}
               onSaveNote={saveNote}
+              onLocalSaved={()=>{noteBaseline.current=reviewNote;setNoteDirty(false)}}
               onDecide={decide}
-              onClose={() => {
+              onClose={() => go(() => {
                 setSelectedKey("closed")
                 setNotice("")
-              }}
+              })}
             />
           </div>
         )}
         {view === "工单中心" && (
-          <section className="work-orders-sla" aria-label="SLA 负载">
-            <h2>SLA 负载</h2>
+          <details className="work-orders-sla" aria-label="SLA 负载">
+            <summary>SLA 负载</summary>
             <div className="work-orders-sla-grid">
               {slaGroups.map((group) => (
-                <Stat key={group.priority} {...group} />
+                DEMO_MODE?<Stat key={group.priority} {...group} />:<div key={group.priority}><small>{group.priority}</small><p>— · 服务器未提供工单等级</p></div>
               ))}
             </div>
-          </section>
+          </details>
         )}
         {createOpen && (
           <NewWorkOrderDialog
@@ -1991,16 +2063,20 @@ export default function WorkOrdersApprovalPage({
             members={members}
             self={user && hasStationPermission(user, orderDraft.stationId, "workorder.handle") ? {id: user.id, name: user.name} : undefined}
             onChange={updateOrderDraft}
-            onClose={() => {
+            onClose={() => go(() => {
               setCreateOpen(false)
               setCreateError("")
-            }}
+            })}
             onSubmit={submitWorkOrder}
           />
         )}
-        {inspectionCreateOpen && <InspectionCreateDialog rows={inspectionRows} draft={inspectionDraft} error={inspectionCreateError} busy={serverBusy} self={user?.name || user?.id || ""} onChange={patch => {setInspectionDraft(current => ({...current, ...patch})); setInspectionCreateError("")}} onClose={() => setInspectionCreateOpen(false)} onSubmit={submitInspection} />}
+        {inspectionCreateOpen && <InspectionCreateDialog rows={inspectionRows} draft={inspectionDraft} error={inspectionCreateError} busy={serverBusy} self={user?.name || user?.id || ""} onChange={patch => {setCreateDirty(true);setInspectionDraft(current => ({...current, ...patch})); setInspectionCreateError("")}} onClose={() => go(()=>setInspectionCreateOpen(false))} onSubmit={submitInspection} />}
         {detailOrder && (
           <WorkOrderDetailDialog
+            initialHandling={view==='我的待办'}
+            registerLeaveGuard={registerChildGuard}
+            key={`${detailOrder.row.station.id}:${detailOrder.order.id}`}
+            onNote={!DEMO_MODE&&canAt(detailOrder.row.station.id,'workorder.handle')?async note=>{try{await send(`/work-orders/${detailOrder.order.id}/notes`,'POST',{note});onServerChange?.();return true}catch(error){setNotice(error instanceof Error?error.message:'记录保存失败');return false}}:undefined}
             events={serverEvents}
             assignees={[...(user && canAt(detailOrder.row.station.id, "workorder.handle") ? [{id:user.id, name:`${user.name}（当前用户）`}] : []), ...members.filter(member => String(member.id) !== user?.id).map(member => ({id:String(member.id), name:member.display_name || member.account}))]}
             onAssign={!DEMO_MODE && canAt(detailOrder.row.station.id, "workorder.edit") ? async (assignedTo) => {
@@ -2014,7 +2090,7 @@ export default function WorkOrdersApprovalPage({
             local={localOrders.some(
               (order) => order.id === detailOrder.order.id,
             )}
-            onClose={() => setOrderDetailKey("")}
+            onClose={() => go(()=>setOrderDetailKey(""))}
             onDelete={() => removeLocalOrder(detailOrder.order.id)}
             canHandle={canAt(detailOrder.row.station.id, "workorder.handle")}
             onTransition={(status) =>
@@ -2025,15 +2101,19 @@ export default function WorkOrdersApprovalPage({
         )}
         {detailInspection && (
           <InspectionDetailDialog
+            registerLeaveGuard={registerChildGuard}
+            canHandle={canAt(detailInspection.row.station.id,'inspection.manage')&&(DEMO_MODE||!detailInspection.inspection.owner||detailInspection.inspection.owner===user?.id)}
+            onComplete={async note=>Boolean(await transitionInspection(detailInspection.inspection.id,'completed',note))}
             row={detailInspection.row}
             inspection={detailInspection.inspection}
-            onClose={() => setInspectionDetailKey("")}
+            onClose={() => go(()=>setInspectionDetailKey(""))}
             onTransition={(status) =>
               transitionInspection(detailInspection.inspection.id, status)
             }
             notice={notice}
           />
         )}
+        {leave.dialog}
       </div>
     </main>
   )
@@ -2041,24 +2121,28 @@ export default function WorkOrdersApprovalPage({
 
 function InspectionCreateDialog({rows, draft, error, busy, self, onChange, onClose, onSubmit}: {
   rows: MaintenanceStation[]
-  draft: {stationId:string; title:string; dueAt:string}
+  draft: InspectionDraft
   error: string
   busy: boolean
   self: string
-  onChange: (patch: Partial<{stationId:string; title:string; dueAt:string}>) => void
+  onChange: (patch: Partial<InspectionDraft>) => void
   onClose: () => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
   const ref = useRef<HTMLDialogElement>(null)
   useEffect(() => {const dialog = ref.current; dialog?.showModal(); return () => dialog?.close()}, [])
-  return <dialog ref={ref} className="work-orders-create-dialog" aria-label="新建巡检" onCancel={onClose}>
+  return <dialog ref={ref} className="work-orders-create-dialog" aria-label="新建巡检" onCancel={event=>{event.preventDefault();onClose()}}>
     <form onSubmit={onSubmit}>
-      <header><h2>新建巡检</h2><button type="button" className="operations-icon" aria-label="关闭" onClick={onClose}><X size={16} /></button></header>
+      <header><h2>新建巡检</h2><button type="button" className="operations-icon" aria-label="关闭" onClick={onClose}><img src="/figma/work-orders/close.svg" alt=""/></button></header>
       <div className="work-orders-create-body"><div className="work-orders-create-grid">
         <label className="work-orders-create-field">站点<select aria-label="巡检站点" required value={draft.stationId} onChange={event => onChange({stationId:event.target.value})}>{rows.map(row => <option key={row.station.id} value={row.station.id}>{row.station.name}</option>)}</select></label>
         <label className="work-orders-create-field">巡检标题<input aria-label="巡检标题" required maxLength={200} value={draft.title} onChange={event => onChange({title:event.target.value})} /></label>
         <label className="work-orders-create-field">计划时间<input aria-label="巡检计划时间" required type="datetime-local" value={draft.dueAt} onChange={event => onChange({dueAt:event.target.value})} /></label>
         <div className="work-orders-create-field">负责人<strong>{self}（当前用户）</strong></div>
+        <label className="work-orders-create-field">关联设备<input aria-label="巡检关联设备" value={draft.device||''} onChange={event=>onChange({device:event.target.value})}/></label>
+        <label className="work-orders-create-field">优先级<select aria-label="巡检优先级" value={draft.priority||'P2'} onChange={event=>onChange({priority:event.target.value})}><option>P1</option><option>P2</option><option>P3</option></select></label>
+        <label className="work-orders-create-field work-orders-create-field--wide">检查内容<textarea aria-label="巡检检查内容" value={draft.description||''} onChange={event=>onChange({description:event.target.value})}/></label>
+        <p className="wo-boundary">标题、站点、当前负责人及计划时间保存至服务器；设备、优先级与检查内容另存本地草稿。</p>
       </div>{error && <p role="alert" className="work-orders-create-error">{error}</p>}</div>
       <footer><button type="button" className="operations-button" onClick={onClose}>关闭</button><button type="submit" className="operations-button work-orders-approve" disabled={busy}>创建巡检</button></footer>
     </form>
@@ -2119,7 +2203,7 @@ function NewWorkOrderDialog({
       ref={ref}
       className="work-orders-create-dialog"
       aria-label="新建工单"
-      onCancel={onClose}
+      onCancel={event=>{event.preventDefault();onClose()}}
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose()
       }}
@@ -2128,7 +2212,7 @@ function NewWorkOrderDialog({
         <header>
           <div>
             <h2>新建工单</h2>
-            <span>本地创建 · 未下发后台</span>
+            <span>{DEMO_MODE?'本地创建 · 未下发后台':'服务器工单 · 扩展字段另存本地'}</span>
           </div>
           <button
             type="button"
@@ -2137,7 +2221,7 @@ function NewWorkOrderDialog({
             title="关闭"
             onClick={onClose}
           >
-            <X size={16} />
+            <img src="/figma/work-orders/close.svg" alt=""/>
           </button>
         </header>
         <div className="work-orders-create-body">
@@ -2298,318 +2382,29 @@ function NewWorkOrderDialog({
   )
 }
 
-function WorkOrderDetailDialog({
-  events = [],
-  canHandle = true,
-  assignees = [],
-  onAssign,
-  row,
-  order,
-  nowTime,
-  local,
-  onClose,
-  onDelete,
-  onTransition,
-  notice,
-}: {
-  canHandle?: boolean
-  events?: ApiRow[]
-  assignees?: {id:string; name:string}[]
-  onAssign?: (assignedTo: string) => void
-  row: MaintenanceStation
-  order: DisplayWorkOrder
-  nowTime: number
-  local: boolean
-  onClose: () => void
-  onDelete: () => void
-  onTransition: (status: WorkOrderState) => void
-  notice: string
-}) {
-  const ref = useRef<HTMLDialogElement>(null)
-  const [selectedAssignee, setSelectedAssignee] = useState(order.owner || assignees[0]?.id || "")
-  const deadline = deadlineInfo(order.dueAt, order.status, nowTime)
-  const open = isOpenOrder(order.status)
-  useEffect(() => {
-    const dialog = ref.current
-    dialog?.showModal()
-    return () => dialog?.close()
-  }, [])
-  const fields: [string, string][] = [
-    ["工单编号", order.id],
-    ["来源", orderSource(order)],
-    ["站点", row.station.name],
-    ["设备 / 对象", orderDevice(row, order)],
-    ["等级", orderPriority(order, nowTime)],
-    ["状态", ORDER_DISPLAY_STATUS[order.status]],
-    ["负责人", order.owner || row.station.manager || "--"],
-    ["创建时间", dateTime(order.createdAt)],
-    ["更新时间", dateTime(order.updatedAt ?? order.createdAt)],
-    ["数据来源", local ? "本地创建" : "站点数据"],
-    ["截止时间", dateTime(order.dueAt)],
-    ["处理时限", deadline.label],
-  ]
-  return (
-    <dialog
-      ref={ref}
-      className="work-orders-create-dialog work-orders-order-detail-dialog"
-      aria-label="工单详情"
-      onCancel={onClose}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose()
-      }}
-    >
-      <header>
-        <div>
-          <h2>
-            {order.id} · {order.title}
-          </h2>
-          <span>
-            {row.station.name} · {orderSource(order)}
-            {order.createdBy ? ` · ${order.createdBy}` : ""}
-          </span>
-        </div>
-        <button
-          type="button"
-          className="operations-icon"
-          aria-label="关闭工单详情"
-          title="关闭"
-          onClick={onClose}
-        >
-          <X size={16} />
-        </button>
-      </header>
-      <div className="work-orders-create-body">
-        <dl className="work-orders-order-detail-list">
-          {fields.map(([label, value]) => (
-            <div key={label}>
-              <dt>{label}</dt>
-              <dd
-                className={
-                  label === "处理时限"
-                    ? `work-orders-deadline work-orders-deadline--${deadline.tone}`
-                    : undefined
-                }
-              >
-                {value || "--"}
-              </dd>
-            </div>
-          ))}
-        </dl>
-        <section className="work-orders-order-description">
-          <h3>描述</h3>
-          <p>{order.description || "暂无描述"}</p>
-        </section>
-      </div>
-      <footer>
-        <span>{DEMO_MODE ? '详情为当前页面数据，本地工单未下发后台' : '工单数据来自服务器'}</span>
-        {!DEMO_MODE && <details><summary>服务器事件记录 ({events.length})</summary>{events.map(event => <p key={String(event.id)}>{String(event.created_at ?? '')} · {String(event.action ?? '')} · {String(event.note ?? '')}</p>)}</details>}
-        {onAssign && open && <label>负责人 <select aria-label="更改负责人" value={selectedAssignee} onChange={event => setSelectedAssignee(event.target.value)}>
-          {order.owner && !assignees.some(member => member.id === order.owner) && <option value={order.owner}>当前负责人 #{order.owner}</option>}
-          {assignees.map(member => <option key={member.id} value={member.id}>{member.name}</option>)}
-        </select></label>}
-        {onAssign && open && <button onClick={() => onAssign(selectedAssignee)} disabled={!selectedAssignee || selectedAssignee === order.owner} className="operations-button">更改负责人</button>}
-        <div className="work-orders-dialog-actions">
-          {notice && (
-            <span className="work-orders-dialog-notice" role="status">
-              {notice}
-            </span>
-          )}
-          {local && (
-            <button
-              type="button"
-              className="operations-button work-orders-reject"
-              onClick={onDelete}
-            >
-              删除本地记录
-            </button>
-          )}
-          {open && canHandle && (
-            <button
-              type="button"
-              className="operations-button work-orders-reject"
-              onClick={() => onTransition("cancelled")}
-            >
-              取消工单
-            </button>
-          )}
-          <button type="button" className="operations-button" onClick={onClose}>
-            关闭
-          </button>
-          {canHandle && order.status === "pending" && (
-            <button
-              type="button"
-              className="operations-button work-orders-approve"
-              onClick={() => onTransition("processing")}
-            >
-              开始处理
-            </button>
-          )}
-          {canHandle && order.status === "processing" && (
-            <button
-              type="button"
-              className="operations-button work-orders-approve"
-              onClick={() => onTransition("completed")}
-            >
-              办结工单
-            </button>
-          )}
-          {!open && (
-            <span className="work-orders-final-state">
-              {ORDER_DISPLAY_STATUS[order.status]} · 工单操作已完成
-            </span>
-          )}
-        </div>
-      </footer>
-    </dialog>
-  )
+function WorkOrderDetailDialog({initialHandling=false,events=[],canHandle=true,assignees=[],onAssign,row,order,nowTime,local,onClose,onDelete,onTransition,notice,registerLeaveGuard,onNote}:{
+ initialHandling?:boolean;events?:ApiRow[];canHandle?:boolean;assignees?:{id:string;name:string}[];onAssign?:(id:string)=>void;row:MaintenanceStation;order:DisplayWorkOrder;nowTime:number;local:boolean;onClose:()=>void;onDelete:()=>void;onTransition:(status:WorkOrderState)=>void;notice:string;registerLeaveGuard?:RegisterLeaveGuard;onNote?:(note:string)=>Promise<boolean>
+}){
+ const [handling,setHandling]=useState(initialHandling)
+ const [selectedAssignee,setSelectedAssignee]=useState(order.owner||'')
+ const handlingGuard=useRef<null|(()=>Promise<boolean>)>(null),assignGuard=useRef<null|(()=>Promise<boolean>)>(null)
+ const registerHandling=useCallback<RegisterLeaveGuard>(g=>{handlingGuard.current=g},[]),registerAssign=useCallback<RegisterLeaveGuard>(g=>{assignGuard.current=g},[])
+ const requestLeave=useCallback(async()=>{if(handlingGuard.current&&!(await handlingGuard.current()))return false;return assignGuard.current?.()??true},[])
+ useEffect(()=>{registerLeaveGuard?.(requestLeave);return()=>registerLeaveGuard?.(null)},[registerLeaveGuard,requestLeave])
+ const leave=useWorkflowLeave(selectedAssignee!==(order.owner||''),registerAssign,()=>setSelectedAssignee(order.owner||''),order.id+Boolean(onAssign),Boolean(onAssign))
+ useEffect(()=>setSelectedAssignee(order.owner||''),[order.owner,onAssign===undefined])
+ const deadline=deadlineInfo(order.dueAt,order.status,nowTime),open=isOpenOrder(order.status)
+ return <section className="wo-full-detail" data-handling={handling} aria-label="工单详情"><button className="operations-button" onClick={onClose}>← 返回工单列表</button><header><h2>{order.id} · {order.title}</h2><OrderStatus status={order.status} risk={isOrderRisk(order,nowTime)}/></header><section className="wo-detail-card"><h3>基本信息</h3><dl className="wo-detail-grid">{[['站点',row.station.name],['设备',orderDevice(row,order)],['负责人',assignees.find(m=>m.id===order.owner)?.name||order.owner||'未分派'],['优先级',DEMO_MODE?orderPriority(order,nowTime):'未提供'],['处理时限',deadline.label],['最后更新',dateTime(order.updatedAt||order.createdAt)]].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl></section><section className="wo-detail-card"><h3>详细说明</h3><p>{order.description||'暂无描述'}</p><p>来源：{orderSource(order)} {order.alarmId? ' · 关联告警 '+order.alarmId:''}</p></section><section className="wo-detail-card"><h3>处理记录</h3>{events.length?events.map(event=><p key={String(event.id)}>{String(event.created_at??'')} · {String(event.action??'')} · {String(event.note??'')}</p>):<p>暂无处理记录</p>}</section>
+ <LocalWorkflowFields stationId={row.station.id} objectId={order.id} kind="order-fields"/><WorkHandling stationId={row.station.id} objectId={order.id} kind="order" canEdit={canHandle&&open} registerLeaveGuard={registerHandling} onNote={onNote}/>
+ <footer>{!handling&&canHandle&&open&&<button className="operations-button work-orders-approve" onClick={()=>setHandling(true)}>处理工单</button>}{notice&&<p role="status">{notice}</p>}{onAssign&&open&&<label>负责人<select aria-label="更改负责人" value={selectedAssignee} onChange={e=>setSelectedAssignee(e.target.value)}><option value="">未分派</option>{order.owner&&!assignees.some(m=>m.id===order.owner)&&<option value={order.owner}>当前负责人 #{order.owner}</option>}{assignees.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}</select><button className="operations-button" disabled={!selectedAssignee||selectedAssignee===order.owner} onClick={()=>onAssign(selectedAssignee)}>更改负责人</button></label>}{local&&<button className="operations-button" onClick={onDelete}>删除本地记录</button>}{open&&canHandle&&<button className="operations-button work-orders-reject" onClick={()=>onTransition('cancelled')}>取消工单</button>}{canHandle&&order.status==='pending'&&<button className="operations-button work-orders-approve" onClick={()=>onTransition('processing')}>开始处理</button>}{canHandle&&order.status==='processing'&&<button className="operations-button" onClick={()=>onTransition('completed')}>办结工单</button>}<button className="operations-button" onClick={onClose}>关闭</button><p className="wo-boundary">办结工单直接标记为已完成；验收草稿不会改变此状态。{local?'本地预览，未下发后台':''}</p></footer>{leave.dialog}</section>
 }
 
-function InspectionDetailDialog({
-  row,
-  inspection,
-  onClose,
-  onTransition,
-  notice,
-}: {
-  row: MaintenanceStation
-  inspection: DisplayInspection
-  onClose: () => void
-  onTransition: (status: InspectionState) => void
-  notice: string
-}) {
-  const ref = useRef<HTMLDialogElement>(null)
-  const open =
-    inspection.status === "pending" || inspection.status === "processing"
-  const tone = inspectionTone(inspection)
-  useEffect(() => {
-    const dialog = ref.current
-    dialog?.showModal()
-    return () => dialog?.close()
-  }, [])
-  const fields: [string, string][] = [
-    ["巡检编号", inspection.id],
-    ["巡检事项", inspection.title],
-    ["站点", row.station.name],
-    ["负责人", inspection.owner || row.station.manager || "--"],
-    ["计划时间", dateTime(inspection.dueAt)],
-    ["当前状态", INSPECTION_DISPLAY_STATUS[inspection.status]],
-    ["开始时间", dateTime(inspection.startedAt)],
-    ["完成时间", dateTime(inspection.completedAt)],
-  ]
-  return (
-    <dialog
-      ref={ref}
-      className="work-orders-create-dialog work-orders-order-detail-dialog"
-      aria-label="巡检详情"
-      onCancel={onClose}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose()
-      }}
-    >
-      <header>
-        <div>
-          <h2>
-            {inspection.id} · {inspection.title}
-          </h2>
-          <span>
-            {row.station.name} · {inspection.owner || row.station.manager}
-          </span>
-        </div>
-        <button
-          type="button"
-          className="operations-icon"
-          aria-label="关闭巡检详情"
-          title="关闭"
-          onClick={onClose}
-        >
-          <X size={16} />
-        </button>
-      </header>
-      <div className="work-orders-create-body">
-        <dl className="work-orders-order-detail-list">
-          {fields.map(([label, value]) => (
-            <div key={label}>
-              <dt>{label}</dt>
-              <dd
-                className={
-                  label === "当前状态"
-                    ? `work-orders-todo-status--${tone}`
-                    : undefined
-                }
-              >
-                {value || "--"}
-              </dd>
-            </div>
-          ))}
-        </dl>
-        <section className="work-orders-inspection-context">
-          <h3>站点参考</h3>
-          <dl>
-            <div>
-              <dt>运行状态</dt>
-              <dd>{row.station.runStatus}</dd>
-            </div>
-            <div>
-              <dt>SoC</dt>
-              <dd>{Number.isFinite(row.station.soc) ? `${Math.round(row.station.soc)}%` : "未知"}</dd>
-            </div>
-            <div>
-              <dt>活动告警</dt>
-              <dd>{row.alarmsKnown ? row.active.length : "—"}</dd>
-            </div>
-          </dl>
-        </section>
-      </div>
-      <footer>
-        <span>{DEMO_MODE ? "巡检操作为本地预览，未同步巡检系统" : "完成巡检将由服务器保存结果"}</span>
-        <div className="work-orders-dialog-actions">
-          {notice && (
-            <span className="work-orders-dialog-notice" role="status">
-              {notice}
-            </span>
-          )}
-          {open && (
-            <button
-              type="button"
-              className="operations-button work-orders-reject"
-              disabled={!DEMO_MODE && inspection.status !== "pending"} onClick={() => onTransition("cancelled")}
-            >
-              取消巡检
-            </button>
-          )}
-          <button type="button" className="operations-button" onClick={onClose}>
-            关闭
-          </button>
-          {inspection.status === "pending" && (
-            <button
-              type="button"
-              className="operations-button work-orders-approve"
-              onClick={() => onTransition(DEMO_MODE ? "processing" : "completed")}
-            >
-              {DEMO_MODE ? "开始巡检" : "完成巡检"}
-            </button>
-          )}
-          {inspection.status === "processing" && (
-            <button
-              type="button"
-              className="operations-button work-orders-approve"
-              onClick={() => onTransition("completed")}
-            >
-              完成巡检
-            </button>
-          )}
-          {!open && (
-            <span className="work-orders-final-state">
-              {INSPECTION_DISPLAY_STATUS[inspection.status]} · 巡检操作已完成
-            </span>
-          )}
-        </div>
-      </footer>
-    </dialog>
-  )
+function InspectionDetailDialog({row,inspection,onClose,onTransition,notice,registerLeaveGuard,onComplete,canHandle}:{row:MaintenanceStation;inspection:DisplayInspection;onClose:()=>void;onTransition:(status:InspectionState)=>void;notice:string;registerLeaveGuard?:RegisterLeaveGuard;onComplete:(note:string)=>Promise<boolean>;canHandle:boolean}){
+ return <section className="wo-full-detail wo-inspection-detail" aria-label="巡检详情"><button className="operations-button" onClick={onClose}>← 返回我的待办</button><section className="wo-detail-card"><h2>{inspection.id} · {inspection.title}</h2><dl className="wo-detail-grid">{[['巡检名称',inspection.title],['站点',row.station.name],['设备范围','未关联设备'],['执行人',inspection.owner||'未分派'],['完成期限',dateTime(inspection.dueAt)],['当前状态',INSPECTION_DISPLAY_STATUS[inspection.status]]].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl><LocalWorkflowFields stationId={row.station.id} objectId={inspection.id} kind="inspection-fields"/><WorkHandling key={inspection.id} kind="inspection" stationId={row.station.id} objectId={inspection.id} canEdit={canHandle&&isOpenOrder(inspection.status)} registerLeaveGuard={registerLeaveGuard} onComplete={onComplete}/></section>{notice&&<p role="status">{notice}</p>}<footer><button className="operations-button" onClick={onClose}>关闭</button>{canHandle&&inspection.status==='pending'&&<button className="operations-button work-orders-reject" onClick={()=>onTransition('cancelled')}>取消巡检</button>}</footer></section>
 }
 
 function ApprovalDetail({
+  onLocalSaved,
   row,
   approval,
   reviewState,
@@ -2621,6 +2416,7 @@ function ApprovalDetail({
   onDecide,
   onClose,
 }: {
+  onLocalSaved:()=>void
   row?: MaintenanceStation
   approval?: MaintenanceApproval
   reviewState?: ReviewState
@@ -2632,6 +2428,10 @@ function ApprovalDetail({
   onDecide: (state: ReviewState) => void
   onClose: () => void
 }) {
+  const {user}=useAuth()
+  const [confirm,setConfirm]=useState<'approved'|'rejected'|'supplement'|null>(null)
+  const [localNotice,setLocalNotice]=useState('')
+  useEffect(()=>{setConfirm(null);setLocalNotice('')},[approval?.id,canDecide])
   if (!approval || !row)
     return (
       <aside className="work-orders-detail">
@@ -2639,7 +2439,8 @@ function ApprovalDetail({
       </aside>
     )
   return (
-    <aside className="work-orders-detail" aria-label="审核复核详情">
+    <aside className="work-orders-detail wo-full-detail" aria-label="审核复核详情">
+      <button className="operations-button" onClick={onClose}>← 返回我的待办</button>
       <header>
         <div>
           <h2>
@@ -2655,20 +2456,24 @@ function ApprovalDetail({
           title="关闭详情"
           onClick={onClose}
         >
-          <X size={16} />
+          <img src="/figma/work-orders/close.svg" alt=""/>
         </button>
       </header>
       <div className="work-orders-detail-body">
         <section className="work-orders-change">
-          <small>操作内容</small>
+          <h3>申请内容 · 冻结变更</h3>
           <strong>{approval.change || "系统未提供变更内容"}</strong>
+          <dl className="wo-detail-grid">{[['审批对象',TYPE_LABEL[approval.type]],['生效窗口','未提供'],['审批版本','未提供'],['风险等级','未提供']].map(([key,value])=><div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl>
+          <p className="wo-boundary">预检结果及冻结版本未由当前接口提供。本次决定针对服务器中的当前申请，不代表策略已执行。</p>
           {DEMO_MODE && <span>
             SoC：{Math.round(row.station.soc)} % · 有功：
             {Math.round(row.station.activePower)} kW
           </span>}
         </section>
         <section className="work-orders-evidence">
-          <h3>审批意见与参考</h3>
+          <h3>基本信息与审批记录</h3>
+          <div><span>站点</span><strong>{row.station.name}</strong></div>
+          <div><span>设备</span><strong>未关联设备</strong></div>
           <div>
             <span>提交人</span>
             <strong>{approval.submitter}</strong>
@@ -2692,6 +2497,7 @@ function ApprovalDetail({
             <ReviewBadge status={reviewState ?? approval.status} />
           </div>
           {approval.reviewer && <div><span>审核人</span><strong>{approval.reviewer}</strong></div>}
+          <details><summary>独立复核：操作前后与会签</summary><p>操作前状态：未提供</p><p>操作后状态：未提供</p><p>会签记录：当前接口未提供</p></details>
         </section>
         <section className="work-orders-comment">
           <label>
@@ -2721,14 +2527,15 @@ function ApprovalDetail({
             <button
               className="operations-button work-orders-reject"
               disabled={!canDecide}
-              onClick={() => onDecide("rejected")}
+              onClick={() => setConfirm('rejected')}
             >
               驳回
             </button>
+            <button className="operations-button" disabled={!canDecide} onClick={()=>setConfirm('supplement')}>要求补充</button>
             <button
               className="operations-button work-orders-approve"
               disabled={!canDecide}
-              onClick={() => onDecide("approved")}
+              onClick={() => setConfirm('approved')}
             >
               {DEMO_MODE ? "同意（预览）" : "同意"}
               <ChevronRight size={13} />
@@ -2740,6 +2547,8 @@ function ApprovalDetail({
           </span>
         )}
       </footer>
+      {localNotice&&<p role="status">{localNotice}</p>}
+      {confirm&&<WorkflowConfirm title={confirm==='approved'?'批准这项申请？':confirm==='rejected'?'驳回申请':'要求补充材料'} label={confirm==='approved'?'确认批准':confirm==='rejected'?'确认驳回':'保存补充要求草稿'} onClose={()=>setConfirm(null)} onConfirm={()=>{if(!note.trim()){setLocalNotice('请填写审批意见或补充要求');return}if(confirm==='supplement'){try{localStorage.setItem(workflowKey(user?.id||'',row.station.id,'supplement',approval.id),JSON.stringify({note}));onLocalSaved();setLocalNotice('补充要求草稿已保存；发送接口尚未接通，审批状态未改变');setConfirm(null)}catch{setLocalNotice('保存失败：本地存储不可用')}}else{onDecide(confirm);setConfirm(null)}}}><p>{approval.id} · {approval.title}</p><label>{confirm==='rejected'?'驳回原因':confirm==='supplement'?'补充要求':'审批意见'}<textarea aria-label={confirm==='rejected'?'驳回原因':confirm==='supplement'?'补充要求':'确认审批意见'} value={note} onChange={e=>onNote(e.target.value)} maxLength={2000}/></label>{confirm==='supplement'?<p>当前只能保存本地草稿，不会发送给申请人。</p>:<p>本次决定仅针对当前提交的内容。</p>}</WorkflowConfirm>}
     </aside>
   )
 }

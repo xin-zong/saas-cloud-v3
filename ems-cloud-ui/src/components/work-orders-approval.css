@@ -12,6 +12,118 @@
   background: var(--wo-bg) !important;
 }
 
+/* Module 05: latest queue 1107:1090, detail 1759:3027 and handling 1627 series. */
+.wo-filter-picker{display:flex;gap:20px;align-items:flex-start;flex-basis:100%;flex-wrap:wrap}
+.wo-full-detail[data-handling=false]>.wo-handling{display:none}
+.wo-full-detail[data-handling=true]{max-width:760px;margin:0 auto}
+.wo-full-detail[data-handling=true]>.wo-detail-card:nth-of-type(n+2){display:none}
+.wo-full-detail[data-handling=true]>.wo-detail-card{margin-bottom:0;border-bottom:0;border-radius:12px 12px 0 0}
+.wo-full-detail[data-handling=true]>.wo-handling{margin-top:0;border-top:0;border-radius:0 0 12px 12px}
+.wo-full-detail[data-handling=true] .wo-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.work-orders-page .work-orders-detail.wo-full-detail .work-orders-detail-body{grid-template-columns:1fr;gap:0}
+.work-orders-page .work-orders-detail.wo-full-detail .work-orders-evidence{order:-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px 24px}
+.work-orders-page .work-orders-detail.wo-full-detail .work-orders-evidence>h3,.work-orders-page .work-orders-detail.wo-full-detail .work-orders-evidence>details{grid-column:1/-1}
+.work-orders-page .work-orders-detail.wo-full-detail .work-orders-evidence>div{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:0}
+.work-orders-page .work-orders-detail.wo-full-detail>button{align-self:flex-start;min-width:156px}
+.work-orders-page .work-orders-detail.wo-full-detail h2{font-size:22px}
+.wo-confirm-symbol{display:flex!important;align-items:center;justify-content:center}
+.wo-inspection-detail .wo-check-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.wo-inspection-detail .wo-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.wo-inspection-detail h2{font-size:18px;margin-bottom:24px}
+.wo-inspection-detail .wo-handling>h3{display:none}
+.work-orders-page .work-orders-detail.wo-full-detail .work-orders-evidence>div{padding:0;border:0;line-height:1.5}
+.work-orders-page .work-orders-detail.wo-full-detail .work-orders-evidence{gap:12px 24px;padding:20px}
+.work-orders-page .work-orders-detail.wo-full-detail .work-orders-change .wo-detail-grid{grid-template-columns:repeat(4,minmax(0,1fr));margin:12px 0}
+.work-orders-page .work-orders-detail.wo-full-detail .work-orders-comment{padding:18px 20px}
+.work-orders-page .work-orders-detail.wo-full-detail .work-orders-comment textarea{min-height:64px}
+.work-orders-page .work-orders-detail.wo-full-detail h3{margin-bottom:10px}
+.work-orders-create-dialog .work-orders-create-field:has([aria-label="新建工单负责人"]){grid-row:4;grid-column:1}
+.work-orders-create-dialog .work-orders-create-field:has([aria-label="新建工单处理时限"]){grid-row:4;grid-column:2}
+.wo-filter-menu{width:232px;border:1px solid #dce2e5;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:6px;max-height:500px;overflow:auto}
+.wo-filter-menu button{min-height:36px;background:white}
+.wo-filter-picker>label{display:grid!important;gap:10px!important}
+.wo-filter-picker small{color:#7a8792;font-size:11px}
+.wo-filter-chips{display:flex;flex-wrap:wrap;gap:8px}
+.work-orders-page{--wo-line:#dce2e5;--wo-soft-line:#e4e9ed;--wo-muted:#5f6e78;--wo-primary:#206e5f;--wo-chip:#f4f6f7;color:#344252}
+.work-orders-page .work-orders-topbar{min-height:48px;padding:0 20px;gap:12px}
+.work-orders-page .work-orders-topbar nav{gap:0}
+.work-orders-page .work-orders-topbar nav button{min-width:96px;font-size:13px;font-weight:400}
+.work-orders-page .work-orders-topbar nav button::after{left:24px;right:24px;bottom:12px}
+.work-orders-page .work-orders-topbar>button{margin-left:auto;border:1px solid var(--wo-line);padding:0 10px;min-height:30px}
+.work-orders-page .work-orders-sync{font-size:11px}
+.work-orders-page .work-orders-content{padding:12px 20px 24px;min-height:calc(100% - 48px)}
+.work-orders-page .work-orders-chip{min-height:28px;border-radius:6px;font-weight:400;padding:0 12px}
+.work-orders-page .work-orders-chip[aria-pressed=true]{background:#e8f2ef}
+.work-orders-page .work-orders-toolbar{padding:18px 0 24px}
+.work-orders-page .work-orders-search input{width:320px;padding-left:14px}
+.work-orders-page .work-orders-search>svg{display:none}
+.work-orders-page .work-orders-new{min-width:116px;height:34px}
+.work-orders-page th{background:#f4f6f7!important;font-weight:400}
+.work-orders-page td{height:50px;color:#26333d}
+.work-orders-page .work-orders-title small{display:none}
+.work-orders-page .work-orders-priority{background:none;padding:0;font-weight:400;color:inherit}
+.work-orders-page .work-orders-sla{margin-top:40px}
+.work-orders-content:has(>.wo-full-detail)>:not(.wo-full-detail):not(dialog),
+.work-orders-content:has(>.work-orders-detail-row)>:not(.work-orders-detail-row):not(dialog),
+.work-orders-content:has(>.wo-workbench)>:not(.wo-workbench):not(dialog){display:none}
+.wo-full-detail{min-width:0;width:100%;font-size:13px;color:#465568}
+.wo-full-detail>header{display:flex;align-items:center;justify-content:space-between;margin:20px 0}
+.wo-full-detail h2{font-size:22px;font-weight:600;margin:0}
+.wo-full-detail h3,.wo-workbench h3{font-size:15px;font-weight:500;margin:0 0 18px}
+.wo-detail-card,.wo-handling{padding:24px;border:1px solid #dce2e5;border-radius:8px;margin:20px 0;background:white}
+.wo-detail-card p{line-height:1.8;margin:16px 0 0}
+.wo-detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px 28px;margin:0}
+.wo-detail-grid dt{font-size:12px;color:#8994a0;margin-bottom:8px}
+.wo-detail-grid dd{margin:0;overflow-wrap:anywhere}
+.wo-full-detail footer{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:12px;margin-top:20px}
+.wo-full-detail footer p{flex-basis:100%}
+.wo-handling{max-width:760px;margin:24px auto}
+.wo-handling label,.wo-task-form label{display:flex;flex-direction:column;gap:10px;font-size:13px;margin:14px 0}
+.wo-handling textarea,.wo-task-form textarea{min-height:76px;width:100%;padding:12px;border:1px solid #dce2e5;border-radius:8px;resize:vertical}
+.wo-handling input,.wo-handling select,.wo-task-form input,.wo-task-form select{min-width:0;height:38px;border:1px solid #dce2e5;border-radius:8px;padding:6px 10px;background:white}
+.wo-check-grid,.wo-task-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px}
+.wo-upload input{height:auto;border:0;padding:0}
+.wo-boundary{color:#697987;font-size:12px;line-height:1.7}
+.wo-confirm{position:fixed;inset:0;margin:auto;width:520px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);overflow:auto;border:1px solid #dce2e5;border-radius:16px;padding:52px 58px 30px;color:#26333d;background:#fff;box-shadow:0 20px 40px #0002;z-index:100}
+.wo-confirm::backdrop{background:#0005}
+.wo-confirm h2{font-size:20px;text-align:center;margin:16px 0}
+.wo-confirm p{font-size:13px;line-height:1.8;text-align:center;color:#687786}
+.wo-confirm-symbol{display:block;margin:auto;width:44px;height:44px;border-radius:12px;background:#fbf4e7;text-align:center;font-size:28px}
+.wo-confirm .wo-close{position:absolute;right:22px;top:18px}
+.wo-confirm footer{display:flex;justify-content:center;gap:12px;margin-top:48px}
+.wo-confirm label{display:grid;gap:10px;margin-top:24px;font-size:13px}
+.wo-confirm textarea{width:100%;min-height:80px;border:1px solid #dce2e5;border-radius:8px;padding:12px}
+.work-orders-create-dialog{width:760px!important;border-color:#dce2e5!important}
+.work-orders-create-dialog .work-orders-create-context{display:none}
+.work-orders-create-dialog .work-orders-create-field:has([aria-label="新建工单标题"]){grid-row:1;grid-column:1/-1}
+.work-orders-create-dialog .work-orders-create-field:has([aria-label="新建工单站点"]){grid-row:2;grid-column:1}
+.work-orders-create-dialog .work-orders-create-field:has([aria-label="新建工单设备"]){grid-row:2;grid-column:2}
+.work-orders-create-dialog .work-orders-create-field:has([aria-label="新建工单来源"]){grid-row:3;grid-column:1}
+.work-orders-create-dialog .work-orders-create-field:has([aria-label="新建工单等级"]){grid-row:3;grid-column:2}
+.work-orders-page .work-orders-detail-row{width:100%;margin:0}
+.work-orders-page .work-orders-detail.wo-full-detail{position:static;width:100%;border:0;background:white;max-height:none}
+.work-orders-page .work-orders-detail.wo-full-detail>header{padding:0;border:0}
+.work-orders-page .work-orders-detail.wo-full-detail .work-orders-detail-body{padding:0;overflow:visible}
+.work-orders-page .work-orders-detail.wo-full-detail .work-orders-change,.work-orders-page .work-orders-detail.wo-full-detail .work-orders-evidence,.work-orders-page .work-orders-detail.wo-full-detail .work-orders-comment{border:1px solid #dce2e5;background:#fff;border-radius:8px;padding:24px;margin-bottom:20px}
+.wo-inspection-detail>.wo-detail-card{max-width:760px;margin:20px auto}
+.wo-inspection-detail .wo-handling{padding:0;border:0}
+.wo-workbench{min-width:0;font-size:13px}
+.wo-workbench>nav{display:flex;gap:8px;flex-wrap:wrap}
+.wo-workbench>h2{font-size:22px;margin:24px 0 12px}
+.wo-workbench-grid{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:20px;margin-top:20px}
+.wo-workbench-grid>section,.wo-workbench-grid>aside{border:1px solid #dce2e5;border-radius:8px;padding:24px;min-width:0}
+.wo-workbench-grid dl{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid #edf0f2;padding-bottom:20px;margin:20px 0}
+.wo-workbench-grid dd{margin:0;color:#206e5f}
+.wo-workbench-filter{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.wo-workbench-filter input,.wo-workbench-filter select{height:36px;border:1px solid #dce2e5;padding:6px 10px;border-radius:8px}
+.wo-flow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:20px 0}
+.wo-flow>span{padding:18px;background:#f4f6f7;border:1px solid #dce2e5;border-radius:8px}
+.wo-flow>span button{margin-left:10px}
+.wo-task-table{max-width:100%;overflow:auto}
+.work-orders-page .wo-workbench table{min-width:600px}
+.wo-task-form input[type=checkbox]{width:16px;height:16px;min-height:0}
+@media(max-width:900px){.wo-workbench-grid{grid-template-columns:1fr}.wo-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.work-orders-sync{display:none}.wo-check-grid,.wo-task-form{grid-template-columns:1fr}.wo-full-detail h2{font-size:18px}}
+
 .work-orders-topbar {
   display: flex;
   align-items: center;

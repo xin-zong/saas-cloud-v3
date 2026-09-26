@@ -44,7 +44,8 @@ test('API approval reviewer can decide a server record and sees refreshed state'
     await page.getByRole('button', { name: '办理审批' }).click()
     await page.getByLabel('审批意见').fill('核验通过')
     await page.getByRole('button', { name: '同意' }).click()
-    await page.getByText('已通过', { exact: true }).first().waitFor()
+    await page.getByRole('button', { name: '确认批准', exact: true }).click()
+    await page.getByRole('complementary',{name:'审核复核详情'}).getByText('已通过', { exact: true }).waitFor()
     assert.equal(decisions, 1)
     approval.status = 'pending'
     approval.submitter_id = 7
@@ -63,6 +64,7 @@ test('API approval reviewer can decide a server record and sees refreshed state'
     await page.getByRole('button', { name: '办理审批' }).click()
     await page.getByLabel('审批意见').fill('稍后处理')
     await page.getByRole('button', { name: '驳回', exact: true }).click()
+    await page.getByRole('button', { name: '确认驳回', exact: true }).click()
     await page.getByText('审批已经结束', { exact: true }).waitFor()
     assert.equal(await page.getByRole('button', { name: '驳回', exact: true }).isEnabled(), true)
     assert.deepEqual(errors, [])
