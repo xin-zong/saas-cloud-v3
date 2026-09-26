@@ -35,7 +35,7 @@ test('API login, station scope, server workorder creation, reload and logout', a
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({code:0,msg:'ok',data})})
   })
   try {
-    await page.goto(process.env.PREVIEW_URL || 'http://127.0.0.1:8443')
+    await page.goto(process.env.API_PREVIEW_URL || process.env.PREVIEW_URL || 'http://127.0.0.1:8443')
     assert.equal(await page.getByText('密码统一为 Demo@2026').count(),0)
     await page.getByLabel('登录账号',{exact:true}).fill('test@example.test')
     await page.getByLabel('密码',{exact:true}).fill('server-only-password')
@@ -59,6 +59,7 @@ test('API login, station scope, server workorder creation, reload and logout', a
     assert.equal(await page.getByText('禁止显示站点').count(),0)
     await page.getByRole('button',{name:'真实用户，账户菜单',exact:true}).click()
     await page.getByRole('button',{name:'退出登录',exact:true}).click()
+    await page.getByRole('dialog',{name:'退出登录？'}).getByRole('button',{name:'退出登录',exact:true}).click()
     await page.getByRole('button',{name:'登录',exact:true}).waitFor()
     assert.equal(revoked,true)
     assert.deepEqual(errors,[])
@@ -95,7 +96,7 @@ test('API strategy empty state, draft approval and tariff effective-period creat
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({code:0,data})})
   })
   try {
-    await page.goto(process.env.PREVIEW_URL || 'http://127.0.0.1:8443')
+    await page.goto(process.env.API_PREVIEW_URL || process.env.PREVIEW_URL || 'http://127.0.0.1:8443')
     await page.getByRole('button',{name:'资产与站点',exact:true}).click(); await page.getByRole('button',{name:'计划站点',exact:true}).first().click()
     await page.getByRole('button',{name:'策略运行',exact:true}).click()
     await page.getByText('该日期暂无计划时段。不会自动生成演示计划。',{exact:true}).waitFor()

@@ -39,6 +39,7 @@ import GlobalAiDrawer from "@/components/GlobalAiDrawer"
 import PlatformManagementPage from "@/components/PlatformManagementPage"
 
 import SystemSettingsPage from "@/components/SystemSettingsPage"
+import SettingsDialog from "@/components/SettingsDialog"
 
 import type { MaintenanceData } from "@/data/stationMaintenance"
 
@@ -289,6 +290,10 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
   const { logout } = useAuth()
   const overviewLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
   const registerOverviewLeaveGuard = useCallback((guard: null | (() => Promise<boolean>)) => { overviewLeaveGuard.current = guard }, [])
+  const [logoutConfirm, setLogoutConfirm] = useState(false)
+  const logoutPending = useRef(false)
+  const settingsLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
+  const registerSettingsLeaveGuard = useCallback((guard: null | (() => Promise<boolean>)) => { settingsLeaveGuard.current = guard }, [])
   const platformLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
   const stationLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
   const assetsLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
@@ -433,7 +438,17 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
     if (activeNav === "运维中心") return maintenanceLeaveGuard.current?.() ?? Promise.resolve(true)
     if (activeNav === "工单与审批") return workOrdersLeaveGuard.current?.() ?? Promise.resolve(true)
     if (activeNav === "平台管理") return platformLeaveGuard.current?.() ?? Promise.resolve(true)
+    if (activeNav === "设置") return settingsLeaveGuard.current?.() ?? Promise.resolve(true)
     return Promise.resolve(true)
+  }
+
+  function requestLogout() { if (!logoutPending.current) setLogoutConfirm(true) }
+  async function confirmLogout() {
+    if (logoutPending.current) return
+    logoutPending.current = true
+    setLogoutConfirm(false)
+    try { if (await requestActiveEditorLeave()) logout() }
+    finally { logoutPending.current = false }
   }
 
   const handleUpdateStation = useCallback(
@@ -798,8 +813,9 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
 
   return (
     <div className="workspace-shell" data-immersive={immersive} data-nav-collapsed={sidebarCollapsed} data-design-area={activeNav === "资产与站点" ? "stations" : activeNav !== "总览" ? "business" : undefined}>
-      {activeNav !== "总览" && <StationGlobalHeader user={user} onLogout={async () => { if (await requestActiveEditorLeave()) logout() }} status={DEMO_MODE ? undefined : apiError || (apiLoading ? "正在加载授权站点…" : `已连接业务服务 · ${stations.length} 个授权站点`)} loading={apiLoading} onRefresh={refreshApi} />}
-      {!immersive && activeNav === "总览" && <Header showImmersive={activeNav === "总览"} immersive={immersive} onToggleImmersive={async () => { if (await requestActiveEditorLeave()) { setActiveNav("总览"); setImmersive(true) } }} user={user} onLogout={async () => { if (await requestActiveEditorLeave()) logout() }} />}
+      {activeNav !== "总览" && <StationGlobalHeader user={user} onLogout={requestLogout} status={DEMO_MODE ? undefined : apiError || (apiLoading ? "正在加载授权站点…" : `已连接业务服务 · ${stations.length} 个授权站点`)} loading={apiLoading} onRefresh={refreshApi} />}
+      {!immersive && activeNav === "总览" && <Header showImmersive={activeNav === "总览"} immersive={immersive} onToggleImmersive={async () => { if (await requestActiveEditorLeave()) { setActiveNav("总览"); setImmersive(true) } }} user={user} onLogout={requestLogout} />}
+      {logoutConfirm && <SettingsDialog title="退出登录？" logout onClose={() => setLogoutConfirm(false)}><p>确认退出当前账户？</p><footer><button onClick={() => setLogoutConfirm(false)}>取消</button><button className="settings-confirm-logout" onClick={() => {void confirmLogout()}}>退出登录</button></footer></SettingsDialog>}
       {!immersive && (
         <Sidebar
           collapsed={sidebarCollapsed}
@@ -816,7 +832,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
             } finally { sidebarTransitionPending.current = false }
           })() }}
           user={user}
-          onLogout={logout}
+          onLogout={requestLogout}
         />
       )}
 
@@ -960,9 +976,11 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
         )}
         {activeNav === "设置" && (
           <SystemSettingsPage
+            key={`${DEMO_MODE ? "demo" : "api"}:${user.id}`}
+            registerLeaveGuard={registerSettingsLeaveGuard}
             stations={scopedStations}
             user={user}
-            onLogout={logout}
+            onLogout={requestLogout}
           />
         )}
         {activeNav === "总览" && <OverviewPage stations={scopedStations} user={user} nav={roleConfig.nav} immersive={immersive} onExitImmersive={() => setImmersive(false)} onOpenStation={handleOpenStation} registerLeaveGuard={registerOverviewLeaveGuard} requestLeave={() => overviewLeaveGuard.current?.() ?? Promise.resolve(true)} onNavigate={async nav => { if (roleConfig.nav.includes(nav) && await requestActiveEditorLeave()) setActiveNav(nav) }} />}

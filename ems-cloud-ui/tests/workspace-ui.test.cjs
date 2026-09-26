@@ -4,9 +4,9 @@ const path = require("node:path")
 const test = require("node:test")
 const { chromium } = require("playwright")
 
-const url = process.env.PREVIEW_URL || "http://localhost:8443/"
+const url = process.env.DEMO_PREVIEW_URL || process.env.PREVIEW_URL || "http://localhost:8443/"
 const artifacts = path.resolve(__dirname, "../.figma/stage-one")
-const storageKey = "enerlution-system-settings-v1"
+const storageKey = "enerlution:settings:demo:user-owner-demo"
 const ownerAccount = "owner@enerlution.cn"
 const demoPassword = "Demo@2026"
 
@@ -73,6 +73,7 @@ test(
       timezoneId: "Asia/Shanghai",
     })
     const page = await context.newPage()
+    page.on("dialog", dialog => dialog.type() === "beforeunload" ? dialog.accept() : dialog.dismiss())
     const errors = []
     page.on("pageerror", (error) => errors.push(error.message))
     // External fonts are not required for deterministic local UI tests.
@@ -107,6 +108,7 @@ test(
       await t.test(
         "settings save, reload, cancel reset and storage failure",
         async () => {
+          await page.getByText("本地兼容配置", { exact: true }).click()
           await page
             .getByLabel("备用接口地址", { exact: true })
             .fill("https://backup.example.test/v2")
@@ -123,6 +125,7 @@ test(
           await page.getByText("已保存至本机", { exact: true }).waitFor()
           await page.reload({ waitUntil: "domcontentloaded" })
           await page.getByRole("button", { name: "设置", exact: true }).click()
+          await page.getByText("本地兼容配置", { exact: true }).click()
           assert.equal(
             await page.getByLabel("备用接口地址", { exact: true }).inputValue(),
             "https://backup.example.test/v2",
@@ -165,6 +168,7 @@ test(
           )
           await page.reload({ waitUntil: "domcontentloaded" })
           await page.getByRole("button", { name: "设置", exact: true }).click()
+          await page.getByText("本地兼容配置", { exact: true }).click()
           await page
             .getByRole("button", { name: "恢复默认", exact: true })
             .click()
@@ -201,8 +205,8 @@ test(
           assert.equal(
             await page
               .locator(".workspace-sidebar")
-              .evaluate((e) => e.clientWidth),
-            55,
+              .evaluate((e) => e.getBoundingClientRect().width),
+            64,
           )
           await page
             .getByRole("button", { name: "展开导航", exact: true })
@@ -211,7 +215,7 @@ test(
       )
 
       await t.test(
-        "legacy local settings remain readable and corrupt storage is reported",
+        "account-scoped local settings remain readable and corrupt storage is reported",
         async () => {
           await page.evaluate(
             (key) =>
@@ -227,8 +231,9 @@ test(
           )
           await page.reload({ waitUntil: "domcontentloaded" })
           await page.getByRole("button", { name: "设置", exact: true }).click()
+          await page.getByText("本地兼容配置", { exact: true }).click()
           assert.equal(
-            await page.getByLabel("界面语言", { exact: true }).inputValue(),
+            await page.getByLabel("兼容界面语言", { exact: true }).inputValue(),
             "English",
           )
           assert.equal(
@@ -246,7 +251,7 @@ test(
             .filter({ hasText: "无法读取本地配置" })
             .waitFor()
           assert.equal(
-            await page.getByLabel("界面语言", { exact: true }).inputValue(),
+            await page.getByLabel("兼容界面语言", { exact: true }).inputValue(),
             "简体中文",
           )
           await page.evaluate((key) => localStorage.removeItem(key), storageKey)

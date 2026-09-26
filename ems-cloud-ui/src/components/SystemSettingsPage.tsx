@@ -1,11 +1,13 @@
 import { DEMO_MODE, api, send } from "@/api/client"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import type { ReactNode } from "react"
-import { Bell, Check, Save, X } from "lucide-react"
+import { Check, Save, X } from "lucide-react"
 import type { Station } from "@/App"
 import { ROLE_CONFIG, type AuthUser } from "@/auth/roles"
 import { Button, Select, Switch } from "./ui/Workspace"
 import "./system-settings.css"
+import SettingsDialog from "./SettingsDialog"
+import { useEditorLeaveGuard, type RegisterLeaveGuard } from "./useEditorLeaveGuard"
 
 type SettingsState = {
   displayName: string
@@ -33,7 +35,7 @@ type SettingsState = {
   loginHistory: string
   newDeviceAlert: boolean
 
-  // Legacy values remain readable so existing local settings are not lost.
+  // Older preference fields remain readable within account-scoped local settings.
   autoRefresh: boolean
   refreshInterval: string
   auditLog: boolean
@@ -56,12 +58,12 @@ type Category = {
   saveLabel: string
 }
 
-const STORAGE_KEY = "enerlution-system-settings-v1"
+const preferenceKeys = ["defaultEntry", "defaultTimeRange", "rememberSiteTab", "language", "timezone", "units", "theme", "density", "chartAnimation", "highContrast", "notificationInApp", "notificationEmail", "notificationSms", "alarmScope", "approvalScope", "taskScope", "quietHours", "newDeviceAlert"] as const
 
 const DEFAULT_SETTINGS: SettingsState = {
-  displayName: "周新岸",
-  email: "zhou.xinan@enerlution.com",
-  phone: "138 **** 2046",
+  displayName: "",
+  email: "",
+  phone: "",
   defaultEntry: "总览",
   defaultTimeRange: "当天",
   rememberSiteTab: true,
@@ -79,8 +81,8 @@ const DEFAULT_SETTINGS: SettingsState = {
   density: "舒适",
   chartAnimation: "开启",
   highContrast: false,
-  mfaEnabled: true,
-  loginDevices: "3 台",
+  mfaEnabled: false,
+  loginDevices: "未知",
   loginHistory: "今天",
   newDeviceAlert: true,
 
@@ -127,9 +129,9 @@ const CATEGORIES: Category[] = [
   },
 ]
 
-function readSettings(seed: Partial<SettingsState> = {}) {
+function readSettings(storageKey: string, seed: Partial<SettingsState> = {}) {
   try {
-    const raw = DEMO_MODE ? localStorage.getItem(STORAGE_KEY) : null
+    const raw = DEMO_MODE ? localStorage.getItem(storageKey) : null
     if (!raw) {
       return {
         settings: { ...DEFAULT_SETTINGS, ...seed },
@@ -154,7 +156,7 @@ function readSettings(seed: Partial<SettingsState> = {}) {
     }
   } catch {
     return {
-      settings: { ...DEFAULT_SETTINGS },
+      settings: { ...DEFAULT_SETTINGS, ...seed },
       savedAt: "",
       stored: false,
       error: "无法读取本地配置，当前显示默认值。",
@@ -335,7 +337,7 @@ function PersonalPreferences({
 }) {
   return (
     <>
-      <SettingsCard title="账户资料" status="周">
+      <SettingsCard title="账户资料" status={settings.displayName.slice(0, 1) || "—"}>
         <div className="settings-account-grid">
           <TextField
             label="显示名称"
@@ -387,7 +389,7 @@ function PersonalPreferences({
         </div>
       </SettingsCard>
       <ScopeNote title="设置范围">
-        个人偏好仅影响当前账户，不改变其他用户、站点或租户配置。切换左侧分类后，右侧工作区复用相同结构。
+        个人偏好仅影响当前账户，不改变其他用户、站点或租户配置。默认页面等偏好的全局应用尚未接入；演示账户资料仅保存在本机。
       </ScopeNote>
     </>
   )
@@ -405,31 +407,14 @@ function NotificationSettings({
 }) {
   return (
     <>
-      <SettingsCard title="通知渠道" status="已启用">
+      <SettingsCard title="通知渠道" status="接收偏好">
         <div className="settings-account-grid">
-          <div className="settings-account-field">
-            <span>站内通知</span>
-            <div className="settings-faux-field settings-field-status">
-              {settings.notificationInApp ? "已开启" : "已关闭"}
-            </div>
-          </div>
-          <div className="settings-account-field">
-            <span>邮件通知</span>
-            <div className="settings-faux-field settings-field-status">
-              {settings.notificationEmail
-                ? `已开启 · ${settings.email}`
-                : "已关闭"}
-            </div>
-          </div>
-          <div className="settings-account-field">
-            <span>短信通知</span>
-            <div className="settings-faux-field settings-field-status">
-              {settings.notificationSms}
-            </div>
-          </div>
+          <FieldSelect label="站内通知" value={settings.notificationInApp ? "接收" : "不接收"} options={["接收", "不接收"]} onChange={value => set("notificationInApp", value === "接收")} />
+          <FieldSelect label="邮件通知" value={settings.notificationEmail ? "接收" : "不接收"} options={["接收", "不接收"]} onChange={value => set("notificationEmail", value === "接收")} />
+          <FieldSelect label="短信通知" value={settings.notificationSms} options={["仅紧急告警", "全部告警", "不接收"]} onChange={value => set("notificationSms", value)} />
         </div>
         <p className="settings-card-note">
-          通知渠道只影响当前账户，不改变告警规则和事件级别。
+          通知渠道只保存当前账户的接收偏好，不代表消息已送达；消息投递服务尚未接入。
         </p>
       </SettingsCard>
       <SettingsCard title="通知规则">
@@ -460,7 +445,7 @@ function NotificationSettings({
         </div>
       </SettingsCard>
       <ScopeNote title="生效范围">
-        通知偏好仅影响当前账户；紧急告警仍按平台安全策略强制送达。切换渠道后保存生效。
+        通知偏好仅影响当前账户，不改变告警规则。实际投递和紧急告警策略以平台服务为准。
       </ScopeNote>
     </>
   )
@@ -504,7 +489,7 @@ function DisplaySettings({
           />
         </div>
         <p className="settings-card-note">
-          时间轴、报表与导出文件统一采用所选时区和计量单位。
+          此处保存显示偏好；时间轴、报表、导出的全局应用尚未接入。
         </p>
       </SettingsCard>
       <SettingsCard title="界面显示">
@@ -541,75 +526,27 @@ function DisplaySettings({
   )
 }
 
-function SecuritySettings({
-  settings,
-  set,
-}: {
-  settings: SettingsState
-  set: <K extends keyof SettingsState>(
-    key: K,
-    value: SettingsState[K],
-  ) => void
-}) {
-  return (
-    <>
-      <SettingsCard title="账户安全" status="正常">
-        <div className="settings-account-grid">
-          <div className="settings-account-field">
-            <span>登录账户</span>
-            <div className="settings-faux-field settings-field-status">
-              {settings.email}
-            </div>
-          </div>
-          <div className="settings-account-field">
-            <span>多因素认证</span>
-            <div className="settings-faux-field settings-field-status">
-              {settings.mfaEnabled ? "已开启 · 验证器" : "未开启"}
-            </div>
-          </div>
-          <div className="settings-account-field">
-            <span>最近登录</span>
-            <div className="settings-faux-field settings-field-status">
-              09-06 14:20 · 上海
-            </div>
-          </div>
-        </div>
-        <p className="settings-card-note">
-          检测到异常登录时将强制二次验证，并通知当前账户。
-        </p>
-      </SettingsCard>
-      <SettingsCard title="登录与会话">
-        <div className="settings-preferences">
-          <ChoiceRow
-            label="多因素认证"
-            value={settings.mfaEnabled ? "已开启" : "未开启"}
-            options={["已开启", "未开启"]}
-            onChange={(value) => set("mfaEnabled", value === "已开启")}
-          />
-          <ChoiceRow
-            label="登录设备"
-            value={settings.loginDevices}
-            options={["3 台", "查看设备"]}
-            onChange={(value) => set("loginDevices", value)}
-          />
-          <ChoiceRow
-            label="登录记录"
-            value={settings.loginHistory}
-            options={["今天", "近 7 天", "近 30 天"]}
-            onChange={(value) => set("loginHistory", value)}
-          />
-          <ToggleRow
-            label="新设备登录提醒"
-            checked={settings.newDeviceAlert}
-            onChange={() => set("newDeviceAlert", !settings.newDeviceAlert)}
-          />
-        </div>
-      </SettingsCard>
-      <ScopeNote title="安全提示">
-        退出其他设备会话不会影响当前页面；权限与角色仍由平台管理统一维护。
-      </ScopeNote>
-    </>
-  )
+function SecuritySettings({ settings, set, account }: { account: string; settings: SettingsState; set: <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => void }) {
+  const [panel, setPanel] = useState("")
+  const [range, setRange] = useState("今天")
+  return <>
+    <SettingsCard title="账户安全" status="状态未接入"><div className="settings-account-grid">
+      {[["登录账户", account], ["多因素认证", "未获取状态"], ["最近登录", "暂无数据"]].map(([label, value]) => <div className="settings-account-field" key={label}><span>{label}</span><div className="settings-faux-field settings-field-status">{value || "—"}</div></div>)}
+    </div><p className="settings-card-note">验证方式、登录记录与设备会话服务尚未接入，无法判断账户安全状态。</p></SettingsCard>
+    <SettingsCard title="登录与会话"><div className="settings-preferences">
+      <div className="settings-preference-row"><span className="settings-row-label">多因素认证</span><div className="settings-choice-group"><span className="settings-choice">未获取</span><button className="settings-choice" onClick={() => setPanel("验证方式")}>管理方式</button></div></div>
+      <div className="settings-preference-row"><span className="settings-row-label">登录设备</span><div className="settings-choice-group"><span className="settings-choice">— 台</span><button className="settings-choice" onClick={() => setPanel("登录设备")}>查看设备</button></div></div>
+      <ChoiceRow label="登录记录" value={range} options={["今天", "近 7 天", "近 30 天"]} onChange={value => {setRange(value); setPanel("登录记录")}} />
+      <ToggleRow label="新设备登录提醒" checked={settings.newDeviceAlert} onChange={() => set("newDeviceAlert", !settings.newDeviceAlert)} />
+    </div></SettingsCard>
+    <ScopeNote title="安全提示">仅保存新设备提醒偏好，不能启用 MFA 或撤销其他会话。密码变更和消息投递尚未接入。</ScopeNote>
+    {panel && <SettingsDialog title={panel} onClose={() => setPanel("")}>
+      <p>{panel === "验证方式" ? "验证方式和密码变更服务尚未接入，请联系管理员。" : panel === "登录设备" ? "暂无可用的登录设备数据" : `${range} · 暂无可用的登录记录数据`}</p>
+      {panel === "验证方式" && <fieldset disabled className="settings-security-form"><label>当前密码<input type="password" autoComplete="off" /></label><label>新密码<input type="password" autoComplete="off" /></label><label>确认新密码<input type="password" autoComplete="off" /></label><button>修改密码（未接通）</button><button>配置 MFA（未接通）</button></fieldset>}
+      {panel === "登录设备" && <><table><thead><tr><th>设备</th><th>登录地点</th><th>最近活动</th></tr></thead><tbody><tr><td colSpan={3}>设备会话服务尚未接入</td></tr></tbody></table><button disabled>退出其他设备（未接通）</button></>}
+      <footer><Button onClick={() => setPanel("")}>关闭</Button></footer>
+    </SettingsDialog>}
+  </>
 }
 
 function LegacyCompatibilityControls({
@@ -625,7 +562,7 @@ function LegacyCompatibilityControls({
   onRestore: () => void
 }) {
   return (
-    <div className="settings-compatibility">
+    <details className="settings-compatibility"><summary>本地兼容配置</summary><p>仅为当前演示账户保存，不连接数据服务。</p>
       <input
         aria-label="备用接口地址"
         value={settings.backupEndpoint}
@@ -637,7 +574,7 @@ function LegacyCompatibilityControls({
         onChange={(event) => set("apiEndpoint", event.target.value)}
       />
       <select
-        aria-label="界面语言"
+        aria-label="兼容界面语言"
         value={settings.language}
         onChange={(event) => set("language", event.target.value)}
       >
@@ -664,7 +601,7 @@ function LegacyCompatibilityControls({
       <button type="button" aria-label="恢复默认" onClick={onRestore}>
         恢复默认
       </button>
-    </div>
+    </details>
   )
 }
 
@@ -672,119 +609,86 @@ export default function SystemSettingsPage({
   stations = [],
   user,
   onLogout,
+  registerLeaveGuard,
 }: {
   stations?: Station[]
   user: AuthUser
   onLogout: () => void
+  registerLeaveGuard?: RegisterLeaveGuard
 }) {
-  const primaryStation = stations[0]
-  const [initial] = useState(() =>
-    readSettings({
-      displayName: user.name || primaryStation?.manager || DEFAULT_SETTINGS.displayName,
-      email: user.account || primaryStation?.email || DEFAULT_SETTINGS.email,
-      phone: primaryStation?.phone || (DEMO_MODE ? DEFAULT_SETTINGS.phone : ""),
-      loginDevices: DEMO_MODE ? DEFAULT_SETTINGS.loginDevices : "未知",
-      loginHistory: DEMO_MODE ? DEFAULT_SETTINGS.loginHistory : "未接入",
-    }),
-  )
+  const storageKey = `enerlution:settings:${DEMO_MODE ? "demo" : "api"}:${user.id}`
+  const seed = { displayName: user.name || "", email: user.account || "", phone: "" }
+  const [initial] = useState(() => readSettings(storageKey, seed))
   const [settings, setSettings] = useState(initial.settings)
   const [baseline, setBaseline] = useState(initial.settings)
-  const [activeCategory, setActiveCategory] =
-    useState<CategoryKey>("personal")
-  const [savedAt, setSavedAt] = useState(initial.savedAt)
+  const [activeCategory, setActiveCategory] = useState<CategoryKey>("personal")
   const [stored, setStored] = useState(initial.stored)
   const [error, setError] = useState(initial.error)
-  const restoreDialog = useRef<HTMLDialogElement>(null)
-  const dirty = JSON.stringify(settings) !== JSON.stringify(baseline)
-  const category =
-    CATEGORIES.find((item) => item.key === activeCategory) ?? CATEGORIES[0]
-
-  const set = <K extends keyof SettingsState>(
-    key: K,
-    value: SettingsState[K],
-  ) => {
-    setSettings((current) => ({ ...current, [key]: value }))
-    setError("")
-  }
-
-  const preferenceKeys = ['defaultEntry', 'defaultTimeRange', 'rememberSiteTab', 'language', 'timezone', 'units', 'theme', 'density', 'chartAnimation', 'highContrast'] as const
   const [serverReady, setServerReady] = useState(DEMO_MODE)
+  const [busy, setBusy] = useState(false)
+  const [leave, setLeave] = useState(false)
+  const [loadVersion, setLoadVersion] = useState(0)
+  const restoreDialog = useRef<HTMLDialogElement>(null)
+  const busyRef = useRef(false)
+  const alive = useRef(true)
+  useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
+  const dirty = JSON.stringify(settings) !== JSON.stringify(baseline)
+  const category = CATEGORIES.find(item => item.key === activeCategory) ?? CATEGORIES[0]
+  const { requestLeave: requestDraftLeave, settleLeave } = useEditorLeaveGuard({ dirty, onConfirm: () => setLeave(true), onCancel: () => setLeave(false) })
+  const requestLeave = useCallback(() => {
+    if (busyRef.current) { setError("正在保存，请等待保存完成后再离开。"); return Promise.resolve(false) }
+    return requestDraftLeave()
+  }, [requestDraftLeave])
+  useEffect(() => { registerLeaveGuard?.(requestLeave); return () => registerLeaveGuard?.(null) }, [registerLeaveGuard, requestLeave])
+  useEffect(() => {
+    if (!dirty && !busy) return
+    const prevent = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = "" }
+    window.addEventListener("beforeunload", prevent)
+    return () => window.removeEventListener("beforeunload", prevent)
+  }, [dirty, busy])
+  const decideLeave = (allow: boolean) => { if (allow) {setSettings({...baseline}); setError("")} setLeave(false); settleLeave(allow) }
+  const set = <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => { if (!busyRef.current) {setSettings(current => ({...current, [key]: value})); setError("")} }
   useEffect(() => {
     if (DEMO_MODE) return
     const controller = new AbortController()
-    api<Record<string, string>>('/settings', {signal: controller.signal}).then(values => {
+    setServerReady(false)
+    api<Record<string, string>>("/settings", {signal: controller.signal}).then(values => {
       if (controller.signal.aborted) return
-      setSettings(current => {
-        const next = {...current}
-        for (const key of preferenceKeys) if (values[key] != null) Object.assign(next, {[key]: typeof next[key] === 'boolean' ? values[key] === 'true' : values[key]})
-        setBaseline(next); return next
-      })
-      setServerReady(true)
+      const next = {...initial.settings}
+      for (const key of preferenceKeys) if (values[key] != null) Object.assign(next, {[key]: typeof next[key] === "boolean" ? values[key] === "true" : values[key]})
+      setSettings(next); setBaseline(next); setServerReady(true); setError("")
     }).catch(error => {if (!controller.signal.aborted) setError(error.message)})
     return () => controller.abort()
-  }, [])
+  }, [loadVersion])
   async function save() {
-    if (!DEMO_MODE) {
-      if (!serverReady) return
-      setServerReady(false)
-      try {
-        for (const key of preferenceKeys) if (settings[key] !== baseline[key]) await send('/settings', 'PUT', {key, value: String(settings[key])})
-        const values = await api<Record<string, string>>('/settings')
-        const next = {...baseline}
-        for (const key of preferenceKeys) if (values[key] != null) Object.assign(next, {[key]: typeof next[key] === 'boolean' ? values[key] === 'true' : values[key]})
-        setSettings(next); setBaseline(next); setSavedAt(new Date().toISOString()); setStored(true); setError('')
-      } catch(error) {setError(error instanceof Error ? error.message : '保存失败；请刷新确认已保存项')}
-      finally {setServerReady(true)}
-      return
-    }
-    const timestamp = new Date().toISOString()
+    if (!serverReady || busyRef.current || (!DEMO_MODE && !dirty)) return
+    if (DEMO_MODE && (!settings.displayName.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.email))) {setError("请填写显示名称和有效的联系邮箱。"); return}
+    busyRef.current = true; setBusy(true); setError("")
+    const snapshot = {...settings}
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ settings, savedAt: timestamp }),
-      )
-      setBaseline({ ...settings })
-      setSavedAt(timestamp)
-      setStored(true)
-      setError("")
-    } catch {
-      setError("保存失败：本地存储不可用，请检查浏览器存储权限后重试。")
-    }
+      if (DEMO_MODE) localStorage.setItem(storageKey, JSON.stringify({settings: snapshot, savedAt: new Date().toISOString()}))
+      else {
+        let confirmed = {...baseline}
+        for (const key of preferenceKeys) {
+          if (snapshot[key] === confirmed[key]) continue
+          await send("/settings", "PUT", {key, value: String(snapshot[key])})
+          if (!alive.current) return
+          confirmed = {...confirmed, [key]: snapshot[key]}
+          setBaseline(confirmed)
+        }
+      }
+      if (!alive.current) return
+      setBaseline(snapshot); setStored(true); setError("")
+    } catch (error) {
+      if (alive.current) setError(DEMO_MODE ? "保存失败：本地存储不可用，请检查浏览器存储权限后重试。" : `部分偏好可能已保存；其余输入已保留，请重试。${error instanceof Error ? error.message : "保存失败"}`)
+    } finally {busyRef.current = false; if (alive.current) setBusy(false)}
   }
 
   return (
     <main className="ui-page settings-workspace">
-      <header className="settings-global-header">
-        <div className="settings-global-identity">
-          <span className="settings-global-mark" aria-hidden="true" />
-          <strong>Enerlution</strong>
-        </div>
-        <div className="settings-global-utilities">
-          <span className="settings-global-updated">
-            数据更新{" "}
-            {new Date().toLocaleTimeString("zh-CN", { hour12: false })}
-          </span>
-          <button
-            type="button"
-            className="settings-global-icon"
-            aria-label="通知"
-            title="通知"
-          >
-            <Bell size={18} />
-          </button>
-          <button
-            type="button"
-            className="settings-global-avatar"
-            aria-label={`${user.name}账户`}
-            title={`${user.name} · ${ROLE_CONFIG[user.role].shortLabel}`}
-          >
-            {user.name.slice(0, 1)}
-          </button>
-        </div>
-      </header>
       <div className="settings-layout">
         <aside className="settings-rail">
-          <h1>设置分类</h1>
+          <h1 className="sr-only">设置分类</h1>
           <nav className="settings-category-nav" aria-label="设置分类">
             {CATEGORIES.map((item) => (
               <button
@@ -796,7 +700,7 @@ export default function SystemSettingsPage({
                 aria-current={
                   activeCategory === item.key ? "page" : undefined
                 }
-                onClick={() => setActiveCategory(item.key)}
+                onClick={async () => {if (item.key !== activeCategory && await requestLeave()) setActiveCategory(item.key)}}
               >
                 <strong>{item.title}</strong>
                 <small>{item.subtitle}</small>
@@ -826,10 +730,10 @@ export default function SystemSettingsPage({
               variant="primary"
               aria-label="保存配置"
               onClick={save}
-              disabled={(!DEMO_MODE && (!serverReady || activeCategory === "security" || activeCategory === "notifications")) || (!dirty && stored)}
+              disabled={!serverReady || busy || (!dirty && (!DEMO_MODE || stored))}
             >
               <Save />
-              {category.saveLabel}
+              {busy ? "保存中…" : category.saveLabel}
             </Button>
           </header>
 
@@ -841,8 +745,8 @@ export default function SystemSettingsPage({
 
           <div className="settings-detail-divider" />
 
-          {!DEMO_MODE && <p className="settings-feedback">服务器仅保存个人界面偏好；账户资料、消息投递、安全策略和默认页面应用尚未接入。安全配置以服务器实际策略为准。</p>}
-          <fieldset disabled={!DEMO_MODE && (activeCategory === 'security' || activeCategory === 'notifications')} style={{border: 0, padding: 0, margin: 0}}>
+          {!serverReady && !busy && error && <Button onClick={() => setLoadVersion(value => value + 1)}>重试加载偏好</Button>}
+          <fieldset disabled={!serverReady || busy} style={{border: 0, padding: 0, margin: 0}}>
           <div className="settings-detail-content">
             {activeCategory === "personal" && (
               <PersonalPreferences settings={settings} set={set} />
@@ -854,11 +758,11 @@ export default function SystemSettingsPage({
               <DisplaySettings settings={settings} set={set} />
             )}
             {activeCategory === "security" && (
-              <SecuritySettings settings={settings} set={set} />
+              <SecuritySettings settings={settings} set={set} account={user.account} />
             )}
           </div>
 
-          {DEMO_MODE && <LegacyCompatibilityControls
+          {DEMO_MODE && activeCategory === "personal" && <LegacyCompatibilityControls
             settings={settings}
             set={set}
             onRestore={() => restoreDialog.current?.showModal()}
@@ -877,6 +781,7 @@ export default function SystemSettingsPage({
         </section>
       </div>
 
+      {leave && <SettingsDialog title="未保存的修改" onClose={() => decideLeave(false)}><p>离开将放弃未保存的修改，已确认保存的偏好会保留。</p><footer><Button onClick={() => decideLeave(false)}>继续编辑</Button><Button variant="primary" onClick={() => decideLeave(true)}>放弃修改</Button></footer></SettingsDialog>}
       <dialog
         ref={restoreDialog}
         className="ui-dialog"
@@ -905,7 +810,7 @@ export default function SystemSettingsPage({
           <Button
             variant="primary"
             onClick={() => {
-              setSettings({ ...DEFAULT_SETTINGS })
+              setSettings({ ...DEFAULT_SETTINGS, ...seed })
               setError("")
               restoreDialog.current?.close()
             }}

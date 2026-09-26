@@ -123,6 +123,7 @@ async function logout(page) {
   } else {
     await page.locator(".global-platform-header").getByRole("button", { name: "退出登录", exact: true }).click()
   }
+  await page.getByRole("dialog", { name: "退出登录？" }).getByRole("button", { name: "退出登录", exact: true }).click()
   await page.locator(".auth-page").waitFor()
 }
 
