@@ -7,7 +7,7 @@ const apiUrl = process.env.API_PREVIEW_URL || 'http://127.0.0.1:8461'
 const demoUrl = process.env.DEMO_PREVIEW_URL || 'http://127.0.0.1:8460'
 const artifacts = path.resolve(__dirname, '../.figma/all-modules/01')
 
-async function apiPage(browser) {
+async function apiPage(browser, options = {}) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
   await context.addInitScript(() => sessionStorage.setItem('enerlution-api-token', 'overview-test'))
   const page = await context.newPage()
@@ -15,9 +15,10 @@ async function apiPage(browser) {
   page.setDefaultNavigationTimeout(30000)
   await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com|static\.figma\.com/, route => route.abort())
   const user = { id: '7', name: '总览用户', account: 'overview@test', role: 'owner', organization: '测试组织', stationIds: ['12'], permissions: ['asset.read'], stationPermissions: { '12': ['asset.read'] }, organizationPermissions: {} }
+  Object.assign(user, options.user)
   await page.route('http://127.0.0.1:18090/api/**', async route => {
     const p = new URL(route.request().url()).pathname.slice(4)
-    const data = p === '/auth/me' ? user : p === '/stations' ? [{ id: 12, name: '授权测试站点', code: 'SITE-12', rated_power_kw: 100, capacity_kwh: 200 }, { id: 99, name: '禁止显示站点' }] : []
+    const data = p === '/auth/me' ? user : p === '/stations' ? options.stations ?? [{ id: 12, name: '授权测试站点', code: 'SITE-12', rated_power_kw: 100, capacity_kwh: 200 }, { id: 99, name: '禁止显示站点' }] : []
     await route.fulfill({ json: { code: 0, data } })
   })
   await page.goto(apiUrl, { waitUntil: 'domcontentloaded' })
@@ -29,6 +30,49 @@ async function apiPage(browser) {
     await refreshed
   } }
 }
+
+for (const role of ['operator', 'owner']) test(`overview immersive alarm departure restores navigation for ${role}`, { timeout: 60000 }, async () => {
+  const browser = await chromium.launch({ channel: 'msedge', headless: true })
+  try {
+    let page
+    if (role === 'owner') {
+      page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+      page.setDefaultTimeout(12000)
+      await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com|static\.figma\.com/, route => route.abort())
+      await page.goto(demoUrl, { waitUntil: 'domcontentloaded' })
+      await page.getByLabel('登录账号', { exact: true }).fill('owner@enerlution.cn')
+      await page.getByLabel('密码', { exact: true }).fill('Demo@2026')
+      await page.getByRole('button', { name: '登录', exact: true }).click()
+    } else ({ page } = await apiPage(browser, { user: { role, permissions: ['asset.read', 'alarm.read'], stationPermissions: { '12': ['asset.read', 'alarm.read'] } } }))
+    await page.getByRole('button', { name: '沉浸模式（隐藏导航）', exact: true }).click()
+    await page.getByRole('button', { name: role === 'operator' ? '进入运维中心' : '查看异常站点', exact: true }).click()
+    if (role === 'owner') await page.locator('.station-detail-shell').waitFor()
+    else await page.locator('.overview-workspace').waitFor({ state: 'detached' })
+    assert.equal(await page.locator('.workspace-shell').getAttribute('data-immersive'), 'false')
+    assert.equal(await page.locator('.workspace-sidebar').isVisible(), true)
+    assert.equal(await page.locator(role === 'owner' ? '.station-global-header' : '.global-platform-header').isVisible(), true)
+    await page.getByRole('navigation', { name: '一级导航' }).getByRole('button', { name: '总览', exact: true }).click()
+    await page.getByRole('button', { name: '经营看板', exact: true }).waitFor()
+  } finally { await browser.close() }
+})
+
+for (const mixed of [false, true]) test(`overview capacity ${mixed ? 'mixed' : 'all-missing'} values remain unknown and export empty numeric cells`, { timeout: 60000 }, async () => {
+  const browser = await chromium.launch({ channel: 'msedge', headless: true })
+  try {
+    const stations = [{ id: 12, name: '容量未知站点', code: 'UNKNOWN', region: '华东' }, ...(mixed ? [{ id: 13, name: '容量已知站点', code: 'KNOWN', region: '华东', rated_power_kw: 100, capacity_kwh: 200 }] : [])]
+    const { page } = await apiPage(browser, { stations, user: { stationIds: stations.map(s => String(s.id)), stationPermissions: { '12': ['asset.read'], '13': ['asset.read'] } } })
+    await page.getByRole('button', { name: '经营看板', exact: true }).click()
+    const region = page.locator('.overview-region-load')
+    assert.match(await region.innerText(), /容量数据不完整/)
+    assert.equal(await region.locator('b').innerText(), '— / — MWh')
+    const downloaded = page.waitForEvent('download')
+    await page.getByRole('button', { name: '数据导出', exact: true }).click()
+    const body = await fs.readFile(await (await downloaded).path(), 'utf8')
+    assert.doesNotMatch(body, /NaN|Infinity/)
+    assert.ok(body.includes('"容量未知站点","UNKNOWN","华东","","",'))
+    if (mixed) assert.ok(body.includes('"容量已知站点","KNOWN","华东","100","200",'))
+  } finally { await browser.close() }
+})
 
 test('overview API: dashboard range validation, honest empty data, customization and scoped export', { timeout: 60000 }, async () => {
   const browser = await chromium.launch({ channel: 'msedge', headless: true })

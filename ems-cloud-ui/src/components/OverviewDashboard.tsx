@@ -75,7 +75,7 @@ export default function OverviewDashboard({ stations, user, nav, onNavigate, onO
     setRange({ start: dateString(start), end: dateString(end) }); setPeriod(value)
   }
   function exportData() {
-    const cell = (value: unknown) => `"${String(value ?? "").replace(/^[=+@-]/, "'$&").replace(/"/g, '""')}"`
+    const cell = (value: unknown) => `"${String(typeof value === "number" && !Number.isFinite(value) ? "" : value ?? "").replace(/^[=+@-]/, "'$&").replace(/"/g, '""')}"`
     const rows = [["站点", "编码", "区域", "额定功率(kW)", "储能容量", "范围开始", "范围结束", "数据说明"], ...stations.map(s => [s.name, s.code, s.region, s.ratedPower, s.storageCapacity, range.start, range.end, "站点当前快照；趋势未接通的指标不导出"])]
     const blob = new Blob(["\uFEFF" + rows.map(row => row.map(cell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" })
     const url = URL.createObjectURL(blob); const anchor = document.createElement("a"); anchor.href = url; anchor.download = `总览站点快照-${range.end}.csv`; anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 1000)
@@ -93,6 +93,11 @@ export default function OverviewDashboard({ stations, user, nav, onNavigate, onO
   const orders = stations.flatMap(s => (s.maintenance?.workOrders ?? []).map(order => ({ ...order, station: s }))).filter(o => !o.createdAt || (o.createdAt.slice(0, 10) >= range.start && o.createdAt.slice(0, 10) <= range.end)).slice(0, 3)
   const approvals = stations.flatMap(s => (s.maintenance?.approvals ?? []).filter(a => a.status === "pending").map(a => ({ ...a, station: s }))).slice(0, 3)
   const regions = [...new Set(stations.map(s => s.region || "未设置区域"))]
+  const regionalCapacity = regions.slice(0, 3).map(region => {
+    const members = stations.filter(s => (s.region || "未设置区域") === region)
+    const complete = members.every(s => Number.isFinite(s.storageCapacity))
+    return { region, complete, capacity: complete ? (members.reduce((sum, s) => sum + s.storageCapacity, 0) / (DEMO_MODE ? 1 : 1000)).toFixed(2) : "—" }
+  })
   const alerts = stations.reduce((n, s) => n + s.alerts.length, 0)
   return <section className="overview-dashboard" aria-label="经营看板">
     <div className="overview-dashboard-heading"><div><h1>平台总览运营看板</h1><p>快速获悉全场站的电量分发、设备运行及实时收益趋势</p></div><div className="overview-dashboard-actions">
@@ -104,7 +109,7 @@ export default function OverviewDashboard({ stations, user, nav, onNavigate, onO
     <div className="overview-kpis">{[["站点总数", stations.length, "个"], ["在线站点", DEMO_MODE ? status[0].count : "—", "个"], ["待处理告警", alerts, "项"], ["昨日收益", DEMO_MODE && user.role === "owner" ? buildRevenueSummary(stations).yesterday.toFixed(2) : "—", "元"]].map(([label, value, unit]) => <article key={label}><span>{label}</span><div><strong>{value}</strong><small>{unit}</small></div></article>)}</div>
     <div className="overview-dashboard-grid">
       {visible.includes(sections[0]) && <article><h2>{sections[0]}</h2><div className="overview-health"><div className="overview-health-chart"><PieChart width={110} height={110}><Pie isAnimationActive={false} data={DEMO_MODE && stations.length ? status : [{ count: 1, color: "#e9eef1" }]} dataKey="count" innerRadius={38} outerRadius={52} stroke="none">{(DEMO_MODE && stations.length ? status : [{ color: "#e9eef1" }]).map((s, i) => <Cell key={i} fill={s.color} />)}</Pie></PieChart><strong>{stations.length}<small>总站数</small></strong></div><div>{status.map(s => <p key={s.label}><i style={{ background: s.color }} />{s.label}<b>{DEMO_MODE ? s.count : "—"} 个</b></p>)}</div></div></article>}
-      {visible.includes(sections[1]) && <article><h2>{sections[1]}</h2>{regions.length ? regions.slice(0, 3).map(region => <div className="overview-region-load" key={region}><div><span>{region}</span><b>— / {(stations.filter(s => (s.region || "未设置区域") === region).reduce((sum, s) => sum + (Number.isFinite(s.storageCapacity) ? s.storageCapacity : 0), 0) / (DEMO_MODE ? 1 : 1000)).toFixed(2)} MWh</b></div><progress value={0} max={100} /><small>负荷数据未接通</small></div>) : <div className="overview-empty">暂无授权站点容量数据</div>}</article>}
+      {visible.includes(sections[1]) && <article><h2>{sections[1]}</h2>{regionalCapacity.length ? regionalCapacity.map(({ region, complete, capacity }) => <div className="overview-region-load" key={region}><div><span>{region}</span><b>— / {capacity} MWh</b></div><progress value={0} max={100} /><small>{complete ? "负荷数据未接通" : "容量数据不完整 · 负荷数据未接通"}</small></div>) : <div className="overview-empty">暂无授权站点容量数据</div>}</article>}
       {visible.includes(sections[2]) && <article><h2>{period}储能充放量趋势</h2><div className="overview-trend">{trend.length ? <ResponsiveContainer width="100%" height="100%"><LineChart data={trend}><XAxis dataKey="h" tick={{ fontSize: 10 }} /><YAxis tick={{ fontSize: 10 }} width={35} /><Tooltip /><Line isAnimationActive={false} name="充电量(MWh)" dataKey="charge" stroke="#226d5b" dot={false} /><Line isAnimationActive={false} name="放电量(MWh)" dataKey="discharge" stroke="#4c6ef5" strokeDasharray="4 3" dot={false} /></LineChart></ResponsiveContainer> : <div className="overview-empty">暂无储能趋势数据</div>}</div></article>}
       {visible.includes(sections[3]) && <article><h2>{sections[3]}</h2><div className="overview-region-map"><img src="/figma/overview/dashboard/imgMapLayer.png" alt="区域示意底图，不代表站点位置" /><span>示意底图</span></div><div className="overview-station-links">{stations.map(s => <button key={s.id} onClick={() => onOpenStation(s.id)}>{s.name}</button>)}</div></article>}
       {visible.includes(sections[4]) && <article><div className="overview-card-heading"><h2>{sections[4]}</h2>{nav.includes("工单与审批") && <button onClick={() => onNavigate("工单与审批")}>查看全部 →</button>}</div><table><thead><tr><th>工单编号</th><th>工单类型</th><th>目标场站</th><th>状态</th></tr></thead><tbody>{orders.map(o => <tr key={o.id}><td>{o.id}</td><td>{o.title}</td><td>{o.station.name}</td><td>{WORK_ORDER_STATUS[o.status]}</td></tr>)}</tbody></table>{!orders.length && <div className="overview-empty">当前范围暂无可查看工单</div>}</article>}

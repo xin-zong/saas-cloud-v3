@@ -27,6 +27,7 @@ export default function OverviewPage({ stations, user, nav, immersive, onExitImm
     return () => window.removeEventListener("keydown", escape)
   }, [immersive, onExitImmersive])
   const allAlarms = () => {
+    onExitImmersive()
     if (nav.includes("运维中心")) onNavigate("运维中心")
     else { const target = visibleStations.find(s => s.alerts.length) ?? visibleStations[0]; if (target) onOpenStation(target.id, "告警信息") }
   }
