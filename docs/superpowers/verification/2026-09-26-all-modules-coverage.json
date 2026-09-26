@@ -1,0 +1,2168 @@
+{
+  "fileKey": "Y0KMYFvalDXgSPnVZ5zG39",
+  "total": 262,
+  "modules": [
+    {
+      "module": "01",
+      "page": "594:3224",
+      "document": "docs/superpowers/verification/2026-09-26-figma-module-01.md",
+      "count": 3,
+      "mappings": [
+        {
+          "node": "1172:26660",
+          "name": "immersive-map-dashboard-v3",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | 一级导航“总览”→地图总览；白色浮层、站点运营概况、充放电趋势、环境效益、在线容量、能源构成、收益、告警与子系统卡片。区域筛选、站点选择、站点弹层关闭/拖动/详情跳转、实时地图缩放继续可用。"
+        },
+        {
+          "node": "1059:10664",
+          "name": "dashboard-optimized",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | 总览“经营看板”切换入口；保留四项指标、健康分布、区域储能容量、充放量趋势、核心站点区域分布、运维工单、待审批卡片，以及今日/近7天/近30天/自定义、CSV导出、页面定制。旧导航名称由现行共享导航取代，不另建重复业务路由。"
+        },
+        {
+          "node": "1286:2252",
+          "name": "immersive-map-dashboard-v3-fullscreen",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | 总览顶栏沉浸按钮；隐藏全局顶栏和导航，保留区域/站点筛选，追加实时状态条、事件日志、实时指标区域；退出全屏按钮或 Escape 返回。"
+        }
+      ]
+    },
+    {
+      "module": "02",
+      "page": "4:3",
+      "document": "docs/superpowers/verification/2026-09-26-figma-module-02.md",
+      "count": 102,
+      "mappings": [
+        {
+          "node": "973:2613",
+          "name": "P021 · 站点概览 · 当前基础版",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "P021 · 站点概览 · 当前基础版 | superseded | 站点概览 → 2044:8026 克制版；保留设备选择、周期查询"
+        },
+        {
+          "node": "973:2973",
+          "name": "P025 · 运营收益 · 当前基础版",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "P025 · 运营收益 · 当前基础版 | superseded | 运营收益 → 2085:8130 克制版；保留结算与导出"
+        },
+        {
+          "node": "973:3869",
+          "name": "P023 · 告警信息 · 当前基础版",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "P023 · 告警信息 · 当前基础版 | superseded | 告警信息 → 2109:8382 / 2111:26952 列表与详情"
+        },
+        {
+          "node": "973:4108",
+          "name": "P024 · 数据分析 · 当前基础版",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "P024 · 数据分析 · 当前基础版 | selected | 运行曲线 → 深入分析 → 实时分析；信号、分组、叠加、分屏、暂停"
+        },
+        {
+          "node": "973:4455",
+          "name": "P026 · 设备详情 · 当前基础版",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "P026 · 设备详情 · 当前基础版 | superseded | 设备详情 → 2271:10795 克制版"
+        },
+        {
+          "node": "986:3367",
+          "name": "P024-H1 · 历史趋势 · 当前基础版",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "P024-H1 · 历史趋势 · 当前基础版 | selected | 运行曲线 → 深入分析 → 历史趋势；日期/粒度查询与导出"
+        },
+        {
+          "node": "986:3721",
+          "name": "Flow / Realtime to History",
+          "decisions": [
+            "connector"
+          ],
+          "mapping": "Flow / Realtime to History | connector | 实时分析 ↔ 历史趋势标签切换；不新增路由"
+        },
+        {
+          "node": "1496:9634",
+          "name": "P028 · 一次接线图 · CAD专业版",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "P028 · 一次接线图 · CAD专业版 | selected | 一次接线图；缩放、选择设备、跳转设备详情"
+        },
+        {
+          "node": "1317:5484",
+          "name": "R9 / 01 · 默认查看：当前时段详情",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 01 · 默认查看：当前时段详情 | composed | 策略运行 → 当前时段详情；并入 R10 2343:12073，不新增重复入口"
+        },
+        {
+          "node": "1317:5955",
+          "name": "R9 / 02B · 切换预设策略方案",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 02B · 切换预设策略方案 | composed | 策略运行 → 切换预设/本地方案；并入 R10 2343:12073，不新增重复入口"
+        },
+        {
+          "node": "1317:6410",
+          "name": "R9 / 03A · 基础模式 / 峰谷套利",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 03A · 基础模式 / 峰谷套利 | composed | 策略运行 → 峰谷套利；并入 R10 2353:13122，不新增重复入口"
+        },
+        {
+          "node": "1317:6941",
+          "name": "R9 / 04A · 覆盖模式 / 需量控制",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 04A · 覆盖模式 / 需量控制 | composed | 策略运行 → 需量控制；并入 R10 2461:13070，不新增重复入口"
+        },
+        {
+          "node": "1317:7472",
+          "name": "R9 / 05 · 添加成功 / 总表更新",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 05 · 添加成功 / 总表更新 | composed | 策略运行 → 保存本地时段并更新总表；并入 R10 2353:12784，不新增重复入口"
+        },
+        {
+          "node": "1317:7951",
+          "name": "R9 / 06 · 展开 AI 策略助手",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 06 · 展开 AI 策略助手 | composed | 策略运行 → 展开 AI 策略助手；并入 R10 2343:12073，不新增重复入口"
+        },
+        {
+          "node": "1317:8441",
+          "name": "R9 / 07 · AI 草案确认",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 07 · AI 草案确认 | composed | 策略运行 → AI 草案确认；并入 R10 2343:12073，不新增重复入口"
+        },
+        {
+          "node": "1317:8945",
+          "name": "R9 / 08 · AI 方案写入列表",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 08 · AI 方案写入列表 | composed | 策略运行 → AI 草案写入本地方案，未下发；并入 R10 2343:12073，不新增重复入口"
+        },
+        {
+          "node": "1319:6442",
+          "name": "R9 / 02 · 点击时间段查看详情",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 02 · 点击时间段查看详情 | composed | 策略运行 → 选择时段详情；并入 R10 2353:12784，不新增重复入口"
+        },
+        {
+          "node": "1324:6562",
+          "name": "R9 / 09 · 新增策略方案",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 09 · 新增策略方案 | composed | 策略运行 → 新增策略方案；并入 R10 2343:12073，不新增重复入口"
+        },
+        {
+          "node": "1324:6755",
+          "name": "R9 / 10 · 方案设置",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 10 · 方案设置 | composed | 策略运行 → 方案设置；并入 R10 2343:12073，不新增重复入口"
+        },
+        {
+          "node": "1324:6948",
+          "name": "R9 / 11 · 删除方案确认",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 11 · 删除方案确认 | composed | 策略运行 → 删除方案确认；并入 R10 2343:12073，不新增重复入口"
+        },
+        {
+          "node": "1324:7118",
+          "name": "R9 / 12 · 编辑既有时段",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 12 · 编辑既有时段 | composed | 策略运行 → 编辑既有时段；并入 R10 2353:12784，不新增重复入口"
+        },
+        {
+          "node": "1324:7460",
+          "name": "R9 / 13 · 删除时段确认",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 13 · 删除时段确认 | composed | 策略运行 → 删除时段确认；并入 R10 2353:12784，不新增重复入口"
+        },
+        {
+          "node": "1334:7162",
+          "name": "R9 / 14 · 默认设置",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 14 · 默认设置 | composed | 策略运行 → 编辑默认配置；并入 R10 2353:12784，不新增重复入口"
+        },
+        {
+          "node": "1385:7691",
+          "name": "R9 / 04E · 覆盖模式 / VPP",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 04E · 覆盖模式 / VPP | composed | 策略运行 → VPP 本地参数；并入 R10 2486:14630，不新增重复入口"
+        },
+        {
+          "node": "1411:8013",
+          "name": "R9 / 04P · 模式优先级",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 04P · 模式优先级 | composed | 策略运行 → 模式优先级；并入 R10 2486:16197，不新增重复入口"
+        },
+        {
+          "node": "1417:8136",
+          "name": "R9 / 03B · 基础模式 / 动态电价优化",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 03B · 基础模式 / 动态电价优化 | composed | 策略运行 → 动态电价优化；并入 R10 2486:12681，不新增重复入口"
+        },
+        {
+          "node": "1417:8566",
+          "name": "R9 / 03C · 基础模式 / 光伏自发自用",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 03C · 基础模式 / 光伏自发自用 | composed | 策略运行 → 光伏自发自用；并入 R10 2486:13064，不新增重复入口"
+        },
+        {
+          "node": "1417:8996",
+          "name": "R9 / 03D · 基础模式 / 新能源平滑",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 03D · 基础模式 / 新能源平滑 | composed | 策略运行 → 新能源平滑（保留 R9 独有基础模式）；并入 R10 2353:12784，不新增重复入口"
+        },
+        {
+          "node": "1419:8577",
+          "name": "R9 / 04B · 覆盖模式 / 容量保护",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 04B · 覆盖模式 / 容量保护 | composed | 策略运行 → 容量保护；并入 R10 2486:13447，不新增重复入口"
+        },
+        {
+          "node": "1419:8996",
+          "name": "R9 / 04C · 覆盖模式 / 备电保障",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 04C · 覆盖模式 / 备电保障 | composed | 策略运行 → 备电保障；并入 R10 2486:13842，不新增重复入口"
+        },
+        {
+          "node": "1419:9413",
+          "name": "R9 / 04D · 覆盖模式 / 一次调频",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 04D · 覆盖模式 / 一次调频 | composed | 策略运行 → 一次调频；并入 R10 2486:14235，不新增重复入口"
+        },
+        {
+          "node": "1419:9832",
+          "name": "R9 / 04F · 覆盖模式 / AGC",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 04F · 覆盖模式 / AGC | composed | 策略运行 → AGC 本地参数；并入 R10 2486:15019，不新增重复入口"
+        },
+        {
+          "node": "1419:10248",
+          "name": "R9 / 04G · 覆盖模式 / 调峰",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 04G · 覆盖模式 / 调峰 | composed | 策略运行 → 调峰本地参数；并入 R10 2486:15411，不新增重复入口"
+        },
+        {
+          "node": "1419:10665",
+          "name": "R9 / 04H · 覆盖模式 / AVC",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 04H · 覆盖模式 / AVC | composed | 策略运行 → AVC 本地参数；并入 R10 2486:15804，不新增重复入口"
+        },
+        {
+          "node": "1467:9451",
+          "name": "R9 / 02C · 查看时段完整配置",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R9 / 02C · 查看时段完整配置 | composed | 策略运行 → 查看时段完整配置；并入 R10 2353:12784，不新增重复入口"
+        },
+        {
+          "node": "1034:8176",
+          "name": "smart-view",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "smart-view | selected | 资产与站点 → 智能规则"
+        },
+        {
+          "node": "1114:8271",
+          "name": "R7-P020-1 · 全部站点",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R7-P020-1 · 全部站点 | selected | 资产与站点 → 列表查询；筛选、分页、打开站点"
+        },
+        {
+          "node": "1122:8285",
+          "name": "R7-P020-0 · 地图入口",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R7-P020-0 · 地图入口 | selected | 资产与站点 → 地图查询"
+        },
+        {
+          "node": "1122:8699",
+          "name": "R7-P020-2 · 收藏站点",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R7-P020-2 · 收藏站点 | selected | 资产与站点 → 收藏站点"
+        },
+        {
+          "node": "1122:9017",
+          "name": "R7-P020-3 · 收藏成功提示",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R7-P020-3 · 收藏成功提示 | selected | 列表 → 收藏；已添加到收藏状态提示"
+        },
+        {
+          "node": "1122:9307",
+          "name": "R7-P020-4 · 取消收藏提示",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R7-P020-4 · 取消收藏提示 | selected | 列表 → 取消收藏；已取消收藏状态提示"
+        },
+        {
+          "node": "1122:9597",
+          "name": "R7-P020-5 · 取消收藏确认",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R7-P020-5 · 取消收藏确认 | selected | 收藏站点 → 取消收藏确认/取消"
+        },
+        {
+          "node": "1122:9922",
+          "name": "R7-P020-6 · 收藏空状态",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R7-P020-6 · 收藏空状态 | selected | 收藏站点 → 无收藏时真实空态"
+        },
+        {
+          "node": "1127:8819",
+          "name": "R7-P021-0 · 新增站点",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R7-P021-0 · 新增站点 | superseded | 新增站点 → 2136:8507 基础信息及完整四步建站"
+        },
+        {
+          "node": "1127:9052",
+          "name": "R7-P021-1 · 编辑站点",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R7-P021-1 · 编辑站点 | selected | 站点列表 → 编辑站点；沿用现有 PUT 接口"
+        },
+        {
+          "node": "1127:9387",
+          "name": "R7-P021-2 · 保存成功",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R7-P021-2 · 保存成功 | selected | 编辑站点 → 保存；仅实际保存成功后显示提示"
+        },
+        {
+          "node": "1127:9732",
+          "name": "R7-P021-3 · 提交审核确认",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R7-P021-3 · 提交审核确认 | selected | 编辑站点 → 提交审核确认；明确审核服务未接通"
+        },
+        {
+          "node": "1127:10085",
+          "name": "R7-P021-4 · 审核只读",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R7-P021-4 · 审核只读 | composed | 站点列表 → 更多 → 查看站点信息；只读字段布局，未接通审核不生成审核记录；权限撤销后退出编辑"
+        },
+        {
+          "node": "1127:10451",
+          "name": "R7-P021-5 · 未保存离开确认",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R7-P021-5 · 未保存离开确认 | selected | 编辑站点 → 未保存离开；保存/放弃/取消"
+        },
+        {
+          "node": "1127:10804",
+          "name": "R7-P021-6 · 删除站点确认",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R7-P021-6 · 删除站点确认 | selected | 站点列表 → 更多 → 删除站点；核对名称，明确删除服务未接通"
+        },
+        {
+          "node": "1955:7238",
+          "name": "运行曲线 · 功率、SOC与充放电量",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "运行曲线 · 功率、SOC与充放电量 | selected | 运行曲线；功率、SOC、充放电量与日期粒度"
+        },
+        {
+          "node": "1957:7906",
+          "name": "06 数据分析 · 从海宁站运行曲线进入",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "06 数据分析 · 从海宁站运行曲线进入 | composed | 运行曲线 → 深入分析；携带所选指标与测点到 973:4108 / 986:3367"
+        },
+        {
+          "node": "2044:8026",
+          "name": "P021 · 站点概览 · 克制风格探索",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "P021 · 站点概览 · 克制风格探索 | selected | 站点概览；能流设备选择、设备跳转、周期、日期、图例"
+        },
+        {
+          "node": "2085:8130",
+          "name": "P025 · 运营收益 · 克制风格探索",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "P025 · 运营收益 · 克制风格探索 | selected | 运营收益；汇总、周期、日期、明细分页、币种 CSV、结算操作"
+        },
+        {
+          "node": "2109:8382",
+          "name": "P023 · 告警分布 · 默认列表",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "P023 · 告警分布 · 默认列表 | selected | 告警信息；等级/状态/设备筛选、分布图与列表"
+        },
+        {
+          "node": "2111:26952",
+          "name": "P023 · 告警详情 · 电池簇温差偏高",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "P023 · 告警详情 · 电池簇温差偏高 | selected | 告警信息 → 查看；趋势、历史、基于告警开单"
+        },
+        {
+          "node": "2136:8507",
+          "name": "01 · 新建站点 · 基础信息",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "01 · 新建站点 · 基础信息 | selected | 新增站点 → 基础信息；必填/数值校验、保存本地草稿"
+        },
+        {
+          "node": "2136:8619",
+          "name": "02 · 新建站点 · 拓扑与设备",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "02 · 新建站点 · 拓扑与设备 | selected | 新增站点 → 拓扑与设备；添加/连接/设备配置、撤销重做"
+        },
+        {
+          "node": "2136:8735",
+          "name": "03 · 新建站点 · 校验发布",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "03 · 新建站点 · 校验发布 | selected | 新增站点 → 校验发布；本地配置校验与未接通发布确认"
+        },
+        {
+          "node": "2136:8851",
+          "name": "04 · 新建站点 · 部署结果",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "04 · 新建站点 · 部署结果 | composed | 新增站点 → 部署结果；保持阶段/设备关联表布局，状态明确未接通"
+        },
+        {
+          "node": "2141:9037",
+          "name": "02B · 拓扑与设备 · 电池 BMS 配置",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "02B · 拓扑与设备 · 电池 BMS 配置 | selected | 拓扑与设备 → 电池/BMS；串口、协议、地址、母线配置"
+        },
+        {
+          "node": "2141:9313",
+          "name": "04B · 部署结果 · 设备关联完成",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "04B · 部署结果 · 设备关联完成 | composed | 部署结果 → 部署状态与异常处理说明；关联完成/部署中/异常/待部署/绑定失败/待回传仅说明，实际阶段与设备结果保持未接通，刷新不伪造记录"
+        },
+        {
+          "node": "2141:9553",
+          "name": "00 · 站点列表 · 建站进度入口",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "00 · 站点列表 · 建站进度入口 | composed | 站点列表 → 继续本地建站草稿 / 建站配置与进度；只恢复当前账号/模式/站点草稿"
+        },
+        {
+          "node": "2141:9743",
+          "name": "03B · 校验发布 · 校验未通过",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "03B · 校验发布 · 校验未通过 | selected | 校验发布 → 校验未通过；问题清单与返回修改"
+        },
+        {
+          "node": "2154:9499",
+          "name": "02C · 拓扑编辑 · 清空确认",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "02C · 拓扑编辑 · 清空确认 | selected | 拓扑与设备 → 清空画布确认/取消"
+        },
+        {
+          "node": "2162:9571",
+          "name": "04C · 建站进度 · 部署中",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "04C · 建站进度 · 部署中 | composed | 部署结果 → 部署状态与异常处理说明；关联完成/部署中/异常/待部署/绑定失败/待回传仅说明，实际阶段与设备结果保持未接通，刷新不伪造记录"
+        },
+        {
+          "node": "2162:9773",
+          "name": "04D · 建站进度 · 部署异常",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "04D · 建站进度 · 部署异常 | composed | 部署结果 → 部署状态与异常处理说明；关联完成/部署中/异常/待部署/绑定失败/待回传仅说明，实际阶段与设备结果保持未接通，刷新不伪造记录"
+        },
+        {
+          "node": "2173:9816",
+          "name": "04E · 海宁新建站点 · 发布后待部署",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "04E · 海宁新建站点 · 发布后待部署 | composed | 部署结果 → 部署状态与异常处理说明；关联完成/部署中/异常/待部署/绑定失败/待回传仅说明，实际阶段与设备结果保持未接通，刷新不伪造记录"
+        },
+        {
+          "node": "2176:9934",
+          "name": "04F · 现场绑定失败",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "04F · 现场绑定失败 | composed | 部署结果 → 部署状态与异常处理说明；关联完成/部署中/异常/待部署/绑定失败/待回传仅说明，实际阶段与设备结果保持未接通，刷新不伪造记录"
+        },
+        {
+          "node": "2176:10136",
+          "name": "04G · 结果待回传",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "04G · 结果待回传 | composed | 部署结果 → 部署状态与异常处理说明；关联完成/部署中/异常/待部署/绑定失败/待回传仅说明，实际阶段与设备结果保持未接通，刷新不伪造记录"
+        },
+        {
+          "node": "2176:10338",
+          "name": "05 · 济宁站 · 新版本配置草稿",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "05 · 济宁站 · 新版本配置草稿 | selected | 站点列表 → 建站配置与进度 / 新建配置版本；按站点隔离本地新版本草稿"
+        },
+        {
+          "node": "2176:10665",
+          "name": "06 · 济宁站 · 新版本校验发布",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "06 · 济宁站 · 新版本校验发布 | selected | 新版本草稿 → 校验发布；沿用本地校验与发布未接通确认"
+        },
+        {
+          "node": "2176:10800",
+          "name": "07 · 济宁站 · 新版本待部署",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "07 · 济宁站 · 新版本待部署 | composed | 部署结果 → 部署状态与异常处理说明；关联完成/部署中/异常/待部署/绑定失败/待回传仅说明，实际阶段与设备结果保持未接通，刷新不伪造记录"
+        },
+        {
+          "node": "2181:10583",
+          "name": "05B · 济宁站 · 新版本 BMS 配置",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "05B · 济宁站 · 新版本 BMS 配置 | selected | 已有站点新版本 → 拓扑与设备 → BMS 配置"
+        },
+        {
+          "node": "2271:10795",
+          "name": "P026 · 设备详情 · 克制风格",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "P026 · 设备详情 · 克制风格 | selected | 设备详情；状态/关键字筛选、目录、概况、完整设备档案"
+        },
+        {
+          "node": "2274:11168",
+          "name": "P026-3 · 设备详情 · 告警",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "P026-3 · 设备详情 · 告警 | selected | 设备详情 → 告警；关联告警与详情"
+        },
+        {
+          "node": "2274:11662",
+          "name": "P026-5 · 设备详情 · 控制记录",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "P026-5 · 设备详情 · 控制记录 | selected | 设备详情 → 控制记录；真实记录及空态"
+        },
+        {
+          "node": "2292:11393",
+          "name": "P026-D2 · 电池簇01详情 · 概况",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "P026-D2 · 电池簇01详情 · 概况 | composed | 设备详情 → 电池簇01；共用 2271:10795 档案框架，读取选中设备，缺失字段显示未知"
+        },
+        {
+          "node": "2292:11613",
+          "name": "P026-D3 · 电池簇02详情 · 概况",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "P026-D3 · 电池簇02详情 · 概况 | composed | 设备详情 → 电池簇02；共用 2271:10795 档案框架，读取选中设备，缺失字段显示未知"
+        },
+        {
+          "node": "2292:11833",
+          "name": "P026-D4 · 并网电表详情 · 概况",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "P026-D4 · 并网电表详情 · 概况 | composed | 设备详情 → 并网电表；共用 2271:10795 档案框架，读取选中设备，缺失字段显示未知"
+        },
+        {
+          "node": "2292:12053",
+          "name": "P026-D5 · 园区负荷表详情 · 概况",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "P026-D5 · 园区负荷表详情 · 概况 | composed | 设备详情 → 园区负荷表；共用 2271:10795 档案框架，读取选中设备，缺失字段显示未知"
+        },
+        {
+          "node": "2292:12273",
+          "name": "P026-D6 · 消防控制器详情 · 概况",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "P026-D6 · 消防控制器详情 · 概况 | composed | 设备详情 → 消防控制器；共用 2271:10795 档案框架，读取选中设备，缺失字段显示未知"
+        },
+        {
+          "node": "2292:12493",
+          "name": "P026-D7 · 温控系统详情 · 概况",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "P026-D7 · 温控系统详情 · 概况 | composed | 设备详情 → 温控系统；共用 2271:10795 档案框架，读取选中设备，缺失字段显示未知"
+        },
+        {
+          "node": "2343:12073",
+          "name": "R10 / 01 · 策略运行 · 综合概览",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R10 / 01 · 策略运行 · 综合概览 | selected | 策略运行 → 综合概览；今日电价、模式、方案列表"
+        },
+        {
+          "node": "2353:12784",
+          "name": "R10 / 03 · 运行策略 · 编辑",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R10 / 03 · 运行策略 · 编辑 | selected | 策略运行 → 编辑运行策略；方案/时段/默认配置与保存离开保护"
+        },
+        {
+          "node": "2353:13122",
+          "name": "R10 / 04A · 基础模式 / 峰谷套利",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R10 / 04A · 基础模式 / 峰谷套利 | selected | 策略运行 → 新增/编辑时段 → 基础模式 → 峰谷套利"
+        },
+        {
+          "node": "2461:13070",
+          "name": "R10 / 05A · 覆盖模式 / 需量控制",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R10 / 05A · 覆盖模式 / 需量控制 | selected | 策略运行 → 新增/编辑时段 → 覆盖模式 → 需量控制"
+        },
+        {
+          "node": "2486:12681",
+          "name": "R10 / 04B · 基础模式 / 动态电价优化",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R10 / 04B · 基础模式 / 动态电价优化 | selected | 策略运行 → 新增/编辑时段 → 基础模式 → 动态电价优化；外部模式仅本地参数草稿，连接状态只读/下发禁用"
+        },
+        {
+          "node": "2486:13064",
+          "name": "R10 / 04C · 基础模式 / 光伏自发自用",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R10 / 04C · 基础模式 / 光伏自发自用 | selected | 策略运行 → 新增/编辑时段 → 基础模式 → 光伏自发自用；外部模式仅本地参数草稿，连接状态只读/下发禁用"
+        },
+        {
+          "node": "2486:13447",
+          "name": "R10 / 05B · 覆盖模式 / 容量保护",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R10 / 05B · 覆盖模式 / 容量保护 | selected | 策略运行 → 新增/编辑时段 → 覆盖模式 → 容量保护；外部模式仅本地参数草稿，连接状态只读/下发禁用"
+        },
+        {
+          "node": "2486:13842",
+          "name": "R10 / 05C · 覆盖模式 / 备电保障",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R10 / 05C · 覆盖模式 / 备电保障 | selected | 策略运行 → 新增/编辑时段 → 覆盖模式 → 备电保障；外部模式仅本地参数草稿，连接状态只读/下发禁用"
+        },
+        {
+          "node": "2486:14235",
+          "name": "R10 / 05D · 覆盖模式 / 一次调频",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R10 / 05D · 覆盖模式 / 一次调频 | selected | 策略运行 → 新增/编辑时段 → 覆盖模式 → 一次调频；外部模式仅本地参数草稿，连接状态只读/下发禁用"
+        },
+        {
+          "node": "2486:14630",
+          "name": "R10 / 05E · 覆盖模式 / VPP",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R10 / 05E · 覆盖模式 / VPP | selected | 策略运行 → 新增/编辑时段 → 覆盖模式 → VPP；外部模式仅本地参数草稿，连接状态只读/下发禁用"
+        },
+        {
+          "node": "2486:15019",
+          "name": "R10 / 05F · 覆盖模式 / AGC",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R10 / 05F · 覆盖模式 / AGC | selected | 策略运行 → 新增/编辑时段 → 覆盖模式 → AGC；外部模式仅本地参数草稿，连接状态只读/下发禁用"
+        },
+        {
+          "node": "2486:15411",
+          "name": "R10 / 05G · 覆盖模式 / 调峰",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R10 / 05G · 覆盖模式 / 调峰 | selected | 策略运行 → 新增/编辑时段 → 覆盖模式 → 调峰；外部模式仅本地参数草稿，连接状态只读/下发禁用"
+        },
+        {
+          "node": "2486:15804",
+          "name": "R10 / 05H · 覆盖模式 / AVC",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R10 / 05H · 覆盖模式 / AVC | selected | 策略运行 → 新增/编辑时段 → 覆盖模式 → AVC；外部模式仅本地参数草稿，连接状态只读/下发禁用"
+        },
+        {
+          "node": "2486:16197",
+          "name": "R10 / 05P · 模式优先级",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R10 / 05P · 模式优先级 | selected | 策略运行 → 新增/编辑时段 → 模式优先级；外部模式仅本地参数草稿，连接状态只读/下发禁用"
+        },
+        {
+          "node": "2390:12820",
+          "name": "R10 / 01-4B · 编辑日模板 · 分时电价",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R10 / 01-4B · 编辑日模板 · 分时电价 | selected | 日模板管理 → 分时电价编辑；分段/冲突校验/保存/离开确认"
+        },
+        {
+          "node": "2396:12453",
+          "name": "R10 / 01-1 · 电价日历",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R10 / 01-1 · 电价日历 | selected | 电价设置 → 电价日历；规则/日期/本地日历，既有服务端电价仍真实保存"
+        },
+        {
+          "node": "2405:12634",
+          "name": "R10 / 01-3 · 日模板管理",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R10 / 01-3 · 日模板管理 | selected | 电价设置 → 日模板管理；创建、编辑、删除"
+        },
+        {
+          "node": "2407:12757",
+          "name": "R10 / 01-4C · 编辑日模板 · 动态电价",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R10 / 01-4C · 编辑日模板 · 动态电价 | selected | 日模板管理 → 动态电价编辑；市场配置/校验/保存/离开确认"
+        },
+        {
+          "node": "2409:12880",
+          "name": "R10 / 01-4A · 编辑日模板 · 固定电价",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R10 / 01-4A · 编辑日模板 · 固定电价 | selected | 日模板管理 → 固定电价编辑；校验/保存/离开确认"
+        }
+      ]
+    },
+    {
+      "module": "03",
+      "page": "4:4",
+      "document": "docs/superpowers/verification/2026-09-26-figma-module-03.md",
+      "count": 21,
+      "mappings": [
+        {
+          "node": "999:661",
+          "name": "R4-P030 · 运营中心 · 跨站运营总览",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | 主布局由 1983:2704 替代。站点筛选／运行分布／收益／站点下钻在总览；组合功率与能量、经营导出在“收益趋势与经营明细”；时段与偏差在策略执行。"
+        },
+        {
+          "node": "1051:820",
+          "name": "R4-P031 · 计划调度 · 跨站计划执行",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | “策略执行”保留新版时间轴；“执行质量”组合 24H／7D／30D／自定义日期区间、计划／实际／正负偏差／已匹配累计偏差图、MAE／RMSE／覆盖率／计划站点数及跨站目标／实际／偏差表，再进入“偏差与交接”；“策略与内部计划”保留计划创建、编辑、提交审批契约。"
+        },
+        {
+          "node": "1051:1153",
+          "name": "R4-P032 · 市场服务 · 承诺与激活",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | “市场响应 → 资源与交付”保留价格、承诺／实测曲线、资源资格与容量布局；“市场服务”保留真实资格查询及内部草稿新建／撤回。未接入的价格／实时能力显示空态。"
+        },
+        {
+          "node": "1051:1486",
+          "name": "R4-P033 · 收益核算 · 对账与证据",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | “收益核算”沿用 OperationsSettlementPage 的日期、币种、结算状态、对账导出、账目／证据链／复核，按此画板补齐卡片边界。"
+        },
+        {
+          "node": "1034:8541",
+          "name": "operations-posture",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | 运行分布与充放电量合并进当前总览；组合功率／能量和 SOC 分布在“收益趋势与经营明细”；单站功率和事件通过站点名称进入站点概览／设备／曲线；风险及告警等级入口继续为运维中心和站点告警，受原权限过滤，不复制新的告警处理服务。"
+        },
+        {
+          "node": "1034:9014",
+          "name": "realtime-monitoring",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | 总览站点名称进入资产站点工作区，设备树／设备实时值／趋势由既有设备详情与运行曲线提供；策略执行的偏差与交接也可进入运行曲线。"
+        },
+        {
+          "node": "1034:9314",
+          "name": "operations-alerts",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | “策略执行 → 偏差与交接 → 转告警事件”进入既有站点告警详情、处理轨迹和工单流程；没有 alarm.read 时不提供入口。跨站告警仍在运维中心。"
+        },
+        {
+          "node": "1034:9734",
+          "name": "dispatch-control",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | “策略执行 → 偏差与交接”保留目标／实测、活跃时段、真实 PCS 档案选择、手动／智能自动建议模式、动作、目标功率、SoC 上下限、检查确认与本地记录。设备 id／名称／编号、模式和阈值随建议持久化；无设备、离线设备及非法 SoC 阈值阻断功率建议。实际模式／测量／联锁缺失保持未知。设备控制与联锁接口未接通，保存为本地建议，不能伪造下发。"
+        },
+        {
+          "node": "1034:10063",
+          "name": "operations-strategy",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | “查看策略／策略与内部计划”复用现有方案编辑、复制、时段、内部审批与离开保护；暂停、回滚需求在偏差与交接保存说明／目标版本建议，明确没有服务器版本历史或发布操作。"
+        },
+        {
+          "node": "1034:11167",
+          "name": "dispatch-planning",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | 新版时段安排＋策略／内部计划编辑与提交审批替代重复计划入口；暂停、取消建议在偏差与交接；无后端状态转换时不改变实际计划状态。"
+        },
+        {
+          "node": "1947:1756",
+          "name": "运营总览 · 收益与站点表现",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | 总览底部“收益趋势与经营明细”保留区域、类型、日期范围、收益柱图、搜索、CSV 导出和单站收益下钻。"
+        },
+        {
+          "node": "1966:1845",
+          "name": "运营中心 · 策略执行 · 新版评审",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | “策略执行”：日期／站点／结果筛选、重置、当天时段安排、当前方案与动作、下一次切换、查看策略。采样偏差不冒充下发成功，设备回执未接入时明示。"
+        },
+        {
+          "node": "1971:1934",
+          "name": "市场响应 · 事件列表",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | “市场响应”：日期、来源平台、事件类型、附加状态筛选、事件数量、列表、详情入口。API 模式没有邀约数据时显示空表；不把 market-services 草稿当成邀约。"
+        },
+        {
+          "node": "1971:2194",
+          "name": "市场响应 · 邀约详情 · 待回复",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | 事件“处理邀约”：摘要、参与站点、SOC／实时可用功率、勾选、功率输入、参与合计。API 可用能力未知时禁用参与；可保存拒绝意向。"
+        },
+        {
+          "node": "1971:2454",
+          "name": "市场响应 · 调度详情 · 执行中",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | 已接入／演示交付记录“查看执行”：目标／实际功率曲线、参与站点、回执及执行状态；缺少回执显示未接入，缺少采样保留曲线空态。"
+        },
+        {
+          "node": "1979:2206",
+          "name": "市场响应 · 确认参与",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | 足额且不超过各站可用功率后，打开参与确认弹窗；取消返回编辑，确认保存本地参与意向。文案不声称外部提交。"
+        },
+        {
+          "node": "1979:2389",
+          "name": "市场响应 · 拒绝邀约确认",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | 拒绝邀约确认弹窗；取消不变更，确认仅保存账号范围的本地拒绝意向。"
+        },
+        {
+          "node": "1979:2572",
+          "name": "市场响应 · 已提交待确认",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | 用相同摘要／分配只读布局显示“参与意向草稿 · 未提交”。后端未提供邀请提交能力，因此不能显示设计示例中的服务器已提交成功。"
+        },
+        {
+          "node": "1979:2739",
+          "name": "市场响应 · 已拒绝",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | 用紧凑结果卡展示拒绝意向、本地保存时间和未发送说明；不将本地意向冒充来源平台已拒绝。"
+        },
+        {
+          "node": "1982:2783",
+          "name": "市场响应 · 参与功率不足",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | 总功率不足显示差额，确认参与禁用；负值、非有限、超站点可用功率同样阻断。"
+        },
+        {
+          "node": "1983:2704",
+          "name": "运营总览 · 运行状态、执行事项与站点表现",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | 四项 KPI、运行分布、待处理事项、站点运营表现、收益核算入口；无数据保留卡片和表格。汇总任一缺值显示未知，完整采样才积分充放电量。"
+        }
+      ]
+    },
+    {
+      "module": "04",
+      "page": "4:5",
+      "document": "docs/superpowers/verification/2026-09-26-figma-module-04.md",
+      "count": 14,
+      "mappings": [
+        {
+          "node": "1000:661",
+          "name": "R4-P040 · 运维中心 · 跨站风险总览",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | 运维总览：六项 KPI（含今日到期巡检）、24h 告警趋势及来源、优先处置队列、站点风险表、筛选与下钻。使用实际告警与巡检汇总。"
+        },
+        {
+          "node": "1036:820",
+          "name": "R4-P041 · 告警事件 · 跨站事件台",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | 告警事件：范围、等级、状态、SLA、搜索、保存视图，事件表及详情、状态时间轴、影响与证据、事件前后趋势、处置记录、确认、跟进备注及原工单回调。未接入趋势与阈值显示空态。"
+        },
+        {
+          "node": "1038:1413",
+          "name": "R4-P043 · 设备健康 · 排名与档案",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | 运维工具 → 健康分析：设备健康排名、风险因子、重复故障模式、健康变化历史；真实设备身份可进入新版设备档案。旧评分数据不进入 API 模式。"
+        },
+        {
+          "node": "1580:2859",
+          "name": "P044 · 固件升级 · 站点设备与实时进度",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | 固件升级：站点侧栏、设备类别与搜索、注册设备选择、型号与通信状态、升级前置条件、真实本机 .bin 文件选择、目标版本、说明、进度与任务区；保存本地方案且明确未上传/未执行。"
+        },
+        {
+          "node": "1034:13149",
+          "name": "inspection-management",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | 运维工具 → 巡检管理：类型/状态/搜索、列表/地图视图；编号、站点、类型、巡检人、计划日期、开始/完成时间、检查项进度、异常数、状态及查看/编辑；完成率环图、每周异常趋势、站点覆盖率。创建完整表单，已有巡检的扩展编辑为本地补充，不误发创建接口。"
+        },
+        {
+          "node": "1034:13479",
+          "name": "spare-parts",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | 运维工具 → 备件管理：四项库存指标、名称规格搜索/类别/仓库/状态筛选、完整十一列表头；快速出入库表单包含操作类型、备件规格、正整数数量、关联维修工单、经办备注；库存未接通，仅保存申请草稿。"
+        },
+        {
+          "node": "1034:13841",
+          "name": "repair-work-orders",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | 运维工具 → 维修工单：搜索/类型/优先级/状态、列表与待分配/已分配/维修中/待验收/已完成五列看板、四项统计；创建/详情回调既有工单流程；扩展草稿保留标题、类型、注册设备、负责人、计划时间、优先级与说明。"
+        },
+        {
+          "node": "1034:14206",
+          "name": "remote-diagnostics",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | 运维工具 → 远程诊断：真实设备树/搜索/型号、配置与开始入口、输出电压/有功功率/IGBT温度/SOC/温差/内阻六指标、结果表；配置类型、时长、采样间隔、电压/SOC上下限、温度上限、说明，严格校验并仅保存本地配置。"
+        },
+        {
+          "node": "1034:12109",
+          "name": "health-overview",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | 运维工具 → 健康分析：四项指标、健康环图、五个子系统条图、站点×类型热力图、30天趋势、高风险Top5，保留筛选、表格、导出；没有数据保持未接通而不补零。"
+        },
+        {
+          "node": "1034:12488",
+          "name": "alerts-diagnostics",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | 告警事件侧栏组合智能 AI 根因诊断、疑似根因、推荐步骤；没有 AI 服务时明确未接通，不生成置信度或故障结论。"
+        },
+        {
+          "node": "1034:12800",
+          "name": "maintenance-plan",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | 运维工具 → 维护计划：类型/状态/搜索、月份选择、月历/列表、未来7天计划、计划详情；创建表单保留标题、维护类型、注册设备、计划时间、负责人、任务说明，记录明确为本地草稿。"
+        },
+        {
+          "node": "1987:1765",
+          "name": "设备健康 · 设备运行与故障列表",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | 设备健康：新版设备运行与故障列表，站点/设备类型/日期/附加条件；设备与站点身份、通信、运行时长、未恢复故障、区间故障、最近故障、最近维护及查看详情。真实设备库存为空就为空。"
+        },
+        {
+          "node": "1987:2040",
+          "name": "设备详情 · BAT-03 · 电池",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | BAT 注册设备详情：SOH、循环次数、单体压差/温差四指标、故障日期范围、历史故障与维护记录。未知点位/设备历史保持空态。"
+        },
+        {
+          "node": "1987:2315",
+          "name": "设备详情 · PCS-02 · 变流器",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | PCS 注册设备详情：模块温度、散热器温度、运行状态、降额状态四指标及故障/维护记录；不以旧原型数据替代 API 点位。"
+        }
+      ]
+    },
+    {
+      "module": "05",
+      "page": "4:6",
+      "document": "docs/superpowers/verification/2026-09-26-figma-module-05.md",
+      "count": 41,
+      "mappings": [
+        {
+          "node": "16:167",
+          "name": "P053 · 全部任务",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "P053 全部任务 | composed | 工单与审批 → 任务协作 → 全部任务；按站点、业务域、阶段、责任人、期限及文字筛选，导出当前授权且筛选后的真实记录；任务表和状态分布，未分派与已知期限未结束的超时分别计数。未知负责人/期限导出为空，其他域空态。隐藏截图限制见上。"
+        },
+        {
+          "node": "16:320",
+          "name": "P054 · 执行任务",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "P054 执行任务 | composed | 任务协作 → 执行任务；准备/范围确认/安全检查/执行/观察/验证/恢复步骤分别保留证据；稳定对象ID、草稿选择/新建、切换保护；SOC下限、异常接管阈值、回滚方案；明确不执行控制命令。"
+        },
+        {
+          "node": "16:473",
+          "name": "P055 · 异常待接管",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "P055 异常待接管 | composed | 任务协作 → 异常待接管；异常/状态/来源/持续时间队列，未知态禁令、接管责任、复核、回滚面板；接管责任和说明本地草稿。"
+        },
+        {
+          "node": "16:621",
+          "name": "P056 · 任务编排",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "P056 任务编排 | composed | 任务协作 → 任务编排；触发/范围校核/安全复核/执行/验证/交接/关闭节点画布，可添加、删除、上移；模板名称、触发条件、责任、异常闭合分支；版本、权限、测试运行真实未接通态。"
+        },
+        {
+          "node": "16:904",
+          "name": "P052 · 消息中心",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "P052 消息中心 | composed | 任务协作 → 消息中心；主题/来源/对象/时间/状态表，订阅规则、归并窗口、接收确认可编辑；消息服务未接通，不伪造通知或发送。"
+        },
+        {
+          "node": "16:1056",
+          "name": "P057 · 协作与交接",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "P057 协作与交接 | composed | 任务协作 → 协作与交接；运营→任务中心→运维/厂家关系，交接上下文、未结事项、责任人、接收人、证据包和时间线、本地接收确认。"
+        },
+        {
+          "node": "1091:867",
+          "name": "R5-P050 · 工单中心",
+          "decisions": [
+            "superseded",
+            "composed"
+          ],
+          "mapping": "R5 工单中心 | superseded/composed | 队列由1107:1090替代；独有SLA负载保留为队列下方可展开内容。API缺等级时显示未知，不能推定P2。"
+        },
+        {
+          "node": "1091:1152",
+          "name": "P051 · 审批中心 · 当前评审",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "审批中心 当前评审 | selected | 审批中心列表；全部审批/待审批/已结束、真实编号/类型/申请事项/站点/提交时间/状态，进入审批详情。"
+        },
+        {
+          "node": "1091:1362",
+          "name": "R5-P052 · 我的待办",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R5 我的待办 | superseded | 1108:1532替代；保留工单、巡检、审批来源及截止时间、办理入口。"
+        },
+        {
+          "node": "1107:1090",
+          "name": "R6-P050-1 · 工单中心 · 工单队列",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R6 工单队列 | selected | 工单中心；白底紧凑状态筛选、搜索、添加筛选、新建、九列表格、查看详情。"
+        },
+        {
+          "node": "1108:1532",
+          "name": "R6-P052-1 · 我的待办 · 待处理事项",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "待处理事项 | selected | 我的待办；待处理/处理中/已办结，来源编号、事项类型/名称、站点、设备、截止时间、状态及办理入口。"
+        },
+        {
+          "node": "1108:2100",
+          "name": "R6-P052-2 · 我的待办 · 审批详情",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "审批详情 | selected | 审批/我的待办 → 办理审批；整页基本信息、申请内容/冻结变更、审批记录与意见；未提供的窗口、冻结版本、风险及预检明确标记未提供。"
+        },
+        {
+          "node": "1746:2814",
+          "name": "工单中心 · 巡检与检修筛选",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "巡检与检修筛选 | composed | 工单中心 → 巡检与检修，显示工单编号/类型/标题/站点/设备/截止时间/状态/操作八列表格，合并实际巡检与检修办理入口；同时保留我的待办类型筛选。"
+        },
+        {
+          "node": "1750:2930",
+          "name": "工单中心 · 已添加筛选 · 负责人陈工",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "负责人筛选 | selected | 添加筛选 → 负责人 → 真实负责人选项；条件标签可移除，清空筛选恢复。"
+        },
+        {
+          "node": "1759:3027",
+          "name": "工单详情页面 · WO-2847",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "WO-2847详情 | selected | 任意处理中的授权工单 → 查看详情；六字段基本信息、详细说明、真实事件记录，关联告警ID。"
+        },
+        {
+          "node": "1759:3040",
+          "name": "工单详情页面 · WO-2841",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "WO-2841详情 | selected | 待处理工单详情；空记录呈现“暂无处理记录”，可以开始处理。"
+        },
+        {
+          "node": "1759:3051",
+          "name": "工单详情页面 · WO-2839",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "WO-2839详情 | selected | 超时工单详情；实际截止时间计算风险和时限；处理工单进入办理卡片。"
+        },
+        {
+          "node": "1759:3062",
+          "name": "工单详情页面 · WO-2835",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "WO-2835详情 | selected | 告警来源工单详情；说明、关联告警、设备与处理记录来自实际对象。"
+        },
+        {
+          "node": "1759:3073",
+          "name": "工单详情页面 · WO-2822",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "WO-2822详情 | selected | 已完成工单详情；保留原状态，关闭办理输入，不把已完成显示为待验收。"
+        },
+        {
+          "node": "1777:3416",
+          "name": "审批中心 · 添加筛选条件",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "审批添加筛选 | selected | 审批筛选含类型、状态、关联站点、申请人、审批人、组织、申请/审批时间、是否超时九项；无对应数据时不匹配。"
+        },
+        {
+          "node": "1777:3449",
+          "name": "我的待办 · 添加筛选条件",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "待办添加筛选 | selected | 待办筛选含事项类型、处理状态、站点、优先级、发起人、创建/截止时间、是否超时八项。"
+        },
+        {
+          "node": "1161:1978",
+          "name": "新建工单 · 居中弹窗",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "新建工单 | selected | 新建工单居中弹窗；标题、站点、设备、类型/来源、等级、负责人、期限、描述；支持字段真实POST，扩展字段另存本地并单独告知。"
+        },
+        {
+          "node": "1161:2523",
+          "name": "新建巡检工单 · 居中弹窗",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "新建巡检工单 | composed | 我的待办 → 新建巡检；标题、站点、设备、等级、负责人、期限及检查内容。标题/站点/当前负责人/时间真实POST，其他字段另存本地。"
+        },
+        {
+          "node": "1034:14574",
+          "name": "review-list",
+          "decisions": [
+            "superseded",
+            "composed"
+          ],
+          "mapping": "review-list | superseded/composed | 新版审批列表/详情替代布局；“独立复核：操作前后与会签”保留独有分区，接口无证据时明示未提供。"
+        },
+        {
+          "node": "1034:14929",
+          "name": "work-order-list",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "work-order-list | superseded | 1107:1090替代队列；创建人/类型/等级/创建及完成时间等通过扩展筛选保留，非真实字段不制造数据。"
+        },
+        {
+          "node": "1034:15241",
+          "name": "work-order-detail",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "work-order-detail | composed | 新版详情 → 处理工单 → 维修与排查方案/备件申请；原因、预计工时、备件、需求量/库存空态；真实转派及事件轨迹；附件无后端来源时不展示原型照片。"
+        },
+        {
+          "node": "1627:4412",
+          "name": "01 工单处理 · WO-2839",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "工单处理 | selected | 我的待办工单入口或详情 → 处理工单；居中卡片、基本对象/状态/负责人/期限、处理结果、附件文件名、提交验收。"
+        },
+        {
+          "node": "1627:4558",
+          "name": "02 巡检工单处理 · WO-4402",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "巡检处理 | selected | 我的待办 → 查看巡检；外观、通信、运行参数三项检查、巡检记录、附件；结果通过现有complete说明字段提交。"
+        },
+        {
+          "node": "1627:4704",
+          "name": "03 审批办理 · AP-221",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "审批办理 | composed | 审批详情与同一冻结变更区；批准/驳回/要求补充均有确认。未提供冻结版本或策略时段，不以原型数据填充。"
+        },
+        {
+          "node": "1630:4671",
+          "name": "work · 提交工单处理结果？",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "提交工单处理结果确认 | selected | 提交验收 → 居中确认；明确“保存验收草稿”，不会调用completed流转接口。"
+        },
+        {
+          "node": "1630:26072",
+          "name": "inspect · 提交巡检记录？",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "提交巡检确认 | selected | 提交巡检 → 三项检查结果摘要与确认；验证记录后真实complete。"
+        },
+        {
+          "node": "1630:26250",
+          "name": "approve · 批准这项申请？",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "批准确认 | selected | 批准/同意 → “批准这项申请？” → 确认批准；仅现有运行计划审批，保留权限及禁止自审。"
+        },
+        {
+          "node": "1631:5293",
+          "name": "reject · 驳回申请",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "驳回申请 | selected | 驳回 → 原因必填 → 确认驳回；真实decision rejected，失败保留内容。"
+        },
+        {
+          "node": "1631:26703",
+          "name": "supplement · 要求补充材料",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "要求补充材料 | selected | 详情的本地补充要求编辑器与服务器审批意见分开；要求补充 → 确认保存，关闭后可按账号/对象恢复，放弃回到已保存基线；本地边界，不声称已经发送。"
+        },
+        {
+          "node": "1632:5151",
+          "name": "work · 已提交验收",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "已提交验收 | composed | 显示“验收草稿已保存至本机；验收接口未接通，工单状态未改变”；保留结果反馈位置，不伪造待验收服务器状态。"
+        },
+        {
+          "node": "1632:5309",
+          "name": "inspect · 巡检已提交",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "巡检已提交 | selected | 真实complete成功后显示服务器确认完成及刷新后的已完成/已办结状态；附件仅本地文件名。"
+        },
+        {
+          "node": "1632:5467",
+          "name": "approve · 审批已通过",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "审批已通过 | selected | 真实批准成功后服务器确认反馈与已通过状态；不表示设备已经执行。"
+        },
+        {
+          "node": "1632:5625",
+          "name": "reject · 申请已驳回",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "申请已驳回 | selected | 真实驳回成功后服务器确认反馈与已驳回状态。"
+        },
+        {
+          "node": "1632:5783",
+          "name": "supplement · 已要求补充",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "已要求补充 | composed | “补充要求草稿已保存；发送接口尚未接通，审批状态未改变”，不生成待补充后端状态。"
+        },
+        {
+          "node": "1765:2986",
+          "name": "添加筛选 · 选择条件",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "选择筛选条件 | selected | 工单添加筛选菜单12项：站点、设备、类型、状态、负责人、等级、来源、创建人、创建/完成/期限、超时。"
+        },
+        {
+          "node": "1765:2987",
+          "name": "添加筛选 · 选择负责人",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "选择负责人 | selected | 负责人选项由授权记录产生，不固定陈工/刘工等原型人名；可移除条件。"
+        }
+      ]
+    },
+    {
+      "module": "06",
+      "page": "4:7",
+      "document": "docs/superpowers/verification/2026-09-26-figma-module-06.md",
+      "count": 7,
+      "mappings": [
+        {
+          "node": "1093:661",
+          "name": "P060 · 数据分析 · 实时分析",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | 分析与报告 → 数据分析 → 信号分析 → 实时分析。注册信号搜索、仅显示已选、设备分组、独立信号/曲线选择、叠加/分层/分窗、A/B 游标、相对/绝对时间、平移、缩放、适配、网格、点、X/Y/XY 坐标及通道表、真实 CSV。API 复用 StationAnalysisPage，不再显示旧单点表单。"
+        },
+        {
+          "node": "1093:1039",
+          "name": "R5-P061 · 报告中心",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | 报告中心 → 报告类型/站点/日期 → 下载 CSV 报告；范围预览保留详情结构；生成历史表保留真实空态。`operations/revenue/health` 已接通，绝不标作全部报告未接通。服务器生成任务、排版正文/预览及历史服务尚未接通。Demo 的既有本地演示报告明确标注演示模式。"
+        },
+        {
+          "node": "1990:8374",
+          "name": "P060-H · 数据分析 · 历史趋势",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | 同页 → 历史趋势。开始/结束时间、1/5/15/30/60 分钟粒度、查询、真实空态、读取失败重试。注册 point ID、最多 31 天一段、一年内查询、显式缺口断线沿用。"
+        },
+        {
+          "node": "1990:8878",
+          "name": "P062 · 数据下载",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "selected | 数据下载 → 站点/设备/CSV/时间范围/粒度 → 参数弹窗（全选、清空、取消、应用）→ 生成文件 → 当前页面本地记录。仅查询所选设备的所选注册测点；生成中、可下载、无数据、失败重试；CSV 值来自真实历史接口。"
+        },
+        {
+          "node": "1992:21289",
+          "name": "P060-S · 站点选择 · 展开",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | 分析工具栏的站点按钮 → 带搜索输入的列表；按真实授权站点过滤；点击切换、Escape/外部点击关闭；切换重新加载注册信号并清除旧站数据。"
+        },
+        {
+          "node": "1034:10365",
+          "name": "trend-analysis",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | 历史趋势内新增今日/7天/30天/自定义时间、趋势对照摘要（平均功率输出、数据完整度、异常标记、通信中断频率）。原稿可选曲线变量由注册信号浏览器承接，任意功率、SOC、无功、电压、电流、SOH、温度、电量测点只有实际注册后才可查询，不伪造预设变量。均值取首个显示中的 kW 通道；完整度按所选通道和查询粒度计算；缺少异常/通信事件来源时显示未提供。"
+        },
+        {
+          "node": "1034:10734",
+          "name": "events-audit",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "composed | 数据分析 → 事件审计。日期、事件类型、站点、操作人、结果、日志搜索、重置；九列表格、展开详情、操作前后状态、设备回执、真实 JSON/复制、导出 CSV（Excel 可打开）、分页。GET /audit 只提供当前账户日志；没有把个人日志说成全站审计。缺少快照、设备回执、执行结果、关联告警/工单字段时明确未提供。站点过滤只采用日志明确的 `station=<id>` 字段，不推断指令执行结果。"
+        }
+      ]
+    },
+    {
+      "module": "07",
+      "page": "4:8",
+      "document": "docs/superpowers/verification/2026-09-26-figma-module-07.md",
+      "count": 68,
+      "mappings": [
+        {
+          "node": "1034:15880",
+          "name": "org-permissions",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "org-permissions | superseded | 1995:3770、2002:4459、1995:4319 | 新成员表/组织树/角色矩阵；身份来源、手机、最后登录无接口，未虚构；成员创建/编辑/删除保留逐人操作，旧批量管理无批量接口"
+        },
+        {
+          "node": "1034:16284",
+          "name": "alert-notification-settings",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "alert-notification-settings | composed | 平台管理 → 配置中心 → 告警与通知 | PlatformConfigurationPanel；账号+模式+对象隔离可读取草稿；下述字段与接口边界逐项说明"
+        },
+        {
+          "node": "1034:16679",
+          "name": "api-integration",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "api-integration | composed | 平台管理 → 配置中心 → 接口接入 | PlatformConfigurationPanel；账号+模式+对象隔离可读取草稿；下述字段与接口边界逐项说明"
+        },
+        {
+          "node": "1034:17068",
+          "name": "system-configuration",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "system-configuration | composed | 平台管理 → 配置中心 → 系统配置 | PlatformConfigurationPanel；账号+模式+对象隔离可读取草稿；下述字段与接口边界逐项说明"
+        },
+        {
+          "node": "1651:4250",
+          "name": "R10-P070 · 客户管理",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R10-P070 · 客户管理 | superseded | 1673:5775/6001/6227/6453 | 独立客户详情；编辑权益完整本地表单（合同、起止日期、套餐、站点/账号/API配额、SLA），日期校验/读取/放弃恢复；未提交线上"
+        },
+        {
+          "node": "1651:4437",
+          "name": "R10-P071 · 组织权限",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R10-P071 · 组织权限 | superseded | 1995:3770、1995:3953、2002:4459 | 拆为成员管理、成员权限、组织管理；临时授权及审批规则另见1659节点"
+        },
+        {
+          "node": "1651:5077",
+          "name": "R10-P074 · 安全审计",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R10-P074 · 安全审计 | superseded | 1673:9495/9720 + 配置中心/安全策略 | 保留类型/日期/结果/搜索及真实当前账号CSV导出"
+        },
+        {
+          "node": "1659:4522",
+          "name": "R10-P071A · 角色权限",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R10-P071A · 角色权限 | superseded | 1995:4319、2012:5309/5592/5875/6158/6441/6724 | 真实服务端角色目录与描述符矩阵；权限范围说明保留，旧固定四列表不作为授权"
+        },
+        {
+          "node": "1659:4729",
+          "name": "R10-P071B · 临时授权",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R10-P071B · 临时授权 | composed | 平台管理 → 组织权限 → 临时授权 | PlatformTemporaryGrants：搜索/状态/详情；MemberGrantsPanel期限选项及逐条编辑撤销真实API；客户/授权人/原因未提供"
+        },
+        {
+          "node": "1659:4936",
+          "name": "R10-P071C · 审批规则",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R10-P071C · 审批规则 | composed | 平台管理 → 配置中心 → 审批规则 | PlatformConfigurationPanel；账号+模式+对象隔离可读取草稿；下述字段与接口边界逐项说明"
+        },
+        {
+          "node": "1659:6119",
+          "name": "R10-P074A · 安全策略",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R10-P074A · 安全策略 | composed | 平台管理 → 配置中心 → 安全策略 | PlatformConfigurationPanel；账号+模式+对象隔离可读取草稿；下述字段与接口边界逐项说明"
+        },
+        {
+          "node": "1667:5290",
+          "name": "R10 · 组织管理 · 编辑组织",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R10 · 组织管理 · 编辑组织 | superseded | 2004:22600 | 组织管理 → 选择组织 → 编辑组织；真实PUT，失败保留输入"
+        },
+        {
+          "node": "1667:5429",
+          "name": "R10 · 组织管理 · 编辑已保存",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R10 · 组织管理 · 编辑已保存 | superseded | 2002:4459 + 2004:22600 | 真实PUT成功后更新同一组织并显示结果"
+        },
+        {
+          "node": "1667:5568",
+          "name": "R10 · 组织管理 · 新增组织",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R10 · 组织管理 · 新增组织 | superseded | 2004:22416 | 组织管理 → 新增子组织；真实父级范围"
+        },
+        {
+          "node": "1667:5707",
+          "name": "R10 · 组织管理 · 新增已保存",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R10 · 组织管理 · 新增已保存 | superseded | 2006:4955 | 真实POST成功后组织树刷新"
+        },
+        {
+          "node": "1667:5846",
+          "name": "R10 · 组织管理 · 删除受限",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R10 · 组织管理 · 删除受限 | composed | 平台管理 → 组织权限 → 组织管理 → 删除组织 | 删除受限状态；后端无DELETE组织接口，不发送伪造删除"
+        },
+        {
+          "node": "1673:5775",
+          "name": "R11 · 客户列表",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R11 · 客户列表 | selected | 平台管理 → 客户管理 | PlatformCustomersPanel；名称真实PUT；主体/联系人独立标注本地草稿；合同权益未接通"
+        },
+        {
+          "node": "1673:6001",
+          "name": "R11 · 客户详情 · 华东能源",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R11 · 客户详情 · 华东能源 | selected | 平台管理 → 客户管理 → 查看详情 | PlatformCustomersPanel；名称真实PUT；主体/联系人独立标注本地草稿；合同权益未接通"
+        },
+        {
+          "node": "1673:6227",
+          "name": "R11 · 编辑客户资料",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R11 · 编辑客户资料 | selected | 平台管理 → 客户管理 → 查看详情 | PlatformCustomersPanel；名称真实PUT；主体/联系人独立标注本地草稿；合同权益未接通"
+        },
+        {
+          "node": "1673:6453",
+          "name": "R11 · 客户详情 · 保存成功",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R11 · 客户详情 · 保存成功 | selected | 平台管理 → 客户管理 → 查看详情 | PlatformCustomersPanel；名称真实PUT；主体/联系人独立标注本地草稿；合同权益未接通"
+        },
+        {
+          "node": "1673:6679",
+          "name": "R11 · 组织与成员列表",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R11 · 组织与成员列表 | superseded | 1995:3770 | 成员列表；实时有效角色与多站点摘要保持基线"
+        },
+        {
+          "node": "1673:6895",
+          "name": "R11 · 成员详情 · 王凯",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R11 · 成员详情 · 王凯 | superseded | 1995:3953 | 成员管理 → 查看权限；逐条授权与受限范围"
+        },
+        {
+          "node": "1673:7111",
+          "name": "R11 · 编辑成员权限",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R11 · 编辑成员权限 | superseded | 1995:4136 | 成员权限 → 编辑授权；真实grant-options、POST/PUT"
+        },
+        {
+          "node": "1673:7327",
+          "name": "R11 · 成员详情 · 保存成功",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R11 · 成员详情 · 保存成功 | superseded | 1995:3953 | 真实保存成功后返回同一成员；期限来自服务器"
+        },
+        {
+          "node": "1673:9495",
+          "name": "R11 · 审计日志列表",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R11 · 审计日志列表 | selected | 平台管理 → 安全审计 | PlatformAuditPanel；GET /audit 当前actor；未知结果/来源/客户明确未提供"
+        },
+        {
+          "node": "1673:9720",
+          "name": "R11 · 审计详情 · 策略下发被拒绝",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R11 · 审计详情 · 策略下发被拒绝 | selected | 平台管理 → 安全审计 → 查看详情 | PlatformAuditPanel；GET /audit 当前actor；未知结果/来源/客户明确未提供"
+        },
+        {
+          "node": "1680:8043",
+          "name": "Flow / 点击客户「查看详情」",
+          "decisions": [
+            "connector"
+          ],
+          "mapping": "Flow / 点击客户「查看详情」 | connector | 客户列表 → 查看详情 | 导航关系，不增加独立页面"
+        },
+        {
+          "node": "1680:8046",
+          "name": "Flow / 编辑客户资料",
+          "decisions": [
+            "connector"
+          ],
+          "mapping": "Flow / 编辑客户资料 | connector | 客户详情 → 编辑客户资料 | 导航关系，不增加独立页面"
+        },
+        {
+          "node": "1680:8049",
+          "name": "Flow / 保存修改，返回同一客户",
+          "decisions": [
+            "connector"
+          ],
+          "mapping": "Flow / 保存修改，返回同一客户 | connector | 保存 → 同一客户详情 | 导航关系，不增加独立页面"
+        },
+        {
+          "node": "1680:8052",
+          "name": "Flow / 点击成员「查看详情」",
+          "decisions": [
+            "connector"
+          ],
+          "mapping": "Flow / 点击成员「查看详情」 | connector | 成员管理 → 查看权限 | 导航关系，不增加独立页面"
+        },
+        {
+          "node": "1680:8055",
+          "name": "Flow / 编辑成员权限",
+          "decisions": [
+            "connector"
+          ],
+          "mapping": "Flow / 编辑成员权限 | connector | 成员权限 → 编辑授权 | 导航关系，不增加独立页面"
+        },
+        {
+          "node": "1680:8058",
+          "name": "Flow / 保存修改，返回同一成员",
+          "decisions": [
+            "connector"
+          ],
+          "mapping": "Flow / 保存修改，返回同一成员 | connector | 保存授权 → 同一成员权限 | 导航关系，不增加独立页面"
+        },
+        {
+          "node": "1680:8079",
+          "name": "Flow / 点击被拒绝记录「查看详情」",
+          "decisions": [
+            "connector"
+          ],
+          "mapping": "Flow / 点击被拒绝记录「查看详情」 | connector | 安全审计 → 查看详情 | 导航关系，不增加独立页面"
+        },
+        {
+          "node": "1678:7447",
+          "name": "R11 · 所选组织 · 华东运营中心",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R11 · 所选组织 · 华东运营中心 | superseded | 2002:4459 | 组织管理 → 选择树节点；同组织成员表"
+        },
+        {
+          "node": "1678:7663",
+          "name": "R11 · 编辑组织",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R11 · 编辑组织 | superseded | 2004:22600 | 组织管理 → 编辑组织；保留未保存离开保护"
+        },
+        {
+          "node": "1678:7900",
+          "name": "R11 · 编辑已保存",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R11 · 编辑已保存 | superseded | 2002:4459 + 2004:22600 | 编辑成功后同组织树/列表刷新"
+        },
+        {
+          "node": "1678:8118",
+          "name": "R11 · 新增组织",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R11 · 新增组织 | superseded | 2004:22416 | 组织管理 → 新增子组织；名称和上级组织"
+        },
+        {
+          "node": "1678:8355",
+          "name": "R11 · 新增已保存",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R11 · 新增已保存 | superseded | 2006:4955 | 新增成功后选择该组织并更新树"
+        },
+        {
+          "node": "1678:8575",
+          "name": "R11 · 删除受限",
+          "decisions": [
+            "composed"
+          ],
+          "mapping": "R11 · 删除受限 | composed | 平台管理 → 组织权限 → 组织管理 → 删除组织 | 删除受限状态；后端无DELETE组织接口，不发送伪造删除"
+        },
+        {
+          "node": "1726:3777",
+          "name": "R11 · 新增成员",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R11 · 新增成员 | superseded | 2004:4432 + 2006:4797 | 成员管理 → 新增成员；账号、初始密码与组织；实际POST成功才更新表格"
+        },
+        {
+          "node": "1995:3770",
+          "name": "07 · 成员管理",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 成员管理 | selected | 组织权限 → 成员管理 | 成员管理；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "1995:3953",
+          "name": "07 · 成员权限 · 王凯",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 成员权限 · 王凯 | selected | 成员管理 → 查看权限 → 选中成员授权概览 | 成员权限 · 王凯；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "1995:4136",
+          "name": "07 · 分配权限 · 王凯",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 分配权限 · 王凯 | selected | 成员权限 → 新增/编辑授权 → 角色/站点/期限 | 分配权限 · 王凯；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "1995:4319",
+          "name": "07 · 角色权限 · 项目业主",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 角色权限 · 项目业主 | selected | 平台管理 → 组织权限 → 角色权限 | 角色权限 · 项目业主；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "1999:4160",
+          "name": "07 · 移除授权 · 确认",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 移除授权 · 确认 | selected | 成员权限 → 对应授权的移除 → 确认 | 移除授权 · 确认；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "1999:4249",
+          "name": "07 · 成员权限 · 移除后",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 成员权限 · 移除后 | selected | 真实DELETE成功 → 同一成员授权列表刷新 | 成员权限 · 移除后；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2001:21984",
+          "name": "已归档 · 旧合并视图收起态",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "已归档 · 旧合并视图收起态 | superseded | 1995:3770 成员管理 + 2002:4459 组织管理 | 2026-09-26 get_metadata 确认 hidden=true；1×1 PNG不作为视觉证据"
+        },
+        {
+          "node": "2002:4459",
+          "name": "07 · 组织管理",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 组织管理 | selected | 组织权限 → 组织管理 → 选择组织 | 组织管理；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2004:4432",
+          "name": "07 · 新增成员",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 新增成员 | selected | 成员管理 → 新增成员 | 新增成员；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2004:4618",
+          "name": "07 · 添加已有成员",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 添加已有成员 | selected | 组织管理 → 添加已有成员 | 添加已有成员；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2004:22416",
+          "name": "07 · 新增子组织",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 新增子组织 | selected | 组织管理 → 新增子组织 | 新增子组织；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2004:22600",
+          "name": "07 · 编辑组织",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 编辑组织 | selected | 组织管理 → 编辑组织 | 编辑组织；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2006:4797",
+          "name": "07 · 成员管理 · 新增成功",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 成员管理 · 新增成功 | selected | 真实新增成员POST成功 → 成员管理结果 | 成员管理 · 新增成功；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2006:4878",
+          "name": "07 · 组织管理 · 已添加赵宁",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 组织管理 · 已添加赵宁 | selected | 添加已有成员真实PUT成功 → 同组织列表 | 组织管理 · 已添加赵宁；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2006:4955",
+          "name": "07 · 组织管理 · 新增子组织成功",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 组织管理 · 新增子组织成功 | selected | 新增子组织真实POST成功 → 同树节点 | 组织管理 · 新增子组织成功；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2007:5127",
+          "name": "07 · 编辑成员 · 王凯",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 编辑成员 · 王凯 | selected | 成员管理 → 编辑成员 | 编辑成员 · 王凯；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2007:5330",
+          "name": "07 · 删除成员 · 王凯",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 删除成员 · 王凯 | selected | 成员管理 → 删除 → 确认 | 删除成员 · 王凯；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2007:5523",
+          "name": "07 · 成员管理 · 删除后",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 成员管理 · 删除后 | selected | 成员删除真实DELETE成功 → 成员列表刷新 | 成员管理 · 删除后；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2012:5309",
+          "name": "07 · 角色权限 · 项目管理方 / 项目公司",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 角色权限 · 项目管理方 / 项目公司 | selected | 平台管理 → 组织权限 → 角色权限 | 角色权限 · 项目管理方 / 项目公司；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2012:5592",
+          "name": "07 · 角色权限 · EMS 运行管理方",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 角色权限 · EMS 运行管理方 | selected | 平台管理 → 组织权限 → 角色权限 | 角色权限 · EMS 运行管理方；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2012:5875",
+          "name": "07 · 角色权限 · 运维服务方",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 角色权限 · 运维服务方 | selected | 平台管理 → 组织权限 → 角色权限 | 角色权限 · 运维服务方；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2012:6158",
+          "name": "07 · 角色权限 · EPC / 系统集成方",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 角色权限 · EPC / 系统集成方 | selected | 平台管理 → 组织权限 → 角色权限 | 角色权限 · EPC / 系统集成方；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2012:6441",
+          "name": "07 · 角色权限 · 设备厂家",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 角色权限 · 设备厂家 | selected | 平台管理 → 组织权限 → 角色权限 | 角色权限 · 设备厂家；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2012:6724",
+          "name": "07 · 角色权限 · 平台治理方",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 角色权限 · 平台治理方 | selected | 平台管理 → 组织权限 → 角色权限 | 角色权限 · 平台治理方；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2016:6619",
+          "name": "07 · 新增业务角色",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 新增业务角色 | selected | 角色权限 → 新增角色 → 名称/说明 | 新增业务角色；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2016:7108",
+          "name": "07 · 角色权限 · 只读观察员",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 角色权限 · 只读观察员 | selected | 角色权限 → 服务端只读角色 → 禁用编辑矩阵 | 角色权限 · 只读观察员；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2016:7614",
+          "name": "07 · 删除角色确认",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 删除角色确认 | selected | 角色权限 → 删除当前角色 → 确认 | 删除角色确认；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        },
+        {
+          "node": "2016:8105",
+          "name": "07 · 角色仍被成员使用",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "07 · 角色仍被成员使用 | selected | 角色权限 → 删除被使用角色 → 受限提示/查看成员 | 角色仍被成员使用；真实API/服务器权限目录、范围与冲突控制优先于示例授权"
+        }
+      ]
+    },
+    {
+      "module": "08",
+      "page": "1077:1794",
+      "document": "docs/superpowers/verification/2026-09-26-figma-module-08.md",
+      "count": 6,
+      "mappings": [
+        {
+          "node": "1101:661",
+          "name": "R5-P080 · 设置",
+          "decisions": [
+            "superseded"
+          ],
+          "mapping": "R5-P080 设置 | superseded | 1146:810 / 设置→个人偏好 | 账户资料、默认进入、密度、时间范围、记住站点标签及退出全部保留；旧版“设置分类”保留导航可访问名称，R7视觉不重复显示标题。独有内容核对后没有额外业务表单。兼容/重置控件保留在可见的“本地兼容配置”。"
+        },
+        {
+          "node": "1146:810",
+          "name": "R7-P080 · 个人偏好",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R7-P080 个人偏好 | selected | 设置→个人偏好 | API资料只读取当前身份；演示资料可校验并按账户本地保存；界面偏好真实 GET/PUT；恢复默认保留当前账号身份；分类/全局离开保护。"
+        },
+        {
+          "node": "1146:962",
+          "name": "R7-P081 · 通知设置",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R7-P081 通知设置 | selected | 设置→通知设置 | 渠道三列、告警/审批/任务范围及免打扰均为真实可持久化偏好；渠道接收选择不冒充已接通消息投递。"
+        },
+        {
+          "node": "1146:1114",
+          "name": "R7-P082 · 显示与语言",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R7-P082 显示与语言 | selected | 设置→显示与语言 | 语言、时区、单位、主题、密度、图表动效、高对比度均持久化；注明全局渲染/报表应用边界。"
+        },
+        {
+          "node": "1146:1266",
+          "name": "R7-P083 · 登录与安全",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "R7-P083 登录与安全 | selected | 设置→登录与安全 | 账户安全三列、MFA管理、设备查看、记录时间范围、提醒偏好。密码确认/格式校验与 MFA 两步仅在内存执行，最终明确未接通；设备/记录真实空态，退出其他设备禁用。未虚构安全状态或成功。"
+        },
+        {
+          "node": "1934:1121",
+          "name": "退出登录 · 确认弹窗",
+          "decisions": [
+            "selected"
+          ],
+          "mapping": "退出登录确认 | selected | App共享模态框 / 页头账户菜单、Sidebar回调、设置退出 | 共用520×320确认框；取消/关闭/Escape保留草稿，确认后进入当前编辑器guard，guard允许后调用原Auth logout。"
+        }
+      ]
+    }
+  ]
+}

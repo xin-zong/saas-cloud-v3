@@ -247,6 +247,7 @@ test("operator role: MFA, maintenance actions, work orders and hidden revenue", 
       "告警事件",
       "设备健康",
       "固件升级",
+      "运维工具",
     ])
     await maintenanceTabs.getByRole("button", { name: "告警事件", exact: true }).click()
     await page.getByText("跨站告警事件", { exact: true }).waitFor()
@@ -335,6 +336,7 @@ test("integrator role: MFA, station delivery, technical work orders, firmware an
       "告警事件",
       "设备健康",
       "固件升级",
+      "运维工具",
     ])
     assert.equal(await maintenanceTabs.getByRole("button", { name: "巡检检修", exact: true }).count(), 0)
     await maintenanceTabs.getByRole("button", { name: "固件升级", exact: true }).click()
