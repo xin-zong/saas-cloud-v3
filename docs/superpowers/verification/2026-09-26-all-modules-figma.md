@@ -70,7 +70,7 @@
 
 Task 9 共 48 张新增截图（36 个允许主入口 + 12 张设置宽度补充），全量绝对路径、PNG 尺寸和几何记录在 `task9-screenshots.json`。文档横向溢出 0，可见图片自然宽度为 0 的记录为 0。已实际查看全部八模块的 API 代表图（总览、站点列表、运营、运维、工单、分析、平台、设置），及 demo owner 运营、operator 1366 设置、integrator 平台三张代表图；没有把自动几何检查说成对所有 48 张的人工逐图审查。
 
-证据归档状态：**待归档**。最终本地集成后，控制者将本计划的 raw logs、报告和截图完整归档到主目录 `D:/projects/ems-cloud-v2.0/ems-cloud-ui/.figma/all-modules/evidence/`（ignored），尤其保留模块 06/07/08 位于 scratch 的全部图片。原始路径继续保留在各模块报告中；在归档完成并验证前，不清理工作树证据，也不把目标目录当成已存在的交付证据。
+证据已复制至主目录 `D:/projects/ems-cloud-v2.0/ems-cloud-ui/.figma/all-modules/evidence/`（ignored）。各报告中的 `.superpowers/sdd/2026-09-26-all-modules-figma/` 前缀对应归档根目录；工作树 `.figma/all-modules/` 前缀对应归档下 `ui-screens/`。模块 06/07/08 位于 scratch 的全部图片、原始失败日志和独立审查报告均保留。主目录最终门禁日志直接写入归档根目录。
 
 明确的设计证据限制：
 
@@ -81,11 +81,11 @@ Task 9 共 48 张新增截图（36 个允许主入口 + 12 张设置宽度补充
 
 ## 后续独立审查与 main 集成
 
-Task 9 只负责隔离分支验收及必要集成修复。控制者接续执行唯一全分支独立审查、集中修复/范围复审、本地 main 合并和 **main checkout 预览**完整门禁；这里不把这些待办标为已完成。未 push，未改后端/数据库，未修改主目录。
+Task 9 实现者负责隔离分支验收及必要集成修复。随后控制者已完成唯一全分支独立审查、一次集中修复和范围复审：I1/I2/M1/M2 全部处理，范围复审无新增 Critical/Important。本地 main 已从 a5c6efc 快进至 9f3e08b；未 push，未改后端/数据库。主目录完整门禁结果见文末。
 
 最终审查裁定的 minor：OverviewDashboard dirty 时初始聚焦和巡检创建成功后的 createDirty 已在下述集中修复中处理；多处密集 JSX 的维护性、约 8.68 MB 入口包及 CRLF 提示允许保留，不扩大本轮改造。
 
-主工作区原九项修改的保护依据为 `main-preservation.json`；两项前端基线已在 `43d99b5` 保留，其余七项须由控制者在本地合并前后核对。main 合并提交、主预览地址及最终全套结果：**待控制者补充**。
+主工作区原九项修改的保护依据为 `main-preservation.json`。两项前端修改合并前与 `43d99b5` 完全一致，已包含在最终实现中；额外保留定向备份 stash `2232fdb0bc59c3d3b7ef5004d5e5e86aba622d64`，不得重复套用。其余七项在合并前后 SHA256 均一致。主目录 API 预览为 `http://127.0.0.1:8443`，demo 预览为 `http://127.0.0.1:8446`。
 
 ## 最终集中行为修复（基于 f660361）
 
@@ -96,6 +96,23 @@ Task 9 只负责隔离分支验收及必要集成修复。控制者接续执行�
 
 新增 `tests/all-modules-final-fix-ui.test.cjs` 的 8 条行为回归先取得 **0/8、exit 1** 的有效 RED，再取得 **8/8、exit 0**。最终代码另跑该文件及既有市场契约，**9/9、exit 0**；既有角色/市场/巡检/策略外层保护完整文件 **13/13、exit 0**，模块级相关用例筛选 **14/14、exit 0**，合计覆盖 **35 个不同用例**。最终 `tsc --noEmit` 和 `git diff --check` 均 exit 0；后者只有既有 LF→CRLF 提示。
 
-运行环境为隔离分支 API 8461 / demo 8460、bundled Node、msedge headless 串行。API 请求均由测试受控夹具截获；未修改后端或数据库、未访问真实 DB、未改主目录或 push。未运行全套，也未把此前 287 项累计通过记录升级为当前全绿；新增文件后完整 runner 的预期基线为 **44 文件 / 295 用例**，main 全套与范围复审仍待控制者完成。本轮没有视觉改版，继承本轮设计证据，不声称重新访问 Figma。
+运行环境为隔离分支 API 8461 / demo 8460、bundled Node、msedge headless 串行。API 请求均由测试受控夹具截获；未修改后端或数据库、未访问真实 DB、未改主目录或 push。未运行全套，也未把此前 287 项累计通过记录升级为当前全绿；新增文件后完整 runner 的预期基线为 **44 文件 / 295 用例**，此处是修复实现者提交时的记录；范围复审现已通过，main 全套结果见文末。本轮没有视觉改版，继承本轮设计证据，不声称重新访问 Figma。
 
 完整命令、各用例覆盖、原始失败/通过日志与边界见忽略目录 `.superpowers/sdd/2026-09-26-all-modules-figma/final-fix-report.md`，raw logs 为 `final-fix-red.log`、`final-fix-green-final.log`、`final-fix-contract-regression.log`、`final-fix-module-regression.log`、`final-fix-tsc-final.log`、`final-fix-diff-check-final.log`。初次夹具误拦开发模块导致的失败和一个测试末段的数组顺序假设错误均单独保留，未计作有效产品 RED。总览原有排序敏感 dirty 比较仍可能在取消勾选再勾选后保守提示；不属于本次焦点修改，未扩大范围。
+
+## main 最终验收（已完成）
+
+2026-09-26，本地 main 产品提交 `9f3e08ba8cd53633d83c45ddd8c060ca5b94b130`。测试直接使用主目录 `ems-cloud-ui`，API 预览 `http://127.0.0.1:8443`，demo 预览 `http://127.0.0.1:8446`，bundled Node 与 msedge headless；不是隔离工作树预览的替代结果。
+
+| 检查 | 最终结果 | 归档原始日志 |
+| --- | --- | --- |
+| 完整 `node scripts/run-tests.cjs` | **44 文件，295/295 通过**；API 40 文件 281 项，demo 4 文件 14 项；失败、取消、跳过、todo 全部 0；exit 0 | main-full-tests.log |
+| `tsc --noEmit` | exit 0，无诊断 | main-tsc.log |
+| 262 项设计覆盖审计 | 262/262，invalid=[]，exit 0 | main-coverage.log |
+| Vite 生产构建 | exit 0，2557 模块；入口 JS 8,679.08 kB / gzip 1,229.18 kB | main-build.log |
+
+API 组耗时 1606.117 秒，demo 组 101.480 秒。上文七项历史失败及辅助截图程序失败均已保留；此处是修复后在 main 上重新执行完整套件的通过结果。接口测试使用受控夹具；不能据此宣称线上服务、数据库或真实设备执行已验收。
+
+最终全分支审查和范围复审见归档 `final-review.md`、`final-rereview.md`。剩余非阻断项为部分密集 JSX 的可维护性、既有大包警告与换行提示；总览取消勾选再勾选可能保守提示有未保存布局，未造成数据丢失，本轮未扩大重构。不存在未处理的 Critical/Important 审查项。
+
+证据归档根目录为 `ems-cloud-ui/.figma/all-modules/evidence/`。最终产品已合并本地 main，原七项非前端修改保持原 SHA256，两项前端原修改包含在基线与最终实现中并保留上述 stash 备份。未推送远端，未修改后端或数据库。本记录的后续提交仅更新验收文档，不改变上述受测产品。
