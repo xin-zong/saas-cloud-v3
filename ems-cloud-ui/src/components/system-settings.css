@@ -674,6 +674,13 @@
 .settings-security-form { display:grid; gap:12px; border:0; padding:12px 0; }
 .settings-security-form label { display:grid; gap:4px; }
 .settings-security-form input { border:1px solid #dce2e5; border-radius:6px; height:34px; }
+.settings-modal { max-height:calc(100dvh - 32px); overflow:auto; }
+.settings-security-form input,.settings-security-form select { width:100%; min-width:0; padding:6px 10px; }
+.settings-security-form select { height:34px; border:1px solid #dce2e5; border-radius:6px; background:white; }
+.settings-security-form p { margin:0; }
+.settings-security-tabs { display:flex; gap:8px; margin-top:20px; }
+.settings-security-tabs button { border:1px solid #dce2e5; border-radius:8px; padding:8px 16px; cursor:pointer; }
+.settings-security-tabs [aria-selected=true] { color:#1e6656; background:#edf4f1; border-color:#8bafa4; }
 .settings-modal table { width:100%; font-size:12px; margin:24px 0; }
 .settings-modal th,.settings-modal td { padding:8px; text-align:left; border-bottom:1px solid #dce2e5; }
 @media(max-width:860px) { .settings-layout { grid-template-columns:190px minmax(0,1fr); } }

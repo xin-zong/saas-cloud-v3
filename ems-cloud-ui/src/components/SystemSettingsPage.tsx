@@ -526,9 +526,85 @@ function DisplaySettings({
   )
 }
 
-function SecuritySettings({ settings, set, account }: { account: string; settings: SettingsState; set: <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => void }) {
+function SecuritySettings({ settings, set, account, busy, registerLeaveGuard }: {
+  account: string
+  settings: SettingsState
+  set: <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => void
+  busy: boolean
+  registerLeaveGuard: RegisterLeaveGuard
+}) {
   const [panel, setPanel] = useState("")
   const [range, setRange] = useState("今天")
+  const [method, setMethod] = useState<"password" | "mfa">("password")
+  const [password, setPassword] = useState("")
+  const [nextPassword, setNextPassword] = useState("")
+  const [confirmation, setConfirmation] = useState("")
+  const [mfaPassword, setMfaPassword] = useState("")
+  const [code, setCode] = useState("")
+  const [mfaMethod, setMfaMethod] = useState("验证器")
+  const [step, setStep] = useState(1)
+  const [feedback, setFeedback] = useState("")
+  const [leaving, setLeaving] = useState(false)
+  const busyRef = useRef(busy)
+  busyRef.current = busy
+  const sensitiveDirty = !!(password || nextPassword || confirmation || mfaPassword || code)
+  const clearSensitive = useCallback(() => {
+    setPassword(""); setNextPassword(""); setConfirmation("")
+    setMfaPassword(""); setCode(""); setMfaMethod("验证器")
+    setStep(1); setMethod("password"); setFeedback("")
+  }, [])
+  const { requestLeave: requestSensitiveLeave, settleLeave } = useEditorLeaveGuard({
+    dirty: sensitiveDirty,
+    onConfirm: () => setLeaving(true),
+    onCancel: () => setLeaving(false),
+  })
+  const requestLeave = useCallback(async () => {
+    if (busyRef.current) {
+      setFeedback("正在保存，请等待保存完成后再离开。")
+      return false
+    }
+    if (!await requestSensitiveLeave()) return false
+    clearSensitive()
+    setPanel("")
+    return true
+  }, [requestSensitiveLeave, clearSensitive])
+  useEffect(() => {
+    registerLeaveGuard(requestLeave)
+    return () => registerLeaveGuard(null)
+  }, [registerLeaveGuard, requestLeave])
+  useEffect(() => {
+    if (!sensitiveDirty) return
+    const prevent = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = "" }
+    window.addEventListener("beforeunload", prevent)
+    return () => window.removeEventListener("beforeunload", prevent)
+  }, [sensitiveDirty])
+  const decideLeave = (allow: boolean) => {
+    if (allow && busyRef.current) return
+    if (allow) clearSensitive()
+    setLeaving(false)
+    settleLeave(allow)
+  }
+  const switchMethod = async (next: "password" | "mfa") => {
+    if (next === method || busyRef.current) return
+    if (!await requestSensitiveLeave()) return
+    clearSensitive()
+    setMethod(next)
+  }
+  const submitPassword = () => {
+    if (busyRef.current) return
+    if (!password) return setFeedback("请输入当前密码。")
+    if (!/^(?=.*[A-Za-z])(?=.*\d).{8,128}$/.test(nextPassword)) return setFeedback("新密码需为 8–128 位，且包含字母和数字。")
+    if (nextPassword !== confirmation) return setFeedback("两次新密码不一致，请重新确认。")
+    if (nextPassword === password) return setFeedback("新密码不能与当前密码相同。")
+    setFeedback("密码变更服务尚未接通，未提交任何变更。")
+  }
+  const submitMfa = () => {
+    if (busyRef.current) return
+    if (!mfaPassword) return setFeedback("请输入 MFA 当前密码。")
+    if (step === 1) { setStep(2); setFeedback(""); return }
+    if (!/^\d{6}$/.test(code)) return setFeedback("MFA 验证码必须为 6 位数字。")
+    setFeedback("MFA 配置服务尚未接通，未提交任何变更。")
+  }
   return <>
     <SettingsCard title="账户安全" status="状态未接入"><div className="settings-account-grid">
       {[["登录账户", account], ["多因素认证", "未获取状态"], ["最近登录", "暂无数据"]].map(([label, value]) => <div className="settings-account-field" key={label}><span>{label}</span><div className="settings-faux-field settings-field-status">{value || "—"}</div></div>)}
@@ -540,11 +616,44 @@ function SecuritySettings({ settings, set, account }: { account: string; setting
       <ToggleRow label="新设备登录提醒" checked={settings.newDeviceAlert} onChange={() => set("newDeviceAlert", !settings.newDeviceAlert)} />
     </div></SettingsCard>
     <ScopeNote title="安全提示">仅保存新设备提醒偏好，不能启用 MFA 或撤销其他会话。密码变更和消息投递尚未接入。</ScopeNote>
-    {panel && <SettingsDialog title={panel} onClose={() => setPanel("")}>
+    {panel && <SettingsDialog title={panel} onClose={() => { void requestLeave() }}>
       <p>{panel === "验证方式" ? "验证方式和密码变更服务尚未接入，请联系管理员。" : panel === "登录设备" ? "暂无可用的登录设备数据" : `${range} · 暂无可用的登录记录数据`}</p>
-      {panel === "验证方式" && <fieldset disabled className="settings-security-form"><label>当前密码<input type="password" autoComplete="off" /></label><label>新密码<input type="password" autoComplete="off" /></label><label>确认新密码<input type="password" autoComplete="off" /></label><button>修改密码（未接通）</button><button>配置 MFA（未接通）</button></fieldset>}
+      {panel === "验证方式" && <>
+        <div role="tablist" aria-label="安全验证方式" className="settings-security-tabs">
+          <button type="button" role="tab" aria-selected={method === "password"} onClick={() => { void switchMethod("password") }}>修改密码</button>
+          <button type="button" role="tab" aria-selected={method === "mfa"} onClick={() => { void switchMethod("mfa") }}>MFA 配置</button>
+        </div>
+        <form noValidate onSubmit={event => { event.preventDefault(); method === "password" ? submitPassword() : submitMfa() }}>
+          <fieldset disabled={busy} className="settings-security-form">
+            {method === "password" ? <>
+              <label>当前密码<input type="password" autoComplete="off" value={password} onChange={event => setPassword(event.target.value)} /></label>
+              <label>新密码<input type="password" autoComplete="off" maxLength={128} value={nextPassword} onChange={event => setNextPassword(event.target.value)} aria-describedby="settings-password-format" /></label>
+              <p id="settings-password-format">8–128 位，包含字母和数字。</p>
+              <label>确认新密码<input type="password" autoComplete="off" maxLength={128} value={confirmation} onChange={event => setConfirmation(event.target.value)} /></label>
+              <Button type="submit">提交密码变更</Button>
+            </> : <>
+              <p>步骤 {step} / 2 · {step === 1 ? "选择验证方式" : "检查验证码格式"}</p>
+              {step === 1 ? <>
+                <label>验证方式<select value={mfaMethod} onChange={event => setMfaMethod(event.target.value)}><option>验证器</option><option>邮箱验证</option></select></label>
+                <label>MFA 当前密码<input type="password" autoComplete="off" value={mfaPassword} onChange={event => setMfaPassword(event.target.value)} /></label>
+                <Button type="submit">下一步</Button>
+              </> : <>
+                <p>{mfaMethod}服务未接通，未生成二维码或发送验证码；此步骤仅检查输入格式。</p>
+                <label>MFA 验证码<input type="text" inputMode="numeric" autoComplete="off" maxLength={6} value={code} onChange={event => setCode(event.target.value)} /></label>
+                <Button type="button" onClick={() => { setStep(1); setFeedback("") }}>上一步</Button>
+                <Button type="submit">提交 MFA 配置</Button>
+              </>}
+            </>}
+          </fieldset>
+        </form>
+      </>}
+      {feedback && <p role="alert" className="ui-error">{feedback}</p>}
       {panel === "登录设备" && <><table><thead><tr><th>设备</th><th>登录地点</th><th>最近活动</th></tr></thead><tbody><tr><td colSpan={3}>设备会话服务尚未接入</td></tr></tbody></table><button disabled>退出其他设备（未接通）</button></>}
-      <footer><Button onClick={() => setPanel("")}>关闭</Button></footer>
+      <footer><Button onClick={() => { void requestLeave() }}>关闭</Button></footer>
+    </SettingsDialog>}
+    {leaving && <SettingsDialog title="未保存的安全输入" onClose={() => decideLeave(false)}>
+      <p>安全服务尚未接通。放弃后将清空本次密码与验证码输入。</p>
+      <footer><Button onClick={() => decideLeave(false)}>继续编辑</Button><Button variant="primary" onClick={() => decideLeave(true)}>放弃修改</Button></footer>
     </SettingsDialog>}
   </>
 }
@@ -630,13 +739,16 @@ export default function SystemSettingsPage({
   const [loadVersion, setLoadVersion] = useState(0)
   const restoreDialog = useRef<HTMLDialogElement>(null)
   const busyRef = useRef(false)
+  const securityLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
+  const registerSecurityLeaveGuard = useCallback<RegisterLeaveGuard>(guard => { securityLeaveGuard.current = guard }, [])
   const alive = useRef(true)
   useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
   const dirty = JSON.stringify(settings) !== JSON.stringify(baseline)
   const category = CATEGORIES.find(item => item.key === activeCategory) ?? CATEGORIES[0]
   const { requestLeave: requestDraftLeave, settleLeave } = useEditorLeaveGuard({ dirty, onConfirm: () => setLeave(true), onCancel: () => setLeave(false) })
-  const requestLeave = useCallback(() => {
-    if (busyRef.current) { setError("正在保存，请等待保存完成后再离开。"); return Promise.resolve(false) }
+  const requestLeave = useCallback(async () => {
+    if (busyRef.current) { setError("正在保存，请等待保存完成后再离开。"); return false }
+    if (securityLeaveGuard.current && !await securityLeaveGuard.current()) return false
     return requestDraftLeave()
   }, [requestDraftLeave])
   useEffect(() => { registerLeaveGuard?.(requestLeave); return () => registerLeaveGuard?.(null) }, [registerLeaveGuard, requestLeave])
@@ -758,7 +870,7 @@ export default function SystemSettingsPage({
               <DisplaySettings settings={settings} set={set} />
             )}
             {activeCategory === "security" && (
-              <SecuritySettings settings={settings} set={set} account={user.account} />
+              <SecuritySettings settings={settings} set={set} account={user.account} busy={busy} registerLeaveGuard={registerSecurityLeaveGuard} />
             )}
           </div>
 
