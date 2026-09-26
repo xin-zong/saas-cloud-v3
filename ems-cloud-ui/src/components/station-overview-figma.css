@@ -2,8 +2,8 @@
 .station-overview-top { display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:20px; }
 .station-energy-card,.station-device-card,.station-overview-trends { border:1px solid #dce2e5; border-radius:12px; background:#fff; overflow:hidden; }
 .station-energy-card { height:340px; container-type:inline-size; }
-.station-energy-canvas { width:100%; height:340px; position:relative; }
-.station-energy-arrows { position:absolute; inset:0; width:100%; height:340px; pointer-events:none; }
+.station-energy-canvas { width:844px; height:340px; position:relative; margin-inline:auto; }
+.station-energy-arrows { position:absolute; inset:0; max-width:none; pointer-events:none; }
 .station-equipment { position:absolute; overflow:hidden; padding:0; border:0; background:transparent; cursor:pointer; }
 .station-equipment img { position:absolute; max-width:none; pointer-events:none; }
 .station-flow-value { position:absolute; background:#f6f8f9; border-radius:8px; padding:5px 10px; width:112px; height:52px; display:flex; flex-direction:column; gap:2px; }
@@ -35,5 +35,5 @@
 .station-overview-trends { margin-top:12px; height:376px; padding:8px 12px; }.station-overview-trends > header { display:flex; align-items:center; justify-content:space-between; height:28px; }.station-overview-trends h2 { font-size:13px; font-weight:600; margin:0; }.station-overview-trends header > div { display:flex; gap:6px; }.station-overview-trends input { border:1px solid #dce2e5; border-radius:5px; font-size:11px; padding:3px 6px; }.station-overview-trends header button { border:0; border-radius:4px; background:#f6f8f9; padding:3px 10px; font-size:11px; cursor:pointer; }.station-overview-trends header button[aria-pressed="true"] { background:#e8f5ef; color:#1f7a68; }
 .station-overview-chart-title { display:flex; align-items:center; justify-content:space-between; height:32px; font-size:11px; }.station-overview-chart-title small { color:#9aa3ac; margin-left:10px; }.station-overview-chart-title > div { display:flex; gap:14px; }.station-overview-chart-title button { display:flex; gap:5px; align-items:center; border:0; background:none; font-size:10px; cursor:pointer; }.station-overview-chart-title button[aria-pressed="false"] { opacity:.4; }.station-overview-chart-title i { width:6px; height:6px; border-radius:50%; }
 .station-overview-power { height:156px; position:relative; }.station-overview-soc { height:110px; position:relative; }.station-chart-empty { position:absolute; inset:0; display:grid; place-items:center; color:#9ca3af; font-size:12px; pointer-events:none; }
-@container (max-width:800px) { .station-energy-canvas { width:844px; transform-origin:top left; transform:scale(calc(100cqw / 844px)); } }
+@container (max-width:844px) { .station-energy-canvas { margin-inline:0; transform-origin:top left; transform:scale(calc(100cqw / 844px)); } }
 @media(max-width:1150px) { .station-overview-top { grid-template-columns:minmax(0,1fr); }.station-device-card { height:auto; min-height:300px; }.station-overview-figma { padding:16px; } }
