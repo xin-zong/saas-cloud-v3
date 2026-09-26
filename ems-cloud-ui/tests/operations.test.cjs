@@ -1061,3 +1061,31 @@ test("market applications validate qualification, duration, capacity and overlap
     150,
   )
 })
+
+
+test("execution quality preserves gaps across selected stations and validates date range", () => {
+  const { executionQuality } = loadDataModule("operationsExecution")
+  const complete = {...station, operations:{plan:[dispatchPeriod],samples:[sample("00:00",{storage:80}),sample("00:15",{storage:120})]}}
+  const missing = {...station,id:"2",operations:{plan:[],samples:[]}}
+  const one = executionQuality([complete],date,date,new Date("2026-09-11T12:00:00"))
+  assert.equal(one.mae,20)
+  assert.equal(one.rmse,20)
+  assert.equal(one.energy,0)
+  assert.equal(one.coverage,2/96*100)
+  assert.equal(one.plannedStations,1)
+  const otherDay=executionQuality([complete],"2026-09-09","2026-09-09",now)
+  assert.equal(otherDay.mae,null)
+  assert.equal(otherDay.plannedStations,0)
+  assert.ok(otherDay.points.every(p=>p.planned===null&&p.actual===null))
+  const partial = executionQuality([complete,missing],date,date,new Date("2026-09-11T12:00:00"))
+  assert.equal(partial.points[0].planned,null)
+  assert.equal(partial.points[0].actual,null)
+  assert.equal(partial.mae,null)
+  assert.equal(partial.coverage,0)
+  assert.equal(partial.plannedStations,1)
+  assert.throws(()=>executionQuality([complete],"2026-09-11",date,now),/时间范围/)
+  assert.throws(()=>executionQuality([complete],"2026-08-01",date,now),/时间范围/)
+  const future=executionQuality([complete],date,date,new Date("2026-09-09T12:00:00"))
+  assert.equal(future.coverage,null)
+  assert.equal(future.mae,null)
+})

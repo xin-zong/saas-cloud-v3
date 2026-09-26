@@ -102,3 +102,16 @@
 .operations-page .settlement-costs {margin-top:8px;padding-top:12px;}
 .operations-page .settlement-progress-list {gap:22px;margin:24px 0;}
 @media(max-width:1000px){.operations-page .settlement-middle{grid-template-columns:1fr;}}
+
+.ops-execution-grid {display:grid;grid-template-columns:minmax(0,1.3fr) minmax(300px,1fr);gap:16px;}
+.ops-execution-chart {height:260px;margin-top:16px;font-size:11px;}
+.ops-execution-metrics {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;border:1px solid #e6eaec;border-radius:6px;padding:12px;font-size:11px;color:#4e5c68;}
+.ops-execution-metrics strong {display:block;font-size:15px;color:#18232d;margin-top:6px;}
+.ops-execution-attention {background:#fbf5e7;padding:18px;border-radius:8px;margin-top:24px;color:#775d32;line-height:1.8;}
+.ops-execution-version {display:block;color:#7c8994;margin-top:6px;}
+.ops-execution-quality .dispatch-toolbar {flex-wrap:wrap;}
+.ops-execution-quality .dispatch-toolbar label {display:flex;align-items:center;gap:8px;}
+.ops-soc-bounds {display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.ops-soc-bounds input {width:100%;min-width:0;}
+.ops-dispatch-tools .dispatch-surface:first-of-type {min-height:0;}
+@media(max-width:1000px){.ops-execution-grid{grid-template-columns:1fr;}}

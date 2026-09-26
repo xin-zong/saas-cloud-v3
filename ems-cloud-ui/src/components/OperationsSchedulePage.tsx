@@ -1,6 +1,7 @@
 import { DEMO_MODE } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
 import { hasStationPermission } from "@/auth/apiPermissions"
+import OperationsExecutionQuality from "./OperationsExecutionQuality"
 import OperationsDispatchTools from "./OperationsDispatchTools"
 import StationStrategyPage from "./StationStrategyPage"
 import type { RegisterLeaveGuard } from "./useEditorLeaveGuard"
@@ -32,6 +33,7 @@ export default function OperationsSchedulePage({
   requestLeave?: () => Promise<boolean>
 }) {
   const {user} = useAuth()
+  const [qualityOpen,setQualityOpen] = useState(false)
   const [toolsId, setToolsId] = useState("")
   const toolsStation = stations.find(s=>s.id===toolsId)
   const [strategyId, setStrategyId] = useState("")
@@ -64,6 +66,7 @@ export default function OperationsSchedulePage({
   const currentMinute = now.getHours() * 60 + now.getMinutes()
 
   if (toolsStation) return <OperationsDispatchTools key={toolsStation.id} station={toolsStation} onBack={()=>setToolsId("")} onStrategy={()=>{setToolsId("");openStrategy(toolsStation.id)}} onOpenStation={onOpenStation} registerLeaveGuard={registerLeaveGuard} />
+  if (qualityOpen) return <OperationsExecutionQuality stations={stations.filter(s=>!scope||s.id===scope)} date={date} now={now} onBack={()=>setQualityOpen(false)} onTools={id=>{setQualityOpen(false);setToolsId(id)}} />
   if (strategyStation) return <div className="dispatch-page"><button className="operations-button" onClick={() => { void (async () => {
     if (requestLeave && !(await requestLeave())) return
     setStrategyId("")
@@ -88,6 +91,7 @@ export default function OperationsSchedulePage({
           <option value="completed">已结束</option>
           <option value="attention">需关注</option>
         </select>
+        <button className="operations-button" onClick={()=>setQualityOpen(true)}>执行质量</button>
         {visible.length > 0 && <button className="operations-button" onClick={()=>setToolsId(visible[0].station.id)}>偏差与交接</button>}
         <button className="operations-button dispatch-reset" onClick={() => { setDate(today); setScope(""); setStatus("") }}>
           重置

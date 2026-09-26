@@ -310,14 +310,33 @@ function ResponseWorkspace({ stations, onOpenStation, registerLeaveGuard }: {
     (total, id) => total + (capacities[id] ?? 0),
     0,
   )
-  const canRespond = canManage && detail?.status === "等待开始" && !decisions[detail.key]
+  const detailAuthorized = !!detail?.participants.length && detail.participants.every(p => permitted(p.station.id)) &&
+    (localEvents.find(event => event.id === detailKey)?.stationIds.every(id => stations.some(s => s.id === id) && permitted(id)) ?? true)
+  const canRespond = canManage && detailAuthorized && detail?.status === "等待开始" && !decisions[detail.key]
   const detailTimeline = detail?.service
     ? marketTimeline([], [detail.service], detail.date, now)
     : []
 
   useEffect(() => {
-    const invalidate = !canManage || (detail && detail.participants.some(p => !permitted(p.station.id)))
-    if (invalidate) { setDialog(null); setCreating(false); setDirty(false); setSelectedIds([]); setCapacities({}); setDetailKey(null) }
+    const permittedObject = (id: string) => stations.some(s => s.id === id) && permitted(id)
+    const localDetail = localEvents.find(event => event.id === detailKey)
+    const invalidate = !canManage ||
+      (creating && draft.stationIds.some(id => !permittedObject(id))) ||
+      selectedIds.some(id => !permittedObject(id)) ||
+      localDetail?.stationIds.some(id => !permittedObject(id)) ||
+      (detail && detail.participants.some(p => !permittedObject(p.station.id)))
+    if (invalidate) {
+      settleLeave(false)
+      setLeaving(false)
+      setDialog(null)
+      setCreating(false)
+      setDirty(false)
+      setSelectedIds([])
+      setCapacities({})
+      setDetailKey(null)
+      setFormError("")
+      setDraft({name:"",date:today,kind:"response",start:"14:00",end:"16:00",capacity:"",stationIds:[]})
+    }
   }, [canManage, stations.map(s=>`${s.id}:${permitted(s.id)}`).join("|")])
   useEffect(() => {
     const beforeUnload = (event: BeforeUnloadEvent) => { if (dirty) {event.preventDefault();event.returnValue=""} }
