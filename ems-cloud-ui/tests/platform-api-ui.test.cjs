@@ -34,7 +34,7 @@ async function setup(t, permissions = ['organization.member.read','member.manage
     else if(/^\/members\/\d+$/.test(path)&&method==='PUT'&&failProfile){failProfile=false;status=409;msg='成员范围已变化';data=null}
     else if(/^\/members\/\d+$/.test(path)&&method==='PUT'){if(options.holdSave)await heldSave;const m=members.find(m=>m.id===Number(path.split('/')[2])); Object.assign(m,{display_name:body.name,email:body.email,enabled:body.enabled});data=null}
     else if(/^\/members\/\d+$/.test(path)&&method==='DELETE'){status=409;msg='成员存在业务或授权历史引用，请停用成员';data=null}
-    else if(path.endsWith('/grants')) data=[]
+    else if(path.endsWith('/grants')) data=options.grants?.[Number(path.split('/')[2])]??[]
     else if(path==='/platform/organizations'&&method==='GET') data=options.mixedScopes?orgs.filter(o=>purposeOrganizations(url.searchParams.get('purpose')||'read').includes(o.id)):orgs
     else if(path==='/platform/organizations'&&method==='POST'){data={id:5};orgs.push({id:5,name:body.name,parent_id:body.parentId,lead_user_id:body.leadUserId})}
     else if(path.startsWith('/platform/organizations/')&&method==='PUT'){const o=orgs.find(o=>o.id===Number(path.split('/')[3]));Object.assign(o,{name:body.name,...(Object.hasOwn(body,"leadUserId")?{lead_user_id:body.leadUserId,lead_restricted:false}:{}),...(body.parentId==null?{}:{parent_id:body.parentId})});data=null}
@@ -46,6 +46,19 @@ async function setup(t, permissions = ['organization.member.read','member.manage
   return {page,requests,members,orgs,releaseSave}
 }
 const writes=requests=>requests.filter(r=>['POST','PUT','DELETE'].includes(r.method))
+test('member rows show live role and station summaries without exposing restricted or expired grants',async t=>{
+  const {page}=await setup(t,undefined,{grants:{9:[
+    {id:1,status:'active',roleName:'运维人员',scopeRestricted:false,stations:[{id:4,name:'电站一'}]},
+    {id:2,status:'active',roleName:'电站业主',scopeRestricted:false,stations:[{id:4,name:'电站一'}]},
+    {id:3,status:'expired',roleName:'过期角色',scopeRestricted:false,stations:[{id:5,name:'过期站点'}]},
+    {id:4,status:'restricted',roleName:'隐藏角色',scopeRestricted:true,stations:[{id:6,name:'隐藏站点'}]},
+  ]}})
+  const row=page.getByRole('row').filter({hasText:'real.member'})
+  await row.getByText('运维人员、电站业主（部分授权不可见）',{exact:true}).waitFor()
+  await row.getByText('电站一（部分授权不可见）',{exact:true}).waitFor()
+  assert.equal(await row.getByText(/过期角色|隐藏角色|过期站点|隐藏站点|详情中查看/).count(),0)
+  await page.getByRole('row').filter({hasText:'free.member'}).getByText('未分配有效角色',{exact:true}).waitFor()
+})
 async function screenshot(page,name){if(process.env.PLATFORM_SCREENSHOTS){fs.mkdirSync(process.env.PLATFORM_SCREENSHOTS,{recursive:true});await page.screenshot({path:process.env.PLATFORM_SCREENSHOTS+'/'+name+'.png'})}}
 
 test('profile-only operator creates unassigned member with explicit owner and edits email without grant access',async t=>{

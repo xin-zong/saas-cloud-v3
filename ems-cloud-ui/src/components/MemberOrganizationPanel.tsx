@@ -11,6 +11,7 @@ import { useAuth } from "@/auth/AuthContext"
 import { ChevronDown, FolderTree, Plus, Search, X } from "lucide-react"
 import MemberGrantsPanel from "./MemberGrantsPanel"
 import type { RolePermissionsHandle } from "./RolePermissionsPanel"
+import { platformApi } from "./platform/platformApi"
 
 type Member = {
   id: number
@@ -20,6 +21,8 @@ type Member = {
   organization_id: number | null
   management_organization_id: number
   email?: string | null
+  roleSummary?: string
+  stationSummary?: string
 }
 type Organization = {
   id: number
@@ -135,6 +138,25 @@ export default forwardRef<RolePermissionsHandle, {
           )
         }
       }
+      await Promise.all([...mergedMembers.values()].map(async (member) => {
+        if (!access.read.has(member.id) && !access.grants.has(member.id)) {
+          member.roleSummary = member.stationSummary = "无查看权限"
+          return
+        }
+        try {
+          const grants = await platformApi.memberGrants(member.id, signal)
+          const visible = grants.filter((grant) => !grant.scopeRestricted && grant.status === "active")
+          const restricted = grants.some((grant) => grant.scopeRestricted)
+          const roles = [...new Set(visible.flatMap((grant) => grant.roleName ? [grant.roleName] : []))]
+          const stations = [...new Map(visible.flatMap((grant) => grant.stations.map((station) => [station.id, station.name] as const))).values()]
+          const suffix = restricted ? "（部分授权不可见）" : ""
+          member.roleSummary = roles.length ? roles.join("、") + suffix : restricted ? "授权范围受限" : "未分配有效角色"
+          member.stationSummary = stations.length ? stations.join("、") + suffix : restricted ? "授权范围受限" : "无有效站点授权"
+        } catch {
+          member.roleSummary = member.stationSummary = "授权加载失败"
+        }
+      }))
+      if (signal?.aborted) return
       const o = [...mergedOrganizations.values()]
       setMembers([...mergedMembers.values()])
       setOrgs(o)
@@ -396,10 +418,8 @@ export default forwardRef<RolePermissionsHandle, {
                   <span className="orgv2-subtext orgv2-member-identity" title={m.account}>{m.account}</span>
                 </td>
                 <td>{orgPath(m.organization_id)}</td>
-                <td title="通过查看权限查看授权明细">
-                  —<small className="orgv2-subtext">详情中查看</small>
-                </td>
-                <td>—</td>
+                <td>{m.roleSummary}</td>
+                <td>{m.stationSummary}</td>
                 <td>
                   <span
                     className={`platform-status ${
@@ -493,7 +513,7 @@ export default forwardRef<RolePermissionsHandle, {
               ((canRead && memberAccess.read.has(grantMember.id)) ||
                (canGrants && memberAccess.grants.has(grantMember.id))) ? "ready" : "denied"}
             selfSelected={String(grantMember.id) === String(user?.id)}
-            onClose={() => setGrantMember(null)}
+            onClose={() => { setGrantMember(null); void load() }}
           />
         ) : (
           <>
