@@ -54,3 +54,18 @@
 ## 后续模块交接
 
 `tests/centers-ui.test.cjs:76` 的非maintenance背景期望仍为 rgb(237,243,239)，operator在 `:187` 的05工单页 checkLayout实际得到白底而失败。父任务已明确保留此05预期给Task5正式设计对齐；本任务只修复04过时导航/背景/标题期望并保持原业务断言。尚未接通的执行服务及统计口径为诚实边界，不新增后端、不模拟执行。
+
+
+## Task4 fix round 1 — 三项 Important 修复
+
+- R1：共享表单持有初始/保存基线，确认放弃会恢复字段并清除错误/提示；巡检、维护计划、工单扩展的新建入口单独初始化，不沿用上一条编辑记录。巡检重新编辑可读取本对象最近保存的补充，诊断切设备重置基线。取消离开继续保留当前输入。
+- R2：有效日期校验仍适用于全部表单；只有新排期要求未来时间，已有巡检的本地补充可保留历史/已完成记录的计划日期。没有修改服务端巡检或创建重复任务。
+- R3：告警备注接入相同离开保护，覆盖关闭按钮、Escape、同模块tab、外部导航、站点详情回调及beforeunload。API错误保留输入/dirty，成功恢复干净状态；失去处理权限清空输入、禁用编辑、取消待离开请求。详情与工具分别注册ref，页面统一桥接App，详情卸载不会清掉新工具guard；确认切tab卸载旧详情。
+
+回归命令（bundled Node，工作区根，API_PREVIEW_URL=8461，msedge）：
+
+1. `node --test --test-concurrency=1 --test-name-pattern="review " ems-cloud-ui/tests/all-modules-maintenance-ui.test.cjs`：修复前3/3失败，分别得到仍保留DISCARD-REVIEW、历史补充没有保存状态、关闭备注没有确认；41.983秒。修复后3/3通过，23.978秒。
+2. `node --test --test-concurrency=1 --test-name-pattern="review alarm|spare request|inspection uses|firmware reads|remote diagnostics" ems-cloud-ui/tests/all-modules-maintenance-ui.test.cjs`：5/5通过，43.807秒。增加同模块tab取消/放弃及后继固件编辑器保护验证，覆盖存储错误、撤权、真实创建错误恢复、文件及诊断验证。
+3. `node node_modules/typescript/bin/tsc --noEmit`（ems-cloud-ui目录）：exit0。`git diff --check`：exit0，只有预存根AGENTS换行提示。
+
+接口路径/方法/载荷未改变，因此未重复45项既有套件；本次已用定向fixture验证实际notes/inspection请求与失败恢复。主页面布局未改；新增告警备注离开确认截图 `alarm-note-leave-{1366,1440,1920}.png` 已生成并逐张查看，确认层可见且按钮完整。Minor格式拆分按控制者要求暂缓；05交接不变。

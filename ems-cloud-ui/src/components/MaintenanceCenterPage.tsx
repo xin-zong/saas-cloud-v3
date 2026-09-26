@@ -1,6 +1,7 @@
 import { hasStationPermission } from "@/auth/apiPermissions"
 import { DEMO_MODE, send, api, type ApiRow } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
+import { useMaintenanceDraft } from "./maintenance/MaintenanceDraft"
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 
@@ -723,6 +724,7 @@ function MaintenanceDetail({
   onClose,
 
   onOpenStation,
+  registerLeaveGuard,
 }: {
   row: MaintenanceStation
 
@@ -731,6 +733,7 @@ function MaintenanceDetail({
   onClose: () => void
 
   onOpenStation: (id: string, subNav?: string) => void
+  registerLeaveGuard?: RegisterLeaveGuard
 }) {
   const ref = useRef<HTMLDialogElement>(null)
 
@@ -767,6 +770,14 @@ function MaintenanceDetail({
   })
 
   const [notice, setNotice] = useState("")
+  const noteBaseline = useRef(note)
+  const canWrite = DEMO_MODE || hasStationPermission(user, row.station.id,
+    detail.kind === "alarm" ? "alarm.handle" : "workorder.handle")
+  const noteDraft = useMaintenanceDraft(row.station.id, `notes:${detail.kind}:${detail.id}`, canWrite,
+    registerLeaveGuard, () => { setNote(noteBaseline.current); setNotice("") })
+  useEffect(() => {
+    if (!canWrite) { noteBaseline.current = ""; setNote(""); setNotice(""); noteDraft.setDirty(false) }
+  }, [canWrite])
 
   useEffect(() => {
     const dialog = ref.current
@@ -855,6 +866,7 @@ function MaintenanceDetail({
     (firmware ? `${firmware.device} 固件升级` : "记录已移除")
 
   async function saveNote() {
+    if (!canWrite || saving) return
     if (!DEMO_MODE) {
       if (!note.trim()) {
         setNotice("请填写跟进备注")
@@ -871,6 +883,8 @@ function MaintenanceDetail({
         )
         setServerNotes(await api<ApiRow[]>(notesPath))
         setNote("")
+        noteBaseline.current = ""
+        noteDraft.setDirty(false)
         setNotice("跟进备注已保存至服务器")
       } catch (e) {
         setNotice(e instanceof Error ? e.message : "保存失败")
@@ -895,6 +909,8 @@ function MaintenanceDetail({
         }),
       )
 
+      noteBaseline.current = note
+      noteDraft.setDirty(false)
       setNotice("备注已保存至本机，业务状态未改变")
     } catch {
       setNotice("保存失败：本地存储不可用")
@@ -906,7 +922,12 @@ function MaintenanceDetail({
       ref={ref}
       className="maintenance-dialog"
       aria-label="运维记录明细"
-      onCancel={onClose}
+      onCancel={(event) => { event.preventDefault(); noteDraft.leave(onClose) }}
+      onKeyDownCapture={(event) => {
+        if (event.key === "Escape" && noteDraft.dialog) {
+          event.preventDefault(); event.stopPropagation(); noteDraft.cancelLeave()
+        }
+      }}
     >
       <header>
         <div>
@@ -920,7 +941,7 @@ function MaintenanceDetail({
           className="operations-icon"
           title="关闭"
           aria-label="关闭运维明细"
-          onClick={onClose}
+          onClick={() => noteDraft.leave(onClose)}
         >
           <X size={18} />
         </button>
@@ -956,10 +977,11 @@ function MaintenanceDetail({
               <textarea
                 aria-label="运维跟进备注"
                 value={note}
+                disabled={!canWrite}
                 maxLength={2000}
                 onChange={(event) => {
                   setNote(event.target.value)
-
+                  noteDraft.setDirty(event.target.value !== noteBaseline.current)
                   setNotice("")
                 }}
               />
@@ -1007,17 +1029,17 @@ function MaintenanceDetail({
         <button
           className="operations-button is-active"
           onClick={() =>
-            onOpenStation(
+            noteDraft.leave(() => onOpenStation(
               row.station.id,
-
               detail.kind === "firmware" ? "设备详情" : "告警信息",
-            )
+            ))
           }
         >
           {detail.kind === "firmware" ? "设备详情" : "站点告警信息"}
           <ArrowRight size={13} />
         </button>
       </footer>
+      {noteDraft.dialog}
     </dialog>
   )
 }
@@ -1068,8 +1090,12 @@ export default function MaintenanceCenterPage({
   const { user } = useAuth()
   const [toolsOpen,setToolsOpen] = useState(false)
   const toolGuard=useRef<null|(()=>Promise<boolean>)>(null)
-  const registerToolGuard=useCallback<RegisterLeaveGuard>(guard=>{toolGuard.current=guard;registerLeaveGuard?.(guard)},[registerLeaveGuard])
-  const leaveTools=(next:()=>void)=>{void(async()=>{if(await(toolGuard.current?.()??Promise.resolve(true)))next()})()}
+  const detailGuard=useRef<null|(()=>Promise<boolean>)>(null)
+  const registerToolGuard=useCallback<RegisterLeaveGuard>(guard=>{toolGuard.current=guard},[])
+  const registerDetailGuard=useCallback<RegisterLeaveGuard>(guard=>{detailGuard.current=guard},[])
+  const requestMaintenanceLeave=useCallback(()=> (detailGuard.current??toolGuard.current)?.()??Promise.resolve(true),[])
+  useEffect(()=>{registerLeaveGuard?.(requestMaintenanceLeave);return()=>registerLeaveGuard?.(null)},[registerLeaveGuard,requestMaintenanceLeave])
+  const leaveTools=(next:()=>void)=>{void(async()=>{if(await requestMaintenanceLeave())next()})()}
 
   const visibleTabs = TABS.filter((item) => allowedTabs.includes(item))
 
@@ -1319,6 +1345,7 @@ export default function MaintenanceCenterPage({
     if (!visibleTabs.includes(value)) return
 
     setTab(value)
+    setDetail(null)
 
     setSelectedHealthDeviceId("")
 
@@ -1650,7 +1677,7 @@ export default function MaintenanceCenterPage({
               {value}
             </button>
           ))}
-          <button aria-current={toolsOpen?"page":undefined} onClick={()=>leaveTools(()=>setToolsOpen(true))}>运维工具</button>
+          <button aria-current={toolsOpen?"page":undefined} onClick={()=>leaveTools(()=>{setDetail(null);setToolsOpen(true)})}>运维工具</button>
           {liveStatus}
         </nav>
       )}
@@ -2961,6 +2988,7 @@ export default function MaintenanceCenterPage({
           detail={detail}
           onClose={() => setDetail(null)}
           onOpenStation={onOpenStation}
+          registerLeaveGuard={registerDetailGuard}
         />
       )}
     </main>

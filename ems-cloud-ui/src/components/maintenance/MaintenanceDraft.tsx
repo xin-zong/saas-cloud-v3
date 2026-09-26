@@ -5,7 +5,7 @@ import { Modal } from "../station-provision/Common"
 import { useEditorLeaveGuard, type RegisterLeaveGuard } from "../useEditorLeaveGuard"
 
 export type Draft = Record<string,string>
-export function useMaintenanceDraft(stationId:string, kind:string, enabled:boolean, registerLeaveGuard?:RegisterLeaveGuard) {
+export function useMaintenanceDraft(stationId:string, kind:string, enabled:boolean, registerLeaveGuard?:RegisterLeaveGuard, onDiscard?:()=>void) {
   const {user}=useAuth()
   const key=`enerlution-maintenance-drafts-v1:${DEMO_MODE?"demo":"api"}:${user?.id}:${stationId}:${kind}`
   const [records,setRecords]=useState<Draft[]>(()=>{try{const rows=JSON.parse(localStorage.getItem(key)||"[]");return Array.isArray(rows)?rows.filter(r=>r&&typeof r==="object"&&Object.values(r).every(v=>typeof v==="string")):[]}catch{return []}})
@@ -19,8 +19,8 @@ export function useMaintenanceDraft(stationId:string, kind:string, enabled:boole
     try{const next=[{...draft,id:crypto.randomUUID(),savedAt:new Date().toISOString()},...records];localStorage.setItem(key,JSON.stringify(next));setRecords(next);setDirty(false);setError("");setNotice(message);return true}catch{setError("本地保存失败，请检查浏览器存储权限后重试。");return false}
   }
   const leave=(next:()=>void)=>{void(async()=>{if(await requestLeave())next()})()}
-  const dialog=leaving&&<Modal title="放弃未保存修改？" onClose={()=>{setLeaving(false);settleLeave(false)}} actions={<><button className="operations-button" onClick={()=>{setLeaving(false);settleLeave(false)}}>继续编辑</button><button className="operations-button is-active" onClick={()=>{setLeaving(false);setDirty(false);settleLeave(true)}}>放弃修改</button></>}><p>当前运维表单尚未保存，离开会丢失修改。</p></Modal>
-  return {records,dirty,setDirty,error,setError,notice,setNotice,save,leave,dialog}
+  const dialog=leaving&&<Modal title="放弃未保存修改？" onClose={()=>{setLeaving(false);settleLeave(false)}} actions={<><button className="operations-button" onClick={()=>{setLeaving(false);settleLeave(false)}}>继续编辑</button><button className="operations-button is-active" onClick={()=>{onDiscard?.();setError("");setNotice("");setLeaving(false);setDirty(false);settleLeave(true)}}>放弃修改</button></>}><p>当前运维表单尚未保存，离开会丢失修改。</p></Modal>
+  return {records,dirty,setDirty,error,setError,notice,setNotice,save,leave,dialog,cancelLeave:()=>{setLeaving(false);settleLeave(false)}}
 }
 export function Surface({title,children,actions}:{title:string,children:ReactNode,actions?:ReactNode}){return <section className="maintenance-surface"><header><h2>{title}</h2>{actions}</header>{children}</section>}
 export function EmptyChart({label,axes}:{label:string,axes?:string}){return <div className="maintenance-empty-chart" role="img" aria-label={`${label}：暂无已接入数据`}><span>{label}数据尚未接通</span><small>{axes}</small></div>}
