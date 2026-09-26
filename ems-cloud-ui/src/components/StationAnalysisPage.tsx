@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { DEMO_MODE } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
 import { hasStationPermission } from "@/auth/apiPermissions"
@@ -117,11 +117,15 @@ export default function StationAnalysisPage({
   initialView = "live",
   initialRange,
   initialMetric,
+  analyticsFeatures = false,
+  stationSelector,
 }: {
   station: Station
   initialMetric?: AnalysisMetric
   initialView?: "live" | "history"
   initialRange?: { start: Date; end: Date }
+  analyticsFeatures?: boolean
+  stationSelector?: ReactNode
 }) {
   const { user } = useAuth()
   const canRead =
@@ -152,6 +156,7 @@ export default function StationAnalysisPage({
   )
   const [points, setPoints] = useState<MeasurementPoint[]>([])
   const [pointsReady, setPointsReady] = useState(false)
+  const [pointRetry, setPointRetry] = useState(0)
   const SIGNALS = useMemo(() => DEMO_MODE ? [...DEMO_SIGNALS] : registeredChannels(points), [points])
   const [minutes, setMinutes] = useState(initialView === "live" ? 1 : 15)
   const [selected, setSelected] = useState<string[]>(DEMO_MODE ? initialMetric ? metricSignals(initialMetric) : INITIAL_SIGNALS : [])
@@ -173,6 +178,8 @@ export default function StationAnalysisPage({
   const [dots, setDots] = useState(false)
 
   const [zoom, setZoom] = useState(false)
+  const [pan, setPan] = useState(false)
+  const [zoomAxis, setZoomAxis] = useState<"X" | "Y" | "XY">("XY")
 
   const [windowMinutes, setWindowMinutes] = useState(15)
 
@@ -212,6 +219,9 @@ export default function StationAnalysisPage({
     setPointsReady(false)
     setSelected([])
     setVisible([])
+    setQueryError("")
+    setSamples([])
+    setHistorySource([])
     if (canRead) loadPoints(station.id, controller.signal).then(result => {
       if (controller.signal.aborted) return
       setPoints(result)
@@ -223,13 +233,14 @@ export default function StationAnalysisPage({
       if (!controller.signal.aborted) setQueryError(error instanceof Error ? error.message : "测点读取失败")
     })
     return () => controller.abort()
-  }, [station.id, canRead, initialMetric])
+  }, [station.id, canRead, initialMetric, pointRetry])
 
   useEffect(() => {
     if (DEMO_MODE) return
     if (!canRead) {
       setSamples([])
       setHistorySource([])
+      setQueryLoading(false)
       return
     }
     if (!pointsReady) return
@@ -334,15 +345,16 @@ export default function StationAnalysisPage({
     [rows, zoomRange],
   )
 
+  const plotRows = analyticsFeatures && zoom && zoomAxis === "Y" ? rows : displayedRows
   const chartRows = useMemo(() => {
-    const step = Math.max(1, Math.ceil(displayedRows.length / 450))
+    const step = Math.max(1, Math.ceil(plotRows.length / 450))
 
     // Preserve missing-data boundaries so downsampling cannot bridge invalid samples.
 
-    return displayedRows.filter(
+    return plotRows.filter(
       (row, index) =>
         index % step === 0 ||
-        index === displayedRows.length - 1 ||
+        index === plotRows.length - 1 ||
         selected.some((id) => {
           if (!visible.includes(id)) return false
 
@@ -350,13 +362,13 @@ export default function StationAnalysisPage({
 
           return (
             (index > 0 &&
-              valid !== (typeof displayedRows[index - 1][id] === "number")) ||
-            (index + 1 < displayedRows.length &&
-              valid !== (typeof displayedRows[index + 1][id] === "number"))
+              valid !== (typeof plotRows[index - 1][id] === "number")) ||
+            (index + 1 < plotRows.length &&
+              valid !== (typeof plotRows[index + 1][id] === "number"))
           )
         }),
     )
-  }, [displayedRows, selected, visible])
+  }, [plotRows, selected, visible])
 
   const last = rows[rows.length - 1]
 
@@ -503,6 +515,7 @@ export default function StationAnalysisPage({
   }
 
   function exportCsv() {
+    if (!canRead || !plotRows.length || !activeSignals.length) return
     const lines = [
       [
         "时间",
@@ -510,7 +523,7 @@ export default function StationAnalysisPage({
           (signal) => `${signal.group}/${signal.name} (${signal.unit})`,
         ),
       ],
-      ...displayedRows.map((row) => [
+      ...plotRows.map((row) => [
         localDateTime(row.timestamp),
         ...activeSignals.map((signal) =>
           typeof row[signal.id] === "number" ? String(row[signal.id]) : "",
@@ -520,7 +533,7 @@ export default function StationAnalysisPage({
 
     const csv = lines
       .map((line) =>
-        line.map((value) => `"${value.replace(/"/g, '""')}"`).join(","),
+        line.map((value) => `"${value.replace(/^[=+@\t\r\n-]/, "'$&").replace(/"/g, '""')}"`).join(","),
       )
       .join("\r\n")
 
@@ -535,7 +548,7 @@ export default function StationAnalysisPage({
 
     window.setTimeout(() => URL.revokeObjectURL(url), 1000)
     setNotice(
-      `已导出 ${displayedRows.length} 个时间点、${selected.length} 个通道`,
+      `已导出 ${plotRows.length} 个时间点、${selected.length} 个通道`,
     )
   }
 
@@ -543,6 +556,15 @@ export default function StationAnalysisPage({
     const units = [...new Set(signals.map((signal) => signal.unit))].sort(
       (a, b) => (a === "kW" ? -1 : b === "kW" ? 1 : 0),
     )
+    function domain(unit: string): [number | "auto", number | "auto"] {
+      if (!analyticsFeatures || !zoom || !zoomRange) return unit === "%" ? [0, 100] : ["auto", "auto"]
+      const rangeRows = zoomAxis === "X" ? rows : displayedRows
+      const values = rangeRows.flatMap(row => signals.filter(s => s.unit === unit).map(s => row[s.id])).filter((v): v is number => typeof v === "number")
+      if (!values.length) return ["auto", "auto"]
+      const min = values.reduce((a, b) => Math.min(a, b)), max = values.reduce((a, b) => Math.max(a, b))
+      const pad = Math.max((max - min) * 0.05, 1)
+      return [min - pad, max + pad]
+    }
 
     return (
       <div
@@ -576,7 +598,8 @@ export default function StationAnalysisPage({
                 yAxisId={unit}
                 orientation={index % 2 === 0 ? "left" : "right"}
                 width={45}
-                domain={unit === "%" ? [0, 100] : ["auto", "auto"]}
+                domain={domain(unit)}
+                allowDataOverflow={analyticsFeatures && zoom && zoomAxis !== "X"}
                 tick={{ fontSize: 10, fill: "#647781" }}
                 axisLine={false}
                 tickLine={false}
@@ -659,6 +682,7 @@ export default function StationAnalysisPage({
           className="analysis-query-status"
         >
           {queryError || "正在查询历史采样…"}
+          {queryError && <button type="button" className="analysis-button" onClick={() => pointsReady ? setPoll(value => value + 1) : setPointRetry(value => value + 1)}>重试读取</button>}
         </div>
       )}
       <header className="analysis-topbar">
@@ -678,14 +702,15 @@ export default function StationAnalysisPage({
             历史趋势
           </button>
         </div>
-        <span className="analysis-source">
+        {!stationSelector && <span className="analysis-source">
           {station.name} · {isDemo ? "示例采样数据" : "已接入采样数据"}
-        </span>
+        </span>}
         <div className="analysis-acquisition">
           <i className={running && view === "live" ? "is-running" : ""} />
           {view === "history" ? "历史快照" : running ? "采集中" : "已暂停"}
           <span>· 质量 {quality}</span>
         </div>
+        {stationSelector}
         <button
           className="analysis-primary"
           disabled={view !== "live" || running}
@@ -694,6 +719,7 @@ export default function StationAnalysisPage({
             setNow(stationNow())
           }}
         >
+
           <Play size={12} />
           开启
         </button>
@@ -723,6 +749,14 @@ export default function StationAnalysisPage({
             queryHistory()
           }}
         >
+          {analyticsFeatures && <div className="analysis-quick-ranges">{["今日", "7天", "30天"].map((label, index) => <button type="button" className="analysis-button" key={label} onClick={() => {
+            const end = new Date(stationNow()), start = new Date(end)
+            if (index === 0) start.setHours(0, 0, 0, 0)
+            else start.setDate(start.getDate() - (index === 1 ? 7 : 30))
+            const next = { start: localDateTime(+start), end: localDateTime(+end) }
+            setRange(next); setHistoryRange(next); setRequestRange({ start, end }); setZoomRange(null)
+            if (DEMO_MODE) { setHistorySource(station.telemetryHistory === undefined ? demoTelemetryRange(station, +start, +end) : normalizeTelemetry(station.telemetryHistory)); setHistoryIsDemo(station.telemetryHistory === undefined) }
+          }}>{label}</button>)}<span>自定义</span></div>}
           <label>
             开始时间
             <input
@@ -759,7 +793,7 @@ export default function StationAnalysisPage({
             <span>{selected.length} 已选</span>
           </header>
           <label className="analysis-search">
-            <Search size={14} />
+            {analyticsFeatures ? <img src="/figma/analytics/search.svg" alt="" /> : <Search size={14} />}
             <input
               placeholder="搜索设备或信号"
               aria-label="搜索设备或信号"
@@ -835,7 +869,7 @@ export default function StationAnalysisPage({
         </aside>
         <section className="analysis-trends" aria-label="多信号趋势">
           <header className="analysis-trend-header">
-            <h2>多信号趋势</h2>
+            <h2>{analyticsFeatures && view === "history" ? "历史多信号趋势" : "多信号趋势"}</h2>
             <label className="analysis-window">
               滚动窗口
               <select
@@ -860,7 +894,7 @@ export default function StationAnalysisPage({
               </select>
             </label>
             <span className="analysis-small">
-              采样 {sampleInterval ? `${sampleInterval.toFixed(1)} s` : "--"}
+              {analyticsFeatures && !DEMO_MODE ? `聚合 ${minutes} min` : `采样 ${sampleInterval ? `${sampleInterval.toFixed(1)} s` : "--"}`}
             </span>
             <div className="analysis-chart-tools">
               <div
@@ -880,14 +914,14 @@ export default function StationAnalysisPage({
                   onClick={() => setLayout("group")}
                 >
                   <ChartNoAxesCombined size={12} />
-                  分组
+                  {analyticsFeatures ? "分层" : "分组"}
                 </button>
                 <button
                   aria-pressed={layout === "split"}
                   onClick={() => setLayout("split")}
                 >
                   <PanelsTopLeft size={12} />
-                  分屏
+                  {analyticsFeatures ? "分窗" : "分屏"}
                 </button>
               </div>
               {(["A", "B"] as const).map((name) => (
@@ -902,6 +936,7 @@ export default function StationAnalysisPage({
                   游标 {name}
                 </button>
               ))}
+              {analyticsFeatures && <button type="button" className="analysis-button" aria-pressed={pan} disabled={rows.length < 2} onClick={() => { setPan(!pan); setZoom(true); setZoomAxis("X"); if (!zoomRange && rows.length > 1) setZoomRange({ start: rows[0].timestamp, end: rows[Math.floor((rows.length - 1) / 2)].timestamp }) }}>平移</button>}
               <button
                 className="analysis-icon"
                 title="平滑曲线"
@@ -909,16 +944,16 @@ export default function StationAnalysisPage({
                 aria-pressed={smooth}
                 onClick={() => setSmooth(!smooth)}
               >
-                <Spline size={14} />
+                {analyticsFeatures ? "平滑" : <Spline size={14} />}
               </button>
               <button
                 className="analysis-icon"
                 title="缩放时间范围"
                 aria-label="缩放时间范围"
                 aria-pressed={zoom}
-                onClick={() => setZoom(!zoom)}
+                onClick={() => { setZoom(!zoom); setPan(false) }}
               >
-                <ZoomIn size={14} />
+                {analyticsFeatures ? "缩放" : <ZoomIn size={14} />}
               </button>
               <button
                 className="analysis-icon"
@@ -928,9 +963,10 @@ export default function StationAnalysisPage({
                   setZoomRange(null)
                   setCursors({ A: null, B: null })
                   setZoom(false)
+                  setPan(false)
                 }}
               >
-                <RotateCcw size={14} />
+                {analyticsFeatures ? "适配" : <RotateCcw size={14} />}
               </button>
               <button
                 className="analysis-icon"
@@ -939,7 +975,7 @@ export default function StationAnalysisPage({
                 aria-pressed={grid}
                 onClick={() => setGrid(!grid)}
               >
-                <Grid2X2 size={14} />
+                {analyticsFeatures ? "网格" : <Grid2X2 size={14} />}
               </button>
               <button
                 className="analysis-icon"
@@ -948,7 +984,7 @@ export default function StationAnalysisPage({
                 aria-pressed={dots}
                 onClick={() => setDots(!dots)}
               >
-                <Circle size={13} />
+                {analyticsFeatures ? "点" : <Circle size={13} />}
               </button>
             </div>
           </header>
@@ -963,6 +999,7 @@ export default function StationAnalysisPage({
             <button aria-pressed={!relative} onClick={() => setRelative(false)}>
               绝对
             </button>
+            {analyticsFeatures && <label className="analysis-axis-mode">缩放坐标 <select aria-label="缩放坐标" value={zoomAxis} onChange={event => { setZoomAxis(event.target.value as "X" | "Y" | "XY"); setPan(false) }}>{["X", "Y", "XY"].map(axis => <option key={axis}>{axis}</option>)}</select></label>}
           </div>
           <div className="analysis-legend">
             {activeSignals.map((signal) => (
@@ -1020,6 +1057,7 @@ export default function StationAnalysisPage({
           )}
           {zoom && rows.length > 1 && (
             <div className="analysis-brush">
+              {analyticsFeatures && <span className="analysis-small">{pan ? "拖动选区平移；拖动边缘调整范围" : "拖动边缘选择范围；Y 模式保留完整时间轴"}</span>}
               <ResponsiveContainer width="100%" height={40} minWidth={0}>
                 <LineChart data={rows}>
                   <Brush
@@ -1071,7 +1109,7 @@ export default function StationAnalysisPage({
                 ? `${Math.abs(rowB.timestamp - rowA.timestamp) / 1000} s`
                 : "--"}
             </span>
-            <span>{displayedRows.length.toLocaleString()} samples</span>
+            <span>{plotRows.length.toLocaleString()} {analyticsFeatures && !DEMO_MODE ? "时间点（含缺口）" : "samples"}</span>
             {stats && (
               <span>
                 {statsSignal.name} · min {valueText(stats.min)} · max{" "}
@@ -1093,6 +1131,13 @@ export default function StationAnalysisPage({
           </footer>
         </section>
       </div>
+      {analyticsFeatures && view === "history" && <section className="analytics-trend-summary" aria-label="趋势对照摘要">{(() => {
+        const power = plottedSignals.find(signal => signal.unit === "kW")
+        const values = power ? displayedRows.map(row => row[power.id]).filter((v): v is number => typeof v === "number") : []
+        const expected = Math.ceil((historyEnd - historyStart) / (minutes * 60000)) * activeSignals.length
+        const available = displayedRows.reduce((count, row) => count + activeSignals.filter(signal => typeof row[signal.id] === "number").length, 0)
+        return [["平均功率输出", values.length ? valueText(values.reduce((sum, v) => sum + v, 0) / values.length) + " kW" : "—"], ["数据完整度", expected > 0 ? Math.min(100, available / expected * 100).toFixed(1) + "%" : "—"], ["异常标记统计", "未提供"], ["通信中断频率", "未提供"]].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)
+      })()}<p>功率均值对应首个已显示 kW 测点；完整度按查询粒度及所选通道计算。缺失区间不代表设备故障。</p></section>}
       <section className="analysis-channels" aria-label="监测通道">
         <header>
           <h2>监测通道</h2>
@@ -1129,8 +1174,8 @@ export default function StationAnalysisPage({
                   "质量",
                   "数据龄期",
                   "时间戳",
-                  "样本数",
-                  "采样率",
+                  analyticsFeatures && !DEMO_MODE ? "有效时间点" : "样本数",
+                  analyticsFeatures && !DEMO_MODE ? "聚合粒度" : "采样率",
                   "显示",
                 ].map((label) => (
                   <th key={label}>{label}</th>
@@ -1166,7 +1211,7 @@ export default function StationAnalysisPage({
                     <td>{last ? clockTime(last.timestamp) : "--"}</td>
                     <td>{validRows.length.toLocaleString()}</td>
                     <td>
-                      {sampleInterval
+                      {analyticsFeatures && !DEMO_MODE ? `${minutes} min` : sampleInterval
                         ? `${(1 / sampleInterval).toFixed(2)} Hz`
                         : "--"}
                     </td>

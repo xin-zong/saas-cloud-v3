@@ -31,7 +31,7 @@ test("API analytics renders sparse history and downloads only successful server 
         { id: 17, device_id: 4, name: "有功功率", unit: "kW" },
         { id: 18, device_id: 4, name: "电池 SOC", unit: "%" },
       ]
-      else if (path === "/points/18/history") {
+      else if (path === "/points/18/history" && url.searchParams.get("from") === "2025-10-09T00:00:00.000Z") {
         historyCalls++
         assert.equal(url.searchParams.get("minutes"), "5")
         assert.equal(url.searchParams.get("from"), "2025-10-09T00:00:00.000Z")
@@ -58,19 +58,17 @@ test("API analytics renders sparse history and downloads only successful server 
   try {
     await page.goto(process.env.PREVIEW_URL || "http://127.0.0.1:8443", { waitUntil: "domcontentloaded", timeout: 30000 })
     await page.getByRole("button", { name: "分析与报告", exact: true }).click()
-    await page.getByRole("option", { name: "电池 SOC (%)" }).waitFor({ state: "attached" })
-    await page.getByLabel("测点", { exact: true }).selectOption("18")
+    await page.getByRole("tab", { name: "历史趋势", exact: true }).click()
+    await page.getByLabel("采样粒度", { exact: true }).selectOption("5")
     await page.getByLabel("开始时间", { exact: true }).fill("2025-10-09T08:00")
     await page.getByLabel("结束时间", { exact: true }).fill("2025-10-09T09:00")
-    await page.getByLabel("粒度", { exact: true }).selectOption("5")
-    await page.getByRole("button", { name: "查询历史" }).click()
-    await page.getByText("所选时间段没有采样数据。").waitFor()
-    assert.equal(await page.getByText("暂无采样数据").count(), 1)
-    await page.getByRole("button", { name: "查询历史" }).click()
-    await page.getByText("2 个采样区间 · 数值为服务器返回的区间平均值。").waitFor()
+    await page.getByRole("button", { name: "查询", exact: true }).click()
+    await page.getByText("当前时间范围暂无采样数据").waitFor()
+    await page.getByRole("button", { name: "查询", exact: true }).click()
+    await page.waitForFunction(() => document.querySelectorAll('.analysis-chart .recharts-line-curve').length > 0)
     assert.equal(historyCalls, 2)
     await page.getByRole("tab", { name: "数据下载" }).click()
-    await page.getByRole("button", { name: "导出查询 CSV" }).waitFor()
+    await page.getByRole("button", { name: "生成文件", exact: true }).waitFor()
     await page.getByRole("tab", { name: "报告中心" }).click()
     await page.getByLabel("报告类型", { exact: true }).selectOption("revenue")
     await page.getByLabel("报告开始日期", { exact: true }).fill("2025-10-01")
@@ -83,7 +81,7 @@ test("API analytics renders sparse history and downloads only successful server 
     assert.equal(reportCalls, 1)
     reportFails = true
     await page.getByRole("button", { name: "下载 CSV 报告" }).click()
-    await page.getByRole("alert").getByText("没有导出权限").waitFor()
+    await page.getByRole("alert").getByText("没有导出权限", { exact: false }).waitFor()
     assert.equal(reportCalls, 2)
     assert.equal(downloads, 1)
     assert.deepEqual(errors, [])

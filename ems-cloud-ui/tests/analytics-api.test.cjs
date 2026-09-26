@@ -24,6 +24,18 @@ function setup() {
   return { ...loadModule("components/apiAnalytics"), client: loadModule("api/client"), events }
 }
 
+test("missing values never become zero and report date validation rejects impossible or oversized ranges", async () => {
+  const service = setup()
+  global.fetch = async () => ({ ok: true, status: 200, json: async () => ({ code: 0, data: [
+    { timestamp: 1000, value: null, samples: 2 }, { timestamp: 2000, value: 0, samples: 1 },
+    { timestamp: 3000, value: 3, samples: null }, { timestamp: 4000, value: 4, samples: 0 },
+  ] }) })
+  const rows = await service.loadHistory('17', new Date(0), new Date(5000), 1)
+  assert.deepEqual(rows, [{ timestamp: 2000, value: 0, samples: 1 }])
+  await assert.rejects(service.downloadServerReport('12', 'health', '2026-02-30', '2026-03-02'), /有效/)
+  await assert.rejects(service.downloadServerReport('12', 'health', '2024-01-01', '2026-03-02'), /一年/)
+})
+
 test("authorized point metadata and sparse history preserve actual buckets", async () => {
   const service = setup()
   service.client.setToken("token")

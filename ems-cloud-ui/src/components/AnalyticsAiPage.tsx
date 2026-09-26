@@ -18,7 +18,9 @@ import {
 } from "@/data/stationTelemetry"
 import StationAnalysisPage from "./StationAnalysisPage"
 import ApiAnalyticsPage from "./ApiAnalyticsPage"
-import { Button, PageHeader, Select } from "./ui/Workspace"
+import AnalyticsStationPicker from "./AnalyticsStationPicker"
+import AnalyticsAudit from "./AnalyticsAudit"
+import { Button, Select } from "./ui/Workspace"
 import "./analytics-ai.css"
 
 type AnalysisTab = "数据分析" | "数据下载" | "报告中心"
@@ -836,6 +838,7 @@ function DemoAnalyticsAiPage({
     visibleTabs[0] ?? "数据分析",
   )
   const [stationId, setStationId] = useState(availableStations[0]?.id ?? "")
+  const [audit, setAudit] = useState(false)
   const reportRanges = useMemo(
     () => buildReportRanges(availableStations),
     [availableStations],
@@ -918,31 +921,6 @@ function DemoAnalyticsAiPage({
 
   return (
     <main className="ui-page analytics-ai-page">
-      <PageHeader
-        title="分析与报告"
-        description={`${ROLE_CONFIG[role].shortLabel}范围 · 实时信号、历史趋势和周期报告。`}
-        actions={
-          <div className="analytics-page-actions">
-            <label>
-              分析站点
-              <Select
-                aria-label="分析站点"
-                value={focusedStation?.id ?? ""}
-                disabled={!availableStations.length}
-                onChange={(event) => setStationId(event.target.value)}
-              >
-                {!availableStations.length && <option value="">暂无站点</option>}
-                {availableStations.map((station) => (
-                  <option key={station.id} value={station.id}>
-                    {station.name}
-                  </option>
-                ))}
-              </Select>
-            </label>
-          </div>
-        }
-      />
-
       <div
         className="analytics-report-tabs"
         role="tablist"
@@ -963,7 +941,7 @@ function DemoAnalyticsAiPage({
           ))}
         </div>
         <span>
-          数据口径 V3.8 · 更新 {formatDownloadTime(stationsDataNow(availableStations))}
+          演示模式 · 示例采样与本地报告
         </span>
       </div>
 
@@ -974,7 +952,8 @@ function DemoAnalyticsAiPage({
               className="analytics-ai-chart analytics-analysis-chart-proxy"
               aria-label={chartLabel}
             >
-              <StationAnalysisPage key={focusedStation.id} station={focusedStation} />
+              <div className="analytics-analysis-switch"><button type="button" aria-pressed={!audit} onClick={() => setAudit(false)}>信号分析</button><button type="button" aria-pressed={audit} onClick={() => setAudit(true)}>事件审计</button></div>
+              {audit ? <AnalyticsAudit stations={availableStations} /> : <StationAnalysisPage key={focusedStation.id} station={focusedStation} analyticsFeatures stationSelector={<AnalyticsStationPicker stations={availableStations} value={focusedStation.id} onChange={setStationId} />} />}
             </div>
           ) : (
             <section className="analytics-empty-state">
