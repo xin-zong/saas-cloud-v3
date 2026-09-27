@@ -36,9 +36,12 @@ public class PlatformController {
       permission = "organization.manage";
       s.access.requirePermission(permission);
     } else throw new BusinessException(400, "无效的组织目录用途");
-    return ApiResponse.ok(new OrganizationWorkflows(s).directory(
-        permission, purpose == null || "organizations".equals(purpose),
-        "organizations".equals(purpose)));
+    return ApiResponse.ok(
+        new OrganizationWorkflows(s)
+            .directory(
+                permission,
+                purpose == null || "organizations".equals(purpose),
+                "organizations".equals(purpose)));
   }
 
   public ApiResponse<?> organizations() {
@@ -91,64 +94,41 @@ public class PlatformController {
     s.access.userId();
     throw new BusinessException(410, "聚合角色权限读取已停用，请使用组织角色接口");
   }
+
   @GetMapping("/platform/customers")
   public ApiResponse<?> customers() {
     s.access.requirePermission("customer.read");
-    var customers =
-        s.db.queryForList(
-            """
-SELECT c.id,c.name,count(st.id) AS station_count FROM customer c JOIN station st ON st.customer_id=c.id
-JOIN effective_station_permission p ON p.station_id=st.id
-WHERE p.user_id=? AND p.permission_code='customer.read' GROUP BY c.id,c.name ORDER BY c.name
-""",
-            s.access.userId());
-    for (var customer : customers) {
-      long id = s.number(customer, "id");
-      customer.put("can_edit", canManageCustomer(id));
-      customer.put(
-          "stations",
-          s.db.queryForList(
-              """
-SELECT st.id,st.name,st.code FROM station st JOIN effective_station_permission p ON p.station_id=st.id
-WHERE st.customer_id=? AND p.user_id=? AND p.permission_code='customer.read' ORDER BY st.id
-""",
-              id,
-              s.access.userId()));
-    }
-    return ApiResponse.ok(customers);
+    return ApiResponse.ok(new CustomerWorkflows(s).list());
+  }
+
+  @GetMapping("/platform/customers/create-options")
+  public ApiResponse<?> customerCreateOptions() {
+    s.access.requirePermission("customer.manage");
+    return ApiResponse.ok(Map.of("organizations", new CustomerWorkflows(s).organizations()));
+  }
+
+  @GetMapping("/platform/customers/options")
+  public ApiResponse<?> customerOptions(@RequestParam long stationId) {
+    return ApiResponse.ok(new CustomerWorkflows(s).options(stationId));
+  }
+
+  @PostMapping("/platform/customers")
+  @Transactional
+  public ApiResponse<?> createCustomer(@RequestBody JsonNode input) {
+    s.access.requirePermission("customer.manage");
+    return ApiResponse.ok(new CustomerWorkflows(s).create(input));
+  }
+
+  @PutMapping("/platform/customers/{id}")
+  @Transactional
+  public ApiResponse<?> editCustomer(@PathVariable long id, @RequestBody JsonNode input) {
+    s.access.requirePermission("customer.manage");
+    return ApiResponse.ok(new CustomerWorkflows(s).edit(id, input));
   }
 
   public record CustomerInput(@NotBlank @Size(max = 160) String name) {}
 
-  @PutMapping("/platform/customers/{id}")
-  @Transactional
-  public ApiResponse<?> editCustomer(
-      @PathVariable long id, @Valid @RequestBody CustomerInput input) {
-    s.db.execute("SELECT pg_advisory_xact_lock(78291001)");
-    s.access.requirePermission("customer.manage");
-    if (!canManageCustomer(id)) throw new BusinessException(403, "客户不属于当前站点和管理组织范围");
-    s.db.update("UPDATE customer SET name=? WHERE id=?", input.name().trim(), id);
-    s.audit("customer.edit", "customer=" + id);
-    return ApiResponse.ok(null);
-  }
-
-  private boolean canManageCustomer(long id) {
-    return Boolean.TRUE.equals(
-        s.db.queryForObject(
-            """
-WITH RECURSIVE grant_branch(grant_id,organization_id) AS (
-  SELECT g.id,r.organization_id FROM active_member_grant g JOIN app_role r ON r.id=g.role_id
-  JOIN role_permission rp ON rp.role_id=r.id
-  WHERE g.user_id=? AND rp.permission_code='customer.manage' AND r.organization_id IS NOT NULL
-  UNION SELECT b.grant_id,o.id FROM grant_branch b JOIN organization o ON o.parent_id=b.organization_id
-) SELECT EXISTS(SELECT 1 FROM station WHERE customer_id=?) AND NOT EXISTS(
-  SELECT 1 FROM station st WHERE st.customer_id=? AND NOT EXISTS(
-    SELECT 1 FROM grant_branch b JOIN member_grant_station gs ON gs.grant_id=b.grant_id
-    WHERE gs.station_id=st.id AND b.organization_id=st.organization_id))
-""",
-            Boolean.class,
-            s.access.userId(),
-            id,
-            id));
+  public ApiResponse<?> editCustomer(long id, CustomerInput input) {
+    return editCustomer(id, new com.fasterxml.jackson.databind.ObjectMapper().valueToTree(input));
   }
 }

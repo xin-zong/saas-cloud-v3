@@ -53,6 +53,11 @@ SELECT NOT EXISTS(SELECT 1 FROM schema_migration WHERE version=9) AS apply_v9 \g
 \ir ../src/main/resources/db/migration/V9__role_management_permission.sql
 INSERT INTO schema_migration(version) VALUES(9);
 \endif
+SELECT NOT EXISTS(SELECT 1 FROM schema_migration WHERE version=10) AS apply_v10 \gset
+\if :apply_v10
+\ir ../src/main/resources/db/migration/V10__customer_profiles.sql
+INSERT INTO schema_migration(version) VALUES(10);
+\endif
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 GRANT USAGE ON SCHEMA public TO ems_proto_app;
 GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ems_proto_app;

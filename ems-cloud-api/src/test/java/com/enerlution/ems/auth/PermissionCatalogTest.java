@@ -138,10 +138,12 @@ class PermissionCatalogTest {
     JsonNode read = find(entries, "customer.read");
     JsonNode manage = find(entries, "customer.manage");
     assertEquals("station", read.path("scope").asText());
-    assertEquals("visible_customer_stations", read.path("scopeRule").asText());
+    assertEquals(
+        "visible_customer_stations_or_zero_station_customer_in_active_station_bearing_grant_organization_branch",
+        read.path("scopeRule").asText());
     assertEquals("station", manage.path("scope").asText());
     assertEquals(
-        "all_customer_stations_in_actor_station_scope_and_organization_branch",
+        "owner_organization_and_all_customer_stations_in_same_grant_station_and_organization_scope",
         manage.path("scopeRule").asText());
     assertEquals("asset.edit + member.manage", manage.path("legacyBinding").asText());
     assertTrue(read.path("available").asBoolean());

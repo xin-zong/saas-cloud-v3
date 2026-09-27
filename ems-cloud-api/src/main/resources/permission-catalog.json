@@ -493,7 +493,7 @@
       }
     ],
     "legacyBinding": "asset.read",
-    "scopeRule": "visible_customer_stations"
+    "scopeRule": "visible_customer_stations_or_zero_station_customer_in_active_station_bearing_grant_organization_branch"
   },
   {
     "code": "customer.manage",
@@ -510,10 +510,38 @@
         "method": "Put",
         "path": "/platform/customers/{id}",
         "enforcesCode": true
+      },
+      {
+        "status": "current",
+        "controller": "PlatformController",
+        "method": "Get",
+        "path": "/platform/customers/create-options",
+        "enforcesCode": true
+      },
+      {
+        "status": "current",
+        "controller": "PlatformController",
+        "method": "Post",
+        "path": "/platform/customers",
+        "enforcesCode": true
+      },
+      {
+        "status": "current",
+        "controller": "PlatformController",
+        "method": "Get",
+        "path": "/platform/customers/options",
+        "enforcesCode": true
+      },
+      {
+        "status": "current",
+        "controller": "AssetController",
+        "method": "Put",
+        "path": "/stations/{id}",
+        "enforcesCode": true
       }
     ],
     "legacyBinding": "asset.edit + member.manage",
-    "scopeRule": "all_customer_stations_in_actor_station_scope_and_organization_branch"
+    "scopeRule": "owner_organization_and_all_customer_stations_in_same_grant_station_and_organization_scope"
   },
   {
     "code": "organization.member.read",
