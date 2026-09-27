@@ -8,6 +8,22 @@ import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class IngressTest {
+    @Test void gatewayLeaseExposesTrafficIndependentRenewalAndShutdownRelease() {
+        assertDoesNotThrow(()->GatewayLease.class.getMethod("renewOwned"));
+        assertDoesNotThrow(()->GatewayLease.class.getMethod("close"));
+    }
+    @Test void permanentRejectionsAndTransientFailuresHaveDifferentTransportDispositions()throws Exception {
+        var method=assertDoesNotThrow(()->MqttIngress.class.getMethod("acceptDelivery",String.class,byte[].class));
+        var lease=new TestLease();var ingress=new MqttIngress(lease,1,Clock.systemUTC());
+        assertEquals("REJECTED",method.invoke(ingress,topic(),"{".getBytes()).toString());
+        assertEquals("REJECTED",method.invoke(ingress,topic(),payload()).toString());
+        lease.registered=true;lease.fence=BigInteger.ONE;
+        assertEquals("ACCEPTED",method.invoke(ingress,topic(),payload()).toString());
+        assertEquals("RETRY",method.invoke(ingress,topic(),payload()).toString());
+        ingress.close();assertEquals("RETRY",method.invoke(ingress,topic(),payload()).toString());
+        var failing=new LeaseAuthority(){public Optional<BigInteger> acquire(UUID id){throw new IllegalStateException();}public boolean isOwner(UUID id,BigInteger token){return true;}};
+        try(var failed=new MqttIngress(failing,1,Clock.systemUTC())){assertEquals("RETRY",method.invoke(failed,topic(),payload()).toString());}
+    }
     @Test void producerPendingCallbacksHaveExplicitBound() {
         var lease=new TestLease();lease.registered=true;lease.fence=BigInteger.ONE;
         try(var kafka=new KafkaIngress(lease,e->new CompletableFuture<>())) {

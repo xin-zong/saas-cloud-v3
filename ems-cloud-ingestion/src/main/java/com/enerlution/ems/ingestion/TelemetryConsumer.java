@@ -84,6 +84,7 @@ public final class TelemetryConsumer implements Runnable, AutoCloseable {
                     evidence(c, period, envelope, "invalid_profile", false); c.commit(); return true;
                 }
                 if(batch.configuration()!=null)ConfigurationStore.store(c,period,envelope,batch.configuration());
+                CabinetLinkStore.store(c,period,envelope,batch);
                 var rows = new ArrayList<ObjectNode>(); boolean missing = false;
                 String identity = ingressIdentity(envelope);
                 var mappings=liveMappings(c,period,batch.cabinet(),envelope.receivedAt());

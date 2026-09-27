@@ -12,6 +12,25 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @EnabledIfEnvironmentVariable(named="EMS_TEST_SCHEMA", matches="ems_ingestion_tests")
 class StateQueryPostgresTest {
+    @Test void ownedRenewalPreservesQuietConnectionButNeverFreshensHeartbeatOrRevivesExpiredFence()throws Exception {
+        var lease=new GatewayLease(source,"task7",30);
+        var renew=GatewayLease.class.getMethod("renewOwned");var close=GatewayLease.class.getMethod("close");
+        try(var c=source.getConnection();var s=c.createStatement()) {
+            s.executeUpdate("UPDATE connection_state SET connection_id='"+connection+"',ingress_generation='"+epoch+"',ingress_order=7,last_fresh_heartbeat=clock_timestamp()-interval '45 seconds',lease_until=clock_timestamp()+interval '2 seconds' WHERE ems_uuid='"+ems+"'");
+        }
+        renew.invoke(lease);
+        try(var c=source.getConnection();var s=c.createStatement();var r=s.executeQuery("SELECT fencing_token,connection_id,ingress_order,clock_timestamp()-last_fresh_heartbeat>interval '45 seconds',lease_until>clock_timestamp()+interval '20 seconds',(SELECT reachable FROM ems_connection_read WHERE ems_uuid='"+ems+"') FROM connection_state WHERE ems_uuid='"+ems+"'")) {
+            assertTrue(r.next());assertEquals(fence,r.getBigDecimal(1).toBigIntegerExact());assertEquals(connection.toString(),r.getString(2));assertEquals(7,r.getInt(3));assertTrue(r.getBoolean(4));assertTrue(r.getBoolean(5));assertTrue(r.getBoolean(6));
+        }
+        try(var c=source.getConnection();var s=c.createStatement()){s.executeUpdate("UPDATE connection_state SET last_fresh_heartbeat=clock_timestamp()-interval '91 seconds' WHERE ems_uuid='"+ems+"'");}
+        renew.invoke(lease);
+        try(var c=source.getConnection();var s=c.createStatement();var r=s.executeQuery("SELECT reachable FROM ems_connection_read WHERE ems_uuid='"+ems+"'")){r.next();assertFalse(r.getBoolean(1));}
+        try(var c=source.getConnection();var s=c.createStatement()){s.executeUpdate("UPDATE connection_state SET lease_until=clock_timestamp()-interval '1 second' WHERE ems_uuid='"+ems+"'");}
+        renew.invoke(lease);assertFalse(lease.isOwner(ems,fence));
+        var replacement=new GatewayLease(source,"replacement",30);var next=replacement.acquire(ems).orElseThrow();assertTrue(next.compareTo(fence)>0);
+        renew.invoke(lease);close.invoke(lease);assertTrue(replacement.isOwner(ems,next));
+        close.invoke(replacement);assertFalse(replacement.isOwner(ems,next));renew.invoke(replacement);assertFalse(replacement.isOwner(ems,next));
+    }
     PGSimpleDataSource source;
     UUID ems = UUID.randomUUID(), epoch = UUID.randomUUID(), connection = UUID.randomUUID();
     BigInteger fence;

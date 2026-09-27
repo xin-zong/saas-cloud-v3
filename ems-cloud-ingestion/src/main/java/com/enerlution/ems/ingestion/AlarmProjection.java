@@ -78,7 +78,7 @@ public final class AlarmProjection {
    // An existing unrelated legacy row is never commandeered on the strength of matching time/code.
    try(var q=c.prepareStatement("INSERT INTO alarm(device_id,code,title,severity,occurred_at,recovered_at) VALUES(?,?,?,?,?,?) ON CONFLICT(device_id,code,occurred_at) DO NOTHING RETURNING id")) {
     q.setLong(1,matches.getFirst()[1]);q.setString(2,first.code);q.setString(3,"EMS 告警 "+first.code);q.setString(4,severity);q.setTimestamp(5,first.source);
-    q.setTimestamp(6,latest.state.equals("recovered")&&!latest.source.before(first.source)?latest.source:null);
+    q.setTimestamp(6,latest.state.equals("cleared")&&!latest.source.before(first.source)?latest.source:null);
     try(var r=q.executeQuery()){if(!r.next())return false;business=r.getLong(1);}
    }
    try(var q=c.prepareStatement("UPDATE ems_alarm_identity SET business_alarm_id=?,business_device_binding_id=? WHERE ems_uuid=?::uuid AND alarm_id=?::uuid")) {
@@ -87,7 +87,7 @@ public final class AlarmProjection {
    created=true;
   } else {
    // Sequence-selected events update business recovery, never a stale last-known snapshot or another period.
-   try(var q=c.prepareStatement("UPDATE alarm SET severity=?,recovered_at=CASE WHEN ?='recovered' AND ?>=occurred_at THEN ? WHEN ?='active' THEN NULL ELSE recovered_at END WHERE id=?")) {
+   try(var q=c.prepareStatement("UPDATE alarm SET severity=?,recovered_at=CASE WHEN ?='cleared' AND ?>=occurred_at THEN ? WHEN ?='active' THEN NULL ELSE recovered_at END WHERE id=?")) {
     q.setString(1,severity);q.setString(2,latest.state);q.setTimestamp(3,latest.source);q.setTimestamp(4,latest.source);q.setString(5,latest.state);q.setLong(6,business);q.executeUpdate();
    }
   }

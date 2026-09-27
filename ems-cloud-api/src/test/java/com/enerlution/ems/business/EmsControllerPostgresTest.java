@@ -26,7 +26,7 @@ class EmsControllerPostgresTest {
     assertEquals("ems_ingestion_test",db.queryForObject("select current_user",String.class));
     db.execute("SET LOCAL search_path TO ems_ingestion_tests,public");db.execute("SELECT pg_advisory_xact_lock(78291028)");
     assertEquals(0,db.queryForObject("select count(*) from information_schema.tables where table_schema='ems_ingestion_tests'",Integer.class));
-    for(int v=1;v<=15;v++) {
+    for(int v=1;v<=16;v++) {
       if(v==11)db.update("INSERT INTO app_role(code,name) VALUES('bootstrap_super_admin__o2','Superadmin')");
       final String prefix="V"+v+"__";
       try(var paths=Files.list(Path.of("src/main/resources/db/migration"))) {
@@ -51,6 +51,14 @@ class EmsControllerPostgresTest {
     telemetry=mock(EmsTelemetryQueries.class);controller=new EmsController(support,json,telemetry);
   }
   @AfterEach void cleanup()throws Exception {if(connection!=null){connection.rollback();connection.close();}}
+  @Test void cabinetCommunicationIsTriStateAndScopedToOriginalCurrentPeriod() {
+    for(int cabinet=1;cabinet<=3;cabinet++)db.update("INSERT INTO cabinet_link_current VALUES(101,?,?,1789353000123,clock_timestamp(),?,1,1)",cabinet,cabinet==1?Boolean.TRUE:cabinet==2?Boolean.FALSE:null,UUID.randomUUID());
+    db.update("INSERT INTO cabinet_link_current VALUES(102,1,true,1789353000123,clock_timestamp(),?,1,1)",UUID.randomUUID());
+    var data=(Map<?,?>)controller.structure(ems).data();var links=(List<Map<String,Object>>)data.get("cabinetLinks");
+    assertEquals(3,links.size());assertEquals(true,links.get(0).get("online"));assertEquals(false,links.get(1).get("online"));assertNull(links.get(2).get("online"));
+    assertEquals("1789353000123",links.getFirst().get("source_time_ms"));assertEquals("101",links.getFirst().get("binding_period_id"));
+    assertEquals(false,data.get("known"),"Communication evidence does not invent structure activation");
+  }
   @Test void outsideStationCannotReadRegisterOrQuery() {
     assertEquals(403,assertThrows(BusinessException.class,()->controller.structure(outside)).status());
     assertEquals(403,assertThrows(BusinessException.class,()->controller.register(102,new EmsController.Registration(UUID.randomUUID(),102))).status());

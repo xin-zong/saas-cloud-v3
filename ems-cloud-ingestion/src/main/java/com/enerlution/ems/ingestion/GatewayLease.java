@@ -8,11 +8,14 @@ import java.util.*;
 /** DB time and monotonic numeric fencing; no UUID comparison and no cached ownership. */
 public final class GatewayLease implements LeaseAuthority {
  private final DataSource source; private final String owner; private final int seconds;
+ private boolean closed;
+ private UUID renewalCursor;
  public GatewayLease(DataSource source,String owner,int seconds){
   if(owner==null||owner.isBlank()||seconds<1)throw new IllegalArgumentException("Invalid lease configuration");
   this.source=source;this.owner=owner;this.seconds=seconds;
  }
- public Optional<BigInteger> acquire(UUID id){
+ public synchronized Optional<BigInteger> acquire(UUID id){
+  if(closed)return Optional.empty();
   for(int attempt=0;attempt<3;attempt++) {
    try(var c=source.getConnection()) {
     c.setAutoCommit(false);
@@ -38,5 +41,52 @@ public final class GatewayLease implements LeaseAuthority {
    q.setQueryTimeout(5);q.setString(1,id.toString());q.setString(2,owner);q.setBigDecimal(3,new java.math.BigDecimal(fence));
    try(var rows=q.executeQuery()){return rows.next();}
   }catch(SQLException e){throw new IllegalStateException("Lease database check failed",e);}
+ }
+ private record Owned(UUID id,BigInteger fence) {}
+ private List<Owned> owned(UUID after,boolean live)throws SQLException {
+  var result=new ArrayList<Owned>();
+  try(var c=source.getConnection();var q=c.prepareStatement("SELECT ems_uuid,fencing_token FROM connection_state WHERE lease_owner=? AND (?::uuid IS NULL OR ems_uuid>?::uuid) "+(live?"AND lease_until>clock_timestamp() ":"")+"ORDER BY ems_uuid LIMIT 128")) {
+   q.setQueryTimeout(5);q.setString(1,owner);q.setObject(2,after);q.setObject(3,after);
+   try(var r=q.executeQuery()){while(r.next())result.add(new Owned(r.getObject(1,UUID.class),r.getBigDecimal(2).toBigIntegerExact()));}
+  }
+  return result;
+ }
+ /** One bounded page, fair cursor, no acquisition and no heartbeat/connection mutation. */
+ public synchronized void renewOwned() {
+  if(closed)return;
+  try {
+   var page=owned(renewalCursor,true);
+   for(var row:page)changeOwned(row,false);
+   renewalCursor=page.size()<128?null:page.getLast().id();
+  }catch(SQLException e){throw new IllegalStateException("Lease renewal failed",e);}
+ }
+ private void changeOwned(Owned row,boolean release)throws SQLException {
+  try(var c=source.getConnection()) {
+   c.setAutoCommit(false);
+   try {
+    // Never wait behind a busy EMS while starving renewals for the rest of the page.
+    if(release)ReliableMessageStore.lock(c,row.id().toString());
+    else try(var q=c.prepareStatement("SELECT pg_try_advisory_xact_lock(hashtextextended(?::text,78291029))")) {
+     q.setQueryTimeout(1);q.setString(1,row.id().toString());try(var r=q.executeQuery()){r.next();if(!r.getBoolean(1)){c.rollback();return;}}
+    }
+    String assignment=release?"lease_owner=NULL,lease_until=NULL":"lease_until=clock_timestamp()+make_interval(secs=>?)";
+    try(var q=c.prepareStatement("UPDATE connection_state SET "+assignment+" WHERE ems_uuid=? AND lease_owner=? AND fencing_token=?"
+       +(release?"":" AND lease_until>clock_timestamp() AND EXISTS(SELECT 1 FROM ems_binding_period b WHERE b.ems_uuid=connection_state.ems_uuid AND b.valid_from<=clock_timestamp() AND (b.valid_to IS NULL OR b.valid_to>clock_timestamp()))"))) {
+     q.setQueryTimeout(5);int i=1;if(!release)q.setInt(i++,seconds);q.setObject(i++,row.id());q.setString(i++,owner);q.setBigDecimal(i,new java.math.BigDecimal(row.fence()));q.executeUpdate();
+    }
+    c.commit();
+   }catch(SQLException|RuntimeException e){c.rollback();throw e;}
+  }
+ }
+ /** Terminal lifecycle boundary; acquisition/renewal cannot race shutdown. */
+ public synchronized void close() {
+  closed=true;
+  try {
+   UUID cursor=null;
+   while(true) {
+    var page=owned(cursor,false);for(var row:page)changeOwned(row,true);
+    if(page.size()<128)return;cursor=page.getLast().id();
+   }
+  }catch(SQLException e){throw new IllegalStateException("Lease release failed",e);}
  }
 }

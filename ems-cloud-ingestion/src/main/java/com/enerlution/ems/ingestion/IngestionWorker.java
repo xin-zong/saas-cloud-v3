@@ -18,6 +18,8 @@ public final class IngestionWorker implements AutoCloseable {
  }
  public java.util.Map<String,Long> diagnostics(){return diagnostics.snapshot();}
  private final MqttIngress ingress; private final KafkaIngress kafka;
+ private final LeaseAuthority lease;
+ private final ScheduledExecutorService renewals=Executors.newSingleThreadScheduledExecutor();
  private final KafkaProducer<String,String> producer; private final MqttClient mqtt;
  private final ExecutorService pumps=Executors.newFixedThreadPool(8);
  private ReliableConsumer reliable;
@@ -31,6 +33,7 @@ public final class IngestionWorker implements AutoCloseable {
   this(properties,lease,source,null);
  }
  public IngestionWorker(IngestionProperties properties,LeaseAuthority lease,javax.sql.DataSource source,TelemetryConsumer.FactSink facts) throws Exception {
+  this.lease=lease;
   var socketFactory=MqttTls.create(properties.mqttCa(),properties.mqttCertificate(),properties.mqttKey());
   ingress=new MqttIngress(lease,properties.capacity(),Clock.systemUTC(),diagnostics);
   mqtt=new MqttClient(properties.mqttUri(),properties.clientId(),new MemoryPersistence());
@@ -52,9 +55,9 @@ public final class IngestionWorker implements AutoCloseable {
    public void connectionLost(Throwable cause){}
    public void deliveryComplete(IMqttDeliveryToken token){}
    public void messageArrived(String topic,MqttMessage message) throws Exception {
-    if(ingress.accept(topic,message.getPayload()))mqtt.messageArrivedComplete(message.getId(),message.getQos());
-    else { // MQTT PUBACK is transport only. Reconnect replays unacknowledged QoS1 delivery.
-     throw new IllegalStateException("Ingress rejected delivery");
+    if(ingress.acceptDelivery(topic,message.getPayload())!=MqttIngress.Delivery.RETRY)mqtt.messageArrivedComplete(message.getId(),message.getQos());
+    else { // Only transient failures replay. A definitive rejection receives transport PUBACK, never a saved business ACK.
+     throw new IllegalStateException("Ingress temporarily unavailable");
     }
    }
   });
@@ -64,6 +67,8 @@ public final class IngestionWorker implements AutoCloseable {
   options.setConnectionTimeout(10);options.setKeepAliveInterval(30);options.setMaxInflight(16);
   try {
    mqtt.connect(options);mqtt.subscribe("ems/v1/+/up/+",1);
+   long interval=Math.max(100,Math.min(1000,properties.leaseSeconds()*1000L/3));
+   renewals.scheduleWithFixedDelay(()->{if(!closed.get())try{lease.renewOwned();}catch(RuntimeException failure){diagnostics.record(TransportDiagnostics.Signal.DATABASE_FAILURE);}},interval,interval,TimeUnit.MILLISECONDS);
    for(var lane:IngressEnvelope.Lane.values())pumps.submit(()->pump(lane));
    if(source!=null) {
     AckOutbox.Publisher publisher=(topic,bytes)->mqtt.publish(topic,bytes,1,false);
@@ -95,12 +100,14 @@ public final class IngestionWorker implements AutoCloseable {
   if(telemetry!=null)telemetry.close();
   if(projection!=null)projection.close();
   ingress.close();kafka.close();pumps.shutdown();
+  renewals.shutdownNow();
   // Keep transports available while bounded in-flight work and Kafka resource close finish.
   try{if(!pumps.awaitTermination(12,TimeUnit.SECONDS)){pumps.shutdownNow();pumps.awaitTermination(5,TimeUnit.SECONDS);}}
   catch(InterruptedException e){pumps.shutdownNow();Thread.currentThread().interrupt();}
   try{mqtt.disconnectForcibly(1000,1000,false);}catch(Exception ignored){}
   try{mqtt.close(true);}catch(Exception ignored){}
   producer.close(Duration.ofSeconds(5));
+  try{lease.close();}catch(RuntimeException failure){diagnostics.record(TransportDiagnostics.Signal.DATABASE_FAILURE);LOG.warn("Lease release failed; bounded database leases will expire");}
   try{pumps.awaitTermination(5,TimeUnit.SECONDS);}catch(InterruptedException e){Thread.currentThread().interrupt();}
  }
  public record EnvelopeJson(String emsId,String channel,String type,String canonicalHash,String rawBody,String sourceTopic,

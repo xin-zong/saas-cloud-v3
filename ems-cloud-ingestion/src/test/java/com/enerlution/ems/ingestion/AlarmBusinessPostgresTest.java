@@ -56,7 +56,7 @@ class AlarmBusinessPostgresTest {
     assertEquals(0,AlarmProjection.projectBusiness(c,ems));assertEquals(0,scalar("SELECT count(*) FROM alarm"));
     s.execute("DELETE FROM device_binding WHERE id=104");
     assertEquals(1,AlarmProjection.projectBusiness(c,ems));assertEquals("warning",text("SELECT severity FROM alarm"));
-    event(3,"1","recovered");AlarmProjection.projectBusiness(c,ems);assertNotNull(text("SELECT recovered_at FROM alarm"));
+    event(3,"1","cleared");AlarmProjection.projectBusiness(c,ems);assertNotNull(text("SELECT recovered_at FROM alarm"));
     assertEquals(0,scalar("SELECT count(*) FROM outbox"));
   }
   @Test void currentOnlyKnownSnapshotCanProjectButLastKnownCannotConfirmActive()throws Exception {

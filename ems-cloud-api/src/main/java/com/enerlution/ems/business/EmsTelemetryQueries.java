@@ -135,6 +135,8 @@ public class EmsTelemetryQueries {
       default -> null;
     };
   }
+  private record SampleIdentity(String point,String period,String timeKind,String sourceTime) {}
+  private record SampleValue(SampleIdentity identity,String canonical) {}
   static List<Map<String,Object>> aggregate(JsonNode rows,String op,int minutes) {
     if(!OPERATIONS.contains(op)||!Set.of(1,5,15,30,60).contains(minutes))throw new BusinessException(400,"不支持的聚合方式或粒度");
     if(rows.size()>MAX_ROWS)throw new BusinessException(413,"遥测结果过大");
@@ -144,18 +146,25 @@ public class EmsTelemetryQueries {
       buckets.computeIfAbsent(Math.floorDiv(row.path("source_at_ms").longValue(),interval)*interval,x->new ArrayList<>()).add(row);
     var result=new ArrayList<Map<String,Object>>();
     for(var entry:buckets.entrySet()) {
-      var unique=new LinkedHashMap<String,JsonNode>();var sourceValues=new HashMap<String,Set<String>>();
+      var unique=new LinkedHashMap<SampleValue,JsonNode>();var sourceValues=new HashMap<SampleIdentity,Set<String>>();
       for(var row:entry.getValue()) {
-        String identity=row.path("point_id").asText()+":"+row.path("source_at_ms").asText();
+        var identity=new SampleIdentity(row.path("point_id").asText(),row.path("binding_period_id").asText(),
+            row.path("source_time_kind").asText("unknown"),row.path("source_at_ms").asText());
         String canonical=row.path("value_kind").asText()+":"+Objects.toString(value(row));
         sourceValues.computeIfAbsent(identity,x->new HashSet<>()).add(canonical);
         // Collapse only identical known-source samples; conflicts remain evidence.
-        unique.put(identity+":"+canonical,row);
+        unique.put(new SampleValue(identity,canonical),row);
       }
-      boolean conflict=sourceValues.values().stream().anyMatch(values->values.size()>1);
-      var ordered=unique.values().stream().sorted(Comparator.comparingLong((JsonNode r)->r.path("source_at_ms").asLong())
+      // Source quality is chosen for the whole bucket, before filtering invalid/null samples.
+      // An archive value cannot stand in for an unavailable source observation.
+      String selectedKind=unique.values().stream().anyMatch(r->r.path("source_time_kind").asText().equals("source"))?"source":
+          unique.values().stream().anyMatch(r->r.path("source_time_kind").asText().equals("archive"))?"archive":"unknown";
+      var selected=unique.values().stream().filter(r->r.path("source_time_kind").asText("unknown").equals(selectedKind)).toList();
+      boolean evidenceConflict=sourceValues.values().stream().anyMatch(values->values.size()>1);
+      boolean conflict=sourceValues.entrySet().stream().anyMatch(e->e.getKey().timeKind().equals(selectedKind)&&e.getValue().size()>1);
+      var ordered=selected.stream().sorted(Comparator.comparingLong((JsonNode r)->r.path("source_at_ms").asLong())
           .thenComparingLong(r->r.path("received_at_ms").asLong())).toList();
-      var samples=unique.values().stream().filter(r->r.path("quality").asText().equals("valid")&&!r.path("value_kind").asText().equals("null"))
+      var samples=selected.stream().filter(r->r.path("quality").asText().equals("valid")&&!r.path("value_kind").asText().equals("null"))
           .sorted(Comparator.comparingLong(r->r.path("source_at_ms").asLong())).toList();
       Object value=null;boolean resetUnknown=false;
       if(op.equals("last"))value=value(ordered.getLast());
@@ -177,6 +186,9 @@ public class EmsTelemetryQueries {
       dto.put("sourceTime",op.equals("last")?ordered.getLast().path("source_at_ms").longValue():null);
       dto.put("receivedAt",op.equals("last")?ordered.getLast().path("received_at_ms").longValue():null);
       dto.put("source","ems");dto.put("aggregation",op);dto.put("precision",op.equals("avg")?"34 significant digits HALF_EVEN":"exact");
+      dto.put("selectedSourceTimeKind",selectedKind);dto.put("selectionPolicy","prefer_source_per_bucket_else_archive");
+      dto.put("excludedEvidenceCount",unique.size()-selected.size());dto.put("evidenceConflict",evidenceConflict);
+      dto.put("completeness","unknown");
       dto.put("evidence",unique.values().stream().map(EmsTelemetryQueries::observation).toList());result.add(dto);
     }
     return result;

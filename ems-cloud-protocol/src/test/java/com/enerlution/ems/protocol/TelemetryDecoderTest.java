@@ -8,6 +8,17 @@ import java.nio.file.*;
 import java.math.*;
 import java.util.*;
 class TelemetryDecoderTest {
+ @Test void cabinetLinkPreservesBooleanNullAndOriginalTimestamp()throws Exception {
+  var accessor=assertDoesNotThrow(()->TelemetryBatch.class.getMethod("link"));
+  for(Boolean online:Arrays.asList(true,false,null)) {
+   var n=fixture("机柜30秒");var link=block(n,"link");link.put("ts",1789353000123L);
+   if(online==null)link.putNull("online");else link.put("online",online);
+   var decoded=accessor.invoke(decode(n));assertNotNull(decoded);
+   assertEquals(online,decoded.getClass().getMethod("online").invoke(decoded));
+   assertEquals(1789353000123L,decoded.getClass().getMethod("sourceTimestampMs").invoke(decoded));
+  }
+  assertNull(accessor.invoke(decode(fixture("机柜60秒"))));
+ }
  @Test void configurationRetainsExactExtensionIdBeyondIntegerRange()throws Exception {
   var n=fixture("EMS");
   ((ArrayNode)n.path("d").path("cfg").path("p")).addArray().add(new BigInteger("999999999999999999999")).add("wide extension");

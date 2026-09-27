@@ -66,6 +66,54 @@ class TelemetryProjectionPostgresTest {
         assertEquals(1, count("reliable_message", "status='projected'"));
     }
 
+    @Test void legalClearedEventsRecoverBusinessWithoutHandlingThem()throws Exception {
+        for(boolean clearedFirst:List.of(false,true)) {
+            var alarm=UUID.randomUUID();
+            if(!clearedFirst)acceptAlarm(alarm,1,"active");
+            if(!clearedFirst)try(var c=source.getConnection();var s=c.createStatement()) {
+                long actor=scalar(c,"INSERT INTO app_user(account,display_name,password_hash) VALUES('finalfix-"+alarm+"','Synthetic handler','unused') RETURNING id");
+                s.executeUpdate("UPDATE alarm SET acknowledged_by="+actor+",acknowledged_at='2026-09-15Z' WHERE id=(SELECT business_alarm_id FROM ems_alarm_identity WHERE alarm_id='"+alarm+"')");
+            }
+            acceptAlarm(alarm,2,"cleared");
+            try(var c=source.getConnection();var q=c.prepareStatement("SELECT a.recovered_at,a.acknowledged_at FROM alarm a JOIN ems_alarm_identity i ON i.business_alarm_id=a.id WHERE i.alarm_id=?")) {
+                q.setObject(1,alarm);try(var r=q.executeQuery()){assertTrue(r.next());assertNotNull(r.getTimestamp(1));if(clearedFirst)assertNull(r.getTimestamp(2));else assertEquals(Instant.parse("2026-09-15T00:00:00Z"),r.getTimestamp(2).toInstant());}
+            }
+        }
+    }
+    void acceptAlarm(UUID alarm,int seq,String state)throws Exception {
+        String raw="{\"v\":1,\"type\":\"alarm_event\",\"sv\":null,\"alarmId\":\""+alarm+"\",\"seq\":"+seq+",\"device\":{\"c\":1,\"type\":\"bms\",\"id\":1},\"code\":\"020101\",\"level\":2,\"state\":\""+state+"\",\"ts\":"+(1789353000000L+seq)+"}";
+        assertEquals(ReliableMessageStore.Outcome.SAVED,new ReliableMessageStore(source).accept(envelope("alarm",raw)));
+        try(var c=source.getConnection()){c.setAutoCommit(false);AlarmProjection.projectBusiness(c,ems.toString());c.commit();}
+    }
+
+    @Test void cabinetLinkPreservesTrueFalseNullAndRejectsOldIngressAndOldPeriod()throws Exception {
+        var consumer=new TelemetryConsumer(source,sink,new TransportDiagnostics());
+        IngressEnvelope previous=null;int seq=0;
+        for(Boolean online:Arrays.asList(true,false,null)) {
+            seq++;var base=ordinary(seq);var raw=(ObjectNode)new com.fasterxml.jackson.databind.ObjectMapper().readTree(base.rawBody());
+            var link=(ObjectNode)raw.path("d").path("link");link.put("ts",1789353000000L+seq);
+            if(online==null)link.putNull("online");else link.put("online",online);
+            var decoded=envelope("telemetry",raw.toString());
+            var e=new IngressEnvelope(ems,decoded.channel(),decoded.type(),decoded.canonicalHash(),decoded.rawBody(),decoded.sourceTopic(),decoded.receivedAt(),ingressEpoch,BigInteger.valueOf(seq),fence);
+            assertTrue(consumer.accept(e));
+            if(previous!=null)assertTrue(consumer.accept(previous));
+            try(var c=source.getConnection();var s=c.createStatement();var r=s.executeQuery("SELECT online,source_at_ms,ingress_order FROM cabinet_link_current WHERE binding_period_id="+period+" AND cabinet_no=1")) {
+                assertTrue(r.next());assertEquals(online,r.getObject(1));assertEquals(1789353000000L+seq,r.getLong(2));assertEquals(seq,r.getInt(3));
+            }
+            previous=e;
+        }
+        long replacement;
+        try(var c=source.getConnection();var s=c.createStatement()) {
+            c.setAutoCommit(false);ReliableMessageStore.lock(c,ems.toString());
+            s.executeUpdate("UPDATE point_binding SET valid_to=clock_timestamp() WHERE device_binding_id IN(SELECT id FROM device_binding WHERE binding_period_id="+period+") AND valid_to IS NULL");
+            s.executeUpdate("UPDATE device_binding SET valid_to=clock_timestamp() WHERE binding_period_id="+period+" AND valid_to IS NULL");
+            s.executeUpdate("UPDATE ems_binding_period SET valid_to=clock_timestamp() WHERE id="+period);
+            replacement=scalar(c,"INSERT INTO ems_binding_period(ems_uuid,station_id,valid_from) VALUES('"+ems+"',991,clock_timestamp()) RETURNING id");c.commit();
+        }
+        assertTrue(consumer.accept(previous));
+        try(var c=source.getConnection()){assertEquals(0,scalar(c,"SELECT count(*) FROM cabinet_link_current WHERE binding_period_id="+replacement));}
+    }
+
     @Test void failedClickHouseRetainsAcceptedObjectAndRecoversWithSameIdentity() throws Exception {
         assertEquals(ReliableMessageStore.Outcome.SAVED, new ReliableMessageStore(source).accept(history("[[1,0,[65535,0,12,42]]]")));
         var failedRows = new ArrayList<ObjectNode>();
@@ -137,7 +185,7 @@ class TelemetryProjectionPostgresTest {
         if(source==null||ems==null)return;
         try(var c=source.getConnection();var s=c.createStatement()) {
             c.setAutoCommit(false);ReliableMessageStore.lock(c,ems.toString());
-            for(String table:List.of("outbox","history_sample_identity","reliable_message"))s.executeUpdate("DELETE FROM "+table+" WHERE ems_uuid='"+ems+"'");
+            for(String table:List.of("outbox","ems_alarm_event","history_sample_identity","reliable_message"))s.executeUpdate("DELETE FROM "+table+" WHERE ems_uuid='"+ems+"'");
             for(String table:List.of("telemetry_diagnostic_evidence","structure_refresh_demand"))s.executeUpdate("DELETE FROM "+table+" WHERE binding_period_id="+period);
             c.commit();
         }

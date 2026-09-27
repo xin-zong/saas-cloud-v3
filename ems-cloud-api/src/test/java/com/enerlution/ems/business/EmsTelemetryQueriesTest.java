@@ -7,6 +7,25 @@ import java.util.*;
 import org.junit.jupiter.api.Test;
 
 class EmsTelemetryQueriesTest {
+  @Test void sourceAndArchiveAreDistinctEvidenceWithExplicitBucketPrecedence() throws Exception {
+    for(String archived:List.of("1","9")) {
+      var rows=json.createArrayNode();
+      rows.add(json.readTree("{\"point_id\":1,\"binding_period_id\":10,\"source_at_ms\":1000,\"received_at_ms\":1001,\"source_time_kind\":\"source\",\"quality\":\"valid\",\"value_kind\":\"number\",\"number_exact\":\"1\"}"));
+      var archive=rows.get(0).deepCopy();((com.fasterxml.jackson.databind.node.ObjectNode)archive).put("source_time_kind","archive").put("number_exact",archived);rows.add(archive);
+      var bucket=EmsTelemetryQueries.aggregate(rows,"avg",1).getFirst();
+      assertEquals("1",bucket.get("value"));assertEquals(false,bucket.get("conflict"));
+      assertEquals("source",bucket.get("selectedSourceTimeKind"));
+      assertEquals("prefer_source_per_bucket_else_archive",bucket.get("selectionPolicy"));
+      assertEquals(2,((List<?>)bucket.get("evidence")).size());assertEquals(1,bucket.get("excludedEvidenceCount"));
+      ((com.fasterxml.jackson.databind.node.ObjectNode)rows.get(0)).put("value_kind","null").put("quality","invalid");
+      assertNull(EmsTelemetryQueries.aggregate(rows,"avg",1).getFirst().get("value"));
+      rows.remove(0);assertEquals(archived,EmsTelemetryQueries.aggregate(rows,"avg",1).getFirst().get("value"));
+    }
+  }
+  @Test void equalTimeInDifferentBindingPeriodsDoesNotConflict()throws Exception {
+    var rows=json.readTree("[{\"point_id\":1,\"binding_period_id\":10,\"source_at_ms\":1,\"source_time_kind\":\"source\",\"quality\":\"valid\",\"value_kind\":\"number\",\"number_exact\":\"1\"},{\"point_id\":1,\"binding_period_id\":11,\"source_at_ms\":1,\"source_time_kind\":\"source\",\"quality\":\"valid\",\"value_kind\":\"number\",\"number_exact\":\"3\"}]");
+    var bucket=EmsTelemetryQueries.aggregate(rows,"avg",1).getFirst();assertEquals("2",bucket.get("value"));assertEquals(false,bucket.get("conflict"));assertEquals(2,bucket.get("samples"));
+  }
   final ObjectMapper json = new ObjectMapper();
   @Test void exactAverageCollapsesReceiptsAndPreservesConflicts() throws Exception {
     var rows = json.readTree("""

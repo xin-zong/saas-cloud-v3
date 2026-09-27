@@ -55,7 +55,11 @@ class EmsTelemetryClickHouseTest {
     assertNull(((Map<?,?>)tail.get(1)).get("value"));assertNull(((Map<?,?>)tail.get(1)).get("sourceTime"));assertEquals(now-500,((Map<?,?>)tail.get(1)).get("receivedAt"));
     var history=new TelemetryController(fixture.support,fixture.json,System.getenv("EMS_TEST_CH_URL"),"unused","unused","ems_cloud_v2_proto_telemetry",queries);
     var aggregates=(List<?>)history.history(point,OffsetDateTime.ofInstant(Instant.ofEpochMilli(now-4*3600000),ZoneOffset.UTC),OffsetDateTime.now(ZoneOffset.UTC),1,"ems","avg").data();
-    assertEquals(1,aggregates.size());var average=(Map<?,?>)aggregates.getFirst();assertEquals("9007199254740994",average.get("value"));assertEquals(3,average.get("samples"));
+    assertEquals(1,aggregates.size());var average=(Map<?,?>)aggregates.getFirst();assertEquals("9007199254740994",average.get("value"));assertEquals(2,average.get("samples"));assertEquals("source",average.get("selectedSourceTimeKind"));assertEquals(1,average.get("excludedEvidenceCount"));
+    insert("task8_observation",List.of(observation(point,103,bucket+1000,now+2000,"number","9007199254740993","important_history")));
+    var sameTime=EmsTelemetryQueries.aggregate(queries.history(point,List.of(103L),bucket,bucket+60000),"avg",1).getFirst();assertEquals(false,sameTime.get("conflict"));assertEquals("9007199254740994",sameTime.get("value"));assertEquals(4,((List<?>)sameTime.get("evidence")).size());
+    insert("task8_observation",List.of(observation(point,103,bucket+3000,now+2001,"number","9","important_history")));
+    var different=EmsTelemetryQueries.aggregate(queries.history(point,List.of(103L),bucket,bucket+60000),"avg",1).getFirst();assertEquals(false,different.get("conflict"));assertEquals("9007199254740994",different.get("value"));assertEquals(3,different.get("excludedEvidenceCount"));
     var conflict=observation(point,103,bucket+1000,now-100,"number","9","cabinet_30s");insert("task8_observation",List.of(conflict));
     var conflicting=EmsTelemetryQueries.aggregate(queries.history(point,List.of(103L),bucket,bucket+60000),"avg",1).getFirst();assertEquals(true,conflicting.get("conflict"));assertNull(conflicting.get("value"));
     UUID oldConnection=UUID.randomUUID(),newConnection=UUID.randomUUID();

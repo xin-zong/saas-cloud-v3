@@ -97,6 +97,7 @@ public class EmsController {
       result.put("receivedAt",row.get("received_at"));result.put("reachable",row.get("reachable"));
     }
     result.put("deviceMappings",s.db.queryForList("SELECT id::text,scope,cabinet_no,role,local_no::text,device_id::text,valid_from FROM device_binding WHERE binding_period_id=? AND valid_to IS NULL ORDER BY id",s.number(p,"id")));
+    result.put("cabinetLinks",s.db.queryForList("SELECT cabinet_no,online,source_at_ms::text AS source_time_ms,received_at,binding_period_id::text,ingress_generation,ingress_order::text,fencing_token::text FROM cabinet_link_current WHERE binding_period_id=? ORDER BY cabinet_no",s.number(p,"id")));
     var mappings=s.db.queryForList("SELECT pb.id::text,pb.measurement_point_id::text,d.catalog_version,d.namespace,d.source_id::text,d.value_type,d.aggregation FROM point_binding pb JOIN device_binding b ON b.id=pb.device_binding_id JOIN point_definition d ON d.id=pb.definition_id WHERE b.binding_period_id=? AND b.valid_to IS NULL AND pb.valid_to IS NULL ORDER BY pb.id",s.number(p,"id"));
     for(var mapping:mappings)semantics(mapping,(String)mapping.get("aggregation"),(String)mapping.get("value_type"));
     result.put("pointMappings",mappings);

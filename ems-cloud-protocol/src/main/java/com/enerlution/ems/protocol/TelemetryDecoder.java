@@ -18,7 +18,7 @@ public final class TelemetryDecoder {
         var n=message.body();var d=n.path("d");
         if(type.startsWith("cell_"))return cells(message,layout);
         var observations=new ArrayList<PointValue>();var seen=new HashSet<Integer>();
-        ConfigurationSnapshot configuration=null;Integer cabinet=null;
+        ConfigurationSnapshot configuration=null;Integer cabinet=null;TelemetryBatch.LinkObservation link=null;
         if(type.equals("ems")) {
             for(var block:d.path("base"))readBlock(block,"ems","base",type,observations,seen,true);
             require(seen.containsAll(definedIds("ems",type)),"Incomplete EMS profile");
@@ -37,9 +37,12 @@ public final class TelemetryDecoder {
             for(String subsystem:List.of("emu","bms","tms","pvdc","pcs","grid"))
                 readBlock(d.path(subsystem),"cabinet",subsystem,type,observations,seen,false);
             require(seen.equals(definedIds("cabinet",type)),"Incomplete cabinet profile");
-            if(type.equals("cabinet_30s"))timestamp(d.path("link").path("ts"));
+            if(type.equals("cabinet_30s")) {
+                var observation=d.path("link");
+                link=new TelemetryBatch.LinkObservation(observation.path("online").isNull()?null:observation.path("online").booleanValue(),timestamp(observation.path("ts")));
+            }
         }
-        return new TelemetryBatch(message.emsId(),cabinet,type,observations,configuration,null);
+        return new TelemetryBatch(message.emsId(),cabinet,type,observations,configuration,null,link);
     }
     private Set<Integer> definedIds(String namespace,String type){
         var ids=new HashSet<Integer>();
@@ -85,7 +88,7 @@ public final class TelemetryDecoder {
             require(hasValue,"Unavailable cell group must use outer null");
         }
         var frame=new CellFrame(cabinet,sv,message.type(),timestamp(d.path("ts")),quality,values);
-        return new TelemetryBatch(message.emsId(),cabinet,message.type(),List.of(),null,frame);
+        return new TelemetryBatch(message.emsId(),cabinet,message.type(),List.of(),null,frame,null);
     }
     private static int id(JsonNode n){require(n.isIntegralNumber()&&n.canConvertToInt()&&n.intValue()>0,"Unsupported point ID");return n.intValue();}
     private static Long timestamp(JsonNode n){if(n.isNull())return null;require(n.isIntegralNumber()&&n.canConvertToLong(),"Source timestamp outside supported range");return n.longValue();}
