@@ -5,6 +5,7 @@ export const text = (value: unknown) => value == null ? '' : String(value)
 const numeric = (value: unknown) => value == null || value === '' ? NaN : Number(value)
 export function adaptStation(row: ApiRow): Station {
   return {
+    customerId: row.customer_id == null ? null : text(row.customer_id),
     id: text(row.id), name: text(row.name), shortName: text(row.name), code: text(row.code),
     status: 'offline', runStatus: '遥测未知', x: 50, y: 50,
     devices: {online: NaN, fault: NaN, offline: NaN, building: NaN},
