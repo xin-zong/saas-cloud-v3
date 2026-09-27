@@ -121,14 +121,14 @@ assertEquals(1, factCountAfterReplay(factId));
 
 **Interfaces:** gateway current connection 按入口租约代际 + 新鲜心跳切换；query_request 状态 pending/sent/succeeded/failed/expired/unknown；op 白名单 structure.get/alarm.current.get。
 
-- [ ] RED：90秒无新鲜心跳不可达；Kafka 重放/退役连接不接管；同 sv 不同 seq 元信息更新；旧响应/连接变更不能完成新请求。
+- [x] RED：90秒无新鲜心跳不可达；Kafka 重放/退役连接不接管；同 sv 不同 seq 元信息更新；旧响应/连接变更不能完成新请求。
 ```java
 assertFalse(state.isReachable(clock.instant()));
 assertEquals("expired", dispatch(expiredRequest).status());
 ```
-- [ ] 实现 structure/current snapshots、config rev 冲突规则、固定请求ID和deadline、32次/60秒限流与有界队列；无设备写命令默认路由。
-- [ ] MQTT 模拟器查询往返及后续实机响应分开验收。
-- [ ] GREEN，提交。
+- [x] 实现 structure/current snapshots、config rev 冲突规则、固定请求ID和deadline、32次/60秒限流与有界队列；无设备写命令默认路由。
+- [x] MQTT 模拟器查询往返及后续实机响应分开验收。
+- [x] GREEN，提交。
 
 ## Task 8: API 读模型、授权与管理入口
 

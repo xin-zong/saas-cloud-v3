@@ -1,0 +1,44 @@
+{
+  "artifactSha256": "adf52e64d8dc171e984beb4600c7f52dfc1b82a53ccd4cb86340df6f37ade2cc",
+  "v14Sha256": "58b57505df98eff4854191a67af39cf8a895e8a12b73c19a5b4722dac00aa992",
+  "local": {
+    "tests": 89,
+    "passed": 53,
+    "skippedPg": 36,
+    "failures": 0,
+    "errors": 0
+  },
+  "actualPostgres": {
+    "stateQuery": {
+      "tests": 15,
+      "seconds": 13.037
+    },
+    "typedProjection": {
+      "tests": 5,
+      "seconds": 11.389
+    },
+    "reliable": {
+      "tests": 16,
+      "seconds": 9.568
+    },
+    "failed": 0,
+    "skipped": 0
+  },
+  "simulatorMqttKafkaPostgres": "PASS",
+  "realEmsVerified": false,
+  "productionV14Applied": true,
+  "runner": "Frozen artifacts, server Java21/JUnit1.12.2, isolated ems_ingestion_tests schema and test role",
+  "fixRound1": {
+    "artifactSha256": "a134040090216df60487458fd9a8c8fdbee9dc2392d3ac599097a61d671c9f8f",
+    "actualStateQuery": "18 passed in 19-case run; one invalid progress assertion corrected; focused remaining case passed",
+    "focusedSeconds": 3.637,
+    "actualProjectionTests": 5,
+    "projectionSeconds": 10.203,
+    "simulator": "PASS",
+    "localIngestionTests": 73,
+    "localIngestionPassed": 33,
+    "guardedPgSkipped": 40,
+    "schemaChanged": false,
+    "review": "All findings addressed, no new Critical/Important breakage"
+  }
+}

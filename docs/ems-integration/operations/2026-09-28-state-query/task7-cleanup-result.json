@@ -1,0 +1,14 @@
+{
+  "temporaryTopicsRemoved": 3,
+  "temporaryGroupRemoved": true,
+  "testListenerStopped": true,
+  "testSchemaEmpty": true,
+  "remainingTopics": [
+    "__consumer_offsets",
+    "__transaction_state",
+    "ems-cloud-v3.ingress.fast.v1",
+    "ems-cloud-v3.ingress.reliable.v1",
+    "ems-cloud-v3.ingress.state.v1"
+  ],
+  "artifactDirectoryRetainedForAudit": true
+}

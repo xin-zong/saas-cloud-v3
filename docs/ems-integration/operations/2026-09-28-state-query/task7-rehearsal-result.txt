@@ -1,0 +1,48 @@
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+CREATE TABLE
+REVOKE
+DO
+DO
+ALTER TABLE
+ALTER TABLE
+DROP TRIGGER
+DROP FUNCTION
+DO
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+INSERT 0 1
+GRANT
+GRANT
+GRANT
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+REVOKE
+REVOKE
+DO
+SET
+ first_attempt_at 
+------------------
+(0 rows)
+
+ record 
+--------
+(0 rows)
+
+RESET
+DO
+ROLLBACK
+psql:/var/lib/ems-cloud-v3/task7-rollout/database/rehearsal.sql:10: NOTICE:  relation "schema_migration" already exists, skipping

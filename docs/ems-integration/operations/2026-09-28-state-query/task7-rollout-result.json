@@ -1,0 +1,25 @@
+{
+  "productionV14Applied": true,
+  "applyRuns": 2,
+  "before": {
+    "station": 2,
+    "device": 26,
+    "measurement_point": 258,
+    "ems_gateway": 0,
+    "alarm": 30
+  },
+  "after": {
+    "station": 2,
+    "device": 26,
+    "measurement_point": 258,
+    "ems_gateway": 0,
+    "alarm": 30
+  },
+  "privileges": {
+    "workerOutboxWrite": true,
+    "workerAssetUpdate": false,
+    "apiOutboxRead": false,
+    "apiMemberRead": true,
+    "apiConnectionRead": true
+  }
+}

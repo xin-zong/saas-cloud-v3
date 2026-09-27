@@ -1,0 +1,1 @@
+PASS actual simulator MQTT/Kafka/PG: fresh heartbeat, durable fixed read query, real MQTT response, committed current snapshot; real EMS verification remains separate
