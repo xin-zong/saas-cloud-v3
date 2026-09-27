@@ -1,0 +1,16 @@
+{
+  "v": 1,
+  "type": "alarm_event",
+  "sv": 1,
+  "alarmId": "0c0731b8-9a62-4abc-bd32-10f5eb5e8917",
+  "seq": 1,
+  "device": {
+    "c": 3,
+    "type": "bms",
+    "id": null
+  },
+  "code": "020101",
+  "level": 2,
+  "state": "active",
+  "ts": 1789353000000
+}

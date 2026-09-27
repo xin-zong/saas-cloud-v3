@@ -1,0 +1,122 @@
+{
+  "v": 1,
+  "type": "structure",
+  "connectionId": "746bc054-9758-41cf-8ae2-cd788b286713",
+  "seq": 2,
+  "sv": 1,
+  "d": {
+    "ems": {
+      "vendor": null,
+      "sn": null,
+      "swVersion": null
+    },
+    "publicMeters": [
+      {
+        "id": 1,
+        "use": null,
+        "vendor": null,
+        "sn": null,
+        "swVersion": null
+      }
+    ],
+    "clusters": [
+      {
+        "c": 1,
+        "sn": null,
+        "state": "active",
+        "cellReady": true,
+        "devices": {
+          "emu": {
+            "sn": null,
+            "swVersion": null
+          },
+          "pcs": {
+            "sn": null,
+            "swVersion": null
+          },
+          "dcdc": {
+            "sn": null,
+            "swVersion": null
+          },
+          "tms": {
+            "sn": null,
+            "swVersion": null
+          },
+          "bmu": {
+            "sn": null,
+            "swVersion": null
+          },
+          "clusterMeters": [
+            {
+              "id": 1,
+              "sn": null,
+              "swVersion": null
+            }
+          ]
+        }
+      },
+      {
+        "c": 2,
+        "sn": null,
+        "state": "active",
+        "cellReady": true,
+        "devices": {
+          "emu": {
+            "sn": null,
+            "swVersion": null
+          },
+          "pcs": {
+            "sn": null,
+            "swVersion": null
+          },
+          "dcdc": {
+            "sn": null,
+            "swVersion": null
+          },
+          "tms": {
+            "sn": null,
+            "swVersion": null
+          },
+          "bmu": {
+            "sn": null,
+            "swVersion": null
+          },
+          "clusterMeters": [
+            {
+              "id": 1,
+              "sn": null,
+              "swVersion": null
+            }
+          ]
+        }
+      }
+    ],
+    "clusterLayout": {
+      "emu": 1,
+      "pcs": 1,
+      "dcdc": 1,
+      "tms": 1,
+      "vendors": {
+        "emu": null,
+        "pcs": null,
+        "dcdc": null,
+        "tms": null,
+        "bmu": null
+      },
+      "clusterMeters": [
+        {
+          "id": 1,
+          "use": null,
+          "vendor": null
+        }
+      ],
+      "bms": {
+        "count": 1,
+        "bmuType": 2,
+        "bmuCount": 5,
+        "voltCount": 52,
+        "tempCount": 26
+      }
+    }
+  }
+}
