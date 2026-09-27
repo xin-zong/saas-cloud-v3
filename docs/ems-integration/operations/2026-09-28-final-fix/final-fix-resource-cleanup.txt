@@ -1,0 +1,2 @@
+Deletion of requested consumer groups ('ems-cloud-v3.ingestion.finalfix-20260928.reliable') was successful.
+FINAL_FIX_RESOURCES_CLEANED

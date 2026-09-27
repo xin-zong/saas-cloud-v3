@@ -1,0 +1,130 @@
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+DO
+DROP SCHEMA
+CREATE SCHEMA
+REVOKE
+COMMIT
+
+Test run finished after 5120 ms
+[         2 containers found      ]
+[         0 containers skipped    ]
+[         2 containers started    ]
+[         0 containers aborted    ]
+[         2 containers successful ]
+[         0 containers failed     ]
+[         1 tests found           ]
+[         0 tests skipped         ]
+[         1 tests started         ]
+[         0 tests aborted         ]
+[         1 tests successful      ]
+[         0 tests failed          ]
+
+
+API_JUNIT_EXIT=0
+NOTICE:  drop cascades to 101 other objects
+DETAIL:  drop cascades to table ems_ingestion_tests.organization
+drop cascades to function ems_ingestion_tests.check_organization_cycle()
+drop cascades to table ems_ingestion_tests.app_user
+drop cascades to table ems_ingestion_tests.app_role
+drop cascades to table ems_ingestion_tests.permission
+drop cascades to table ems_ingestion_tests.user_role
+drop cascades to table ems_ingestion_tests.role_permission
+drop cascades to table ems_ingestion_tests.user_totp
+drop cascades to table ems_ingestion_tests.customer
+drop cascades to table ems_ingestion_tests.station
+drop cascades to table ems_ingestion_tests.user_station
+drop cascades to table ems_ingestion_tests.device_model
+drop cascades to table ems_ingestion_tests.device
+drop cascades to table ems_ingestion_tests.measurement_kind
+drop cascades to table ems_ingestion_tests.measurement_point
+drop cascades to table ems_ingestion_tests.topology_connection
+drop cascades to table ems_ingestion_tests.device_observation
+drop cascades to table ems_ingestion_tests.audit_event
+drop cascades to table ems_ingestion_tests.user_preference
+drop cascades to table ems_ingestion_tests.alarm
+drop cascades to table ems_ingestion_tests.alarm_note
+drop cascades to table ems_ingestion_tests.work_order
+drop cascades to table ems_ingestion_tests.work_order_alarm
+drop cascades to table ems_ingestion_tests.work_order_event
+drop cascades to table ems_ingestion_tests.inspection
+drop cascades to table ems_ingestion_tests.firmware_task
+drop cascades to table ems_ingestion_tests.operating_plan
+drop cascades to table ems_ingestion_tests.plan_period
+drop cascades to table ems_ingestion_tests.tariff
+drop cascades to table ems_ingestion_tests.tariff_period
+drop cascades to table ems_ingestion_tests.station_tariff
+drop cascades to table ems_ingestion_tests.approval
+drop cascades to table ems_ingestion_tests.market_area
+drop cascades to table ems_ingestion_tests.market_qualification
+drop cascades to table ems_ingestion_tests.market_service
+drop cascades to table ems_ingestion_tests.market_allocation
+drop cascades to table ems_ingestion_tests.contract
+drop cascades to table ems_ingestion_tests.settlement_record
+drop cascades to table ems_ingestion_tests.settlement_line
+drop cascades to table ems_ingestion_tests.settlement_payment
+drop cascades to table ems_ingestion_tests.settlement_review
+drop cascades to table ems_ingestion_tests.member_grant
+drop cascades to table ems_ingestion_tests.member_grant_station
+drop cascades to view ems_ingestion_tests.active_member_grant
+drop cascades to view ems_ingestion_tests.effective_station_permission
+drop cascades to view ems_ingestion_tests.effective_organization_permission
+drop cascades to view ems_ingestion_tests.effective_permission
+drop cascades to function ems_ingestion_tests.check_customer_station_ownership()
+drop cascades to type ems_ingestion_tests.ems_counter
+drop cascades to type ems_ingestion_tests.ems_positive_counter
+drop cascades to type ems_ingestion_tests.ems_uuid_v4
+drop cascades to type ems_ingestion_tests.ems_content_hash
+drop cascades to table ems_ingestion_tests.ems_gateway
+drop cascades to table ems_ingestion_tests.ems_binding_period
+drop cascades to table ems_ingestion_tests.connection_state
+drop cascades to table ems_ingestion_tests.retired_connection
+drop cascades to table ems_ingestion_tests.structure_revision
+drop cascades to table ems_ingestion_tests.structure_acceptance
+drop cascades to table ems_ingestion_tests.structure_current
+drop cascades to table ems_ingestion_tests.device_binding
+drop cascades to table ems_ingestion_tests.bmu_layout
+drop cascades to table ems_ingestion_tests.point_definition
+drop cascades to table ems_ingestion_tests.point_binding
+drop cascades to table ems_ingestion_tests.config_revision
+drop cascades to table ems_ingestion_tests.config_acceptance
+drop cascades to table ems_ingestion_tests.config_current
+drop cascades to table ems_ingestion_tests.config_value
+drop cascades to table ems_ingestion_tests.reliable_message
+drop cascades to table ems_ingestion_tests.history_sample_identity
+drop cascades to table ems_ingestion_tests.ems_alarm_identity
+drop cascades to table ems_ingestion_tests.ems_alarm_event
+drop cascades to table ems_ingestion_tests.alarm_current_snapshot
+drop cascades to table ems_ingestion_tests.alarm_current_member
+drop cascades to table ems_ingestion_tests.query_request
+drop cascades to table ems_ingestion_tests.outbox
+drop cascades to function ems_ingestion_tests.check_ems_binding_period()
+drop cascades to function ems_ingestion_tests.check_ems_device_binding()
+drop cascades to function ems_ingestion_tests.check_ems_asset_move()
+drop cascades to function ems_ingestion_tests.check_ems_point_binding()
+drop cascades to function ems_ingestion_tests.ems_valid_u16_words(jsonb)
+drop cascades to function ems_ingestion_tests.check_ems_config_value()
+drop cascades to function ems_ingestion_tests.check_ems_query_binding()
+drop cascades to function ems_ingestion_tests.check_ems_parent_change()
+drop cascades to function ems_ingestion_tests.check_ems_definition_identity()
+drop cascades to view ems_ingestion_tests.ems_ingestion_status
+drop cascades to function ems_ingestion_tests.check_ems_version_acceptance()
+drop cascades to function ems_ingestion_tests.check_ems_immutable_version_fact()
+drop cascades to table ems_ingestion_tests.alarm_refresh_demand
+drop cascades to function ems_ingestion_tests.ems_valid_history_value(jsonb)
+drop cascades to table ems_ingestion_tests.telemetry_diagnostic_evidence
+drop cascades to table ems_ingestion_tests.structure_refresh_demand
+drop cascades to view ems_ingestion_tests.ems_connection_read
+drop cascades to view ems_ingestion_tests.ems_alarm_evidence
+drop cascades to function ems_ingestion_tests.check_ems_business_alarm_origin()
+drop cascades to function ems_ingestion_tests.keep_ems_business_alarm_origin()
+drop cascades to view ems_ingestion_tests.ems_alarm_business_origin
+drop cascades to function ems_ingestion_tests.check_ems_business_alarm_asset()
+drop cascades to view ems_ingestion_tests.ems_ingestion_diagnostics
+drop cascades to view ems_ingestion_tests.ems_alarm_refresh_read
+drop cascades to function ems_ingestion_tests.ems_invalidate_binding(uuid,bigint)
+and 1 other object (see server log for list)

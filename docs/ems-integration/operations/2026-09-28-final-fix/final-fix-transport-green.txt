@@ -1,0 +1,5 @@
+ISOLATED_CURRENT_SETUP_EXIT=0
+FINAL_FIX_TRANSPORT_PASS invalid_qos1_consumed valid_kafka_pg_progress no_invalid_saved_ack persistent_restart quiet_35s_live_fence shutdown_release
+WARN com.enerlution.ems.ingestion.IngestionWorker - Ingestion transport failure counters: {DECODER_REJECTION=1}
+
+LIVE_EXIT=0

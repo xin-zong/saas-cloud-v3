@@ -1,0 +1,8 @@
+{
+  "git": "a49ca1702549dfdb6cfed363afaae6d30365894a",
+  "artifacts": {
+    "source.zip": "9067d068f2fa34618ca748131091604fca8e09bd7948a11b8edfae73aaff6d27",
+    "ems-cloud-api.jar": "437b96a2d75c8304b2fd466a4579d2fe2b252310b667dafaedaf437fe38e209a",
+    "ems-cloud-ingestion.jar": "bf2d7c169e8b7b87c58a5e085c0c11755af1482fd2ae44aa353709861ee5388e"
+  }
+}
