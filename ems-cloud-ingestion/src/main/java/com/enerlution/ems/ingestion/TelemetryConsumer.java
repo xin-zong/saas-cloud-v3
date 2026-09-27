@@ -212,7 +212,7 @@ public final class TelemetryConsumer implements Runnable, AutoCloseable {
         final CellFrame frame;
         try {frame=new TelemetryDecoder(catalog).decode(message,layout).cells();}
         catch(ProtocolException invalid){evidence(c,period,e,"unknown_layout",true);c.commit();return true;}
-        var row=TypedFact.cells(frame.values());String identity=ingressIdentity(e);
+        var row=TypedFact.cells(frame.values(),layout.connectionId());String identity=ingressIdentity(e);
         row.put("fact_id",TypedFact.id("cell",Long.toString(period),Integer.toString(frame.cabinet()),Long.toString(revision),frame.kind(),identity));
         row.put("binding_period_id",period);row.put("cabinet_no",frame.cabinet());row.put("structure_revision_id",revision);row.put("cell_kind",frame.kind());
         row.put("source_message_id",identity);row.put("source_time_kind",frame.sourceTimestampMs()==null?"unknown":"source");

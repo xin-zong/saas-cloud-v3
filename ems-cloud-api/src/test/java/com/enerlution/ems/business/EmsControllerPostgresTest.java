@@ -163,7 +163,7 @@ class EmsControllerPostgresTest {
     db.update("INSERT INTO structure_revision(id,ems_uuid,sv,layout,content_hash) VALUES(103,?,1,'{}',repeat('a',64))",ems);
     db.update("INSERT INTO structure_acceptance VALUES(101,103,clock_timestamp())");
     db.update("INSERT INTO structure_current VALUES(?,101,?,1,103,'{\"clusters\":[{\"c\":1,\"state\":\"active\",\"cellReady\":false}]}',clock_timestamp())",ems,connectionId);
-    when(telemetry.cells(List.of(101L),1,103)).thenReturn(List.of(Map.of("value",List.of(List.of("3.14")))));
+    when(telemetry.cells(List.of(101L),1,103,connectionId)).thenReturn(List.of(Map.of("value",List.of(List.of("3.14")))));
     assertEquals(false,((Map<?,?>)controller.cells(101).data()).get("known"));verifyNoInteractions(telemetry);
     db.update("UPDATE structure_current SET metadata='{\"clusterLayout\":{\"bms\":{\"count\":1,\"bmuCount\":1}},\"clusters\":[{\"c\":1,\"state\":\"active\",\"cellReady\":true}]}'");
     assertEquals(true,((Map<?,?>)controller.cells(101).data()).get("known"));
@@ -187,7 +187,7 @@ class EmsControllerPostgresTest {
     db.update("INSERT INTO structure_revision(id,ems_uuid,sv,layout,content_hash) VALUES(103,?,1,'{}',repeat('a',64))",ems);
     db.update("INSERT INTO structure_acceptance VALUES(101,103,clock_timestamp())");
     db.update("INSERT INTO structure_current VALUES(?,101,?,1,103,'{\"clusterLayout\":{\"bms\":{\"count\":1,\"bmuCount\":3}},\"clusters\":[{\"c\":1,\"state\":\"active\",\"cellReady\":true}]}',clock_timestamp())",ems,connectionId);
-    when(telemetry.cells(List.of(101L),1,103)).thenReturn(List.of(Map.of("value",List.of(List.of("1"),List.of("2"),List.of("3")))));
+    when(telemetry.cells(List.of(101L),1,103,connectionId)).thenReturn(List.of(Map.of("value",List.of(List.of("1"),List.of("2"),List.of("3")))));
     var cells=(Map<?,?>)controller.cells(101).data();var value=(Map<?,?>)((List<?>)cells.get("values")).getFirst();
     assertEquals(List.of("2","3"),value.get("bmuSlots"));assertEquals(List.of(List.of("2"),List.of("3")),value.get("value"));
     var page=(Map<?,?>)controller.latest(101,1,0).data();assertEquals(false,page.get("hasMore"));assertEquals(0L,page.get("total"));
@@ -209,5 +209,22 @@ class EmsControllerPostgresTest {
     controller.closeDeviceBinding(identity,binding);
     assertEquals(0,db.queryForObject("SELECT count(*) FROM point_binding WHERE device_binding_id=? AND valid_to IS NULL",Integer.class,binding));
     assertEquals(0,db.queryForObject("SELECT count(*) FROM device_binding WHERE id=? AND valid_to IS NULL",Integer.class,binding));
+  }
+  @Test void currentAlarmParentPaginationEndsAtTheFinalAndExhaustedGlobalPages() {
+    UUID connectionId=UUID.randomUUID();
+    db.update("INSERT INTO connection_state(ems_uuid,connection_id,ingress_generation,ingress_order,last_fresh_heartbeat,lease_owner,lease_until) VALUES(?,?,?,1,clock_timestamp(),'worker',clock_timestamp()+interval '1 minute')",ems,connectionId,UUID.randomUUID());
+    db.update("INSERT INTO alarm_current_snapshot(ems_uuid,cabinet_no,connection_id,seq,known,observed_at,binding_period_id,content_hash) VALUES(?,1,?,1,true,clock_timestamp(),101,repeat('a',64))",ems,connectionId);
+    for(int i=1;i<=2;i++) {
+      UUID alarm=UUID.fromString("00000000-0000-4000-8000-00000000000"+i);
+      db.update("INSERT INTO ems_alarm_identity(ems_uuid,alarm_id) VALUES(?,?)",ems,alarm);
+      String record="{\"alarmId\":\""+alarm+"\",\"seq\":1,\"sv\":1,\"device\":{\"c\":1,\"type\":\"pcs\",\"id\":null},\"code\":\"050001\",\"level\":2,\"state\":\"active\",\"ts\":1788220800000}";
+      db.update("INSERT INTO alarm_current_member(ems_uuid,cabinet_no,connection_id,seq,alarm_id,record) VALUES(?,1,?,1,?,?::jsonb)",ems,connectionId,alarm,record);
+    }
+    var first=(Map<?,?>)controller.alarms(ems,"current",null,1,0).data();
+    assertEquals(true,((Map<?,?>)((List<?>)first.get("snapshots")).getFirst()).get("hasMore"));
+    var last=(Map<?,?>)controller.alarms(ems,"current",null,1,1).data();
+    assertEquals(false,((Map<?,?>)((List<?>)last.get("snapshots")).getFirst()).get("hasMore"));
+    var exhausted=(Map<?,?>)controller.alarms(ems,"current",null,1,2).data();
+    assertEquals(false,((Map<?,?>)((List<?>)exhausted.get("snapshots")).getFirst()).get("hasMore"));
   }
 }

@@ -99,10 +99,10 @@ public class EmsTelemetryQueries {
         +" AND binding_period_id IN ("+ids(periods)+") AND source_at_ms>="+from+" AND source_at_ms<"+to
         +" ORDER BY source_at_ms,received_at_ms,fact_id LIMIT "+(MAX_ROWS+1));
   }
-  List<Map<String,Object>> cells(List<Long> periods,int cabinet,long revision) {
+  List<Map<String,Object>> cells(List<Long> periods,int cabinet,long revision,UUID connection) {
     if(periods.isEmpty())return List.of();
     var rows=query("SELECT * FROM "+database+"."+cellTable+" WHERE binding_period_id IN ("+ids(periods)
-        +") AND cabinet_no="+cabinet+" AND structure_revision_id="+revision
+        +") AND cabinet_no="+cabinet+" AND structure_revision_id="+revision+" AND connection_id=toUUID('"+Objects.requireNonNull(connection)+"')"
         +" ORDER BY received_at_ms DESC,fact_id DESC LIMIT 1 BY cell_kind LIMIT 3");
     var result=new ArrayList<Map<String,Object>>();
     for(var r:rows) {

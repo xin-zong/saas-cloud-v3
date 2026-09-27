@@ -267,10 +267,13 @@ public class EmsController {
         JOIN ems_connection_read c ON c.ems_uuid=a.ems_uuid AND c.connection_id=a.connection_id
         WHERE a.ems_uuid=? AND a.binding_period_id=? ORDER BY a.cabinet_no
         """,id,s.number(p,"id"));
+      long precedingMembers=0;
       for(var parent:parents) {
         int cabinet=((Number)parent.get("cabinet_no")).intValue();
         parent.put("alarms",rows.stream().filter(r->((Number)r.get("cabinet_no")).intValue()==cabinet).toList());
-        parent.put("hasMore",((List<?>)parent.get("alarms")).size()<((Number)parent.get("total_members")).longValue());
+        long total=((Number)parent.get("total_members")).longValue();
+        long consumed=Math.min(total,Math.max(0L,(long)offset-precedingMembers))+((List<?>)parent.get("alarms")).size();
+        parent.put("hasMore",consumed<total);precedingMembers+=total;
         parent.put("unknownReason",Boolean.TRUE.equals(parent.get("known"))?null:"current_alarm_list_unknown_last_known_only");
       }
       var result=new LinkedHashMap<String,Object>();result.put("snapshots",parents);
@@ -303,7 +306,7 @@ public class EmsController {
   public ApiResponse<?> cells(@PathVariable long id) {
     var asset=s.one("SELECT station_id FROM device WHERE id=?",id);s.access.requireStationPermission(s.number(asset,"station_id"),"telemetry.read");
     var rows=s.db.queryForList("""
-      SELECT d.binding_period_id,d.cabinet_no,d.role,d.local_no::text,c.revision_id,c.metadata::text FROM device_binding d
+      SELECT d.binding_period_id,d.cabinet_no,d.role,d.local_no::text,c.revision_id,c.connection_id,c.metadata::text FROM device_binding d
       JOIN ems_binding_period p ON p.id=d.binding_period_id
       JOIN structure_current c ON c.binding_period_id=p.id AND c.ems_uuid=p.ems_uuid
       JOIN ems_connection_read r ON r.ems_uuid=c.ems_uuid AND r.connection_id=c.connection_id
@@ -336,7 +339,7 @@ public class EmsController {
     }
     if(bmuCount<1||bmuCount>10||slots.isEmpty()||slots.first()<1||slots.last()>bmuCount)
       return ApiResponse.ok(Map.of("known",false,"unknownReason","bmu_slot_outside_accepted_layout","values",List.of()));
-    var values=telemetry.cells(List.of(s.number(row,"binding_period_id")),cabinet,s.number(row,"revision_id"));
+    var values=telemetry.cells(List.of(s.number(row,"binding_period_id")),cabinet,s.number(row,"revision_id"),(UUID)row.get("connection_id"));
     var scoped=new ArrayList<Map<String,Object>>();
     for(var value:values) {
       var dto=new LinkedHashMap<>(value);dto.put("bmuSlots",slots.stream().map(Object::toString).toList());

@@ -46,4 +46,8 @@ class TypedFactTest {
                 TypedFact.id("ems", "period", "point", "archive", "12", "message"));
         assertNotEquals(TypedFact.id("a|b", "c"), TypedFact.id("a", "b|c"));
     }
+    @Test void cellsRetainTheExactAdmittedConnectionRatherThanRevisionOrReceipt() {
+        var connection=java.util.UUID.fromString("11111111-1111-4111-8111-111111111111");
+        assertEquals(connection.toString(),TypedFact.cells(NullNode.instance,connection).path("connection_id").asText());
+    }
 }

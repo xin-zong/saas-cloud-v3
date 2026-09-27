@@ -105,6 +105,7 @@ class TelemetryProjectionPostgresTest {
 
     @Test void cellsNeedCurrentMatchingReadyLayoutAndPreserveNullPositions() throws Exception {
         var consumer=new TelemetryConsumer(source,sink,new TransportDiagnostics());
+        String connection=UUID.randomUUID().toString();
         var unknown=envelope("telemetry","{\"v\":1,\"type\":\"cell_voltage\",\"c\":1,\"sv\":2,\"d\":{\"ts\":null,\"q\":\"valid\",\"values\":[[null,3.2]]}}");
         assertTrue(consumer.accept(unknown));assertTrue(written.isEmpty());
         try(var c=source.getConnection();var s=c.createStatement()) {
@@ -113,7 +114,6 @@ class TelemetryProjectionPostgresTest {
             String layout="{\"clusterLayout\":{\"bms\":{\"bmuType\":1,\"bmuCount\":1,\"voltCount\":2,\"tempCount\":2}},\"clusters\":[{\"c\":1}],\"publicMeters\":[]}";
             long revision=scalar(c,"INSERT INTO structure_revision(ems_uuid,sv,layout,content_hash) VALUES('"+ems+"',1,'"+layout+"','"+"a".repeat(64)+"') RETURNING id");
             s.executeUpdate("INSERT INTO structure_acceptance(binding_period_id,revision_id,received_at) VALUES("+period+","+revision+",clock_timestamp())");
-            String connection=UUID.randomUUID().toString();
             s.executeUpdate("UPDATE connection_state SET connection_id='"+connection+"',ingress_generation='"+ingressEpoch+"',last_fresh_heartbeat=clock_timestamp() WHERE ems_uuid='"+ems+"'");
             String metadata="{\"clusterLayout\":{\"bms\":{\"bmuType\":1,\"bmuCount\":1,\"voltCount\":2,\"tempCount\":2}},\"clusters\":[{\"c\":1,\"state\":\"active\",\"cellReady\":false}]}";
             s.executeUpdate("INSERT INTO structure_current(ems_uuid,binding_period_id,connection_id,seq,revision_id,metadata,received_at) VALUES('"+ems+"',"+period+",'"+connection+"',1,"+revision+",'"+metadata+"',clock_timestamp())");c.commit();
@@ -125,6 +125,7 @@ class TelemetryProjectionPostgresTest {
         var fresh=envelope("telemetry",valid.rawBody());
         assertTrue(consumer.accept(fresh));assertEquals(1,written.size());
         assertTrue(written.getFirst().path("cell_values").get(0).get(0).isNull());
+        assertEquals(connection,written.getFirst().path("connection_id").asText());
         assertEquals("3.2",written.getFirst().path("cell_values").get(0).get(1).textValue());
         assertTrue(written.getFirst().path("source_at_ms").isNull());
         assertEquals("cell_voltage",written.getFirst().path("cell_kind").textValue());

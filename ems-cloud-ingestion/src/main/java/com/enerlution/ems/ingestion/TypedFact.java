@@ -7,6 +7,10 @@ import java.security.MessageDigest;
 import java.util.HexFormat;
 
 final class TypedFact {
+    static ObjectNode cells(JsonNode value,java.util.UUID connection) {
+        if(connection==null||connection.version()!=4||connection.variant()!=2)throw new IllegalArgumentException("Accepted connection must be UUIDv4");
+        var row=cells(value);row.put("connection_id",connection.toString());return row;
+    }
     static ObjectNode value(JsonNode value) {
         var row = JsonNodeFactory.instance.objectNode();
         row.putNull("number_exact");
