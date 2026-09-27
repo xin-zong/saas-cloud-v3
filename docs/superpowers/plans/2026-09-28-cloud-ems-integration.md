@@ -27,16 +27,16 @@
 
 **Interfaces:** `WireDecoder.decode(String topic, byte[] payload): WireMessage`；`WireMessage(UUID emsId,String channel,String type,JsonNode body,String canonicalHash)`；规范化 hash 以键排序、数字无损规范化后的树生成，不含接收时间。结构细节/点目录和业务状态校验留在下游专用处理器，decoder 必须校验消息 envelope 与每类必有字段，失败抛 ProtocolException，不暴露原报文。
 
-- [ ] 先写测试，用反射 assertDoesNotThrow(Class.forName(...)) 让缺少类型表现为测试失败；添加非法 UUID/Topic、重复键、尾部 JSON、v!=1、type/channel 冲突、无损大整数、哈希键序不敏感的测试。
+- [x] 先写测试，用反射 assertDoesNotThrow(Class.forName(...)) 让缺少类型表现为测试失败；添加非法 UUID/Topic、重复键、尾部 JSON、v!=1、type/channel 冲突、无损大整数、哈希键序不敏感的测试。
 ```java
 assertThrows(ProtocolException.class, () -> decoder.decode(topic,
     "{\"v\":1,\"v\":1,\"type\":\"structure\"}".getBytes(UTF_8)));
 assertEquals(first.canonicalHash(), reordered.canonicalHash());
 ```
-- [ ] 创建聚合器和协议模块的测试依赖，运行 `mvn -pl ems-cloud-protocol test`，保存 RED 证据。
-- [ ] 实现 strict duplicate detection、尾随 token 拒绝、UTF-8 严格解码/树解析、整数范围、UUIDv4 lowercase、按消息类 6144/65536/131072 byte 限额，最大树深度/字符串/数字长度限制。响应 64KiB，heartbeat/status 同样设上限。只接受 6 个 up Topic；type 缺失只允许协议明确未带 type 的 heartbeat/response/status。
-- [ ] 定义所有 10 种业务 type 路由及字段形状，禁止 reliable 类型进入普通遥测 Topic；柜号 1—30、版本 1、序号正数、关键 ID/字符串长度、history part/parts/p/data 下标、alarm_event level/state/device 等按源协议校验。查询响应按 ok 区分 data/error。
-- [ ] GREEN 后在根 `mvn test` 验证现有 API 单元回归，提交本任务文件；保留 JDBC 集成测试未启用的明确标记。
+- [x] 创建聚合器和协议模块的测试依赖，运行 `mvn -pl ems-cloud-protocol test`，保存 RED 证据。
+- [x] 实现 strict duplicate detection、尾随 token 拒绝、UTF-8 严格解码/树解析、整数范围、UUIDv4 lowercase、按消息类 6144/65536/131072 byte 限额，最大树深度/字符串/数字长度限制。响应 64KiB，heartbeat/status 同样设上限。只接受 6 个 up Topic；type 缺失只允许协议明确未带 type 的 heartbeat/response/status。
+- [x] 定义所有 10 种业务 type 路由及字段形状，禁止 reliable 类型进入普通遥测 Topic；柜号 1—30、版本 1、序号正数、关键 ID/字符串长度、history part/parts/p/data 下标、alarm_event level/state/device 等按源协议校验。查询响应按 ok 区分 data/error。
+- [x] GREEN 后在根 `mvn test` 验证现有 API 单元回归，提交本任务文件；保留 JDBC 集成测试未启用的明确标记。
 
 ## Task 2: 点定义和结构解释
 
@@ -44,30 +44,30 @@ assertEquals(first.canonicalHash(), reordered.canonicalHash());
 
 **Interfaces:** `TelemetryDecoder.decode(WireMessage, StructureLayout)` 返回 typed observation 列表及配置快照；PointValue 保留 JsonNode typed value/quality/source timestamp，不转换未知单位。
 
-- [ ] 用 30s/60s 295 点、20062 数组、11 个版本、EMS 6 项与 cfg 173 项编写来源明确的 fixture，独立样例不拼成假站。为不匹配 sv、数组长度、q 与 ts=null 编写拒绝/未知断言。
+- [x] 用 30s/60s 295 点、20062 数组、11 个版本、EMS 6 项与 cfg 173 项编写来源明确的 fixture，独立样例不拼成假站。为不匹配 sv、数组长度、q 与 ts=null 编写拒绝/未知断言。
 ```java
 assertEquals("1.02", version.value().textValue());
 assertTrue(missing.value().isNull());
 assertEquals(65535, bitmap.value().get(3).intValue());
 ```
-- [ ] RED 后实现 SQL INSERT 文本提取、来源 hash、命名空间及 wire 类型覆盖；不执行源 SQL，不将缺失枚举解释为实际规范。
-- [ ] 普通点 profile 中已知单位/语义才映射 kind，其余源点可保留并标待映射；单体只按匹配布局解释，BMU 槽不创建假物理 SN。
-- [ ] GREEN，核算导入数量和源文件 hash，提交。
+- [x] RED 后实现 SQL INSERT 文本提取、来源 hash、命名空间及 wire 类型覆盖；不执行源 SQL，不将缺失枚举解释为实际规范。
+- [x] 普通点 profile 中已知单位/语义才映射 kind，其余源点可保留并标待映射；单体只按匹配布局解释，BMU 槽不创建假物理 SN。
+- [x] GREEN，核算导入数量和源文件 hash，提交。
 
 ## Task 3: PG 接入关系与权限迁移
 
-**Files:** `ems-cloud-api/src/main/resources/db/migration/V10__ems_ingestion.sql`；`permission-catalog.json`；`src/test/java/com/enerlution/ems/ingestion/IngestionSchemaPostgresTest.java`。
+**Files:** `ems-cloud-api/src/main/resources/db/migration/V11__ems_ingestion.sql`；`permission-catalog.json`；`src/test/java/com/enerlution/ems/ingestion/IngestionSchemaPostgresTest.java`。V10 已由主分支客户管理占用，且已部署，禁止复用版本号。
 
 **Interfaces:** 迁移定义 ems_gateway、绑定历史/结构/点映射/配置、连接与租约、可靠对象/补传样本身份、query_request、outbox；具体列由 spec 第 6 节的函数依赖裁定。所有使用方按这份迁移读取，不各自建表。
 
-- [ ] 在 `ems_ingestion_tests` 独立 schema 中应用 V1—V10；先测试缺少 V10 时失败，再实现。测试重复 EMS/源点、跨站绑定、非法柜号、同版本冲突、无效外键与 value 类型互斥。
+- [x] 在 `ems_ingestion_tests` 独立 schema 中应用 V1—V11；先测试缺少 V11 时失败，再实现。测试重复 EMS/源点、跨站绑定、非法柜号、同版本冲突、无效外键与 value 类型互斥。
 ```java
 assertThrows(DataIntegrityViolationException.class,
     () -> db.update("INSERT INTO ems_gateway(ems_uuid,device_id) VALUES (?,?)", sameUuid, anotherDevice));
 ```
-- [ ] 实现关系及所需权限 ems.read/ems.manage/ems.query，按照既有角色/授权规则赋予超级管理员，不用超级管理员特殊旁路替代鉴权。
-- [ ] 真实 PostgreSQL 执行约束和回滚测试，再在新业务库跑增量迁移；记录版本、校验和、前后行数，禁止执行到旧库。
-- [ ] GREEN，提交 migration 与测试。
+- [x] 实现关系及所需权限 ems.read/ems.manage/ems.query，按照既有角色/授权规则赋予超级管理员，不用超级管理员特殊旁路替代鉴权。
+- [x] 真实 PostgreSQL 执行约束和回滚测试，再在新业务库跑增量迁移；记录版本、校验和、前后行数，禁止执行到旧库。
+- [x] GREEN，提交 migration 与测试。
 
 ## Task 4: 接入服务与 MQTT→Kafka
 

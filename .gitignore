@@ -5,6 +5,7 @@
 **/target/
 **/.tools/
 **/.cache/
+**/__pycache__/
 **/.vite/
 **/.idea/
 **/.superpowers/

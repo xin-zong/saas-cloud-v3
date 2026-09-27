@@ -1,0 +1,1 @@
+{"worker_asset_update" : false, "worker_layout_insert" : true, "worker_permission_read" : true, "api_raw_read" : false, "api_outbox_read" : false, "api_status_read" : true, "api_connection_heartbeat_read" : true, "api_connection_fence_read" : false, "registered_gateways" : 0, "superadmin_ems_grants" : 3}

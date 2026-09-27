@@ -1,0 +1,22 @@
+BEGIN
+ pg_advisory_xact_lock
+-----------------------
+
+(1 row)
+
+CREATE TABLE
+REVOKE
+GRANT
+GRANT
+GRANT
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+REVOKE
+REVOKE
+DO
+COMMIT
+psql:/var/lib/ems-cloud-v3/migration-ffb1c4a/database/apply.sql:10: NOTICE:  relation "schema_migration" already exists, skipping

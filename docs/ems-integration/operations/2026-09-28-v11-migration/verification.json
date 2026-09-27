@@ -1,0 +1,36 @@
+{
+  "database": "ems_cloud_v2_proto",
+  "commit": "ffb1c4a",
+  "sha256": "96e940fb49e2844dded36086e68513853eab453f6860cd0c0afbb01b155af4a9",
+  "before": {
+    "version": 10,
+    "station": 2,
+    "device": 26,
+    "measurement_point": 258,
+    "customer": 0,
+    "alarm": 30,
+    "permission": 31,
+    "role_permission": 67
+  },
+  "after": {
+    "version": 11,
+    "station": 2,
+    "device": 26,
+    "measurement_point": 258,
+    "customer": 0,
+    "alarm": 30,
+    "permission": 34,
+    "role_permission": 70
+  },
+  "secondRun": {
+    "version": 11,
+    "station": 2,
+    "device": 26,
+    "measurement_point": 258,
+    "customer": 0,
+    "alarm": 30,
+    "permission": 34,
+    "role_permission": 70
+  },
+  "idempotent": true
+}
