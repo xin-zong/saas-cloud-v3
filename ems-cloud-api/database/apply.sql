@@ -64,6 +64,11 @@ SELECT NOT EXISTS(SELECT 1 FROM schema_migration WHERE version=11) AS apply_v11 
 INSERT INTO schema_migration(version) VALUES(11);
 \endif
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+SELECT NOT EXISTS(SELECT 1 FROM schema_migration WHERE version=12) AS apply_v12 \gset
+\if :apply_v12
+\ir ../src/main/resources/db/migration/V12__reliable_alarm_refresh.sql
+INSERT INTO schema_migration(version) VALUES(12);
+\endif
 GRANT USAGE ON SCHEMA public TO ems_proto_app;
 GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ems_proto_app;
 GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ems_proto_app;
@@ -74,6 +79,7 @@ REVOKE INSERT,UPDATE,DELETE ON user_role,user_station FROM ems_proto_app;
 -- API reads business snapshots, manages bindings, and creates authorized queries.
 -- Raw evidence, ACK outbox, leases and connection arbitration are worker-only.
 REVOKE ALL ON connection_state,retired_connection,reliable_message,history_sample_identity,ems_alarm_event,outbox FROM ems_proto_app;
+REVOKE ALL ON alarm_refresh_demand FROM ems_proto_app;
 GRANT SELECT ON ems_ingestion_status TO ems_proto_app;
 GRANT SELECT(ems_uuid,connection_id,last_fresh_heartbeat) ON connection_state TO ems_proto_app;
 REVOKE INSERT,UPDATE,DELETE ON structure_revision,structure_acceptance,structure_current,bmu_layout,point_definition,config_revision,config_acceptance,config_current,config_value,ems_alarm_identity,alarm_current_snapshot,alarm_current_member FROM ems_proto_app;
@@ -86,6 +92,8 @@ BEGIN
   GRANT SELECT ON device,station,measurement_kind,measurement_point,ems_gateway,ems_binding_period,device_binding,point_binding,effective_station_permission TO ems_ingestion_worker;
   GRANT SELECT,INSERT,UPDATE,DELETE ON connection_state,retired_connection,structure_revision,structure_acceptance,structure_current,bmu_layout,point_definition,config_revision,config_acceptance,config_current,config_value,reliable_message,history_sample_identity,ems_alarm_identity,ems_alarm_event,alarm_current_snapshot,alarm_current_member,query_request,outbox TO ems_ingestion_worker;
   GRANT SELECT,INSERT,UPDATE ON alarm TO ems_ingestion_worker;
+  GRANT SELECT,INSERT,UPDATE,DELETE ON alarm_refresh_demand TO ems_ingestion_worker;
+  GRANT USAGE,SELECT ON SEQUENCE alarm_refresh_demand_id_seq TO ems_ingestion_worker;
   GRANT USAGE,SELECT ON SEQUENCE structure_revision_id_seq,point_definition_id_seq,config_revision_id_seq,reliable_message_id_seq,outbox_id_seq,alarm_id_seq TO ems_ingestion_worker;
  END IF;
 END $$;

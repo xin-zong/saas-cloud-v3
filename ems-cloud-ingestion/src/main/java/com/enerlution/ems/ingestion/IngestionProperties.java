@@ -26,6 +26,10 @@ public record IngestionProperties(String mqttUri,String clientId,Path mqttCa,Pat
   p.setProperty(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG,"10000");p.setProperty(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG,"5000");
   return p;
  }
+ public Properties reliableConsumerProperties() throws IOException {
+  var p=new Properties();try(var in=Files.newInputStream(kafkaConfig)){p.load(in);}
+  p.setProperty("group.id",env("EMS_KAFKA_RELIABLE_GROUP","ems-cloud-v3.ingestion.reliable.v1"));return p;
+ }
  private static String required(String key){var v=System.getenv(key);if(v==null||v.isBlank())throw new IllegalArgumentException("Missing environment "+key);return v;}
  private static String env(String key,String fallback){return System.getenv().getOrDefault(key,fallback);}
  @Override public String toString(){return "IngestionProperties[managed configuration]";}

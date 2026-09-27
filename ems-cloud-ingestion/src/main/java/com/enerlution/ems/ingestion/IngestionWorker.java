@@ -19,12 +19,17 @@ public final class IngestionWorker implements AutoCloseable {
  public java.util.Map<String,Long> diagnostics(){return diagnostics.snapshot();}
  private final MqttIngress ingress; private final KafkaIngress kafka;
  private final KafkaProducer<String,String> producer; private final MqttClient mqtt;
- private final ExecutorService pumps=Executors.newFixedThreadPool(3);
+ private final ExecutorService pumps=Executors.newFixedThreadPool(5);
+ private ReliableConsumer reliable;
  private final AtomicBoolean closed=new AtomicBoolean();
  public IngestionWorker(IngestionProperties properties,LeaseAuthority lease) throws Exception {
+  this(properties,lease,null);
+ }
+ public IngestionWorker(IngestionProperties properties,LeaseAuthority lease,javax.sql.DataSource source) throws Exception {
   var socketFactory=MqttTls.create(properties.mqttCa(),properties.mqttCertificate(),properties.mqttKey());
   ingress=new MqttIngress(lease,properties.capacity(),Clock.systemUTC(),diagnostics);
   mqtt=new MqttClient(properties.mqttUri(),properties.clientId(),new MemoryPersistence());
+  mqtt.setTimeToWait(10000);
   try {producer=new KafkaProducer<>(properties.producerProperties());}
   catch(Exception failure){mqtt.close(true);throw failure;}
   var mapper=new ObjectMapper();
@@ -55,6 +60,13 @@ public final class IngestionWorker implements AutoCloseable {
   try {
    mqtt.connect(options);mqtt.subscribe("ems/v1/+/up/+",1);
    for(var lane:IngressEnvelope.Lane.values())pumps.submit(()->pump(lane));
+   if(source!=null) {
+    AckOutbox.Publisher publisher=(topic,bytes)->mqtt.publish(topic,bytes,1,false);
+    reliable=new ReliableConsumer(properties.reliableConsumerProperties(),java.util.List.of(properties.topics().get(IngressEnvelope.Lane.RELIABLE),properties.topics().get(IngressEnvelope.Lane.STATE)),new ReliableMessageStore(source,diagnostics),publisher);
+    pumps.submit(reliable);
+    var outbox=new AckOutbox(source,publisher);
+    pumps.submit(()->{while(!closed.get()&&!Thread.currentThread().isInterrupted())try{if(!outbox.publishNext())Thread.sleep(100);}catch(java.sql.SQLException failure){diagnostics.record(TransportDiagnostics.Signal.PUMP_FAILURE);try{Thread.sleep(500);}catch(InterruptedException stop){Thread.currentThread().interrupt();}}catch(InterruptedException stop){Thread.currentThread().interrupt();}});
+   }
   }catch(Exception failure){close();throw failure;}
  }
  private void pump(IngressEnvelope.Lane lane){
@@ -67,7 +79,11 @@ public final class IngestionWorker implements AutoCloseable {
  }
  public void close(){
   if(!closed.compareAndSet(false,true))return;
-  ingress.close();kafka.close();pumps.shutdownNow();
+  if(reliable!=null)reliable.close();
+  ingress.close();kafka.close();pumps.shutdown();
+  // Keep transports available while bounded in-flight work and Kafka resource close finish.
+  try{if(!pumps.awaitTermination(12,TimeUnit.SECONDS)){pumps.shutdownNow();pumps.awaitTermination(5,TimeUnit.SECONDS);}}
+  catch(InterruptedException e){pumps.shutdownNow();Thread.currentThread().interrupt();}
   try{mqtt.disconnectForcibly(1000,1000,false);}catch(Exception ignored){}
   try{mqtt.close(true);}catch(Exception ignored){}
   producer.close(Duration.ofSeconds(5));
