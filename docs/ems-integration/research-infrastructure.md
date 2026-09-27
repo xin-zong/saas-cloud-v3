@@ -1,5 +1,7 @@
 # 云端接入基础设施核查（2026-09-27，只读）
 
+> 后续状态：用户随后明确授权清除旧 Kafka 测试/开发数据，23:56 已完成清理及读写验证。以下保留原只读核查快照；当前状态以 [清理记录](operations/2026-09-27-kafka-cleanup/README.md) 为准。Kafka 已恢复管理访问，16 个旧业务 Topic 已删除，旧接入/遥测四个服务已停用。当前有效管理配置为 `/etc/chuneng-cloud-v2/kafka/security/clients/kafka-admin.properties`。
+
 服务器 120.27.23.229；SSH 使用用户已提供授权。本轮未改配置、未重启服务、未创建 Topic、未读取业务库旧数据、未执行 EMS 资料 SQL。
 
 ## Kafka

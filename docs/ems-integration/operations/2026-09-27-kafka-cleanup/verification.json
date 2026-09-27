@@ -1,0 +1,59 @@
+{
+  "checked_at": "2026-09-27T23:56:19+0800",
+  "topics": [
+    "__consumer_offsets",
+    "__transaction_state"
+  ],
+  "consumer_groups": [],
+  "business_partition_directories": [],
+  "allocated_bytes_after": 121958400,
+  "services": {
+    "chuneng-v2-kafka": {
+      "ActiveState": "active",
+      "UnitFileState": "enabled"
+    },
+    "chuneng-v2-ems": {
+      "ActiveState": "inactive",
+      "UnitFileState": "disabled"
+    },
+    "chuneng-telemetry-processing": {
+      "ActiveState": "inactive",
+      "UnitFileState": "disabled"
+    },
+    "chuneng-telemetry-history": {
+      "ActiveState": "inactive",
+      "UnitFileState": "disabled"
+    },
+    "chuneng-telemetry-state-projection": {
+      "ActiveState": "inactive",
+      "UnitFileState": "disabled"
+    },
+    "chuneng-v03-mosquitto": {
+      "ActiveState": "active",
+      "UnitFileState": "enabled"
+    },
+    "chuneng-v2-saas": {
+      "ActiveState": "active",
+      "UnitFileState": "enabled"
+    },
+    "postgresql": {
+      "ActiveState": "active",
+      "UnitFileState": "enabled"
+    },
+    "clickhouse-server": {
+      "ActiveState": "active",
+      "UnitFileState": "enabled"
+    }
+  },
+  "roundtrip": {
+    "test": "SASL_SSL produce/consume",
+    "topic": "ems-cleanup-probe-20260927",
+    "matched": true,
+    "checked_at": "2026-09-27T23:55:04+0800"
+  },
+  "physical_cleanup_verified": true,
+  "memory_limits_restored": {
+    "MemoryHigh": 805306368,
+    "MemoryMax": 1073741824
+  }
+}

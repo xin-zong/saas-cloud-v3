@@ -1,0 +1,16 @@
+telemetry.cn-east.test.authorized-replay.request.v1
+telemetry.cn-east.test.backfill.raw.v1
+telemetry.cn-east.test.current-state.changed.v1
+telemetry.cn-east.test.dead-letter.v1
+telemetry.cn-east.test.normalized.fact.v1
+telemetry.cn-east.test.online.raw.v1
+telemetry.cn-east.test.quarantine.fact.v1
+telemetry.cn-east.test.safety.v1
+telemetry.cn-test.test.cell-history.v1
+telemetry.shared-test.synthetic.backfill.raw.v1
+telemetry.shared-test.synthetic.control.v1
+telemetry.shared-test.synthetic.current-state.changed.v1
+telemetry.shared-test.synthetic.current-state.changed.v1.p2
+telemetry.shared-test.synthetic.normalized.fact.v1
+telemetry.shared-test.synthetic.online.raw.v1
+telemetry.shared-test.synthetic.quarantine.fact.v1

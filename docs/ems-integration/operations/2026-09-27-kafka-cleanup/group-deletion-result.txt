@@ -1,0 +1,1 @@
+Deletion of requested consumer groups ('telemetry-cn-test-test-cell-history-sink-v1') was successful.
