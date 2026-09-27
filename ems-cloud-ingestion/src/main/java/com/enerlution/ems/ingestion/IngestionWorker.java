@@ -10,13 +10,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /** One bounded pump per lane; at most one pending producer completion per lane. */
 public final class IngestionWorker implements AutoCloseable {
+ private static final org.slf4j.Logger LOG=org.slf4j.LoggerFactory.getLogger(IngestionWorker.class);
+ private final TransportDiagnostics diagnostics=new TransportDiagnostics();
+ static void publishOne(KafkaIngress kafka,IngressEnvelope envelope,TransportDiagnostics diagnostics,Duration timeout)throws InterruptedException {
+  try{kafka.publish(envelope).toCompletableFuture().get(timeout.toNanos(),TimeUnit.NANOSECONDS);}
+  catch(ExecutionException|TimeoutException|RuntimeException failed){diagnostics.record(TransportDiagnostics.Signal.PUMP_FAILURE);}
+ }
+ public java.util.Map<String,Long> diagnostics(){return diagnostics.snapshot();}
  private final MqttIngress ingress; private final KafkaIngress kafka;
  private final KafkaProducer<String,String> producer; private final MqttClient mqtt;
  private final ExecutorService pumps=Executors.newFixedThreadPool(3);
  private final AtomicBoolean closed=new AtomicBoolean();
  public IngestionWorker(IngestionProperties properties,LeaseAuthority lease) throws Exception {
   var socketFactory=MqttTls.create(properties.mqttCa(),properties.mqttCertificate(),properties.mqttKey());
-  ingress=new MqttIngress(lease,properties.capacity(),Clock.systemUTC());
+  ingress=new MqttIngress(lease,properties.capacity(),Clock.systemUTC(),diagnostics);
   mqtt=new MqttClient(properties.mqttUri(),properties.clientId(),new MemoryPersistence());
   try {producer=new KafkaProducer<>(properties.producerProperties());}
   catch(Exception failure){mqtt.close(true);throw failure;}
@@ -29,7 +36,7 @@ public final class IngestionWorker implements AutoCloseable {
     producer.send(new ProducerRecord<>(properties.topics().get(envelope.lane()),envelope.emsId().toString(),mapper.writeValueAsString(node)),
      (metadata,error)->{if(error==null)result.complete(null);else result.completeExceptionally(error);});
    }catch(Exception e){result.completeExceptionally(e);}return result;
-  });
+  },diagnostics);
   mqtt.setManualAcks(true);
   mqtt.setCallback(new MqttCallback(){
    public void connectionLost(Throwable cause){}
@@ -53,9 +60,9 @@ public final class IngestionWorker implements AutoCloseable {
  private void pump(IngressEnvelope.Lane lane){
   while(!closed.get()&&!Thread.currentThread().isInterrupted()) {
    var envelope=ingress.poll(lane);
-   try {if(envelope==null)Thread.sleep(10);else kafka.publish(envelope).toCompletableFuture().get(12,TimeUnit.SECONDS);}
+   try {if(envelope==null)Thread.sleep(10);else publishOne(kafka,envelope,diagnostics,Duration.ofSeconds(12));}
    catch(InterruptedException interrupted){Thread.currentThread().interrupt();return;}
-   catch(Exception failed){/* Reliable business retry is driven by device until downstream persisted ACK. */}
+   if(!closed.get())diagnostics.warningIfDue().ifPresent(counts->LOG.warn("Ingestion transport failure counters: {}",counts));
   }
  }
  public void close(){
