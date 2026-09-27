@@ -30,6 +30,14 @@ public record IngestionProperties(String mqttUri,String clientId,Path mqttCa,Pat
   var p=new Properties();try(var in=Files.newInputStream(kafkaConfig)){p.load(in);}
   p.setProperty("group.id",env("EMS_KAFKA_RELIABLE_GROUP","ems-cloud-v3.ingestion.reliable.v1"));return p;
  }
+ public Properties telemetryConsumerProperties() throws IOException {
+  var p=new Properties();try(var in=Files.newInputStream(kafkaConfig)){p.load(in);}
+  p.setProperty("group.id",env("EMS_KAFKA_TELEMETRY_GROUP","ems-cloud-v3.ingestion.telemetry.v1"));return p;
+ }
+ public ClickHouseWriter clickHouseWriter() {
+  return new ClickHouseWriter(java.net.URI.create(required("EMS_CH_HTTP_URL")),required("EMS_CH_USER"),required("EMS_CH_PASSWORD"),
+   "ems_cloud_v2_proto_telemetry.ems_observation","ems_cloud_v2_proto_telemetry.ems_cell",256,1048576,java.time.Duration.ofSeconds(5));
+ }
  private static String required(String key){var v=System.getenv(key);if(v==null||v.isBlank())throw new IllegalArgumentException("Missing environment "+key);return v;}
  private static String env(String key,String fallback){return System.getenv().getOrDefault(key,fallback);}
  @Override public String toString(){return "IngestionProperties[managed configuration]";}
