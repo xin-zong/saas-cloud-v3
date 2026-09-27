@@ -58,3 +58,34 @@ Oxfmt0.2 formatting made touched workflow readable but removed inline type separ
 ## Limits
 
 No backend/API production smoke in this task. Requires backendV10 contract during rollout. New-site/deployment and contract/entitlement remain clearly local drafts by approved scope. No unresolved contract blocker.
+
+
+## Review fix round 1 — delayed customer options after revocation
+
+Reviewer P2 reproduced on base c317eef: unversioned retry requests could restore old customer names/can_assign after customer-only capability refresh, while asset access kept editors mounted. Added a monotonic request epoch to both customer loaders, including retry and station save-time lookups. Permission effect cleanup/unmount invalidates all requests; stale success/error/finally cannot overwrite current options, error or loading state. Stale station save-time lookup throws before PUT. New-site no-read state explicitly settles loading/error and retains cleared choices. No unrelated refactor.
+
+Deterministic regression holds a retry response, revokes only customer capability through auth focus refresh, waits for restricted station/current disabled draft state, then releases the old response and waits for it to finish plus React frames. Both assert no old customer name, preserved restricted/disabled authority and zero writes. Initial fixture-count approach exposed effect retries rather than the intended failure and is preserved in task2-revoked-options-red.log; corrected explicit held-request fixture reproduces both actual stale-name failures.
+
+Command: `NODE --test --test-name-pattern='delayed customer retry' ems-cloud-ui/tests/customer-workflows-ui.test.cjs`.
+
+Raw RED (`task2-revoked-options-red-final.log`):
+```
+✖ station delayed customer retry cannot restore names after customer-only revocation (6822.3281ms)
+✖ new-site delayed customer retry cannot restore names after customer-only revocation (6231.3409ms)
+ℹ tests 2
+ℹ pass 0
+ℹ fail 2
+AssertionError [ERR_ASSERTION]: 1 !== 0
+actual:1 expected:0 — old customer option remained visible
+```
+Raw GREEN (`task2-revoked-options-green.log`):
+```
+✔ station delayed customer retry cannot restore names after customer-only revocation (6811.1184ms)
+✔ new-site delayed customer retry cannot restore names after customer-only revocation (6447.5954ms)
+ℹ tests 2
+ℹ pass 2
+ℹ fail 0
+ℹ duration_ms 13659.3702
+```
+`NODE ems-cloud-ui/node_modules/typescript/bin/tsc --noEmit -p ems-cloud-ui/tsconfig.json`: exit0, task2-fix-typecheck.log (`tsc exit=0`).
+From ems-cloud-ui, `NODE node_modules/vite/bin/vite.js build`: exit0, task2-fix-build.log,2557 modules, built2.01s; existing chunk advisory unchanged. Prior broader suites intentionally not repeated for this scoped async correction. Root confirmed reviewer has no additional findings before fix commit.

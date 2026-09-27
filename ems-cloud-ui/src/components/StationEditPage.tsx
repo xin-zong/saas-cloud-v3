@@ -94,7 +94,10 @@ function StationEditor({
 
   const pendingSave = useRef(false)
 
+  const customerRequest = useRef(0)
+
   async function reloadCustomers(signal?: AbortSignal) {
+    const request = ++customerRequest.current
     setCustomerLoading(true)
     setCustomerError("")
     try {
@@ -102,16 +105,19 @@ function StationEditor({
         `/platform/customers/options?stationId=${encodeURIComponent(station!.id)}`,
         { signal },
       )
-      if (!signal?.aborted) setCustomerOptions(options)
+      if (signal?.aborted || request !== customerRequest.current) {
+        throw new Error("客户关联选项已失效，请重试")
+      }
+      setCustomerOptions(options)
       return options
     } catch (e) {
-      if (!signal?.aborted) {
+      if (!signal?.aborted && request === customerRequest.current) {
         setCustomerOptions(null)
         setCustomerError(e instanceof Error ? e.message : "客户加载失败")
       }
       throw e
     } finally {
-      if (!signal?.aborted) setCustomerLoading(false)
+      if (!signal?.aborted && request === customerRequest.current) setCustomerLoading(false)
     }
   }
 
@@ -120,7 +126,10 @@ function StationEditor({
     const controller = new AbortController()
     setCustomerOptions(null)
     void reloadCustomers(controller.signal).catch(() => {})
-    return () => controller.abort()
+    return () => {
+      customerRequest.current++
+      controller.abort()
+    }
   }, [
     station?.id,
     user?.id,

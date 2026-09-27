@@ -154,7 +154,10 @@ function ProvisionEditor({
     } catch {}
   }
 
+  const customerRequest = useRef(0)
+
   async function loadCustomers(signal?: AbortSignal) {
+    const request = ++customerRequest.current
     setCustomerLoading(true)
     setCustomerError("")
     setCustomers([])
@@ -163,7 +166,7 @@ function ProvisionEditor({
         "/platform/customers",
         { signal },
       )
-      if (signal?.aborted) return
+      if (signal?.aborted || request !== customerRequest.current) return
       const allowed = data.filter((c) => c.can_edit)
       setCustomers(allowed)
       setDraft((d) =>
@@ -186,12 +189,12 @@ function ProvisionEditor({
         }
       } catch {}
     } catch (e) {
-      if (!signal?.aborted) {
+      if (!signal?.aborted && request === customerRequest.current) {
         setCustomerError(e instanceof Error ? e.message : "客户加载失败")
         revokeDraftCustomer()
       }
     } finally {
-      if (!signal?.aborted) setCustomerLoading(false)
+      if (!signal?.aborted && request === customerRequest.current) setCustomerLoading(false)
     }
   }
 
@@ -199,10 +202,15 @@ function ProvisionEditor({
     const controller = new AbortController()
     if (canReadCustomers) void loadCustomers(controller.signal)
     else {
+      setCustomerLoading(false)
+      setCustomerError("")
       setCustomers([])
       revokeDraftCustomer()
     }
-    return () => controller.abort()
+    return () => {
+      customerRequest.current++
+      controller.abort()
+    }
   }, [
     user?.id,
     canReadCustomers,

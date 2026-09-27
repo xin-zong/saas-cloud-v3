@@ -310,3 +310,59 @@ const artifacts=path.resolve(__dirname,"../../.superpowers/sdd/2026-09-27-custom
 async function capture(page,name){await page.locator("img:visible").evaluateAll(images=>Promise.all(images.map(image=>image.decode().catch(()=>{}))));if(name==="station-customer-selector"){const assets=await page.locator(".station-editor img:visible").evaluateAll(images=>images.map(image=>({src:image.getAttribute("src"),loaded:image.complete&&image.naturalWidth>0,width:image.getBoundingClientRect().width,height:image.getBoundingClientRect().height})));for(const asset of assets)assert.equal(asset.loaded&&asset.width>0&&asset.height>0,true,`loaded ${asset.src}`)}await fs.mkdir(artifacts,{recursive:true});for(const width of [1366,1440,1920]){await page.setViewportSize({width,height:900});await page.screenshot({path:path.join(artifacts,`${name}-${width}.png`)});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)}}
 test("customer creation retries options and duplicate errors while preserving input and dirty focus",async t=>{const {page,posts}=await setup(t,{optionFailures:1,createFailures:1});await page.getByRole("button",{name:"新增客户",exact:true}).click();await page.getByRole("alert").filter({hasText:"组织加载暂时失败"}).waitFor();await page.getByRole("button",{name:"重试加载组织"}).click();await page.getByLabel("客户名称 *",{exact:true}).fill("重复客户");await page.getByRole("button",{name:"保存",exact:true}).click();await page.getByRole("alert").filter({hasText:"客户名称已存在"}).waitFor();assert.equal(await page.getByLabel("客户名称 *",{exact:true}).inputValue(),"重复客户");assert.equal(posts(),1);await page.getByLabel("客户名称 *",{exact:true}).fill("可用客户");await page.keyboard.press("Escape");await page.getByRole("button",{name:"继续编辑",exact:true}).click();assert.equal(await page.getByLabel("客户名称 *",{exact:true}).inputValue(),"可用客户");await page.getByRole("button",{name:"保存",exact:true}).click();await page.getByRole("heading",{name:"可用客户",exact:true}).waitFor();assert.equal(posts(),2)});
 test("customer reader has no creation entry or organization options request",async t=>{const {page}=await setup(t,{permissions:["customer.read"]});await page.getByText("当前条件下暂无客户",{exact:true}).waitFor();assert.equal(await page.getByRole("button",{name:"新增客户",exact:true}).count(),0)});
+for (const flow of ['station', 'new-site']) {
+  test(`${flow} delayed customer retry cannot restore names after customer-only revocation`, async t => {
+    const browser = await chromium.launch({channel:'msedge',headless:true})
+    t.after(() => browser.close())
+    const page = await browser.newPage()
+    page.setDefaultTimeout(6000)
+    await page.addInitScript(() => sessionStorage.setItem('enerlution-api-token','held-customer'))
+    let revoked = false, retryRequested = false, heldRoute
+    let releaseHeld, markHeldStarted
+    const heldStarted = new Promise(resolve => { markHeldStarted = resolve })
+    const held = new Promise(resolve => { releaseHeld = resolve })
+    const writes = []
+    await page.route('http://127.0.0.1:18090/api/**', async route => {
+      const request = route.request(), pathname = new URL(request.url()).pathname.slice(4)
+      let data = [], status = 200, msg = 'ok', headers = {}
+      if (['POST','PUT','DELETE'].includes(request.method())) writes.push(pathname)
+      if (pathname === '/auth/me') {
+        const permissions = revoked ? ['asset.read','asset.edit'] : ['asset.read','asset.edit','customer.read','customer.manage']
+        data = {id:'7',name:'管理员',role:'integrator',stationIds:['1'],permissions,stationPermissions:{1:permissions},organizationPermissions:{}}
+      } else if (pathname === '/stations') data = [{id:1,name:'异步站点',code:'S1',customer_id:3}]
+      else if (pathname === (flow === 'station' ? '/platform/customers/options' : '/platform/customers')) {
+        if (!retryRequested) {status=503;msg='首次客户选项失败'}
+        else if (!revoked) {
+          heldRoute = route
+          markHeldStarted()
+          await held
+          headers = {'x-customer-regression':'held'}
+          data = flow === 'station' ? {can_assign:true,customers:[{id:3,name:'延迟返回的客户'}],current_customer:{id:3,name:'延迟返回的客户'},current_customer_restricted:false} : [{id:3,name:'延迟返回的客户',can_edit:true}]
+        } else data = flow === 'station' ? {can_assign:false,customers:[],current_customer:null,current_customer_restricted:true} : []
+      }
+      await route.fulfill({status,headers,contentType:'application/json',body:JSON.stringify({code:status===200?0:status,msg,data})})
+    })
+    await page.goto('http://127.0.0.1:8471',{waitUntil:'domcontentloaded',timeout:60000})
+    await page.getByRole('button',{name:'资产与站点',exact:true}).click()
+    await page.getByRole('button',{name:flow === 'station' ? '编辑异步站点' : '＋ 新增站点',exact:true}).click()
+    await page.getByRole('alert').filter({hasText:'首次客户选项失败'}).waitFor()
+    retryRequested = true
+    await page.getByRole('button',{name:'重试加载客户',exact:true}).click()
+    await heldStarted
+    assert.ok(heldRoute,'retry request is held before revocation')
+    revoked = true
+    const refresh = page.waitForResponse(response => response.url().endsWith('/auth/me'))
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')))
+    await refresh
+    if (flow === 'station') await page.getByLabel('所属客户',{exact:true}).filter({visible:true}).waitFor()
+    await page.waitForFunction(flow => flow === 'station' ? document.querySelector('input[aria-label="所属客户"]')?.value === '当前客户关联受限' : document.querySelector('select[aria-label="所属客户"]')?.disabled, flow)
+    const oldResponse = page.waitForResponse(response => response.headers()['x-customer-regression'] === 'held')
+    releaseHeld()
+    await (await oldResponse).finished()
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+    assert.equal(await page.getByText('延迟返回的客户',{exact:true}).count(),0)
+    if (flow === 'station') assert.equal(await page.getByLabel('所属客户',{exact:true}).inputValue(),'当前客户关联受限')
+    else assert.equal(await page.getByLabel('所属客户',{exact:true}).isDisabled(),true)
+    assert.equal(writes.length,0)
+  })
+}
