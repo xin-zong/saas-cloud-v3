@@ -1,0 +1,80 @@
+[
+  {
+    "name": "05_单体电压完整报文参考.json",
+    "bytes": 1253,
+    "sha256": "5840D249E753C7D52A00F14E9F020D90E681E0FEC6D7E0013C18082BF3E66E97",
+    "source": "D:\\install\\weixin\\xwechat_files\\wxid_8hvegkl8iuyd22_7fa3\\msg\\file\\2026-09\\20260917\\05_单体电压完整报文参考.json"
+  },
+  {
+    "name": "05_单体温度完整报文参考.json",
+    "bytes": 504,
+    "sha256": "B35C00AA9D39C7E4AA7C0CE8653D37733CA1199AC4BDF086679B73AA7528DBE1",
+    "source": "D:\\install\\weixin\\xwechat_files\\wxid_8hvegkl8iuyd22_7fa3\\msg\\file\\2026-09\\20260917\\05_单体温度完整报文参考.json"
+  },
+  {
+    "name": "05_故障关联数据完整报文参考.json",
+    "bytes": 11690,
+    "sha256": "28EFC9BA7176DC661BFDB720A3782A82485C3169E907A5DECA6B969983075CED",
+    "source": "D:\\install\\weixin\\xwechat_files\\wxid_8hvegkl8iuyd22_7fa3\\msg\\file\\2026-09\\20260917\\05_故障关联数据完整报文参考.json"
+  },
+  {
+    "name": "05_故障事件完整报文参考.json",
+    "bytes": 273,
+    "sha256": "9E99180FF9798FE4BD4957381305ED50F40CC49DA3225BA65DA660BC6FAF534F",
+    "source": "D:\\install\\weixin\\xwechat_files\\wxid_8hvegkl8iuyd22_7fa3\\msg\\file\\2026-09\\20260917\\05_故障事件完整报文参考.json"
+  },
+  {
+    "name": "05_机柜30秒完整报文参考.json",
+    "bytes": 5573,
+    "sha256": "C314EF965E4C42BEC3FD0E34021260BDD9D8F3BE2D53C58D0417CEA0D453E93A",
+    "source": "D:\\install\\weixin\\xwechat_files\\wxid_8hvegkl8iuyd22_7fa3\\msg\\file\\2026-09\\20260917\\05_机柜30秒完整报文参考.json"
+  },
+  {
+    "name": "05_机柜60秒完整报文参考.json",
+    "bytes": 1832,
+    "sha256": "6EEDB3DE51C7D9B5DEB2E643187B06D2DF4054051B00D849FCB5909BC92A5CCE",
+    "source": "D:\\install\\weixin\\xwechat_files\\wxid_8hvegkl8iuyd22_7fa3\\msg\\file\\2026-09\\20260917\\05_机柜60秒完整报文参考.json"
+  },
+  {
+    "name": "05_设备结构完整报文参考.json",
+    "bytes": 2315,
+    "sha256": "94D47545122C0326483FCACB18CA3637CDC77C916E2E498142126DB585ED9FB1",
+    "source": "D:\\install\\weixin\\xwechat_files\\wxid_8hvegkl8iuyd22_7fa3\\msg\\file\\2026-09\\20260917\\05_设备结构完整报文参考.json"
+  },
+  {
+    "name": "05_重要数据补传完整报文参考.json",
+    "bytes": 482,
+    "sha256": "14E3F150C15664EE727FCF90BCE36CA384DA26254F004A801599EFE567A3BBC2",
+    "source": "D:\\install\\weixin\\xwechat_files\\wxid_8hvegkl8iuyd22_7fa3\\msg\\file\\2026-09\\20260917\\05_重要数据补传完整报文参考.json"
+  },
+  {
+    "name": "05_EMS完整报文参考.json",
+    "bytes": 4038,
+    "sha256": "50ACB2ED88C2AC381E87328A5FF568EEF2A6F3AC3196DF01293C3B7A7063C500",
+    "source": "D:\\install\\weixin\\xwechat_files\\wxid_8hvegkl8iuyd22_7fa3\\msg\\file\\2026-09\\20260917\\05_EMS完整报文参考.json"
+  },
+  {
+    "name": "05_EMS与云端MQTT交互协议.md",
+    "bytes": 100945,
+    "sha256": "C00D096A3D4E418A5FCC411C51B03801132F657695E5DB5ECAE5540EC1D93E0D",
+    "source": "D:\\install\\weixin\\xwechat_files\\wxid_8hvegkl8iuyd22_7fa3\\msg\\file\\2026-09\\20260917\\05_EMS与云端MQTT交互协议.md"
+  },
+  {
+    "name": "06_EMS故障与告警方案.md",
+    "bytes": 35938,
+    "sha256": "8EC22042991265467B6670A1485998937D99D990A53397BD287AFE65FD2A37DE",
+    "source": "D:\\install\\weixin\\xwechat_files\\wxid_8hvegkl8iuyd22_7fa3\\msg\\file\\2026-09\\20260917\\06_EMS故障与告警方案.md"
+  },
+  {
+    "name": "point_catalog(1).sql",
+    "bytes": 106079,
+    "sha256": "DFDF055B53755549962C6EF84E205C47D4399070803E3711CBE0EFB6D5F020C5",
+    "source": "D:\\install\\weixin\\xwechat_files\\wxid_8hvegkl8iuyd22_7fa3\\msg\\file\\2026-09\\20260917\\point_catalog(1).sql"
+  },
+  {
+    "name": "telemetry数据库结构说明.md",
+    "bytes": 2608,
+    "sha256": "C9C57C686B0AB3462B232E57965EBCBD68869CEBC8EBC8E457FC34A80C06EA04",
+    "source": "D:\\install\\weixin\\xwechat_files\\wxid_8hvegkl8iuyd22_7fa3\\msg\\file\\2026-09\\20260917\\telemetry数据库结构说明.md"
+  }
+]
