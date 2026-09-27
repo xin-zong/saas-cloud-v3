@@ -165,6 +165,10 @@ test("station association explicitly assigns and clears, unchanged fields omit c
     else if (p === "/stations/1" && r.method() === "PUT") {
       const b = r.postDataJSON()
       writes.push(b)
+      if (Object.hasOwn(b, "customerId") && b.customerId !== null && !Number.isSafeInteger(b.customerId)) {
+        await route.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify({ code: 400, msg: "customerId must be an integer" }) })
+        return
+      }
       station = {
         ...station,
         name: b.name,
@@ -189,7 +193,7 @@ test("station association explicitly assigns and clears, unchanged fields omit c
   await capture(page,"station-customer-selector")
   await page.getByRole("button", { name: "保存", exact: true }).click()
   await page.getByRole("status").filter({ hasText: "已保存编辑" }).waitFor()
-  assert.equal(writes[0].customerId, "4")
+  assert.equal(writes[0].customerId, 4)
   await page.getByLabel("所属客户", { exact: true }).selectOption("")
   await page.getByRole("button", { name: "保存", exact: true }).click()
   await page.getByRole("status").filter({ hasText: "已保存编辑" }).waitFor()

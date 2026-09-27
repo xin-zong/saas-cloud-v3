@@ -463,10 +463,14 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
         if (!current) throw new Error("站点已不可用，请刷新后重试")
 
         const next = { ...current, ...patch }
+        const customerId = patch.customerId == null ? patch.customerId : Number(patch.customerId)
+        if (customerId != null && (!Number.isSafeInteger(customerId) || customerId <= 0)) {
+          throw new Error("客户标识无效，请刷新后重试")
+        }
 
         const persisted = await send<ApiRow>(`/stations/${id}`, "PUT", {
           name: next.name,
-          ...(patch.customerId !== undefined ? { customerId: patch.customerId } : {}),
+          ...(patch.customerId !== undefined ? { customerId } : {}),
           ratedPowerKw: Number.isFinite(next.ratedPower) ? next.ratedPower : undefined,
           capacityKwh: Number.isFinite(next.storageCapacity) ? next.storageCapacity : undefined,
           region: next.region,

@@ -89,3 +89,6 @@ Raw GREEN (`task2-revoked-options-green.log`):
 ```
 `NODE ems-cloud-ui/node_modules/typescript/bin/tsc --noEmit -p ems-cloud-ui/tsconfig.json`: exit0, task2-fix-typecheck.log (`tsc exit=0`).
 From ems-cloud-ui, `NODE node_modules/vite/bin/vite.js build`: exit0, task2-fix-build.log,2557 modules, built2.01s; existing chunk advisory unchanged. Prior broader suites intentionally not repeated for this scoped async correction. Root confirmed reviewer has no additional findings before fix commit.
+
+### Final review P1: integer station customer association
+Station PUT now serializes non-null customer IDs as positive safe integers, while preserving omitted undefined and explicit null. The station association mock rejects non-integer IDs with HTTP 400 and asserts numeric 4. Focused RED: 1 failed at save status after rejection; GREEN: 1 passed, 0 failed. TypeScript --noEmit and Vite build both exit 0 (2557 modules; existing bundle advisory). Exact commands and raw logs: .superpowers/sdd/2026-09-27-customer-workflows/final-fix-report.md. Functional serialization only; no layout changes.
