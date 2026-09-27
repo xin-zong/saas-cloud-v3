@@ -1,0 +1,8 @@
+{
+  "valid_cn_clientid_roundtrip": true,
+  "wrong_clientid_denied": true,
+  "mqtt5_denied": true,
+  "spoof_username_keeps_device_acl": true,
+  "spoof_username_down_publish_denied": true,
+  "missing_certificate_denied": true
+}
