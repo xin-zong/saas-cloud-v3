@@ -1,0 +1,32 @@
+{
+  "before": {
+    "schema_version": 11,
+    "stations": 2,
+    "devices": 26,
+    "points": 258,
+    "customers": 0,
+    "alarms": 30,
+    "gateways": 0,
+    "snapshots": 0
+  },
+  "after": {
+    "schema_version": 12,
+    "stations": 2,
+    "devices": 26,
+    "points": 258,
+    "customers": 0,
+    "alarms": 30,
+    "gateways": 0,
+    "snapshots": 0
+  },
+  "migration_sha256": "687ed33533d9b9414214f6f49494d929ccfac9583e766b0062056a4550ccadfb",
+  "idempotent_second_run": true,
+  "privileges": {
+    "worker_refresh_insert": true,
+    "worker_refresh_sequence": true,
+    "worker_asset_update": false,
+    "api_refresh_read": false,
+    "api_raw_read": false,
+    "api_snapshot_read": true
+  }
+}

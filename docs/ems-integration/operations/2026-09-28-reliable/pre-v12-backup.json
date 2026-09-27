@@ -1,0 +1,8 @@
+{
+  "file": "/var/backups/ems-cloud-v3/ems_cloud_v2_proto-pre-v12-20260927T180310Z.dump",
+  "bytes": 486523,
+  "sha256": "9deea14d10d4cb0957e379af431a0999d9801c57258e37c16293eb1f57e4a575",
+  "mode": "0o600",
+  "pg_restore_list_passed": true,
+  "full_restore_tested": false
+}

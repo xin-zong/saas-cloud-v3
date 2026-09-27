@@ -108,7 +108,7 @@ EMU、BMS、TMS、PVDC、PCS、GRID 的逻辑来源与物理设备不总是一�
 |---|---|
 | 接入身份 | ems_gateway：ems_uuid 主键、device_id 唯一外键；绑定有效期单独记录，以防换站后历史授权错误 |
 | 当前连接 | 每 EMS 一条 connection_state；保存当前连接、入口代际、最后新鲜心跳、租约/fencing；不复制站点/客户名称 |
-| 结构与资产 | structure_revision 以 (EMS,sv) 唯一保存布局；device_binding 记录作用域/角色/局部号与资产及有效期；bmu_layout 记录 BMU 位置和容量 |
+| 结构与资产 | structure_revision 以 (EMS,sv) 唯一保存布局；device_binding 记录作用域/角色/局部号与资产及有效期；bmu_layout 记录 BMU 槽位及电压、温度数量 |
 | 结构现状 | 单独保存当前 connectionId/seq 与设备元信息现状；同 sv 可以更新 SN、版本、cellReady 等非布局信息，不新增虚假 sv |
 | 点定义 | point_definition 以 (catalog_version,namespace,source_id) 唯一，关联测量语义；point_binding 关联源设备位置和现有 measurement_point，禁止一个有效源位置绑定多个测点 |
 | 配置快照 | config_revision 以 (EMS,cfg_rev) 唯一；config_value 以 (revision,definition) 唯一；173 项按定义类型保存，预留 null 有别于运行采样失败 |
@@ -122,6 +122,8 @@ EMU、BMS、TMS、PVDC、PCS、GRID 的逻辑来源与物理设备不总是一�
 遵循 3NF：资产决定归属、点定义决定单位/类型、测点实例决定资产绑定，不在子表重复名称和客户等可推导属性。原始报文是协议取证对象，可按完整 JSON/字节保存；它不替代可查询业务关系。规范内容比较拒绝重复 JSON 键，数字使用无损解析，不能经 JavaScript Number 再计算 hash。
 
 ACK/outbox、消费记录和原始证据是运行所需信息，按明确定义的保留期维护，不额外给所有表套用删除标记、备注或冗余 tenant_id。具体 DDL 字段逐项说明用途后纳入迁移审查。
+
+2026-09-28 实施补充：当前告警快照保存明确的 binding_period_id，独立的 alarm_refresh_demand 保存刷新需求，事件不得制造假的当前快照序号。新可靠对象的全部来源时间须在本次接收所验证的同一绑定期内：告警检查事件时间，补传检查每条归档时间，告警关联数据检查整个采样区间。早于首次登记、落在旧绑定期或跨绑定期的整包拒绝，不按设备时钟推测归属。已经保存的同键同内容重复保留首次绑定期并可再次 ACK。此限制意味着未登记的历史不能自动补入；需先取得明确的历史绑定依据，不能将旧站数据直接归给新站。
 
 ## 7. ClickHouse 时序模型
 

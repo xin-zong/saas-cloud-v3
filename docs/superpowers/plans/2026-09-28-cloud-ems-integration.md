@@ -90,15 +90,15 @@ assertEquals(0, publishedBusinessAcks.size());
 
 **Interfaces:** `ReliableMessageStore.accept(WireMessage, Instant receivedAt)` 提交 PG 事务后返回已保存/重复；业务错误区分 busy/rejected。outbox worker 只读已提交记录，topic/ACK shape 由保存类型派生。
 
-- [ ] RED：重复对象再次 ACK；同键不同值整包冲突；跨 taskId 同历史身份冲突；事务回滚无 ACK；提交后发送前进程重启可恢复。
+- [x] RED：重复对象再次 ACK；同键不同值整包冲突；跨 taskId 同历史身份冲突；事务回滚无 ACK；提交后发送前进程重启可恢复。
 ```java
 assertEquals(1, reliableCount(key));
 assertEquals(0, partialHistoryRows(rejectedPackage));
 assertFalse(ackWasPublishedBeforeCommit);
 ```
-- [ ] 实现唯一约束与规范 hash 比较，whole-package 原子性；消费者提交 offset 晚于 PG；outbox 重试 ACK 不重复业务事实。
-- [ ] 告警事件进历史、触发当前清单刷新；null 现状不清空；查询过程中新增事件保留后续刷新代际。
-- [ ] 真实 PG/Kafka 故障注入 GREEN，提交。
+- [x] 实现唯一约束与规范 hash 比较，whole-package 原子性；消费者提交 offset 晚于 PG；outbox 重试 ACK 不重复业务事实。
+- [x] 告警事件进历史、触发当前清单刷新；null 现状不清空；查询过程中新增事件保留后续刷新代际。
+- [x] 真实 PG/Kafka 故障注入 GREEN，提交。
 
 ## Task 6: CH typed facts 和投影恢复
 

@@ -1,0 +1,8 @@
+{
+  "test_topics_deleted": 3,
+  "test_group_deleted": true,
+  "test_broker_stopped": true,
+  "test_schema_tables": 0,
+  "business_topics_retained": 3,
+  "temporary_archives_removed": true
+}

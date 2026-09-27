@@ -1,0 +1,49 @@
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+CREATE TABLE
+REVOKE
+CREATE TABLE
+ALTER TABLE
+DO
+ALTER TABLE
+ALTER TABLE
+CREATE FUNCTION
+ALTER TABLE
+ALTER TABLE
+INSERT 0 1
+GRANT
+GRANT
+GRANT
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+REVOKE
+REVOKE
+DO
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+SET
+INSERT 0 1
+INSERT 0 1
+DO
+RESET
+SET
+DO
+RESET
+ROLLBACK
+                                         json_build_object                                         
+---------------------------------------------------------------------------------------------------
+ {"schema_version" : 11, "v12_rolled_back" : true, "stations" : 2, "devices" : 26, "gateways" : 0}
+(1 row)
+
+psql:/var/lib/ems-cloud-v3/migration-6a10236/database/rehearsal-v12.sql:10: NOTICE:  relation "schema_migration" already exists, skipping

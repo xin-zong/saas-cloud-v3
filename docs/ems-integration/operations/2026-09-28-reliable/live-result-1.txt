@@ -1,0 +1,68 @@
+WARN org.apache.kafka.clients.consumer.internals.ConsumerCoordinator - [Consumer clientId=consumer-ems-cloud-v3.ingestion.task5-20260928-1, groupId=ems-cloud-v3.ingestion.task5-20260928] Interrupted while waiting for consumer heartbeat thread to close
+ERROR org.apache.kafka.clients.consumer.internals.ClassicKafkaConsumer - [Consumer clientId=consumer-ems-cloud-v3.ingestion.task5-20260928-1, groupId=ems-cloud-v3.ingestion.task5-20260928] Failed to close coordinator with a timeout(ms)=5000
+org.apache.kafka.common.errors.InterruptException: java.lang.InterruptedException
+	at org.apache.kafka.clients.consumer.internals.ConsumerNetworkClient.maybeThrowInterruptException(ConsumerNetworkClient.java:537)
+	at org.apache.kafka.clients.consumer.internals.ConsumerNetworkClient.poll(ConsumerNetworkClient.java:298)
+	at org.apache.kafka.clients.consumer.internals.ConsumerNetworkClient.pollNoWakeup(ConsumerNetworkClient.java:323)
+	at org.apache.kafka.clients.consumer.internals.AbstractCoordinator.maybeLeaveGroup(AbstractCoordinator.java:1182)
+	at org.apache.kafka.clients.consumer.internals.AbstractCoordinator.close(AbstractCoordinator.java:1132)
+	at org.apache.kafka.clients.consumer.internals.ConsumerCoordinator.close(ConsumerCoordinator.java:987)
+	at org.apache.kafka.clients.consumer.internals.ClassicKafkaConsumer.lambda$close$2(ClassicKafkaConsumer.java:1140)
+	at org.apache.kafka.common.utils.Utils.swallow(Utils.java:1050)
+	at org.apache.kafka.clients.consumer.internals.ClassicKafkaConsumer.close(ClassicKafkaConsumer.java:1140)
+	at org.apache.kafka.clients.consumer.internals.ClassicKafkaConsumer.close(ClassicKafkaConsumer.java:1109)
+	at org.apache.kafka.clients.consumer.KafkaConsumer.close(KafkaConsumer.java:1777)
+	at com.enerlution.ems.ingestion.ReliableConsumer.run(ReliableConsumer.java:51)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: java.lang.InterruptedException
+	... 17 common frames omitted
+ERROR org.apache.kafka.clients.consumer.internals.ClassicKafkaConsumer - [Consumer clientId=consumer-ems-cloud-v3.ingestion.task5-20260928-1, groupId=ems-cloud-v3.ingestion.task5-20260928] Failed to close fetcher with a timeout(ms)=4999
+org.apache.kafka.common.errors.InterruptException: java.lang.InterruptedException
+	at org.apache.kafka.clients.consumer.internals.ConsumerNetworkClient.maybeThrowInterruptException(ConsumerNetworkClient.java:537)
+	at org.apache.kafka.clients.consumer.internals.ConsumerNetworkClient.poll(ConsumerNetworkClient.java:298)
+	at org.apache.kafka.clients.consumer.internals.Fetcher.maybeCloseFetchSessions(Fetcher.java:132)
+	at org.apache.kafka.clients.consumer.internals.Fetcher.closeInternal(Fetcher.java:169)
+	at org.apache.kafka.clients.consumer.internals.AbstractFetch.lambda$close$11(AbstractFetch.java:483)
+	at org.apache.kafka.common.internals.IdempotentCloser.close(IdempotentCloser.java:161)
+	at org.apache.kafka.common.internals.IdempotentCloser.close(IdempotentCloser.java:139)
+	at org.apache.kafka.clients.consumer.internals.AbstractFetch.close(AbstractFetch.java:483)
+	at org.apache.kafka.clients.consumer.internals.ClassicKafkaConsumer.lambda$close$3(ClassicKafkaConsumer.java:1153)
+	at org.apache.kafka.common.utils.Utils.swallow(Utils.java:1050)
+	at org.apache.kafka.clients.consumer.internals.ClassicKafkaConsumer.close(ClassicKafkaConsumer.java:1153)
+	at org.apache.kafka.clients.consumer.internals.ClassicKafkaConsumer.close(ClassicKafkaConsumer.java:1109)
+	at org.apache.kafka.clients.consumer.KafkaConsumer.close(KafkaConsumer.java:1777)
+	at com.enerlution.ems.ingestion.ReliableConsumer.run(ReliableConsumer.java:51)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: java.lang.InterruptedException
+	... 19 common frames omitted
+ERROR org.apache.kafka.clients.consumer.internals.ClassicKafkaConsumer - [Consumer clientId=consumer-ems-cloud-v3.ingestion.task5-20260928-2, groupId=ems-cloud-v3.ingestion.task5-20260928] Failed to close coordinator with a timeout(ms)=5000
+org.apache.kafka.common.errors.InterruptException: java.lang.InterruptedException
+	at org.apache.kafka.clients.consumer.internals.ConsumerNetworkClient.maybeThrowInterruptException(ConsumerNetworkClient.java:537)
+	at org.apache.kafka.clients.consumer.internals.ConsumerNetworkClient.poll(ConsumerNetworkClient.java:298)
+	at org.apache.kafka.clients.consumer.internals.ConsumerNetworkClient.poll(ConsumerNetworkClient.java:253)
+	at org.apache.kafka.clients.consumer.internals.ConsumerNetworkClient.poll(ConsumerNetworkClient.java:244)
+	at org.apache.kafka.clients.consumer.internals.ConsumerNetworkClient.awaitPendingRequests(ConsumerNetworkClient.java:355)
+	at org.apache.kafka.clients.consumer.internals.AbstractCoordinator.close(AbstractCoordinator.java:1140)
+	at org.apache.kafka.clients.consumer.internals.ConsumerCoordinator.close(ConsumerCoordinator.java:987)
+	at org.apache.kafka.clients.consumer.internals.ClassicKafkaConsumer.lambda$close$2(ClassicKafkaConsumer.java:1140)
+	at org.apache.kafka.common.utils.Utils.swallow(Utils.java:1050)
+	at org.apache.kafka.clients.consumer.internals.ClassicKafkaConsumer.close(ClassicKafkaConsumer.java:1140)
+	at org.apache.kafka.clients.consumer.internals.ClassicKafkaConsumer.close(ClassicKafkaConsumer.java:1109)
+	at org.apache.kafka.clients.consumer.KafkaConsumer.close(KafkaConsumer.java:1777)
+	at com.enerlution.ems.ingestion.ReliableConsumer.run(ReliableConsumer.java:51)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: java.lang.InterruptedException
+	... 18 common frames omitted
+PASS actual PG/Kafka/mTLS: committed saved ACK, duplicate reACK, atomic cross-task rejection, PG rollback keeps Kafka offset, recovery advances offset, abandoned outbox restart recovery

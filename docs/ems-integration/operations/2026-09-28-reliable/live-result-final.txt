@@ -1,0 +1,1 @@
+PASS actual PG/Kafka/mTLS: committed saved ACK, duplicate reACK, atomic cross-task rejection, PG rollback keeps Kafka offset, recovery advances offset, abandoned outbox restart recovery
