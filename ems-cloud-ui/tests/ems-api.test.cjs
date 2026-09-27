@@ -54,3 +54,10 @@ test('EMS-only station grant has a platform entry without granting unrelated bus
 test('manual work orders retain the server business alarm linkage',()=>{
  const service=load('adapters');assert.equal(service.adaptOrder({id:'99',alarm_id:'88',title:'真实关联工单'}).alarmId,'88')
 })
+test('historical buckets use typed evidence independently of absent or null latest values',()=>{
+ const service=setup()
+ assert.equal(service.historyChartNumber({value:'12.5',quality:'valid',aggregation:'last',evidence:[{valueType:'number',value:'12.5'}]}),12.5)
+ assert.equal(service.historyChartNumber({value:'12',quality:'valid',aggregation:'last',evidence:[{valueType:'text',value:'12'}]}),null)
+ assert.equal(service.historyChartNumber({value:'7',quality:'valid',aggregation:'avg',evidence:[{valueType:'number',value:'6',quality:'valid'},{valueType:'number',value:'8',quality:'valid'}]}),7)
+ assert.equal(service.historyChartNumber({value:'7',quality:'valid',aggregation:'avg',evidence:[]}),null)
+})

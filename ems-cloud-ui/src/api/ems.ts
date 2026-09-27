@@ -48,3 +48,13 @@ export async function mutateEms<T = ApiRow>(path: string, body: ApiRow, signal: 
   return api<T>(path, { method: 'POST', body: JSON.stringify(body), signal })
 }
 export const exactText = (value: unknown): string => value == null ? '—（未知）' : typeof value === 'object' ? JSON.stringify(value) : String(value)
+
+/** Bucket types come from original historical evidence, never a current sample. */
+export function historyChartNumber(row: ApiRow): number | null {
+  if (row.conflict || row.resetUnknown || !Array.isArray(row.evidence) || !row.evidence.length) return null
+  const evidence = row.evidence as ApiRow[]
+  const ordered = [...evidence].sort((a,b)=>Number(a.sourceTime)-Number(b.sourceTime)||Number(a.receivedAt)-Number(b.receivedAt))
+  const samples = evidence.filter(item=>item.quality === 'valid' && item.valueType !== 'null')
+  const numeric = row.aggregation === 'last' ? ordered[ordered.length - 1]?.valueType === 'number' : samples.length > 0 && samples.every(item => item.valueType === 'number')
+  return chartNumber({value:row.value,valueType:numeric?'number':'unknown',quality:String(row.quality)})
+}
