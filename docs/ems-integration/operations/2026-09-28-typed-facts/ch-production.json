@@ -1,0 +1,11 @@
+{
+  "ddlSha256": "5efa83b8b5119c38ae78b6b3f80f7f36121fe82ae55020f5b4dfbb96d33dddab",
+  "appliedTwice": true,
+  "writerGrants": [
+    "GRANT INSERT ON ems_cloud_v2_proto_telemetry.ems_cell TO ems_ingestion_writer",
+    "GRANT INSERT ON ems_cloud_v2_proto_telemetry.ems_observation TO ems_ingestion_writer"
+  ],
+  "managedSecretMode": "0o640",
+  "database": "ems_cloud_v2_proto_telemetry",
+  "workerDeployed": false
+}

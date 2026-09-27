@@ -106,14 +106,14 @@ assertFalse(ackWasPublishedBeforeCommit);
 
 **Interfaces:** typed observation 存 point ID、source/receipt/archive time、quality、stable fact ID 与互斥值；单体二维 nullable 元素数组加整体存在标记。API query 使用同一表契约。
 
-- [ ] RED：版本/位图/null roundtrip；重复消费无重复查询结果；补传不覆盖实时最新值；CH 断开时可靠 PG 对象与待投影状态保留。
+- [x] RED：版本/位图/null roundtrip；重复消费无重复查询结果；补传不覆盖实时最新值；CH 断开时可靠 PG 对象与待投影状态保留。
 ```java
 assertEquals(originalBitmap, historyValue(pointId));
 assertEquals(1, factCountAfterReplay(factId));
 ```
-- [ ] 实现 HTTP 有界批写、稳定幂等身份、CH 成功后 offset/投影状态推进，失败重试有退避；不在每个实时点上写 PG EAV。
-- [ ] 新库执行 DDL 并使用独立测试表验证后清理测试表；持久化读取权限分离。
-- [ ] GREEN，提交。
+- [x] 实现 HTTP 有界批写、稳定幂等身份、CH 成功后 offset/投影状态推进，失败重试有退避；不在每个实时点上写 PG EAV。
+- [x] 新库执行 DDL 并使用独立测试表验证后清理测试表；持久化读取权限分离。
+- [x] GREEN，提交。
 
 ## Task 7: 连接/结构/配置现状及查询下行
 

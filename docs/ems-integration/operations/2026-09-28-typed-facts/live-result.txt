@@ -1,0 +1,1 @@
+PASS actual PG/Kafka/CH: reliable failure retains saved object/ACK, recovery projects exact bitmap/null, replay FINAL deduplicates, accepted current layout preserves nullable cells, FAST offset waits for CH success and recovers

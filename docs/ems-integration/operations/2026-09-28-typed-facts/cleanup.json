@@ -1,0 +1,7 @@
+{
+  "temporaryKafkaTopicAclGroupDeleted": true,
+  "isolatedClickHouseTablesAndGrantsRemoved": true,
+  "postgresTestSchemaEmpty": true,
+  "serverTestArchiveRemoved": true,
+  "productionTopicsPreserved": true
+}

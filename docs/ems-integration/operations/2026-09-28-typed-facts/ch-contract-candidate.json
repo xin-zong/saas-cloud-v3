@@ -1,0 +1,17 @@
+{
+  "scope": "candidate DDL in isolated task6_* tables, not production rollout",
+  "server": "ClickHouse 24.8.5.115",
+  "database": "ems_cloud_v2_proto_telemetry",
+  "candidateTestDdlSha256": "eefcc22b763990a72d4e49032cd7e8ddc6b0fa811cbc32074d6791cc0567adf7",
+  "exactNumber": true,
+  "versionText": true,
+  "u16Bitmap": true,
+  "null": true,
+  "duplicateFinalCount": 4,
+  "slotConstraintRejected": true,
+  "nullableCellPositions": true,
+  "wholeNullDistinct": true,
+  "testIdentityLegacyTableReadDenied": true,
+  "testRowsCleaned": true,
+  "firstCandidateFailure": "Code 165 CNF expansion in multi-branch constraint; fixed using separate slot constraints"
+}

@@ -1,0 +1,8 @@
+{
+  "archiveSha256":"fc3ff11c3f06daf0cbb4d2ec8ca25e54c79f7351fc9dcefab2a1854af4e34cef",
+  "isolatedDdlSha256":"da5e1c74fae7ebaa799d232fecdbdaad587f301086073e0340826c7c060197f9",
+  "postgresTests":{"tests":5,"failures":0,"errors":0,"skipped":0,"seconds":61.08},
+  "serverHarness":{"java":21,"postgres":true,"kafka":true,"clickhouse":true,"exitCode":0,"warnings":0,"errors":0},
+  "productionMigrated":false,
+  "realEmsVerified":false
+}
