@@ -1,0 +1,27 @@
+[Unit]
+Description=EMS repository API loopback 18090
+After=network-online.target
+Wants=network-online.target
+Conflicts=ems-cloud-v3-api-preview.service
+
+[Service]
+Type=simple
+User=ems-cloud-v3
+Group=ems-cloud-v3
+EnvironmentFile=/etc/ems-cloud-v2-proto/runtime.env
+Environment=EMS_BIND_ADDRESS=127.0.0.1
+Environment=EMS_PORT=18090
+ExecStart=/usr/lib/jvm/java-21-openjdk-amd64/bin/java -Xmx512m -jar /opt/ems-cloud-v3/current/ems-cloud-api.jar
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=45
+SuccessExitStatus=143
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target
