@@ -127,7 +127,7 @@ test('tariff-only capability opens existing price settings for its authorized st
 test('customer-only reads server station summaries and obeys can_edit, then 403 refresh removes stale write',async t=>{
   const user={...base,permissions:['customer.read','customer.manage'],stationPermissions:{1:['customer.read','customer.manage']}}
   const {page,requests}=await setup(t,user,({path,req,setUser})=>{
-    if(path==='/platform/customers') return {data:[{id:11,name:'独立客户',station_count:1,can_edit:true,stations:[{id:1,name:'客户站点 A',code:'CA'}]},{id:12,name:'只读客户',station_count:1,can_edit:false,stations:[{id:2,name:'客户站点 B',code:'CB'}]}]}
+    if(path==='/platform/customers') return {data:[{id:11,name:'独立客户',organization_id:1,organization_name:'测试',entity:'独立主体',contact:'联系人',station_count:1,can_edit:true,stations:[{id:1,name:'客户站点 A',code:'CA'}]},{id:12,name:'只读客户',organization_id:1,organization_name:'测试',entity:null,contact:null,station_count:1,can_edit:false,stations:[{id:2,name:'客户站点 B',code:'CB'}]}]}
     if(path==='/platform/customers/11' && req.method()==='PUT'){setUser({...user,permissions:['customer.read'],stationPermissions:{1:['customer.read']}});return {status:403,msg:'客户权限已收回'}}
   })
   await page.getByRole('button',{name:'平台管理',exact:true}).click()

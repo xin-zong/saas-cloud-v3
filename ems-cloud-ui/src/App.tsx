@@ -1,5 +1,6 @@
-import { DEMO_MODE, send } from "@/api/client"
+import { DEMO_MODE, send, type ApiRow } from "@/api/client"
 
+import { adaptStation } from "@/api/adapters"
 import { loadStations } from "@/api/stations"
 import { apiRoleConfig, hasStationPermission, stationRoleConfig } from "@/auth/apiPermissions"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -81,6 +82,7 @@ export type RevenueHistoryPoint = {
 }
 
 export type Station = {
+  customerId?: string | null
   // Identity
 
   id: string
@@ -453,17 +455,22 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
 
   const handleUpdateStation = useCallback(
     async (id: string, patch: Partial<Station>) => {
-      if (!canAccessStation(user, id) || !(DEMO_MODE ? roleConfig.canEditAssets : hasStationPermission(user, id, "asset.edit"))) return
+      if (!canAccessStation(user, id) || !(DEMO_MODE ? roleConfig.canEditAssets : hasStationPermission(user, id, "asset.edit"))) throw new Error("站点编辑权限已失效，请刷新后重试")
 
       if (!DEMO_MODE) {
         const current = stations.find((s) => s.id === id)
 
-        if (!current) return
+        if (!current) throw new Error("站点已不可用，请刷新后重试")
 
         const next = { ...current, ...patch }
+        const customerId = patch.customerId == null ? patch.customerId : Number(patch.customerId)
+        if (customerId != null && (!Number.isSafeInteger(customerId) || customerId <= 0)) {
+          throw new Error("客户标识无效，请刷新后重试")
+        }
 
-        await send(`/stations/${id}`, "PUT", {
+        const persisted = await send<ApiRow>(`/stations/${id}`, "PUT", {
           name: next.name,
+          ...(patch.customerId !== undefined ? { customerId } : {}),
           ratedPowerKw: Number.isFinite(next.ratedPower) ? next.ratedPower : undefined,
           capacityKwh: Number.isFinite(next.storageCapacity) ? next.storageCapacity : undefined,
           region: next.region,
@@ -472,6 +479,15 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
           latitude: next.lat ? Number(next.lat) : null,
         })
 
+        if (persisted) {
+          const saved = adaptStation(persisted)
+          setStations(prev => prev.map(s => s.id === id ? {
+            ...s, name: saved.name, shortName: saved.shortName,
+            customerId: saved.customerId, ratedPower: saved.ratedPower,
+            storageCapacity: saved.storageCapacity, region: saved.region,
+            address: saved.address, lng: saved.lng, lat: saved.lat,
+          } : s))
+        }
         refreshApi()
 
         return

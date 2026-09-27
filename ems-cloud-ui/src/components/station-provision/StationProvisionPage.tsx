@@ -1,10 +1,20 @@
 import { useEffect, useRef, useState } from "react"
+
 import type { Station } from "@/App"
-import { DEMO_MODE } from "@/api/client"
+
+import { DEMO_MODE, api } from "@/api/client"
+
 import { useAuth } from "@/auth/AuthContext"
-import { useEditorLeaveGuard, type RegisterLeaveGuard } from "../useEditorLeaveGuard"
+
+import {
+  useEditorLeaveGuard,
+  type RegisterLeaveGuard,
+} from "../useEditorLeaveGuard"
+
 import { Button } from "../ui/Workspace"
+
 import { Asset, Field, Modal } from "./Common"
+
 import {
   provisionDraftKey,
   deviceTypes,
@@ -17,55 +27,92 @@ import {
   type DeviceType,
   type ProvisionDraft,
 } from "./model"
+
 import "./station-entry.css"
 
 const icon: Record<DeviceType, string> = {
   电网: "imgGrid",
+
   光伏: "imgPv",
+
   "光伏 DC/DC": "imgPvDcDc",
+
   PCS: "imgPcs",
+
   "电池 / BMS": "imgBattery",
+
   负载: "imgLoad",
+
   电表: "img",
 }
+
 const positions: Record<DeviceType, [number, number]> = {
   电网: [18, 15],
+
   光伏: [72, 43],
+
   "光伏 DC/DC": [72, 66],
+
   PCS: [39, 52],
+
   "电池 / BMS": [62, 83],
+
   负载: [83, 15],
+
   电表: [18, 30],
 }
+
 type PositionedDevice = Device & { x?: number; y?: number }
+
 function initialFor(station?: Station): ProvisionDraft {
   return station
     ? {
         ...emptyProvision(),
+
         stationId: station.id,
+
         name: station.name,
+
         code: station.code,
+
         region: station.region,
+
         address: station.address,
+
         ratedPower: String(station.ratedPower),
+
         storageCapacity: String(station.storageCapacity),
       }
     : emptyProvision()
 }
+
 type Props = {
   station?: Station
+
   onBack: () => void
+
   registerLeaveGuard?: RegisterLeaveGuard
 }
+
 export default function StationProvisionPage(props: Props) {
   const { user } = useAuth()
-  const storageKey = provisionDraftKey(user?.id ?? "anonymous", DEMO_MODE, props.station?.id)
+
+  const storageKey = provisionDraftKey(
+    user?.id ?? "anonymous",
+    DEMO_MODE,
+    props.station?.id,
+  )
+
   return <ProvisionEditor key={storageKey} {...props} storageKey={storageKey} />
 }
+
 function ProvisionEditor({
   station,
+
   onBack,
+
   registerLeaveGuard,
+
   storageKey: key,
 }: Props & { storageKey: string }) {
   const [draft, setDraft] = useState<ProvisionDraft>(() => {
@@ -75,50 +122,177 @@ function ProvisionEditor({
       return initialFor(station)
     }
   })
+
+  const { user } = useAuth()
+
+  const [customers, setCustomers] = useState<{
+    id: number
+    name: string
+    can_edit: boolean
+  }[]>([])
+
+  const [customerLoading, setCustomerLoading] = useState(false)
+
+  const [customerError, setCustomerError] = useState("")
+
+  const [customerSearch, setCustomerSearch] = useState("")
+
+  const canReadCustomers =
+    !DEMO_MODE && !!user?.permissions.includes("customer.read")
+
+  function revokeDraftCustomer() {
+    setDraft((d) => d.customerId ? { ...d, customerId: null } : d)
+    setPast([])
+    setFuture([])
+    try {
+      const stored = parseDraft(localStorage.getItem(key))
+      if (stored)
+        localStorage.setItem(
+          key,
+          JSON.stringify({ ...stored, customerId: null }),
+        )
+    } catch {}
+  }
+
+  const customerRequest = useRef(0)
+
+  async function loadCustomers(signal?: AbortSignal) {
+    const request = ++customerRequest.current
+    setCustomerLoading(true)
+    setCustomerError("")
+    setCustomers([])
+    try {
+      const data = await api<{ id: number; name: string; can_edit: boolean }[]>(
+        "/platform/customers",
+        { signal },
+      )
+      if (signal?.aborted || request !== customerRequest.current) return
+      const allowed = data.filter((c) => c.can_edit)
+      setCustomers(allowed)
+      setDraft((d) =>
+        d.customerId && !allowed.some((c) => String(c.id) === d.customerId)
+          ? { ...d, customerId: null }
+          : d,
+      )
+      try {
+        const stored = parseDraft(localStorage.getItem(key))
+        if (
+          stored?.customerId &&
+          !allowed.some((c) => String(c.id) === stored.customerId)
+        ) {
+          localStorage.setItem(
+            key,
+            JSON.stringify({ ...stored, customerId: null }),
+          )
+          setPast([])
+          setFuture([])
+        }
+      } catch {}
+    } catch (e) {
+      if (!signal?.aborted && request === customerRequest.current) {
+        setCustomerError(e instanceof Error ? e.message : "客户加载失败")
+        revokeDraftCustomer()
+      }
+    } finally {
+      if (!signal?.aborted && request === customerRequest.current) setCustomerLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    const controller = new AbortController()
+    if (canReadCustomers) void loadCustomers(controller.signal)
+    else {
+      setCustomerLoading(false)
+      setCustomerError("")
+      setCustomers([])
+      revokeDraftCustomer()
+    }
+    return () => {
+      customerRequest.current++
+      controller.abort()
+    }
+  }, [
+    user?.id,
+    canReadCustomers,
+    JSON.stringify(user?.stationPermissions),
+    JSON.stringify(user?.organizationPermissions),
+    JSON.stringify(user?.permissions),
+  ])
+
   const [saved, setSaved] = useState(() => JSON.stringify(draft))
+
   const [step, setStep] = useState(station ? 1 : 0)
+
   const [selected, setSelected] = useState("")
+
   const [errors, setErrors] = useState<string[]>([])
+
   const [notice, setNotice] = useState("")
+
   const [modal, setModal] = useState<"leave" | "clear" | "publish" | null>(null)
+
   const [past, setPast] = useState<ProvisionDraft[]>([])
+
   const [future, setFuture] = useState<ProvisionDraft[]>([])
+
   const canvas = useRef<HTMLDivElement>(null)
+
   const file = useRef<HTMLInputElement>(null)
+
   const dirty = JSON.stringify(draft) !== saved
+
   const { settleLeave } = useEditorLeaveGuard({
-    dirty, registerLeaveGuard,
-    onConfirm: () => setModal("leave"), onCancel: () => setModal(null),
+    dirty,
+    registerLeaveGuard,
+
+    onConfirm: () => setModal("leave"),
+    onCancel: () => setModal(null),
   })
+
   function finishLeave() {
     settleLeave(true)
+
     onBack()
   }
+
   const device = draft.devices.find((d) => d.id === selected)
+
   const issues = validateTopology(draft.devices)
+
   const communication = draft.devices.filter(
     (d) => !["电网", "光伏", "负载"].includes(d.type),
   )
+
   useEffect(() => {
     const listener = (e: BeforeUnloadEvent) => {
       if (dirty) {
         e.preventDefault()
+
         e.returnValue = ""
       }
     }
+
     window.addEventListener("beforeunload", listener)
+
     return () => window.removeEventListener("beforeunload", listener)
   }, [dirty])
+
   function change(patch: Partial<ProvisionDraft>) {
     setPast((p) => [...p.slice(-39), draft])
+
     setFuture([])
+
     setDraft({ ...draft, ...patch })
+
     setNotice("")
   }
+
   function setField(key: keyof ProvisionDraft, value: string) {
     change({ [key]: value })
+
     setErrors([])
   }
+
   function updateDevice(patch: Partial<PositionedDevice>) {
     change({
       devices: draft.devices.map((d) =>
@@ -126,82 +300,140 @@ function ProvisionEditor({
       ),
     })
   }
+
   function addDevice(type: DeviceType) {
     const count = draft.devices.filter((d) => d.type === type).length
+
     const d: Device = {
       id: crypto.randomUUID(),
+
       type,
+
       name: `${type === "电池 / BMS" ? "电池簇" : type} ${count + 1}`,
+
       protocol: "",
+
       interface: type === "电池 / BMS" ? "COM 1" : "LAN 1",
+
       ip: "",
+
       port: "502",
+
       address: String(communication.length + 1),
+
       bus: draft.buses[0] ?? "",
+
       baud: "9600",
+
       parity: "无校验",
+
       bits: "8 / 1",
     }
+
     change({ devices: [...draft.devices, d] })
+
     setSelected(d.id)
   }
+
   function save() {
     try {
+      if (
+        draft.customerId &&
+        (customerLoading ||
+          customerError ||
+          !customers.some((c) => String(c.id) === draft.customerId))
+      ) {
+        setErrors(["客户选项已失效，请重新选择后保存草稿"])
+        return
+      }
+
       localStorage.setItem(key, JSON.stringify(draft))
+
       setSaved(JSON.stringify(draft))
+
       setNotice("本地草稿已保存 · 仅保存在此浏览器，尚未发布")
+
       return true
     } catch {
       setErrors(["浏览器存储不可用或空间不足，请先移除大图片后重试"])
+
       return false
     }
   }
+
   function back() {
     if (dirty) setModal("leave")
     else onBack()
   }
+
   function next() {
     if (step === 0) {
       const e = validateBasics(draft)
+
       setErrors(e)
+
       if (e.length) return
     }
+
     setErrors([])
+
     setStep((s) => s + 1)
   }
+
   function download() {
     const blob = new Blob(
       [
         JSON.stringify(
           { ...draft, kind: "local-draft", deploymentStatus: "unavailable" },
+
           null,
+
           2,
         ),
       ],
+
       { type: "application/json" },
     )
+
     const url = URL.createObjectURL(blob)
+
     const a = document.createElement("a")
+
     a.href = url
+
     a.download = `${draft.name || "station"}-本地草稿-v${draft.version}.json`
+
     a.click()
+
     URL.revokeObjectURL(url)
   }
+
   function undo() {
     const d = past.at(-1)
+
     if (!d) return
+
     setFuture((f) => [draft, ...f])
+
     setPast((p) => p.slice(0, -1))
+
     setDraft(d)
   }
+
   function redo() {
     const d = future[0]
+
     if (!d) return
+
     setPast((p) => [...p, draft])
+
     setFuture((f) => f.slice(1))
+
     setDraft(d)
   }
+
   const version = `V${draft.version}.0`
+
   return (
     <div
       className="station-provision station-entry-scope"
@@ -234,6 +466,7 @@ function ProvisionEditor({
             onClick={() => {
               if (i === 0 || i <= step) {
                 setErrors([])
+
                 setStep(i)
               } else if (i === 1) next()
             }}
@@ -274,6 +507,66 @@ function ProvisionEditor({
                   placeholder="请输入站点 ID（本地草稿标识）"
                 />
               </Field>
+              {!station && !DEMO_MODE && (
+                <Field label="所属客户">
+                  <div className="station-customer-selector">
+                    {canReadCustomers && (
+                      <input
+                        aria-label="搜索草稿客户"
+                        placeholder="搜索客户名称"
+                        value={customerSearch}
+                        disabled={customerLoading}
+                        onChange={(e) => setCustomerSearch(e.target.value)}
+                      />
+                    )}
+                    <select
+                      aria-label="所属客户"
+                      disabled={
+                        !canReadCustomers || customerLoading || !!customerError
+                      }
+                      value={
+                        customers.some((c) => String(c.id) === draft.customerId)
+                          ? (draft.customerId ?? "")
+                          : ""
+                      }
+                      onChange={(e) =>
+                        change({ customerId: e.target.value || null })
+                      }
+                    >
+                      <option value="">
+                        {customerLoading ? "正在加载客户…" : "未关联客户"}
+                      </option>
+                      {customers
+                        .filter(
+                          (c) =>
+                            String(c.id) === draft.customerId ||
+                            c.name.includes(customerSearch),
+                        )
+                        .map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                    </select>
+                    <small>
+                      仅保存草稿关联；站点创建服务接通后需再次核验。
+                    </small>
+                    {customerError && (
+                      <>
+                        <p role="alert" className="station-danger">
+                          {customerError}
+                        </p>
+                        <button
+                          className="station-text-button"
+                          onClick={() => void loadCustomers()}
+                        >
+                          重试加载客户
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </Field>
+              )}
               <Field label="所属组织">
                 <input
                   value={draft.organization}
@@ -299,14 +592,23 @@ function ProvisionEditor({
                   <option value="">请选择地区</option>
                   {[
                     "华东",
+
                     "华南",
+
                     "华北",
+
                     "华中",
+
                     "西南",
+
                     "西北",
+
                     "东北",
+
                     "欧洲",
+
                     "北美",
+
                     "东南亚",
                   ].map((x) => (
                     <option key={x}>{x}</option>
@@ -320,8 +622,11 @@ function ProvisionEditor({
                 >
                   {[
                     "Asia/Shanghai (UTC+08:00)",
+
                     "Europe/Berlin",
+
                     "America/New_York",
+
                     "UTC",
                   ].map((x) => (
                     <option key={x}>{x}</option>
@@ -356,17 +661,23 @@ function ProvisionEditor({
                     hidden
                     onChange={(e) => {
                       const f = e.target.files?.[0]
+
                       if (!f) return
+
                       if (
                         !["image/jpeg", "image/png"].includes(f.type) ||
                         f.size > 2 * 1024 * 1024
                       ) {
                         setErrors(["请选择 2 MB 以内的 JPG 或 PNG 图片"])
+
                         return
                       }
+
                       const reader = new FileReader()
+
                       reader.onload = () =>
                         setField("imageUrl", String(reader.result))
+
                       reader.readAsDataURL(f)
                     }}
                   />
@@ -426,6 +737,7 @@ function ProvisionEditor({
                       change({
                         devices: draft.devices.filter((d) => d.id !== selected),
                       })
+
                       setSelected("")
                     }}
                   >
@@ -456,17 +768,25 @@ function ProvisionEditor({
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault()
+
                   const id = e.dataTransfer.getData("text/plain")
+
                   const rect = canvas.current?.getBoundingClientRect()
+
                   if (!rect) return
+
                   const x = Math.max(
                     8,
+
                     Math.min(90, ((e.clientX - rect.left) / rect.width) * 100),
                   )
+
                   const y = Math.max(
                     9,
+
                     Math.min(90, ((e.clientY - rect.top) / rect.height) * 100),
                   )
+
                   change({
                     devices: draft.devices.map((d) =>
                       d.id === id ? { ...d, x, y } : d,
@@ -493,12 +813,18 @@ function ProvisionEditor({
                   ))}
                   {draft.devices.map((d: PositionedDevice, i) => {
                     const b = draft.buses.indexOf(d.bus)
+
                     const p = positions[d.type]
+
                     const duplicate = draft.devices
+
                       .slice(0, i)
+
                       .filter((x) => x.type === d.type).length
+
                     const x = d.x ?? Math.min(90, p[0] + duplicate * 12),
                       y = d.y ?? p[1]
+
                     return b >= 0 ? (
                       <line
                         key={d.id}
@@ -532,8 +858,11 @@ function ProvisionEditor({
                 {draft.devices.map((d: PositionedDevice, i) => {
                   const p = positions[d.type],
                     duplicate = draft.devices
+
                       .slice(0, i)
+
                       .filter((x) => x.type === d.type).length
+
                   return (
                     <button
                       key={d.id}
@@ -547,6 +876,7 @@ function ProvisionEditor({
                       }`}
                       style={{
                         left: `${d.x ?? Math.min(90, p[0] + duplicate * 12)}%`,
+
                         top: `${d.y ?? p[1]}%`,
                       }}
                       aria-label={`配置 ${d.name}`}
@@ -648,9 +978,13 @@ function ProvisionEditor({
                             >
                               {[
                                 "9600",
+
                                 "19200",
+
                                 "38400",
+
                                 "57600",
+
                                 "115200",
                               ].map((x) => (
                                 <option key={x}>{x}</option>
@@ -716,17 +1050,22 @@ function ProvisionEditor({
               {[
                 [
                   "电气连接",
+
                   draft.devices.length && draft.devices.every((d) => d.bus)
                     ? "设备已连接到所选母线"
                     : "请添加设备并配置母线连接",
                 ],
+
                 ["设备协议", "仅检查本地通信字段；协议模板兼容性需服务端核验"],
+
                 [
                   "通信地址",
+
                   issues.length
                     ? issues.join("；")
                     : "IP、端口与设备地址格式正确，未发现重复地址",
                 ],
+
                 ["配置完整性", "发布服务未接通，尚未进行现场可用性校验"],
               ].map(([title, detail]) => (
                 <div className="validation-item" key={title}>
@@ -797,9 +1136,13 @@ function ProvisionEditor({
                   <tr>
                     {[
                       "设备",
+
                       "类型",
+
                       "通信地址",
+
                       "实际设备序列号",
+
                       "关联结果",
                     ].map((x) => (
                       <th key={x}>{x}</th>
@@ -845,7 +1188,9 @@ function ProvisionEditor({
           <Button
             onClick={() => {
               change({ version: draft.version + 1 })
+
               setStep(1)
+
               setNotice("已创建新版本本地草稿，现场生效版本未知。")
             }}
           >
@@ -857,6 +1202,7 @@ function ProvisionEditor({
             <Button
               onClick={() => {
                 setErrors([])
+
                 setStep((s) => s - 1)
               }}
             >
@@ -899,7 +1245,9 @@ function ProvisionEditor({
                 className="station-danger-button"
                 onClick={() => {
                   change({ devices: [], buses: [] })
+
                   setSelected("")
+
                   setModal(null)
                 }}
               >
@@ -914,10 +1262,20 @@ function ProvisionEditor({
       {modal === "leave" && (
         <Modal
           title="未保存的更改"
-          onClose={() => { settleLeave(false); setModal(null) }}
+          onClose={() => {
+            settleLeave(false)
+            setModal(null)
+          }}
           actions={
             <>
-              <Button onClick={() => { settleLeave(false); setModal(null) }}>取消</Button>
+              <Button
+                onClick={() => {
+                  settleLeave(false)
+                  setModal(null)
+                }}
+              >
+                取消
+              </Button>
               <Button onClick={finishLeave}>不保存离开</Button>
               <Button
                 variant="primary"
@@ -945,6 +1303,7 @@ function ProvisionEditor({
                 onClick={() => {
                   if (save()) {
                     setModal(null)
+
                     setStep(3)
                   }
                 }}

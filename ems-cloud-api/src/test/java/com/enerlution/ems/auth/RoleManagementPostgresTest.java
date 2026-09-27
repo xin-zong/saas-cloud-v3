@@ -366,10 +366,12 @@ ems_permission_tests.app_role,ems_permission_tests.permission,ems_permission_tes
         db.queryForObject("SELECT name FROM customer WHERE id=141", String.class));
   }
 
-  private void customerDelegationFixture() {
+  private void customerDelegationFixture() throws Exception {
+    db.execute(
+        Files.readString(Path.of("src/main/resources/db/migration/V10__customer_profiles.sql")));
     db.execute(
         """
-INSERT INTO customer(id,name) VALUES(141,'Customer');
+INSERT INTO customer(id,name,organization_id) VALUES(141,'Customer',102);
 UPDATE station SET customer_id=141 WHERE id=131;
 INSERT INTO app_role(id,code,name,organization_id) VALUES(113,'customer-source','Customer source',103);
 INSERT INTO role_permission VALUES(113,'customer.manage'),(113,'alarm.handle');

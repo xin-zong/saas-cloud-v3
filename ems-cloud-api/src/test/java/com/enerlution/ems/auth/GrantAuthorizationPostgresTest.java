@@ -43,6 +43,7 @@ class GrantAuthorizationPostgresTest {
         Files.readString(Path.of("src/main/resources/db/migration/V6__member_grant_schema.sql")));
     Path v8 = Path.of("src/main/resources/db/migration/V8__effective_grant_permissions.sql");
     if (Files.exists(v8)) db.execute(Files.readString(v8));
+    db.execute(Files.readString(Path.of("src/main/resources/db/migration/V10__customer_profiles.sql")));
     db.execute(
         """
 CREATE TABLE operating_plan(id bigint,station_id bigint);
@@ -260,7 +261,7 @@ END $$;
     db.execute(
         """
 INSERT INTO organization(id,name) VALUES(3,'Other');
-INSERT INTO customer(id,name) VALUES(1,'Customer');
+INSERT INTO customer(id,name,organization_id) VALUES(1,'Customer',1);
 UPDATE station SET customer_id=1;
 INSERT INTO permission VALUES('customer.read','customers'),('customer.manage','manage');
 DELETE FROM role_permission;
