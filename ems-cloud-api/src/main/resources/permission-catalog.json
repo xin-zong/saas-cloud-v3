@@ -792,5 +792,35 @@
       }
     ],
     "notes": "历史粗粒度代码，仅保留迁移基线；当前接口使用拆分后的独立权限。"
+  },
+  {
+    "code": "ems.read",
+    "name": "查看 EMS 接入",
+    "module": "ems",
+    "scope": "station",
+    "page": "资产与站点",
+    "origin": "ems-integration",
+    "available": false,
+    "bindings": []
+  },
+  {
+    "code": "ems.manage",
+    "name": "管理 EMS 绑定",
+    "module": "ems",
+    "scope": "station",
+    "page": "资产与站点",
+    "origin": "ems-integration",
+    "available": false,
+    "bindings": []
+  },
+  {
+    "code": "ems.query",
+    "name": "查询 EMS 状态",
+    "module": "ems",
+    "scope": "station",
+    "page": "资产与站点",
+    "origin": "ems-integration",
+    "available": false,
+    "bindings": []
   }
 ]
