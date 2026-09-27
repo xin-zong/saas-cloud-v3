@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { DEMO_MODE } from "@/api/client"
+import EmsPanel from "./EmsPanel"
 import "./station-devices-figma.css"
 import {
   ArrowRight,
@@ -722,6 +723,7 @@ export default function StationDevicesPage({
 
   return (
     <div className="station-devices-page">
+      <EmsPanel stations={[station]} module="assets" deviceId={selected?.id} />
       <header className="device-toolbar">
         <h1>设备详情</h1>
         <div className="device-filters" role="group" aria-label="设备状态筛选">

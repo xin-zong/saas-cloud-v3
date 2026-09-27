@@ -22,6 +22,7 @@ import {
 import { stationDataNow } from "@/data/dataClock"
 import { buildCurveData } from "./StationRunCurvePage"
 import "./station-overview-figma.css"
+import EmsPanel from "./EmsPanel"
 
 const root = "/figma/stations/overview/"
 const equipment = [
@@ -206,6 +207,7 @@ export default function StationOverviewPage({
   }
   return (
     <main className="station-overview-figma">
+      <EmsPanel stations={[station]} module="assets" />
       <div className="station-overview-top">
         <section className="station-energy-card" aria-label="站点能流图">
           <div className="station-energy-canvas">

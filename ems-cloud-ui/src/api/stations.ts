@@ -14,7 +14,7 @@ import type { StationDevice } from "../data/stationDevices"
 export async function loadStations(user: AuthUser, signal?: AbortSignal) {
   const records = user.permissions.includes("asset.read") ? await allRows("/stations", signal) : []
   // Independent operations need only authorized names, never synthetic asset measurements.
-  const contextCodes = ["workorder.read", "workorder.create", "inspection.manage", "approval.read", "strategy.read", "alarm.read", "telemetry.read", "market.read", "revenue.read", "tariff.manage"]
+  const contextCodes = ["workorder.read", "workorder.create", "inspection.manage", "approval.read", "strategy.read", "alarm.read", "telemetry.read", "market.read", "revenue.read", "tariff.manage", "ems.read", "ems.manage", "ems.query"]
   const identities = await Promise.all(contextCodes.filter(code =>
     Object.entries(user.stationPermissions ?? {}).some(([id, codes]) => codes.includes(code) && !records.some(row => String(row.id) === id))
   ).map(code => api<ApiRow[]>(`/stations/options?permission=${encodeURIComponent(code)}`, {signal})))

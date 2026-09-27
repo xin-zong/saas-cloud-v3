@@ -18,7 +18,7 @@ export async function loadHistory(pointId: string, from: Date, to: Date, minutes
   if (![1, 5, 15, 30, 60].includes(minutes) || !Number.isFinite(from.getTime()) || !Number.isFinite(to.getTime()) || to <= from || to.getTime() - from.getTime() > 31 * 86400000) {
     throw new Error("请选择 31 天内有效时间段和采样粒度。")
   }
-  const query = new URLSearchParams({ from: from.toISOString(), to: to.toISOString(), minutes: String(minutes) })
+  const query = new URLSearchParams({ from: from.toISOString(), to: to.toISOString(), minutes: String(minutes), source: 'legacy', aggregation: 'avg' })
   const rows = await api<Array<Record<string, unknown>>>(`/points/${encodeURIComponent(pointId)}/history?${query}`, { signal })
   return rows.filter(row => row.timestamp !== null && row.timestamp !== "" && row.value !== null && row.value !== "" && row.samples !== null && row.samples !== "").map((row) => ({ timestamp: Number(row.timestamp), value: Number(row.value), samples: Number(row.samples) }))
     .filter((row) => Number.isFinite(row.timestamp) && Number.isFinite(row.value) && Number.isFinite(row.samples) && row.samples > 0)

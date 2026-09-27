@@ -861,6 +861,7 @@ export default function StationAnalysisPage({
           </button>
         </form>
       )}
+      {!DEMO_MODE && <p className="analysis-data-source">当前原有曲线 source=legacy / avg · 历史来源未验证；EMS 精确类型、质量与统计见 EMS 历史面板。</p>}
       <div className="analysis-workspace">
         <aside className="analysis-signal-browser" aria-label="信号浏览器">
           <header>

@@ -1,4 +1,5 @@
 import { useState } from "react"
+import EmsPanel from "./EmsPanel"
 import type { Station } from "@/App"
 import { DEMO_MODE } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
@@ -41,6 +42,7 @@ export default function OperationsOverviewPage({ stations, onOpenStation, onSche
   const attention = rows.filter(row => row.dispatch && !["正常", "待执行", "建设中"].includes(row.dispatch.status))
   const revenue = rows.filter(row => allowed(row.station.id, "revenue.read"))
   return <div className="ops-overview ops-current-overview">
+    <EmsPanel stations={scoped} module="operations" />
     <section className="ops-current-toolbar" aria-label="运营范围与时间">
       <select aria-label="运营站点范围" value={scope} onChange={e=>setScope(e.target.value)}>
         <option value="">全部站点 · {stations.length}</option>

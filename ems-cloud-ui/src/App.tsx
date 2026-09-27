@@ -985,7 +985,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
         )}
         {activeNav === "平台管理" && (
           <PlatformManagementPage
-            stations={scopedStations}
+            stations={operationalStations}
             allowedTabs={roleConfig.platformTabs}
             registerLeaveGuard={registerPlatformLeaveGuard}
           />
@@ -994,12 +994,12 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
           <SystemSettingsPage
             key={`${DEMO_MODE ? "demo" : "api"}:${user.id}`}
             registerLeaveGuard={registerSettingsLeaveGuard}
-            stations={scopedStations}
+            stations={operationalStations}
             user={user}
             onLogout={requestLogout}
           />
         )}
-        {activeNav === "总览" && <OverviewPage stations={scopedStations} user={user} nav={roleConfig.nav} immersive={immersive} onExitImmersive={() => setImmersive(false)} onOpenStation={handleOpenStation} registerLeaveGuard={registerOverviewLeaveGuard} requestLeave={() => overviewLeaveGuard.current?.() ?? Promise.resolve(true)} onNavigate={async nav => { if (roleConfig.nav.includes(nav) && await requestActiveEditorLeave()) setActiveNav(nav) }} />}
+        {activeNav === "总览" && <OverviewPage emsStations={operationalStations} stations={scopedStations} user={user} nav={roleConfig.nav} immersive={immersive} onExitImmersive={() => setImmersive(false)} onOpenStation={handleOpenStation} registerLeaveGuard={registerOverviewLeaveGuard} requestLeave={() => overviewLeaveGuard.current?.() ?? Promise.resolve(true)} onNavigate={async nav => { if (roleConfig.nav.includes(nav) && await requestActiveEditorLeave()) setActiveNav(nav) }} />}
       </div>
 
       {DEMO_MODE && (

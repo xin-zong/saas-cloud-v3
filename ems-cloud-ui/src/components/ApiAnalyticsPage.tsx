@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import EmsPanel from "./EmsPanel"
 import type { Station } from "@/App"
 import { useAuth } from "@/auth/AuthContext"
 import { hasStationPermission } from "@/auth/apiPermissions"
@@ -64,6 +65,7 @@ function ApiAnalyticsWorkspace({ stations, allowedTabs, allowedReportTypes, acco
     finally { if (!request.signal.aborted) setBusy(false) }
   }
   return <main className="ui-page analytics-ai-page api-analytics-page" aria-label="分析与报告">
+    <EmsPanel stations={station ? [station] : telemetryStations} module="analysis" />
     <div className="analytics-report-tabs" role="tablist" aria-label="分析与报告视图"><div>{tabs.map(t => <button type="button" key={t} role="tab" aria-selected={tab === t} onClick={() => { setTab(t); setError(""); setNotice("") }}>{t}</button>)}</div><span>服务器数据</span></div>
     {!tab ? <section className="analytics-empty-state"><h2>暂无授权站点</h2></section> : tab === "数据分析" && station ? <>
       <div className="analytics-analysis-switch"><button type="button" aria-pressed={!audit} onClick={() => setAudit(false)}>信号分析</button><button type="button" aria-pressed={audit} onClick={() => setAudit(true)}>事件审计</button></div>

@@ -9,9 +9,10 @@ import BottomBar from "./BottomBar"
 import StationPopup from "./StationPopup"
 import TickerBar from "./TickerBar"
 import OverviewDashboard from "./OverviewDashboard"
+import EmsPanel from "./EmsPanel"
 
-type Props = { stations: Station[]; user: AuthUser; nav: NavLabel[]; immersive: boolean; onExitImmersive: () => void; onOpenStation: (id: string, subNav?: string) => void; onNavigate: (nav: NavLabel) => void; registerLeaveGuard: (guard: null | (() => Promise<boolean>)) => void; requestLeave: () => Promise<boolean> }
-export default function OverviewPage({ stations, user, nav, immersive, onExitImmersive, onOpenStation, onNavigate, registerLeaveGuard, requestLeave }: Props) {
+type Props = { emsStations?: Station[]; stations: Station[]; user: AuthUser; nav: NavLabel[]; immersive: boolean; onExitImmersive: () => void; onOpenStation: (id: string, subNav?: string) => void; onNavigate: (nav: NavLabel) => void; registerLeaveGuard: (guard: null | (() => Promise<boolean>)) => void; requestLeave: () => Promise<boolean> }
+export default function OverviewPage({ stations, emsStations = stations, user, nav, immersive, onExitImmersive, onOpenStation, onNavigate, registerLeaveGuard, requestLeave }: Props) {
   const [view, setView] = useState<"map" | "dashboard">("map")
   const [mapMode, setMapMode] = useState<"diagram" | "live">("diagram")
   const [region, setRegion] = useState("")
@@ -32,6 +33,7 @@ export default function OverviewPage({ stations, user, nav, immersive, onExitImm
     else { const target = visibleStations.find(s => s.alerts.length) ?? visibleStations[0]; if (target) onOpenStation(target.id, "告警信息") }
   }
   return <section className="overview-workspace" data-overview-view={view} data-immersive={immersive}>
+    {!immersive && <EmsPanel stations={emsStations.filter(s => !region || s.region === region)} module="overview" />}
     {!immersive && <div className="overview-view-switch" role="group" aria-label="总览视图"><button aria-pressed={view === "map"} onClick={async () => { if (await requestLeave()) setView("map") }}>地图总览</button><button aria-pressed={view === "dashboard"} onClick={() => setView("dashboard")}>经营看板</button></div>}
     {view === "dashboard" ? <OverviewDashboard stations={stations} user={user} nav={nav} onNavigate={onNavigate} onOpenStation={onOpenStation} registerLeaveGuard={registerLeaveGuard} /> : <div className="overview-map" data-map-mode={mapMode}>
       <img className="overview-map-image" src={immersive ? "/figma/overview/fullscreen/imgMapCanvas.png" : "/figma/overview/map/imgGeographicMapBackground.png"} alt="" />

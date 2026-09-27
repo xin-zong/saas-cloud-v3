@@ -21,5 +21,5 @@ export function adaptStation(row: ApiRow): Station {
   }
 }
 export function adaptOrder(row: ApiRow): MaintenanceWorkOrder {
-  return {id: text(row.id), title: text(row.title), description: text(row.description), status: row.status as MaintenanceWorkOrder['status'], owner: text(row.assigned_to), createdAt: text(row.created_at), dueAt: text(row.due_at)}
+  return {id: text(row.id), alarmId: row.alarm_id == null ? undefined : text(row.alarm_id), title: text(row.title), description: text(row.description), status: row.status as MaintenanceWorkOrder['status'], owner: text(row.assigned_to), createdAt: text(row.created_at), dueAt: text(row.due_at)}
 }

@@ -80,3 +80,9 @@ test("server report uses bearer CSV and surfaces errors without a fake file", as
   assert.equal(service.client.getToken(), null)
   assert.deepEqual(service.events, ["enerlution:permissions-changed", "enerlution:unauthorized"])
 })
+test('legacy history requests explicitly retain unverified source instead of silently defaulting to EMS', async () => {
+ const service=setup();let url
+ global.fetch=async(input)=>{url=String(input);return {ok:true,status:200,json:async()=>({code:0,data:[]})}}
+ await service.loadHistory('17',new Date(0),new Date(60000),1)
+ assert.match(url,/source=legacy/);assert.match(url,/aggregation=avg/)
+})
