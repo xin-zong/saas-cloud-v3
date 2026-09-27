@@ -75,14 +75,14 @@ assertThrows(DataIntegrityViolationException.class,
 
 **Interfaces:** transport 使用 Task1 decoder；Kafka envelope 带不可变 receivedAt、ingressEpoch/sequence、消息身份与原始正文。PG 注册信息是 emsId 的允许清单。
 
-- [ ] 先测未注册身份、未持有租约、过期 fencing、Kafka 失败时无业务 ACK/无无限缓冲。
+- [x] 先测未注册身份、未持有租约、过期 fencing、Kafka 失败时无业务 ACK/无无限缓冲。
 ```java
 assertFalse(lease.isOwner(emsId, staleFence));
 assertEquals(0, publishedBusinessAcks.size());
 ```
-- [ ] 实现 mTLS MQTT 3.1.1 客户端与 Kafka idempotent producer；独立三输入 Topic；每类有界队列，关闭时取消后台任务。生产消费凭据仅由受管文件/环境读取。
-- [ ] 真实 MQTT/Kafka 独立测试 Topic 完成消费检查；测试数据与业务绑定隔离，结束删除本次测试资源。
-- [ ] GREEN，构建独立 worker jar，提交。
+- [x] 实现 mTLS MQTT 3.1.1 客户端与 Kafka idempotent producer；独立三输入 Topic；每类有界队列，关闭时取消后台任务。生产消费凭据仅由受管文件/环境读取。
+- [x] 真实 MQTT/Kafka 独立测试 Topic 完成消费检查；测试数据与业务绑定隔离，结束删除本次测试资源。
+- [x] GREEN，构建独立 worker jar，提交。
 
 ## Task 5: 可靠保存、告警、补传和 ACK
 
