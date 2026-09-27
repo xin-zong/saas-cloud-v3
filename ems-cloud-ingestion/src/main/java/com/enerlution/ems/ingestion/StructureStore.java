@@ -25,7 +25,14 @@ public final class StructureStore {
             try(var r=q.executeQuery()){if(r.next()) {
                 int order=n.path("seq").decimalValue().compareTo(r.getBigDecimal(1));
                 if(order<0)return false;
-                if(order==0)try{return new com.fasterxml.jackson.databind.ObjectMapper().readTree(r.getString(2)).equals(n.get("d")) && (r.getBigDecimal(3)==null?n.path("sv").isNull():!n.path("sv").isNull()&&r.getBigDecimal(3).compareTo(n.path("sv").decimalValue())==0);}catch(Exception invalid){throw new SQLException("Invalid saved metadata",invalid);}
+                if(order==0) {
+                    try {
+                        boolean sameMetadata=CanonicalJson.equivalent(CanonicalJson.read(r.getString(2)),n.get("d"));
+                        boolean sameVersion=r.getBigDecimal(3)==null?n.path("sv").isNull():
+                            !n.path("sv").isNull() && r.getBigDecimal(3).compareTo(n.path("sv").decimalValue())==0;
+                        return sameMetadata && sameVersion;
+                    }catch(java.io.IOException invalid){throw new SQLException("Invalid saved metadata",invalid);}
+                }
             }}
         }
         Long revision=null;
@@ -58,7 +65,7 @@ public final class StructureStore {
         cabinets.sort(Comparator.comparingInt(c -> c.path("c").intValue()));
         var clusters = result.putArray("clusters");
         for (var cabinet : cabinets) clusters.addObject().set("c", cabinet.get("c").deepCopy());
-        return result;
+        return CanonicalJson.normalize(result);
     }
     private static JsonNode meters(JsonNode input) {
         if (input.isNull()) return NullNode.instance;

@@ -9,11 +9,61 @@ public final class QueryDispatcher {
     public QueryDispatcher(javax.sql.DataSource source, AckOutbox.Publisher publisher) {this.source=source;this.publisher=publisher;}
     /** NULL cabinet demand has unsupported EMS/public scope and remains pending evidence. */
     public boolean enqueueDemand() {
-        String sql="SELECT b.ems_uuid,'alarm.current.get' AS operation,d.cabinet_no FROM alarm_refresh_demand d JOIN ems_binding_period b ON b.id=d.binding_period_id JOIN connection_state s ON s.ems_uuid=b.ems_uuid WHERE d.pending AND d.cabinet_no IS NOT NULL AND NOT EXISTS(SELECT 1 FROM (SELECT q.status,q.result FROM query_request q WHERE q.binding_period_id=b.id AND q.connection_id=s.connection_id AND q.operation='alarm.current.get' AND q.params=jsonb_build_object('c',d.cabinet_no) ORDER BY q.created_at DESC,q.id DESC LIMIT 1) latest WHERE latest.status='failed' AND latest.result ? 'error' AND latest.result->'error'->>'code' NOT IN ('BUSY','DATA_UNAVAILABLE')) AND b.valid_from<=clock_timestamp() AND (b.valid_to IS NULL OR b.valid_to>clock_timestamp()) AND s.lease_until>clock_timestamp() AND s.last_fresh_heartbeat>clock_timestamp()-interval '90 seconds' AND NOT EXISTS(SELECT 1 FROM query_request q WHERE q.ems_uuid=b.ems_uuid AND q.operation='alarm.current.get' AND q.params=jsonb_build_object('c',d.cabinet_no) AND q.status IN ('pending','sent') AND q.expires_at>clock_timestamp()) UNION ALL SELECT b.ems_uuid,'structure.get',NULL FROM structure_refresh_demand d JOIN ems_binding_period b ON b.id=d.binding_period_id JOIN connection_state s ON s.ems_uuid=b.ems_uuid WHERE d.pending AND NOT EXISTS(SELECT 1 FROM (SELECT q.status,q.result FROM query_request q WHERE q.binding_period_id=b.id AND q.connection_id=s.connection_id AND q.operation='structure.get' AND q.params='{}'::jsonb ORDER BY q.created_at DESC,q.id DESC LIMIT 1) latest WHERE latest.status='failed' AND latest.result ? 'error' AND latest.result->'error'->>'code' NOT IN ('BUSY','DATA_UNAVAILABLE')) AND b.valid_from<=clock_timestamp() AND (b.valid_to IS NULL OR b.valid_to>clock_timestamp()) AND s.lease_until>clock_timestamp() AND s.last_fresh_heartbeat>clock_timestamp()-interval '90 seconds' AND NOT EXISTS(SELECT 1 FROM query_request q WHERE q.ems_uuid=b.ems_uuid AND q.operation='structure.get' AND q.status IN ('pending','sent') AND q.expires_at>clock_timestamp()) LIMIT 1";
+        String sql="""
+            WITH demands AS (
+                SELECT d.binding_period_id, 'alarm.current.get' AS operation, d.cabinet_no,
+                       jsonb_build_object('c', d.cabinet_no) AS params
+                FROM alarm_refresh_demand d
+                WHERE d.pending AND d.cabinet_no IS NOT NULL
+                  AND EXISTS (
+                      SELECT 1 FROM device_binding cabinet
+                      WHERE cabinet.binding_period_id=d.binding_period_id
+                        AND cabinet.cabinet_no=d.cabinet_no
+                        AND cabinet.valid_from<=clock_timestamp()
+                        AND (cabinet.valid_to IS NULL OR cabinet.valid_to>clock_timestamp())
+                  )
+                UNION ALL
+                SELECT d.binding_period_id, 'structure.get', NULL, '{}'::jsonb
+                FROM structure_refresh_demand d WHERE d.pending
+            )
+            SELECT b.ems_uuid, d.operation, d.cabinet_no
+            FROM demands d
+            JOIN ems_binding_period b ON b.id=d.binding_period_id
+            JOIN connection_state s ON s.ems_uuid=b.ems_uuid
+            WHERE b.valid_from<=clock_timestamp()
+              AND (b.valid_to IS NULL OR b.valid_to>clock_timestamp())
+              AND s.connection_id IS NOT NULL AND s.lease_until>clock_timestamp()
+              AND s.last_fresh_heartbeat>clock_timestamp()-interval '90 seconds'
+              AND (SELECT count(*) FROM query_request rate
+                   WHERE rate.ems_uuid=b.ems_uuid AND rate.connection_id=s.connection_id
+                     AND rate.created_at>clock_timestamp()-interval '60 seconds')<32
+              AND (SELECT count(*) FROM query_request active
+                   WHERE active.ems_uuid=b.ems_uuid AND active.connection_id=s.connection_id
+                     AND active.status IN ('pending','sent') AND active.expires_at>clock_timestamp())<32
+              AND NOT EXISTS (
+                  SELECT 1 FROM query_request active
+                  WHERE active.ems_uuid=b.ems_uuid AND active.connection_id=s.connection_id
+                    AND active.binding_period_id=b.id AND active.operation=d.operation
+                    AND active.params=d.params AND active.status IN ('pending','sent')
+                    AND active.expires_at>clock_timestamp()
+              )
+              AND NOT EXISTS (
+                  SELECT 1 FROM (
+                      SELECT q.status,q.result FROM query_request q
+                      WHERE q.binding_period_id=b.id AND q.connection_id=s.connection_id
+                        AND q.operation=d.operation AND q.params=d.params
+                      ORDER BY q.created_at DESC,q.id DESC LIMIT 1
+                  ) latest
+                  WHERE latest.status='failed' AND latest.result ? 'error'
+                    AND latest.result->'error'->>'code' NOT IN ('BUSY','DATA_UNAVAILABLE')
+              )
+            ORDER BY b.ems_uuid, d.operation, d.cabinet_no NULLS LAST
+            LIMIT 1
+            """;
         try(var c=source.getConnection();var s=c.createStatement();var r=s.executeQuery(sql)) {
             if(!r.next())return false;int cabinet=r.getInt(3);boolean absent=r.wasNull();
             return enqueueAutomatic(UUID.fromString(r.getString(1)),r.getString(2),absent?null:cabinet);
-        }catch(SQLException failure){return false;}
+        }catch(SQLException failure){StateTransaction.recordFailure(failure);return false;}
     }
     public boolean enqueueAutomatic(UUID ems, String operation, Integer cabinet) {
         if(!allowed(operation) || operation.equals("alarm.current.get") && (cabinet==null||cabinet<1||cabinet>30) || operation.equals("structure.get")&&cabinet!=null)return false;
@@ -59,7 +109,7 @@ public final class QueryDispatcher {
         String ems;
         try(var c=source.getConnection();var s=c.createStatement();var r=s.executeQuery("SELECT q.ems_uuid FROM query_request q WHERE q.status='pending' AND NOT EXISTS(SELECT 1 FROM outbox o WHERE o.query_request_id=q.id) ORDER BY q.created_at,q.id LIMIT 1")) {
             if(!r.next())return false;ems=r.getString(1);
-        }catch(SQLException failure){return false;}
+        }catch(SQLException failure){StateTransaction.recordFailure(failure);return false;}
         return StateTransaction.run(source,ems,c->{
             String sql="SELECT q.id,q.binding_period_id,q.connection_id,q.operation,q.params::text,q.expires_at,"
                 +"q.actor_id IS NOT NULL AND q.connection_id=s.connection_id AND s.lease_until>clock_timestamp() "
@@ -73,9 +123,9 @@ public final class QueryDispatcher {
                 q.setString(1,ems);try(var r=q.executeQuery()){if(!r.next())return;
                     String id=r.getString(1),op=r.getString(4);var params=new com.fasterxml.jackson.databind.ObjectMapper().readTree(r.getString(5));
                     boolean valid=r.getBoolean(7)&&allowed(op);
-                    valid &= op.equals("structure.get")?params.size()==0:params.size()==1&&params.path("c").isIntegralNumber()&&params.path("c").intValue()>=1&&params.path("c").intValue()<=30;
+                    valid &= op.equals("structure.get")?params.size()==0:params.size()==1&&params.path("c").isIntegralNumber()&&params.path("c").canConvertToInt()&&params.path("c").intValue()>=1&&params.path("c").intValue()<=30;
                     if(valid && op.equals("alarm.current.get"))try(var bound=c.prepareStatement("SELECT 1 FROM device_binding WHERE binding_period_id=? AND cabinet_no=? AND valid_from<=clock_timestamp() AND (valid_to IS NULL OR valid_to>clock_timestamp())")) {
-                        bound.setLong(1,r.getLong(2));bound.setInt(2,params.path("c").intValue());try(var rows=bound.executeQuery()){valid=rows.next();}
+                        bound.setLong(1,r.getLong(2));bound.setInt(2,params.path("c").bigIntegerValue().intValueExact());try(var rows=bound.executeQuery()){valid=rows.next();}
                     }
                     if(valid)try(var rate=c.prepareStatement("SELECT count(*) FROM query_request WHERE ems_uuid=?::uuid AND connection_id=?::uuid AND created_at>clock_timestamp()-interval '60 seconds' AND (created_at,id)<=(SELECT created_at,id FROM query_request WHERE id=?::uuid)")) {
                         rate.setString(1,ems);rate.setString(2,r.getString(3));rate.setString(3,id);try(var rows=rate.executeQuery()){rows.next();valid=rows.getInt(1)<=32;}
@@ -94,12 +144,27 @@ public final class QueryDispatcher {
     }
     public boolean publishNext() {
         materializePending();
-        String ems;
-        String candidate="SELECT q.ems_uuid FROM query_request q JOIN outbox o ON o.query_request_id=q.id "
-            +"WHERE q.status IN ('pending','sent') AND (q.expires_at<=clock_timestamp() OR (o.status='pending' AND o.next_attempt_at<=clock_timestamp()) "
-            +"OR (o.status='sending' AND o.lease_until<=clock_timestamp())) AND (q.expires_at<=clock_timestamp() OR o.first_attempt_at IS NOT NULL OR (SELECT count(*) FROM outbox rate JOIN query_request rq ON rq.id=rate.query_request_id WHERE rq.ems_uuid=q.ems_uuid AND rq.connection_id=q.connection_id AND rate.first_attempt_at>clock_timestamp()-interval '60 seconds')<32) ORDER BY q.created_at,q.id LIMIT 1";
-        try(var c=source.getConnection();var s=c.createStatement();var r=s.executeQuery(candidate)) {if(!r.next())return false;ems=r.getString(1);}
-        catch(SQLException failure){return false;}
+        String ems,requestId;
+        String candidate="""
+            SELECT q.ems_uuid,q.id
+            FROM query_request q JOIN outbox o ON o.query_request_id=q.id
+            WHERE q.status IN ('pending','sent')
+              AND (q.expires_at<=clock_timestamp()
+                   OR (o.status='pending' AND o.next_attempt_at<=clock_timestamp())
+                   OR (o.status='sending' AND o.lease_until<=clock_timestamp()))
+              AND (q.expires_at<=clock_timestamp() OR o.first_attempt_at IS NOT NULL OR (
+                  SELECT count(*) FROM outbox rate
+                  JOIN query_request rq ON rq.id=rate.query_request_id
+                  WHERE rq.ems_uuid=q.ems_uuid AND rq.connection_id=q.connection_id
+                    AND rate.first_attempt_at>clock_timestamp()-interval '60 seconds'
+              )<32)
+            ORDER BY q.created_at,q.id LIMIT 1
+            """;
+        try(var c=source.getConnection();var s=c.createStatement();var r=s.executeQuery(candidate)) {
+            if(!r.next())return false;
+            ems=r.getString(1);requestId=r.getString(2);
+        }
+        catch(SQLException failure){StateTransaction.recordFailure(failure);return false;}
         Claim[] claim={null};
         boolean committed=StateTransaction.run(source,ems,c->{
             String sql="SELECT q.id,q.binding_period_id,q.operation,q.params::text,o.id,o.topic,o.payload,q.expires_at,"
@@ -107,11 +172,11 @@ public final class QueryDispatcher {
                 +"AND b.valid_from<=clock_timestamp() AND (b.valid_to IS NULL OR b.valid_to>clock_timestamp()) "
                 +"AND (q.actor_id IS NULL OR EXISTS(SELECT 1 FROM effective_station_permission p WHERE p.user_id=q.actor_id AND p.station_id=b.station_id AND p.permission_code='ems.query')) AS valid,"
                 +"o.attempts FROM query_request q JOIN outbox o ON o.query_request_id=q.id JOIN connection_state s ON s.ems_uuid=q.ems_uuid "
-                +"JOIN ems_binding_period b ON b.id=q.binding_period_id WHERE q.ems_uuid=?::uuid AND q.status IN ('pending','sent') "
+                +"JOIN ems_binding_period b ON b.id=q.binding_period_id WHERE q.ems_uuid=?::uuid AND q.id=?::uuid AND q.status IN ('pending','sent') "
                 +"AND (q.expires_at<=clock_timestamp() OR (o.status='pending' AND o.next_attempt_at<=clock_timestamp()) OR (o.status='sending' AND o.lease_until<=clock_timestamp())) "
                 +"ORDER BY q.created_at,q.id FOR UPDATE OF q,o LIMIT 1";
             try(var q=c.prepareStatement(sql)) {
-                q.setString(1,ems);try(var r=q.executeQuery()){if(!r.next())return;
+                q.setString(1,ems);q.setString(2,requestId);try(var r=q.executeQuery()){if(!r.next())return;
                     String id=r.getString(1),operation=r.getString(3);long period=r.getLong(2),outbox=r.getLong(5);
                     boolean expired=!r.getTimestamp(8).toInstant().isAfter(StateTransaction.now(c));
                     if(expired || !r.getBoolean(9) || !allowed(operation)) {

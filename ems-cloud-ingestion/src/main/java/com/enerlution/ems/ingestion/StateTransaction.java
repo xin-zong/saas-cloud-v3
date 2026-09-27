@@ -7,6 +7,14 @@ import java.time.Instant;
 
 /** All state mutations share the same EMS lock and numeric lease admission. */
 final class StateTransaction {
+    private static final org.slf4j.Logger LOG=org.slf4j.LoggerFactory.getLogger(StateTransaction.class);
+    private static final TransportDiagnostics DIAGNOSTICS=new TransportDiagnostics();
+    static java.util.Map<String,Long> failureSnapshot(){return DIAGNOSTICS.snapshot();}
+    static void recordFailure(Exception failure) {
+        DIAGNOSTICS.record(failure instanceof SQLException?TransportDiagnostics.Signal.DATABASE_FAILURE:
+            TransportDiagnostics.Signal.STATE_PROGRAMMING_FAILURE);
+        DIAGNOSTICS.warningIfDue().ifPresent(counters->LOG.warn("State processing failure counters: {}",counters));
+    }
     interface Work { void run(Connection connection) throws Exception; }
     static boolean run(DataSource source, String ems, Work work) {
         for (int attempt=0; attempt<3; attempt++) {
@@ -15,8 +23,12 @@ final class StateTransaction {
                 try {
                     ReliableMessageStore.lock(c,ems);
                     work.run(c); c.commit(); return true;
-                } catch(Exception failure) { c.rollback(); throw failure; }
+                } catch(Exception failure) {
+                    try{c.rollback();}catch(SQLException rollbackFailure){failure.addSuppressed(rollbackFailure);}
+                    throw failure;
+                }
             } catch(Exception failure) {
+                recordFailure(failure);
                 if(failure instanceof SQLException sql && attempt<2 &&
                     ("40001".equals(sql.getSQLState()) || "40P01".equals(sql.getSQLState()))) continue;
                 return false;

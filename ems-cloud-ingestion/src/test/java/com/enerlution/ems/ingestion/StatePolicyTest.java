@@ -8,6 +8,15 @@ import java.time.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class StatePolicyTest {
+    @Test void immutableProjectionCanonicalizesNestedObjectKeyOrderAndNumbers()throws Exception {
+        var mapper=new ObjectMapper();
+        var d=(ObjectNode)mapper.readTree(Files.readString(Path.of("../ems-cloud-protocol/src/test/resources/telemetry/structure-matched-synthetic.json"))).get("d");
+        var reordered=d.deepCopy();
+        ((ObjectNode)reordered.path("clusterLayout")).set("bms",mapper.readTree("{\"tempCount\":16,\"voltCount\":32,\"bmuCount\":5,\"bmuType\":2,\"count\":1}"));
+        assertEquals(StructureStore.layout(d).toString(),StructureStore.layout(reordered).toString());
+        var wireTyped=new ObjectMapper().enable(com.fasterxml.jackson.databind.DeserializationFeature.USE_BIG_INTEGER_FOR_INTS).readTree(d.toString());
+        assertEquals(StructureStore.layout(d),StructureStore.layout(wireTyped));
+    }
     @Test void heartbeatExpiresAtExactlyNinetySeconds() {
         Instant observed = Instant.parse("2026-09-28T00:00:00Z");
         assertTrue(ConnectionState.fresh(observed, observed.plusSeconds(89)));

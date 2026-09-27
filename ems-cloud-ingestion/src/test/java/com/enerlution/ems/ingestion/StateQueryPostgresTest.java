@@ -57,6 +57,7 @@ class StateQueryPostgresTest {
         var store=new StructureStore(source);assertTrue(store.accept(envelope("telemetry",n.toString(),2,Instant.now())));
         assertEquals("1",value("SELECT count(*) FROM structure_current WHERE ems_uuid='"+ems+"'"));
         n.put("seq",3);((com.fasterxml.jackson.databind.node.ObjectNode)n.path("d").path("clusters").get(0)).put("cellReady",false);
+        ((com.fasterxml.jackson.databind.node.ObjectNode)n.path("d").path("clusterLayout")).set("bms",new com.fasterxml.jackson.databind.ObjectMapper().readTree("{\"tempCount\":16,\"voltCount\":32,\"bmuCount\":5,\"bmuType\":2,\"count\":1}"));
         assertTrue(store.accept(envelope("telemetry",n.toString(),3,Instant.now())));
         assertEquals("false",value("SELECT metadata->'clusters'->0->>'cellReady' FROM structure_current WHERE ems_uuid='"+ems+"'"));
         n.put("seq",4);((com.fasterxml.jackson.databind.node.ObjectNode)n.path("d").path("clusterLayout").path("bms")).put("voltCount",33);
@@ -159,8 +160,11 @@ class StateQueryPostgresTest {
         assertEquals("failed",value("SELECT status FROM query_request WHERE id='"+next+"'"));
     }
     UUID apiRequest(long actor)throws Exception {
-        UUID id=UUID.randomUUID();try(var c=source.getConnection();var q=c.prepareStatement("INSERT INTO query_request(id,ems_uuid,actor_id,binding_period_id,connection_id,operation,params,created_at,expires_at,status) VALUES(?::uuid,?::uuid,?,?,?::uuid,'structure.get','{}',statement_timestamp(),statement_timestamp()+interval '30 seconds','pending')")) {
-            q.setString(1,id.toString());q.setString(2,ems.toString());q.setLong(3,actor);q.setLong(4,period);q.setString(5,connection.toString());q.executeUpdate();
+        return apiRequest(actor,"structure.get","{}");
+    }
+    UUID apiRequest(long actor,String operation,String params)throws Exception {
+        UUID id=UUID.randomUUID();try(var c=source.getConnection();var q=c.prepareStatement("INSERT INTO query_request(id,ems_uuid,actor_id,binding_period_id,connection_id,operation,params,created_at,expires_at,status) VALUES(?::uuid,?::uuid,?,?,?::uuid,?,?::jsonb,statement_timestamp(),statement_timestamp()+interval '30 seconds','pending')")) {
+            q.setString(1,id.toString());q.setString(2,ems.toString());q.setLong(3,actor);q.setLong(4,period);q.setString(5,connection.toString());q.setString(6,operation);q.setString(7,params);q.executeUpdate();
         }return id;
     }
     @Test void responseCannotCompleteUnsentRequestAndAbandonedAttemptRecoversSamePayload()throws Exception {
@@ -178,18 +182,30 @@ class StateQueryPostgresTest {
         assertTrue(new ResponseConsumer(source).accept(response));assertEquals("BUSY",value("SELECT result->'error'->>'code' FROM query_request WHERE id='"+id+"'"));
     }
     @Test void permanentAndUnclassifiedErrorsPauseAutomaticRefreshUntilNewManualSuccess()throws Exception {
-        new ConnectionState(source).accept(heartbeat(connection,1,now()));var dispatcher=new QueryDispatcher(source,(t,b)->{});
-        assertTrue(dispatcher.enqueueAutomatic(ems,"alarm.current.get",1));assertTrue(dispatcher.publishNext());
-        String id=value("SELECT id FROM query_request WHERE ems_uuid='"+ems+"'");
-        String response="{\"v\":1,\"emsId\":\""+ems+"\",\"id\":\""+id+"\",\"ok\":false,\"error\":{\"code\":\"RESULT_TOO_LARGE\",\"message\":\"test oversized\"}}";
-        assertTrue(new ResponseConsumer(source).accept(envelope("response",response,2,now())));
-        assertFalse(dispatcher.enqueueAutomatic(ems,"alarm.current.get",1));
-        assertEquals("t",value("SELECT pending FROM alarm_refresh_demand WHERE binding_period_id="+period));
-        // A newer explicitly authorized API success supersedes the old failed outcome.
-        try(var c=source.getConnection();var s=c.createStatement()) {
-            s.executeUpdate("UPDATE query_request SET status='succeeded',result='{}' WHERE id='"+id+"'");
-        }
+        new ConnectionState(source).accept(heartbeat(connection,1,now()));
+        var dispatcher=new QueryDispatcher(source,(t,b)->{});
+        long actor=grantActor();long snapshotSequence=1;
         assertTrue(dispatcher.enqueueAutomatic(ems,"alarm.current.get",1));
+        for(String code:List.of("RESULT_TOO_LARGE","VENDOR_UNCLASSIFIED")) {
+            String failedId=value("SELECT id FROM query_request WHERE ems_uuid='"+ems+"' AND status='pending'");
+            assertTrue(dispatcher.publishNext());
+            var failed=com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+            failed.put("v",1);failed.put("emsId",ems.toString());failed.put("id",failedId);failed.put("ok",false);
+            failed.putObject("error").put("code",code).put("message","Isolated error result");
+            assertTrue(new ResponseConsumer(source).accept(envelope("response",failed.toString(),10+snapshotSequence,now())));
+            assertFalse(dispatcher.enqueueAutomatic(ems,"alarm.current.get",1));
+            assertEquals("t",value("SELECT pending FROM alarm_refresh_demand WHERE binding_period_id="+period+" AND cabinet_no=1"));
+            UUID manual=apiRequest(actor,"alarm.current.get","{\"c\":1}");
+            assertTrue(dispatcher.publishNext());
+            var succeeded=com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+            succeeded.put("v",1);succeeded.put("emsId",ems.toString());succeeded.put("id",manual.toString());succeeded.put("ok",true);
+            var data=succeeded.putObject("data");data.put("v",1);data.put("type","alarm_current");data.put("connectionId",connection.toString());
+            data.put("c",1);data.put("seq",snapshotSequence++);data.putArray("alarms");
+            assertTrue(new ResponseConsumer(source).accept(envelope("response",succeeded.toString(),20+snapshotSequence,now())));
+            assertEquals("succeeded",value("SELECT status FROM query_request WHERE id='"+manual+"'"));
+            assertEquals("failed",value("SELECT status FROM query_request WHERE id='"+failedId+"'"),"Old failed outcome is immutable in this regression");
+            assertTrue(dispatcher.enqueueAutomatic(ems,"alarm.current.get",1),"A genuinely newer authorized success resumes automatic refresh");
+        }
     }
     @Test void delayedFirstSendCannotExceedActualSixtySecondRateWindow()throws Exception {
         new ConnectionState(source).accept(heartbeat(connection,1,now()));var sent=new ArrayList<String>();
@@ -210,6 +226,60 @@ class StateQueryPostgresTest {
         assertTrue(projection.current(source,alarmCurrent(2,"["+entry+","+entry+"]")));
         assertEquals("1",value("SELECT seq FROM alarm_current_snapshot WHERE ems_uuid='"+ems+"'"));
         assertEquals("0",value("SELECT count(*) FROM alarm_current_member WHERE ems_uuid='"+ems+"'"));
+    }
+    @Test void removedCabinetDemandDoesNotStarveEligibleStructureRefresh()throws Exception {
+        new ConnectionState(source).accept(heartbeat(connection,1,now()));
+        try(var c=source.getConnection();var s=c.createStatement()){s.executeUpdate("UPDATE device_binding SET valid_to=clock_timestamp() WHERE binding_period_id="+period);}
+        var dispatcher=new QueryDispatcher(source,(t,b)->{});
+        assertTrue(dispatcher.enqueueDemand());
+        assertEquals("structure.get",value("SELECT operation FROM query_request WHERE ems_uuid='"+ems+"'"));
+        assertEquals("t",value("SELECT pending FROM alarm_refresh_demand WHERE binding_period_id="+period+" AND cabinet_no=1"));
+    }
+    @Test void identicalSameSequenceStructureQueryResponseIsSucceeded()throws Exception {
+        new ConnectionState(source).accept(heartbeat(connection,1,now()));
+        var n=(com.fasterxml.jackson.databind.node.ObjectNode)new com.fasterxml.jackson.databind.ObjectMapper().readTree(Files.readString(Path.of("../ems-cloud-protocol/src/test/resources/telemetry/structure-matched-synthetic.json")));
+        n.remove("_testFixtureProvenance");n.put("connectionId",connection.toString());
+        assertTrue(new StructureStore(source).accept(envelope("telemetry",n.toString(),2,now())));
+        var dispatcher=new QueryDispatcher(source,(t,b)->{});assertTrue(dispatcher.enqueueAutomatic(ems,"structure.get",null));assertTrue(dispatcher.publishNext());
+        String id=value("SELECT id FROM query_request WHERE ems_uuid='"+ems+"'");
+        var response=com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.objectNode();response.put("v",1);response.put("emsId",ems.toString());response.put("id",id);response.put("ok",true);response.set("data",n);
+        assertTrue(new ResponseConsumer(source).accept(envelope("response",response.toString(),3,now())));
+        assertEquals("succeeded",value("SELECT status FROM query_request WHERE id='"+id+"'"));
+    }
+    @Test void wideApiCabinetDoesNotTruncateIntoAnAllocatedCabinet()throws Exception {
+        new ConnectionState(source).accept(heartbeat(connection,1,now()));long actor=grantActor();UUID id=apiRequest(actor);
+        try(var c=source.getConnection();var s=c.createStatement()){s.executeUpdate("UPDATE query_request SET operation='alarm.current.get',params='{\"c\":4294967297}' WHERE id='"+id+"'");}
+        var sent=new ArrayList<String>();assertFalse(new QueryDispatcher(source,(t,b)->sent.add(t)).publishNext());
+        assertTrue(sent.isEmpty());assertEquals("failed",value("SELECT status FROM query_request WHERE id='"+id+"'"));
+        assertEquals("0",value("SELECT count(*) FROM outbox WHERE query_request_id='"+id+"'"));
+    }
+    long grantActor()throws Exception {
+        long actor,role,grant;String identity=UUID.randomUUID().toString();
+        try(var c=source.getConnection();var s=c.createStatement()) {
+            try(var r=s.executeQuery("INSERT INTO app_user(account,password_hash,display_name) VALUES('task7-"+identity+"','test-only','Task7 test actor') RETURNING id")){r.next();actor=r.getLong(1);}
+            try(var r=s.executeQuery("INSERT INTO app_role(code,name) VALUES('task7-"+identity+"','Task7 test role') RETURNING id")){r.next();role=r.getLong(1);}
+            s.executeUpdate("INSERT INTO role_permission VALUES("+role+",'ems.query')");
+            try(var r=s.executeQuery("INSERT INTO member_grant(user_id,role_id,valid_from) VALUES("+actor+","+role+",'2026-09-01Z') RETURNING id")){r.next();grant=r.getLong(1);}
+            s.executeUpdate("INSERT INTO member_grant_station VALUES("+grant+",992)");
+        }return actor;
+    }
+    @Test void rateBlockedOldFirstSendDoesNotHideNewerEligibleRetry()throws Exception {
+        new ConnectionState(source).accept(heartbeat(connection,1,now()));var sent=new ArrayList<String>();var dispatcher=new QueryDispatcher(source,(t,b)->sent.add(new String(b,java.nio.charset.StandardCharsets.UTF_8)));
+        assertTrue(dispatcher.enqueueAutomatic(ems,"structure.get",null));String blocked=value("SELECT id FROM query_request WHERE ems_uuid='"+ems+"'");
+        UUID retry=UUID.randomUUID();
+        try(var c=source.getConnection();var q=c.prepareStatement("INSERT INTO query_request(id,ems_uuid,binding_period_id,connection_id,operation,params,created_at,expires_at,status) VALUES(?::uuid,?::uuid,?,?::uuid,'alarm.current.get','{\"c\":1}',statement_timestamp()+interval '1 millisecond',statement_timestamp()+interval '30 seconds','sent')")) {
+            q.setString(1,retry.toString());q.setString(2,ems.toString());q.setLong(3,period);q.setString(4,connection.toString());q.executeUpdate();
+        }
+        try(var c=source.getConnection();var s=c.createStatement()) {
+            s.executeUpdate("INSERT INTO outbox(ems_uuid,type,query_request_id,topic,payload,status,attempts,first_attempt_at) VALUES('"+ems+"','query','"+retry+"','isolated-test',convert_to('retry-exact-payload','UTF8'),'pending',1,clock_timestamp())");
+            for(int i=0;i<31;i++) {
+                UUID previous=UUID.randomUUID();
+                s.executeUpdate("INSERT INTO query_request(id,ems_uuid,binding_period_id,connection_id,operation,params,created_at,expires_at,status) VALUES('"+previous+"','"+ems+"',"+period+",'"+connection+"','structure.get','{}',clock_timestamp()-interval '70 seconds',clock_timestamp()-interval '40 seconds','failed')");
+                s.executeUpdate("INSERT INTO outbox(ems_uuid,type,query_request_id,topic,payload,status,attempts,first_attempt_at) VALUES('"+ems+"','query','"+previous+"','isolated-test',convert_to('previous','UTF8'),'sent',1,clock_timestamp())");
+            }
+        }
+        assertTrue(dispatcher.publishNext());assertEquals(List.of("retry-exact-payload"),sent);
+        assertEquals("pending",value("SELECT status FROM query_request WHERE id='"+blocked+"'"));
     }
     @Test void newerLowConfigRevisionWinsButDelayedOldIngressCannotReplaceIt() throws Exception {
         var store=new ConfigurationStore(source);

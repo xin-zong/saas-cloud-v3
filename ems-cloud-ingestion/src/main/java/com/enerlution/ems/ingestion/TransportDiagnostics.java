@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.*;
 import java.time.Duration;
 /** Fixed-cardinality counters: callbacks never retain input/errors or write logs. */
 public final class TransportDiagnostics {
- public enum Signal { ACCEPTED, PUBLISHED, DECODER_REJECTION, ADMISSION_REJECTION, DATABASE_FAILURE, QUEUE_OVERFLOW, STALE_FENCE, PRODUCER_FAILURE, PUMP_FAILURE, CLOSED_REJECTION }
+ public enum Signal { ACCEPTED, PUBLISHED, DECODER_REJECTION, ADMISSION_REJECTION, DATABASE_FAILURE, STATE_PROGRAMMING_FAILURE, QUEUE_OVERFLOW, STALE_FENCE, PRODUCER_FAILURE, PUMP_FAILURE, CLOSED_REJECTION }
  private final LongAdder[] counters=Arrays.stream(Signal.values()).map(s->new LongAdder()).toArray(LongAdder[]::new);
  private final AtomicLong failureVersion=new AtomicLong();
  private final long intervalNanos; private final LongSupplier ticker; private long lastWarning,reportedVersion;
