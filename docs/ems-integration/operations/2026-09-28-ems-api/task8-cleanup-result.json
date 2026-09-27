@@ -1,0 +1,12 @@
+{
+  "task8ChResourcesRemoved": [
+    "task8_cell",
+    "task8_cell_final",
+    "task8_live_observation_final",
+    "task8_observation",
+    "task8_observation_final"
+  ],
+  "testSchemaEmpty": true,
+  "productionPg": 15,
+  "productionCh": 3
+}

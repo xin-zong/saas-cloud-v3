@@ -1,0 +1,67 @@
+BEGIN
+ pg_advisory_xact_lock
+-----------------------
+
+(1 row)
+
+CREATE TABLE
+REVOKE
+CREATE VIEW
+CREATE VIEW
+ALTER TABLE
+ALTER TABLE
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE VIEW
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE VIEW
+CREATE VIEW
+CREATE FUNCTION
+DO
+REVOKE
+INSERT 0 1
+GRANT
+GRANT
+GRANT
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+REVOKE
+REVOKE
+GRANT
+DO
+DO
+SET
+ ems_uuid | alarm_id | binding_period_id | seq | sv | code | level | state | device | source_at | received_at | evidence_kind | cabinet_no | known
+----------+----------+-------------------+-----+----+------+-------+-------+--------+-----------+-------------+---------------+------------+-------
+(0 rows)
+
+ ems_uuid | connection_id | last_fresh_heartbeat | reachable
+----------+---------------+----------------------+-----------
+(0 rows)
+
+ alarm_id | station_id | binding_period_id | ems_uuid | external_alarm_id | device_id
+----------+------------+-------------------+----------+-------------------+-----------
+(0 rows)
+
+DO
+RESET
+SET
+ ems_uuid | alarm_id | binding_period_id | seq | sv | code | level | state | device | source_at | received_at | evidence_kind | cabinet_no | known
+----------+----------+-------------------+-----+----+------+-------+-------+--------+-----------+-------------+---------------+------------+-------
+(0 rows)
+
+UPDATE 0
+RESET
+ROLLBACK
+psql:/var/lib/ems-cloud-v3/task8-rollout/database/rehearsal.sql:10: NOTICE:  relation "schema_migration" already exists, skipping

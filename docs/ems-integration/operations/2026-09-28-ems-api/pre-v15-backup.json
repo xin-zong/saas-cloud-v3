@@ -1,0 +1,8 @@
+{
+  "database": "ems_cloud_v2_proto",
+  "path": "/var/backups/ems-cloud-v3/ems_cloud_v2_proto-pre-v15-20260927T202459Z.dump",
+  "bytes": 504887,
+  "sha256": "5124b7607827d0cf3ca331a145fe8c858923005aa89161b60a568b74dc01011a",
+  "catalogListVerified": true,
+  "fullRestoreTested": false
+}
