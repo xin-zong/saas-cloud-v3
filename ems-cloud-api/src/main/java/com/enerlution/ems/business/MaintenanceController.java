@@ -28,7 +28,9 @@ public class MaintenanceController {
             "SELECT a.id,a.device_id,a.code,a.title,a.severity,a.occurred_at,CASE WHEN"
                 + " a.recovered_at<=now() THEN a.recovered_at ELSE NULL END AS"
                 + " recovered_at,a.acknowledged_by,a.acknowledged_at,a.sla_due_at,d.name AS"
-                + " device_name FROM alarm a JOIN device d ON d.id=a.device_id WHERE d.station_id=?"
+                + " device_name FROM alarm a JOIN device d ON d.id=a.device_id"
+                + " LEFT JOIN ems_alarm_business_origin origin ON origin.alarm_id=a.id"
+                + " WHERE COALESCE(origin.station_id,d.station_id)=?"
                 + " AND a.occurred_at<=now() ORDER BY occurred_at DESC,a.id DESC LIMIT ? OFFSET ?",
             id,
             s.limit(limit),
@@ -40,7 +42,7 @@ public class MaintenanceController {
   public ApiResponse<?> acknowledge(@PathVariable long id) {
     var a =
         s.one(
-            "SELECT a.*,d.station_id FROM alarm a JOIN device d ON d.id=a.device_id WHERE a.id=?"
+            "SELECT a.*,COALESCE(o.station_id,d.station_id) AS station_id FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN ems_alarm_business_origin o ON o.alarm_id=a.id WHERE a.id=?"
                 + " FOR UPDATE OF a",
             id);
     s.access.requireStationPermission(s.number(a, "station_id"), "alarm.handle");
@@ -61,7 +63,7 @@ public class MaintenanceController {
   public ApiResponse<?> alarmNote(@PathVariable long id, @Valid @RequestBody Note note) {
     var a =
         s.one(
-            "SELECT d.station_id FROM alarm a JOIN device d ON d.id=a.device_id WHERE a.id=?", id);
+            "SELECT COALESCE(o.station_id,d.station_id) AS station_id FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN ems_alarm_business_origin o ON o.alarm_id=a.id WHERE a.id=?", id);
     s.access.requireStationPermission(s.number(a, "station_id"), "alarm.handle");
     s.db.update(
         "INSERT INTO alarm_note(alarm_id,author_id,body) VALUES(?,?,?)",
@@ -76,7 +78,7 @@ public class MaintenanceController {
   public ApiResponse<?> alarmNotes(@PathVariable long id) {
     var a =
         s.one(
-            "SELECT d.station_id FROM alarm a JOIN device d ON d.id=a.device_id WHERE a.id=?", id);
+            "SELECT COALESCE(o.station_id,d.station_id) AS station_id FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN ems_alarm_business_origin o ON o.alarm_id=a.id WHERE a.id=?", id);
     s.access.requireStationPermission(s.number(a, "station_id"), "alarm.read");
     return ApiResponse.ok(
         s.db.queryForList(
@@ -126,7 +128,7 @@ public class MaintenanceController {
     if (n.alarmId() != null) {
       var alarm =
           s.one(
-              "SELECT d.station_id FROM alarm a JOIN device d ON d.id=a.device_id WHERE a.id=?",
+              "SELECT COALESCE(o.station_id,d.station_id) AS station_id FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN ems_alarm_business_origin o ON o.alarm_id=a.id WHERE a.id=?",
               n.alarmId());
       if (s.number(alarm, "station_id") != n.stationId())
         throw new BusinessException(400, "告警不属于该站点");

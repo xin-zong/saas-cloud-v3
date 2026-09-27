@@ -800,8 +800,8 @@
     "scope": "station",
     "page": "资产与站点",
     "origin": "ems-integration",
-    "available": false,
-    "bindings": []
+    "available": true,
+    "bindings": [{"status":"current","controller":"EmsController","method":"Get","path":"/stations/{id}/ems","enforcesCode":true}]
   },
   {
     "code": "ems.manage",
@@ -810,8 +810,8 @@
     "scope": "station",
     "page": "资产与站点",
     "origin": "ems-integration",
-    "available": false,
-    "bindings": []
+    "available": true,
+    "bindings": [{"status":"current","controller":"EmsController","method":"Post","path":"/stations/{id}/ems-bindings","enforcesCode":true}]
   },
   {
     "code": "ems.query",
@@ -820,7 +820,7 @@
     "scope": "station",
     "page": "资产与站点",
     "origin": "ems-integration",
-    "available": false,
-    "bindings": []
+    "available": true,
+    "bindings": [{"status":"current","controller":"EmsController","method":"Get","path":"/ems/{id}/queries/{requestId}","enforcesCode":true}]
   }
 ]

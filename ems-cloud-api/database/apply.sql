@@ -79,6 +79,11 @@ SELECT NOT EXISTS(SELECT 1 FROM schema_migration WHERE version=14) AS apply_v14 
 \ir ../src/main/resources/db/migration/V14__current_alarm_evidence.sql
 INSERT INTO schema_migration(version) VALUES(14);
 \endif
+SELECT NOT EXISTS(SELECT 1 FROM schema_migration WHERE version=15) AS apply_v15 \gset
+\if :apply_v15
+\ir ../src/main/resources/db/migration/V15__ems_api_provenance.sql
+INSERT INTO schema_migration(version) VALUES(15);
+\endif
 GRANT USAGE ON SCHEMA public TO ems_proto_app;
 GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ems_proto_app;
 GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ems_proto_app;
@@ -92,9 +97,12 @@ REVOKE ALL ON connection_state,retired_connection,reliable_message,history_sampl
 REVOKE ALL ON alarm_refresh_demand FROM ems_proto_app;
 REVOKE ALL ON telemetry_diagnostic_evidence,structure_refresh_demand FROM ems_proto_app;
 GRANT SELECT ON ems_ingestion_status TO ems_proto_app;
+GRANT SELECT ON ems_connection_read,ems_alarm_evidence,ems_alarm_business_origin,ems_ingestion_diagnostics,ems_alarm_refresh_read TO ems_proto_app;
+GRANT EXECUTE ON FUNCTION ems_invalidate_binding(uuid,bigint) TO ems_proto_app;
 GRANT SELECT(ems_uuid,connection_id,last_fresh_heartbeat) ON connection_state TO ems_proto_app;
 REVOKE INSERT,UPDATE,DELETE ON structure_revision,structure_acceptance,structure_current,bmu_layout,point_definition,config_revision,config_acceptance,config_current,config_value,ems_alarm_identity,alarm_current_snapshot,alarm_current_member FROM ems_proto_app;
 REVOKE UPDATE,DELETE ON query_request FROM ems_proto_app;
+GRANT INSERT ON point_definition TO ems_proto_app;
 -- Worker identity is provisioned separately; portable migration does not create roles.
 DO $$
 BEGIN
@@ -103,6 +111,7 @@ BEGIN
   GRANT SELECT ON device,station,measurement_kind,measurement_point,ems_gateway,ems_binding_period,device_binding,point_binding,effective_station_permission TO ems_ingestion_worker;
   GRANT SELECT,INSERT,UPDATE,DELETE ON connection_state,retired_connection,structure_revision,structure_acceptance,structure_current,bmu_layout,point_definition,config_revision,config_acceptance,config_current,config_value,reliable_message,history_sample_identity,ems_alarm_identity,ems_alarm_event,alarm_current_snapshot,alarm_current_member,query_request,outbox TO ems_ingestion_worker;
   GRANT SELECT,INSERT,UPDATE ON alarm TO ems_ingestion_worker;
+  GRANT SELECT ON ems_alarm_evidence,ems_alarm_business_origin TO ems_ingestion_worker;
   GRANT SELECT,INSERT,UPDATE,DELETE ON alarm_refresh_demand TO ems_ingestion_worker;
   GRANT SELECT,INSERT,UPDATE,DELETE ON telemetry_diagnostic_evidence,structure_refresh_demand TO ems_ingestion_worker;
   GRANT USAGE,SELECT ON SEQUENCE alarm_refresh_demand_id_seq TO ems_ingestion_worker;

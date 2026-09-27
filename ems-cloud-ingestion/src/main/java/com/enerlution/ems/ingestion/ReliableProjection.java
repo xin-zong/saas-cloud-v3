@@ -12,6 +12,7 @@ public final class ReliableProjection implements Runnable,AutoCloseable {
     private final DataSource source;
     private final TelemetryConsumer.FactSink sink;
     private final PointCatalog catalog=PointCatalog.loadDefault();
+    private final AlarmProjection businessAlarms=new AlarmProjection();
     private long cursor;
     private volatile boolean closed;
     private boolean failed;
@@ -30,6 +31,7 @@ public final class ReliableProjection implements Runnable,AutoCloseable {
     /** A committed PG object's original period is authority; live gateway leases are irrelevant here. */
     public boolean projectNext() throws Exception {
         failed=false;
+        businessAlarms.recoverBusiness(source);
         try(var c=source.getConnection()) {
             c.setAutoCommit(false);
             try {
