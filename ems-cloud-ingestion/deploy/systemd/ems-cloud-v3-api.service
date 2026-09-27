@@ -11,6 +11,7 @@ Group=ems-cloud-v3
 EnvironmentFile=/etc/ems-cloud-v2-proto/runtime.env
 Environment=EMS_BIND_ADDRESS=127.0.0.1
 Environment=EMS_PORT=18090
+Environment=EMS_CORS_ORIGINS=http://localhost:8443,http://127.0.0.1:8443
 ExecStart=/usr/lib/jvm/java-21-openjdk-amd64/bin/java -Xmx512m -jar /opt/ems-cloud-v3/current/ems-cloud-api.jar
 Restart=on-failure
 RestartSec=10

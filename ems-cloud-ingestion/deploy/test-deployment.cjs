@@ -1,8 +1,31 @@
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const {spawnSync} = require('node:child_process');
+const {readFileSync} = require('node:fs');
+const path = require('node:path');
 const bash = process.env.BASH_BIN || (process.platform === 'win32' ? 'C:/Program Files/Git/bin/bash.exe' : '/bin/bash');
 const run = (...args) => spawnSync(bash, args, {encoding:'utf8', cwd:__dirname});
+test('permanent and recreated preview preserve the active 8443 CORS origins', () => {
+  const origins='http://localhost:8443,http://127.0.0.1:8443';
+  const unit=readFileSync(path.join(__dirname,'systemd/ems-cloud-v3-api.service'),'utf8');
+  const transition=readFileSync(path.join(__dirname,'api-preview-transition.sh'),'utf8');
+  assert.ok(unit.includes(`Environment=EMS_CORS_ORIGINS=${origins}`));
+  assert.ok(transition.includes(`--setenv=EMS_CORS_ORIGINS=${origins}`));
+  assert.ok(transition.includes('verify_api_cors()'));
+});
+test('API CORS probe checks both approved origins and rejects healthy 5173-only responses', () => {
+  const transition=readFileSync(path.join(__dirname,'api-preview-transition.sh'),'utf8');
+  const probe=transition.match(/verify_api_cors\(\) \{[\s\S]*?\n\}/)?.[0];
+  assert.ok(probe,'CORS response probe missing');
+  const correct=`curl() { local arg selected; for arg in "$@"; do if [[ $arg == 'Origin: '* ]]; then selected=\${arg#Origin: }; fi; done; printf 'HTTP/1.1 200 OK\\r\\nAccess-Control-Allow-Origin: %s\\r\\n\\r\\n' "$selected"; }`;
+  let result=run('-c',`${correct}\n${probe}\nverify_api_cors`);
+  assert.equal(result.status,0,result.stderr);
+  for(const wrong of ['http://localhost:5173','http://localhost:8443','*','']) {
+    const mock=`curl() { printf 'HTTP/1.1 200 OK\\r\\nAccess-Control-Allow-Origin: ${wrong}\\r\\n\\r\\n'; }`;
+    result=run('-c',`${mock}\n${probe}\nverify_api_cors`);
+    assert.notEqual(result.status,0,`unexpectedly accepted ${wrong}`);
+  }
+});
 test('empty fleet grants only the exact cloud channels', () => {
   const result = run('render-acl.sh');
   assert.equal(result.status, 0, result.stderr);
