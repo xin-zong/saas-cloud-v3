@@ -7,35 +7,49 @@ import java.sql.*;
 public final class AlarmProjection {
  public boolean current(javax.sql.DataSource source,IngressEnvelope envelope) {
   final WireMessage m;
-  try {
-   m=new com.enerlution.ems.protocol.WireDecoder().decode(envelope.sourceTopic(),envelope.rawBody().getBytes(java.nio.charset.StandardCharsets.UTF_8));
-   if(!m.type().equals("alarm_current")||!m.emsId().equals(envelope.emsId())||!m.canonicalHash().equals(envelope.canonicalHash())||!m.channel().equals(envelope.channel())||!m.type().equals(envelope.type()))return true;
-  }catch(RuntimeException invalid){return true;}
-  for(int attempt=0;attempt<3;attempt++)try(var c=source.getConnection()) {
-   c.setAutoCommit(false);
-   try {
-    ReliableMessageStore.lock(c,m.emsId().toString());long period;
-    try(var q=c.prepareStatement("SELECT b.id FROM connection_state s JOIN ems_binding_period b USING(ems_uuid) WHERE s.ems_uuid=?::uuid AND s.connection_id=?::uuid AND s.fencing_token=? AND s.lease_until>clock_timestamp() AND b.valid_from<=clock_timestamp() AND (b.valid_to IS NULL OR b.valid_to>clock_timestamp()) AND ? >=b.valid_from AND (b.valid_to IS NULL OR ?<b.valid_to) FOR UPDATE OF s")) {
-     q.setString(1,m.emsId().toString());q.setString(2,m.body().get("connectionId").asText());q.setBigDecimal(3,new java.math.BigDecimal(envelope.fencingToken()));q.setTimestamp(4,Timestamp.from(envelope.receivedAt()));q.setTimestamp(5,Timestamp.from(envelope.receivedAt()));try(var r=q.executeQuery()){if(!r.next()){c.rollback();return true;}period=r.getLong(1);}
-    }
-    // Unknown is not a new empty list, and cannot counterfeit an observed snapshot.
-    if(m.body().get("alarms").isNull()){c.commit();return true;}
-    int cabinet=m.body().get("c").intValue();
-    try(var q=c.prepareStatement("SELECT 1 FROM alarm_current_snapshot WHERE ems_uuid=?::uuid AND cabinet_no=? AND binding_period_id=? AND connection_id=?::uuid AND seq>=?")) {
-     q.setString(1,m.emsId().toString());q.setInt(2,cabinet);q.setLong(3,period);q.setString(4,m.body().get("connectionId").asText());q.setBigDecimal(5,m.body().get("seq").decimalValue());try(var r=q.executeQuery()){if(r.next()){c.commit();return true;}}
-    }
-    try(var q=c.prepareStatement("DELETE FROM alarm_current_snapshot WHERE ems_uuid=?::uuid AND cabinet_no=?")){q.setString(1,m.emsId().toString());q.setInt(2,cabinet);q.executeUpdate();}
-    try(var q=c.prepareStatement("INSERT INTO alarm_current_snapshot(ems_uuid,cabinet_no,binding_period_id,connection_id,seq,known,observed_at) VALUES(?::uuid,?,?,?::uuid,?,true,?)")){q.setString(1,m.emsId().toString());q.setInt(2,cabinet);q.setLong(3,period);q.setString(4,m.body().get("connectionId").asText());q.setBigDecimal(5,m.body().get("seq").decimalValue());q.setTimestamp(6,Timestamp.from(envelope.receivedAt()));q.executeUpdate();}
-    for(var alarm:m.body().get("alarms")) {
-     identity(c,m.emsId().toString(),alarm.get("alarmId").asText());
-     try(var q=c.prepareStatement("INSERT INTO alarm_current_member(ems_uuid,cabinet_no,connection_id,seq,alarm_id) VALUES(?::uuid,?,?::uuid,?,?::uuid)")){q.setString(1,m.emsId().toString());q.setInt(2,cabinet);q.setString(3,m.body().get("connectionId").asText());q.setBigDecimal(4,m.body().get("seq").decimalValue());q.setString(5,alarm.get("alarmId").asText());q.executeUpdate();}
-    }
-    c.commit();return true;
-   }catch(SQLException e){c.rollback();throw e;}
-  }catch(SQLException e){if(attempt<2&&("40001".equals(e.getSQLState())||"40P01".equals(e.getSQLState())))continue;return false;}
-  return false;
+  try {m=ReliableMessageStore.decode(envelope);if(!m.type().equals("alarm_current"))return true;}
+  catch(RuntimeException invalid){return true;}
+  return StateTransaction.run(source,envelope.emsId().toString(),c->{
+   Long period=StateTransaction.admission(c,envelope,true);
+   if(period!=null)storeCurrent(c,period,envelope,m);
+  });
  }
- void event(Connection c,long messageId,long period,WireMessage m) throws SQLException {
+ static boolean storeCurrent(Connection c,long period,IngressEnvelope envelope,WireMessage m)throws Exception {
+  var n=m.body();String ems=m.emsId().toString(),connection=n.path("connectionId").asText();int cabinet=n.path("c").intValue();
+  var identities=new java.util.HashSet<String>();
+  if(!n.path("alarms").isNull())for(var alarm:n.path("alarms"))
+   if(!identities.add(alarm.path("alarmId").asText()))return false;
+  try(var q=c.prepareStatement("SELECT 1 FROM connection_state WHERE ems_uuid=?::uuid AND connection_id=?::uuid")) {
+   q.setString(1,ems);q.setString(2,connection);try(var r=q.executeQuery()){if(!r.next())return false;}
+  }
+  var preserved=new java.util.ArrayList<com.fasterxml.jackson.databind.JsonNode>();
+  try(var q=c.prepareStatement("SELECT binding_period_id,connection_id,seq,content_hash FROM alarm_current_snapshot WHERE ems_uuid=?::uuid AND cabinet_no=?")) {
+   q.setString(1,ems);q.setInt(2,cabinet);try(var r=q.executeQuery()){if(r.next()) {
+    if(r.getLong(1)==period && r.getString(2).equals(connection)) {
+     int order=n.path("seq").decimalValue().compareTo(r.getBigDecimal(3));
+     if(order<0)return false;
+     if(order==0)return m.canonicalHash().equals(r.getString(4));
+    }
+    if(r.getLong(1)==period && n.path("alarms").isNull()) {
+     try(var members=c.prepareStatement("SELECT record::text FROM alarm_current_member WHERE ems_uuid=?::uuid AND cabinet_no=?")) {
+      members.setString(1,ems);members.setInt(2,cabinet);try(var rows=members.executeQuery()){while(rows.next())preserved.add(new com.fasterxml.jackson.databind.ObjectMapper().readTree(rows.getString(1)));}
+     }
+    }
+   }}
+  }
+  try(var q=c.prepareStatement("DELETE FROM alarm_current_snapshot WHERE ems_uuid=?::uuid AND cabinet_no=?")){q.setString(1,ems);q.setInt(2,cabinet);q.executeUpdate();}
+  try(var q=c.prepareStatement("INSERT INTO alarm_current_snapshot(ems_uuid,cabinet_no,binding_period_id,connection_id,seq,known,observed_at,content_hash) VALUES(?::uuid,?,?,?::uuid,?,?,?,?)")) {
+   q.setString(1,ems);q.setInt(2,cabinet);q.setLong(3,period);q.setString(4,connection);q.setBigDecimal(5,n.path("seq").decimalValue());q.setBoolean(6,!n.path("alarms").isNull());q.setTimestamp(7,Timestamp.from(envelope.receivedAt()));q.setString(8,m.canonicalHash());q.executeUpdate();
+  }
+  if(!n.path("alarms").isNull())n.path("alarms").forEach(preserved::add);
+  for(var alarm:preserved) {
+   identity(c,ems,alarm.path("alarmId").asText());
+   try(var q=c.prepareStatement("INSERT INTO alarm_current_member(ems_uuid,cabinet_no,connection_id,seq,alarm_id,record) VALUES(?::uuid,?,?::uuid,?,?::uuid,?::jsonb)")) {
+    q.setString(1,ems);q.setInt(2,cabinet);q.setString(3,connection);q.setBigDecimal(4,n.path("seq").decimalValue());q.setString(5,alarm.path("alarmId").asText());q.setString(6,alarm.toString());q.executeUpdate();
+   }
+  }
+  return true;
+ } void event(Connection c,long messageId,long period,WireMessage m) throws SQLException {
   var alarm=m.body().get("alarmId").asText();identity(c,m.emsId().toString(),alarm);
   try(var q=c.prepareStatement("INSERT INTO ems_alarm_event(ems_uuid,alarm_id,seq,reliable_message_id) VALUES(?::uuid,?::uuid,?,?)")){q.setString(1,m.emsId().toString());q.setString(2,alarm);q.setBigDecimal(3,m.body().get("seq").decimalValue());q.setLong(4,messageId);q.executeUpdate();}
   requireRefresh(c,period,m.body().path("device").get("c").isNull()?null:m.body().path("device").get("c").intValue());

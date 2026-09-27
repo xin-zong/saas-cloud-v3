@@ -14,6 +14,7 @@ import java.math.BigInteger;
 public final class ReliableConsumer implements Runnable,AutoCloseable {
  private final KafkaConsumer<String,String> consumer;
  private final ReliableMessageStore store; private final AckOutbox.Publisher publisher;
+ private java.util.function.Predicate<IngressEnvelope> stateHandler;
  private final AtomicBoolean closed=new AtomicBoolean();
  private static final ObjectMapper JSON=new ObjectMapper(JsonFactory.builder().enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION).streamReadConstraints(StreamReadConstraints.builder().maxNestingDepth(8).maxStringLength(131072).build()).build());
  public ReliableConsumer(Properties properties,String topic,ReliableMessageStore store,AckOutbox.Publisher publisher) {
@@ -25,6 +26,9 @@ public final class ReliableConsumer implements Runnable,AutoCloseable {
   p.setProperty("key.deserializer","org.apache.kafka.common.serialization.StringDeserializer");p.setProperty("value.deserializer","org.apache.kafka.common.serialization.StringDeserializer");p.setProperty("enable.auto.commit","false");p.setProperty("max.poll.records","1");p.setProperty("max.partition.fetch.bytes","1048576");p.setProperty("fetch.max.bytes","1048576");p.setProperty("auto.offset.reset","earliest");
   consumer=new KafkaConsumer<>(p);
   try{consumer.subscribe(topics);}catch(RuntimeException failure){consumer.close(Duration.ofSeconds(5));throw failure;}
+ }
+ public ReliableConsumer(Properties properties,List<String> topics,ReliableMessageStore store,AckOutbox.Publisher publisher,StateConsumer state) {
+  this(properties,topics,store,publisher);this.stateHandler=state::accept;
  }
  static IngressEnvelope decode(String value,String key) {
   if(value==null||value.length()>1048576)throw new IllegalArgumentException("Oversize ingress record");
@@ -41,6 +45,10 @@ public final class ReliableConsumer implements Runnable,AutoCloseable {
     var partition=new TopicPartition(record.topic(),record.partition());
     IngressEnvelope e;
     try{e=decode(record.value(),record.key());}catch(IllegalArgumentException invalid){commit(record,partition);continue;}
+    if(e.lane()==IngressEnvelope.Lane.STATE && stateHandler!=null) {
+     if(stateHandler.test(e))commit(record,partition);else {consumer.seek(partition,record.offset());Thread.sleep(250);}
+     continue;
+    }
     if(e.lane()!=IngressEnvelope.Lane.RELIABLE&&!e.type().equals("alarm_current")){commit(record,partition);continue;}
     var result=e.type().equals("alarm_current")?store.acceptCurrent(e):store.accept(e);
     if(result==ReliableMessageStore.Outcome.BUSY){consumer.seek(partition,record.offset());Thread.sleep(250);continue;}

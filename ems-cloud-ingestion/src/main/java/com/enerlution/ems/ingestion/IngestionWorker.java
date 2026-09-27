@@ -19,7 +19,7 @@ public final class IngestionWorker implements AutoCloseable {
  public java.util.Map<String,Long> diagnostics(){return diagnostics.snapshot();}
  private final MqttIngress ingress; private final KafkaIngress kafka;
  private final KafkaProducer<String,String> producer; private final MqttClient mqtt;
- private final ExecutorService pumps=Executors.newFixedThreadPool(7);
+ private final ExecutorService pumps=Executors.newFixedThreadPool(8);
  private ReliableConsumer reliable;
  private TelemetryConsumer telemetry;
  private ReliableProjection projection;
@@ -67,8 +67,10 @@ public final class IngestionWorker implements AutoCloseable {
    for(var lane:IngressEnvelope.Lane.values())pumps.submit(()->pump(lane));
    if(source!=null) {
     AckOutbox.Publisher publisher=(topic,bytes)->mqtt.publish(topic,bytes,1,false);
-    reliable=new ReliableConsumer(properties.reliableConsumerProperties(),java.util.List.of(properties.topics().get(IngressEnvelope.Lane.RELIABLE),properties.topics().get(IngressEnvelope.Lane.STATE)),new ReliableMessageStore(source,diagnostics),publisher);
+    reliable=new ReliableConsumer(properties.reliableConsumerProperties(),java.util.List.of(properties.topics().get(IngressEnvelope.Lane.RELIABLE),properties.topics().get(IngressEnvelope.Lane.STATE)),new ReliableMessageStore(source,diagnostics),publisher,new StateConsumer(source));
     pumps.submit(reliable);
+    var queries=new QueryDispatcher(source,publisher);
+    pumps.submit(()->{while(!closed.get()&&!Thread.currentThread().isInterrupted())try{queries.enqueueDemand();queries.publishNext();Thread.sleep(100);}catch(InterruptedException stop){Thread.currentThread().interrupt();}});
     var outbox=new AckOutbox(source,publisher);
     pumps.submit(()->{while(!closed.get()&&!Thread.currentThread().isInterrupted())try{if(!outbox.publishNext())Thread.sleep(100);}catch(java.sql.SQLException failure){diagnostics.record(TransportDiagnostics.Signal.PUMP_FAILURE);try{Thread.sleep(500);}catch(InterruptedException stop){Thread.currentThread().interrupt();}}catch(InterruptedException stop){Thread.currentThread().interrupt();}});
     if(facts!=null) {

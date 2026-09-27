@@ -83,6 +83,7 @@ public final class TelemetryConsumer implements Runnable, AutoCloseable {
                 catch (ProtocolException invalid) {
                     evidence(c, period, envelope, "invalid_profile", false); c.commit(); return true;
                 }
+                if(batch.configuration()!=null)ConfigurationStore.store(c,period,envelope,batch.configuration());
                 var rows = new ArrayList<ObjectNode>(); boolean missing = false;
                 String identity = ingressIdentity(envelope);
                 var mappings=liveMappings(c,period,batch.cabinet(),envelope.receivedAt());
@@ -191,10 +192,11 @@ public final class TelemetryConsumer implements Runnable, AutoCloseable {
         String sql="SELECT sr.id,sr.sv,sr.layout::text,sc.metadata::text,sc.connection_id,sc.seq FROM structure_current sc "
                 +"JOIN structure_revision sr ON sr.id=sc.revision_id JOIN connection_state s ON s.ems_uuid=sc.ems_uuid "
                 +"WHERE sc.ems_uuid=?::uuid AND sc.binding_period_id=? AND sc.connection_id=s.connection_id "
-                +"AND sr.sv=? AND sc.received_at<=? AND EXISTS(SELECT 1 FROM structure_acceptance a WHERE a.binding_period_id=sc.binding_period_id AND a.revision_id=sr.id)";
+                +"AND sr.sv=? AND sc.received_at<=? AND s.ingress_generation=?::uuid AND s.last_fresh_heartbeat>clock_timestamp()-interval '90 seconds' AND EXISTS(SELECT 1 FROM structure_acceptance a WHERE a.binding_period_id=sc.binding_period_id AND a.revision_id=sr.id)";
         try(var q=c.prepareStatement(sql)) {
             q.setQueryTimeout(5);q.setString(1,e.emsId().toString());q.setLong(2,period);q.setBigDecimal(3,message.body().path("sv").decimalValue());
             q.setTimestamp(4,Timestamp.from(e.receivedAt()));
+            q.setString(5,e.ingressEpoch().toString());
             try(var r=q.executeQuery()) {if(r.next()) {
                 revision=r.getLong(1);var json=new ObjectMapper();var immutable=json.readTree(r.getString(3));var metadata=json.readTree(r.getString(4));
                 var bms=immutable.path("clusterLayout").path("bms");var cabinets=new HashMap<Integer,StructureLayout.Cabinet>();

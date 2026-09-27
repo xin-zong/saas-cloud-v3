@@ -8,6 +8,12 @@ import java.nio.file.*;
 import java.math.*;
 import java.util.*;
 class TelemetryDecoderTest {
+ @Test void configurationRetainsExactExtensionIdBeyondIntegerRange()throws Exception {
+  var n=fixture("EMS");
+  ((ArrayNode)n.path("d").path("cfg").path("p")).addArray().add(new BigInteger("999999999999999999999")).add("wide extension");
+  var batch=assertDoesNotThrow(()->decode(n));
+  assertEquals("wide extension",batch.configuration().allValues().get(new BigInteger("999999999999999999999")).textValue());
+ }
  static final String ID="8b2a0c73-6d91-4eb5-9a20-f4c18e763d02";
  final PointCatalog catalog=PointCatalog.loadDefault();
  final TelemetryDecoder decoder=new TelemetryDecoder(catalog);

@@ -74,6 +74,11 @@ SELECT NOT EXISTS(SELECT 1 FROM schema_migration WHERE version=13) AS apply_v13 
 \ir ../src/main/resources/db/migration/V13__telemetry_diagnostic_evidence.sql
 INSERT INTO schema_migration(version) VALUES(13);
 \endif
+SELECT NOT EXISTS(SELECT 1 FROM schema_migration WHERE version=14) AS apply_v14 \gset
+\if :apply_v14
+\ir ../src/main/resources/db/migration/V14__current_alarm_evidence.sql
+INSERT INTO schema_migration(version) VALUES(14);
+\endif
 GRANT USAGE ON SCHEMA public TO ems_proto_app;
 GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ems_proto_app;
 GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ems_proto_app;

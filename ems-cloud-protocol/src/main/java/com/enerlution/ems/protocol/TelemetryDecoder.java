@@ -23,13 +23,15 @@ public final class TelemetryDecoder {
             for(var block:d.path("base"))readBlock(block,"ems","base",type,observations,seen,true);
             require(seen.containsAll(definedIds("ems",type)),"Incomplete EMS profile");
             var cfg=d.path("cfg");var values=new LinkedHashMap<Integer,JsonNode>();
+            var extensions=new LinkedHashMap<java.math.BigInteger,JsonNode>();
             for(var pair:cfg.path("p")) {
-                int id=id(pair.get(0));var value=pair.get(1);
+                var sourceId=pair.get(0).bigIntegerValue();var value=pair.get(1);
                 require(value.isNull()||value.isNumber()||value.isTextual(),"Invalid configuration scalar");
-                require(values.put(id,value)==null,"Duplicate configuration point");
+                if(pair.get(0).canConvertToInt())require(values.put(sourceId.intValueExact(),value)==null,"Duplicate configuration point");
+                else require(extensions.put(sourceId,value)==null,"Duplicate configuration point");
             }
             require(values.keySet().containsAll(definedIds("config",type)),"Incomplete configuration snapshot");
-            configuration=new ConfigurationSnapshot(cfg.path("rev").bigIntegerValue(),values);
+            configuration=new ConfigurationSnapshot(cfg.path("rev").bigIntegerValue(),values,extensions);
         } else {
             cabinet=n.path("c").intValue();
             for(String subsystem:List.of("emu","bms","tms","pvdc","pcs","grid"))

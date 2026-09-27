@@ -18,6 +18,7 @@ class TelemetryProjectionPostgresTest {
     UUID ems;
     long period, device, binding, point;
     BigInteger fence;
+    final UUID ingressEpoch=UUID.randomUUID();
     final List<ObjectNode> written = new ArrayList<>();
     final TelemetryConsumer.FactSink sink = new TelemetryConsumer.FactSink() {
         public void observations(List<ObjectNode> rows) { rows.forEach(r -> written.add(r.deepCopy())); }
@@ -113,7 +114,7 @@ class TelemetryProjectionPostgresTest {
             long revision=scalar(c,"INSERT INTO structure_revision(ems_uuid,sv,layout,content_hash) VALUES('"+ems+"',1,'"+layout+"','"+"a".repeat(64)+"') RETURNING id");
             s.executeUpdate("INSERT INTO structure_acceptance(binding_period_id,revision_id,received_at) VALUES("+period+","+revision+",clock_timestamp())");
             String connection=UUID.randomUUID().toString();
-            s.executeUpdate("UPDATE connection_state SET connection_id='"+connection+"',ingress_generation='"+UUID.randomUUID()+"' WHERE ems_uuid='"+ems+"'");
+            s.executeUpdate("UPDATE connection_state SET connection_id='"+connection+"',ingress_generation='"+ingressEpoch+"',last_fresh_heartbeat=clock_timestamp() WHERE ems_uuid='"+ems+"'");
             String metadata="{\"clusterLayout\":{\"bms\":{\"bmuType\":1,\"bmuCount\":1,\"voltCount\":2,\"tempCount\":2}},\"clusters\":[{\"c\":1,\"state\":\"active\",\"cellReady\":false}]}";
             s.executeUpdate("INSERT INTO structure_current(ems_uuid,binding_period_id,connection_id,seq,revision_id,metadata,received_at) VALUES('"+ems+"',"+period+",'"+connection+"',1,"+revision+",'"+metadata+"',clock_timestamp())");c.commit();
         }
@@ -160,7 +161,7 @@ class TelemetryProjectionPostgresTest {
     }
     IngressEnvelope envelope(String channel,String raw) {
         String topic="ems/v1/"+ems+"/up/"+channel; var m=new WireDecoder().decode(topic,raw.getBytes(StandardCharsets.UTF_8));
-        return new IngressEnvelope(ems,channel,m.type(),m.canonicalHash(),raw,topic,Instant.now(),UUID.randomUUID(),BigInteger.ONE,fence);
+        return new IngressEnvelope(ems,channel,m.type(),m.canonicalHash(),raw,topic,Instant.now(),ingressEpoch,BigInteger.ONE,fence);
     }
     long count(String table,String predicate) throws Exception {
         String scope=table.equals("telemetry_diagnostic_evidence")?"binding_period_id="+period:"ems_uuid='"+ems+"'";
