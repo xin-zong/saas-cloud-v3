@@ -1,4 +1,3 @@
-import EmsPanel from "./EmsPanel"
 import { hasStationPermission } from "@/auth/apiPermissions"
 import { DEMO_MODE, send, api, allRows, type ApiRow } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
@@ -1567,11 +1566,7 @@ export default function WorkOrdersApprovalPage({
   const pageLevelNotice = notice.startsWith("已导出")
   return (
     <main className="operations-page work-orders-page">
-      <EmsPanel stations={stations} module="workorders" onAlarm={(id, alarmId) => {
-        const linked = allOrders.find(item => item.row.station.id === id && item.order.alarmId === alarmId)
-        if (linked) { setView("工单中心"); setOrderDetailKey(linked.order.id) }
-        else setNotice(`业务告警 ${alarmId} 尚无可读取的关联工单；可在站点告警信息中人工开单。人工确认 / 工单 / 审批不代表 EMS 执行或保存 ACK。`)
-      }} />
+
       <header className="work-orders-topbar">
         <nav aria-label="工单与审批一级导航">
           {visibleViews.map((item) => (

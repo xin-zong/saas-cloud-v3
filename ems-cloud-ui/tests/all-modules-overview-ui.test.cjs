@@ -188,13 +188,15 @@ test('overview demo: design shell, map modes, fullscreen exit and responsive evi
     await page.getByRole('button', { name: '收起导航', exact: true }).click()
     assert.equal((await page.locator('.workspace-sidebar').boundingBox()).width, 64)
     await page.getByRole('button', { name: '展开导航', exact: true }).click()
-    await page.getByRole('button', { name: '示意底图', exact: true }).click()
-    await page.getByText('示意底图不代表站点位置', { exact: true }).waitFor()
-    await page.getByRole('button', { name: '实时地图', exact: true }).click()
+    assert.equal(await page.getByRole('button', { name: '示意底图', exact: true }).count(), 0)
+    assert.equal(await page.locator('.overview-map-image').count(), 0)
+    assert.equal(await page.getByRole('button', { name: '实时地图', exact: true }).count(), 0)
     await page.locator('.leaflet-container').waitFor({ state: 'visible' })
-    await page.getByRole('button', { name: '示意底图', exact: true }).click()
+    assert.equal(await page.getByRole('button', { name: '示意底图', exact: true }).count(), 0)
     await page.getByRole('button', { name: '沉浸模式（隐藏导航）', exact: true }).click()
     await page.getByRole('heading', { name: /实时事件日志/ }).waitFor()
+    assert.equal(await page.locator('.overview-map-image').count(), 0)
+    assert.equal(await page.locator('.map-zoom-controls').isVisible(), true)
     for (const width of [1366, 1440, 1920]) {
       await page.setViewportSize({ width, height: 900 })
       await page.screenshot({ path: path.join(artifacts, `fullscreen-${width}.png`), animations: 'disabled' })
@@ -235,5 +237,129 @@ test('overview customization: rejected storage, cancel/continue and outer naviga
     await page.getByRole('navigation', { name: '一级导航' }).getByRole('button', { name: '总览', exact: true }).click()
     await page.getByRole('button', { name: '经营看板', exact: true }).click()
     assert.equal(await page.getByRole('heading', { name: '核心站点区域分布', exact: true }).isVisible(), true)
+  } finally { await browser.close() }
+})
+
+test('map ticker remains visible outside immersion, scrolls and selects scoped stations without covering panels', { timeout: 60000 }, async () => {
+  const browser = await chromium.launch({ channel: 'msedge', headless: true })
+  try {
+    const { page } = await apiPage(browser)
+    assert.equal(await page.locator('.overview-ticker').isVisible(), true)
+    const track = page.locator('[data-ticker-track]')
+    await track.waitFor()
+    assert.equal(await page.getByText('禁止显示站点').count(), 0)
+    const before = await track.evaluate(el => getComputedStyle(el).transform)
+    await page.waitForFunction(previous => getComputedStyle(document.querySelector('[data-ticker-track]')).transform !== previous, before)
+    for (const width of [1366, 1440, 1920, 760]) {
+      await page.setViewportSize({ width, height: 900 })
+      const ticker = await page.locator('.overview-ticker').boundingBox()
+      const panel = await page.locator('.overview-left').boundingBox()
+      assert.ok(ticker.y + ticker.height <= panel.y, `ticker overlaps panel at ${width}`)
+    }
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await track.evaluate(el => el.style.animation = 'none')
+    await track.getByRole('button').first().click()
+    await page.locator('.overview-station-popup').waitFor()
+    await fs.mkdir(artifacts, { recursive: true })
+    await page.screenshot({ path: path.join(artifacts, 'ticker-restored-1440.png'), animations: 'disabled' })
+    await page.getByRole('button', { name: '沉浸模式（隐藏导航）', exact: true }).click()
+    assert.equal(await page.locator('.overview-ticker').isVisible(), true)
+    await page.keyboard.press('Escape')
+    assert.equal(await page.locator('.overview-ticker').isVisible(), true)
+    await page.getByRole('button', { name: '经营看板', exact: true }).click()
+    assert.equal(await page.locator('.overview-ticker').count(), 0)
+  } finally { await browser.close() }
+})
+
+test('immersion entry uses an expand icon and retains accessible toggle', { timeout: 60000 }, async () => {
+  const browser = await chromium.launch({ channel: 'msedge', headless: true })
+  try {
+    const { page } = await apiPage(browser)
+    const entry = page.getByRole('button', { name: '沉浸模式（隐藏导航）', exact: true })
+    assert.equal(await entry.locator('svg.lucide-maximize').count(), 1)
+    await entry.click()
+    assert.equal(await page.locator('.workspace-shell').getAttribute('data-immersive'), 'true')
+    await page.getByRole('button', { name: '← 退出全屏', exact: true }).click()
+    assert.equal(await entry.isVisible(), true)
+  } finally { await browser.close() }
+})
+
+
+test('overview cards do not clip or overlap controls and view switch stays anchored', { timeout: 90000 }, async () => {
+  const browser = await chromium.launch({ channel: 'msedge', headless: true })
+  try {
+    const { page } = await apiPage(browser)
+    for (const [width, height] of [[1366,768],[1440,900],[1920,1080],[1024,768]]) {
+      await page.setViewportSize({ width, height })
+      const before = await page.locator('.overview-view-switch').boundingBox()
+      await page.getByRole('button', { name: '经营看板', exact: true }).click()
+      const after = await page.locator('.overview-view-switch').boundingBox()
+      assert.ok(Math.abs(after.x-before.x)<1 && Math.abs(after.y-before.y)<1, 'switch must keep the same position')
+      await page.getByRole('button', { name: '地图总览', exact: true }).click()
+      const geometry = await page.evaluate(() => {
+        const rect = s => { const r=document.querySelector(s).getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right} }
+        return { left:rect('.overview-left'),right:rect('.overview-right'),bottom:rect('.overview-bottom'),zoom:rect('.map-zoom-controls'),ticker:rect('.overview-ticker'),panels:['.overview-left','.overview-right'].map(s=>{const e=document.querySelector(s);return {client:e.clientHeight,scroll:e.scrollHeight}}) }
+      })
+      for (const side of [geometry.left,geometry.right]) {
+        assert.ok(side.top>=geometry.ticker.bottom)
+        assert.ok(side.bottom<=geometry.bottom.top)
+        assert.ok(side.bottom<=geometry.zoom.top || side.right<=geometry.zoom.left || side.left>=geometry.zoom.right)
+      }
+      assert.ok(geometry.panels.every(p=>p.scroll<=p.client+1),'side cards must not be independently clipped')
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)
+      await fs.mkdir(artifacts,{recursive:true})
+      await page.screenshot({path:path.join(artifacts,`layout-stable-${width}.png`),fullPage:true})
+    }
+  } finally { await browser.close() }
+})
+
+
+test('fullscreen columns, live metrics and events never overlap and exit remains reachable', {timeout:90000}, async()=>{
+ const browser=await chromium.launch({channel:'msedge',headless:true})
+ try {
+  const {page}=await apiPage(browser)
+  await page.getByRole('button',{name:'沉浸模式（隐藏导航）',exact:true}).click()
+  for(const [width,height] of [[1366,768],[1920,1080],[1024,768],[760,900]]){
+   await page.setViewportSize({width,height})
+   const boxes=await page.evaluate(()=>{
+    const r=s=>{const b=document.querySelector(s).getBoundingClientRect();return {top:b.top,bottom:b.bottom,left:b.left,right:b.right}}
+    return {left:r('.overview-left'),right:r('.overview-right'),live:r('.overview-live-data'),events:r('.overview-events'),bottom:r('.overview-bottom'),ticker:r('.overview-ticker'),exit:r('.overview-exit')}
+   })
+   assert.ok(boxes.live.top>=boxes.left.top && boxes.live.bottom<=boxes.left.bottom,'metrics must be within left column')
+   assert.ok(boxes.events.top>=boxes.right.top && boxes.events.bottom<=boxes.right.bottom,'events must be within right column')
+   assert.ok(boxes.left.bottom<=boxes.bottom.top && boxes.right.bottom<=boxes.bottom.top)
+   assert.ok(boxes.ticker.bottom<=boxes.left.top && boxes.ticker.bottom<=boxes.right.top)
+   assert.ok(boxes.exit.top>=0 && boxes.exit.bottom<=height)
+   await page.locator('.overview-content').evaluate(e=>e.scrollTop=e.scrollHeight)
+   const exit=await page.locator('.overview-exit').boundingBox()
+   assert.ok(exit.y>=0 && exit.y+exit.height<=height)
+   await page.locator('.overview-content').evaluate(e=>e.scrollTop=0)
+   await fs.mkdir(artifacts,{recursive:true})
+   await page.screenshot({path:path.join(artifacts,`fullscreen-refined-${width}.png`)})
+  }
+  await page.getByRole('button',{name:'← 退出全屏',exact:true}).click()
+  await page.getByRole('button',{name:'经营看板',exact:true}).waitFor()
+ }finally{await browser.close()}
+})
+
+test('dashboard regional map uses live tiles, real coordinates and station navigation', { timeout: 60000 }, async () => {
+  const browser = await chromium.launch({ channel: 'msedge', headless: true })
+  try {
+    const { page } = await apiPage(browser, { stations: [{ id: 12, name: '授权测试站点', code: 'SITE-12', latitude: 31.82, longitude: 117.23 }] })
+    await page.getByRole('button', { name: '经营看板', exact: true }).click()
+    const map = page.getByRole('region', { name: '核心站点实时地图' })
+    const marker = map.locator('.leaflet-marker-icon')
+    await marker.waitFor()
+    assert.equal(await map.locator('img[src*="imgMapLayer"]').count(), 0)
+    assert.ok(await map.locator('img.leaflet-tile').count() > 0)
+    const box = await map.boundingBox()
+    const pin = await marker.boundingBox()
+    assert.ok(pin.x >= box.x && pin.x + pin.width <= box.x + box.width, JSON.stringify({box,pin}))
+    assert.ok(pin.y >= box.y && pin.y + pin.height <= box.y + box.height)
+    await map.getByRole('button', { name: '放大地图' }).click()
+    await fs.mkdir(artifacts, { recursive: true })
+    await page.screenshot({ path: path.join(artifacts, 'dashboard-live-map.png'), animations: 'disabled' })
+    await marker.click()
+    await page.locator('.station-detail-shell').waitFor()
   } finally { await browser.close() }
 })

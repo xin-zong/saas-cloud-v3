@@ -2,10 +2,12 @@ import { useRef, useMemo, useState, useCallback, useEffect } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame, ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, Html } from "@react-three/drei";
-import type { Station } from "@/App";
+import type { ReactNode } from "react";
 
 // ── Types (exported so other views can share) ─────────────────────────────────
 export type DeviceType = "tower" | "factory" | "pcs" | "solar" | "battery";
+export type EnergyMetrics = Record<DeviceType, { value: string; unit: string }>;
+const ignoreChange = () => {};
 type EditTool = "move" | "connect";
 
 export interface DeviceConfig { id: string; type: DeviceType; pos: [number, number, number]; }
@@ -409,7 +411,7 @@ function PendingLine({ from, to }: { from: THREE.Vector3; to: THREE.Vector3 }) {
 
 // ── Scene ─────────────────────────────────────────────────────────────────────
 interface SceneProps {
-  station: Station;
+  metrics: EnergyMetrics;
   devices: DeviceConfig[];
   edges: EdgeConfig[];
   editMode: boolean;
@@ -428,21 +430,9 @@ interface SceneProps {
 }
 
 function EnergyScene(p: SceneProps) {
-  const { station, devices, edges, editMode, editTool, selected, pendingFrom, draggingId, mousePos3D } = p;
+  const { metrics, devices, edges, editMode, editTool, selected, pendingFrom, draggingId, mousePos3D } = p;
 
-  const getInfo = (type: DeviceType) => {
-    const socCol = station.soc >= 60 ? "#10b981" : station.soc >= 30 ? "#f97316" : "#ef4444";
-    const loadMW = Math.max(0, station.activePower / 1000);
-    const gridMW = Math.max(0, loadMW - station.pvOutput - station.generator);
-    const pcsMW = Math.max(0, station.storageCapacity * station.soc / 100);
-    switch (type) {
-      case "tower":   return { value: gridMW.toFixed(2), unit: "MW",  color: META.tower.color };
-      case "factory": return { value: loadMW.toFixed(2), unit: "MW",  color: META.factory.color };
-      case "pcs":     return { value: pcsMW.toFixed(2),  unit: "MW",  color: META.pcs.color };
-      case "solar":   return { value: Math.max(0, station.pvOutput).toFixed(2), unit: "MWp", color: META.solar.color };
-      case "battery": return { value: Math.max(0, station.storageCapacity).toFixed(2), unit: "MWh", color: socCol };
-    }
-  };
+  const getInfo = (type: DeviceType) => ({ ...metrics[type], color: META[type].color });
 
   const devicePos = (id: string) => {
     const d = devices.find(x => x.id === id);
@@ -507,7 +497,7 @@ function EnergyScene(p: SceneProps) {
         const midV = V((fV.x+tV.x)/2, (fV.y+tV.y)/2 + 0.55, (fV.z+tV.z)/2);
         return (
           <group key={edge.id}>
-            <EnergyTube from={fV} to={tV} color={color} animate={!editMode} />
+            <EnergyTube from={fV} to={tV} color={color} animate={false} />
 
             {/* Delete button — visible in any edit mode tool */}
             {editMode && (
@@ -560,11 +550,11 @@ function EnergyScene(p: SceneProps) {
             onPointerDown={(e: ThreeEvent<PointerEvent>) => {
               if (editMode && editTool === "move") { e.stopPropagation(); p.onDevicePointerDown(dev.id); }
             }}
-            onClick={(e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); p.onDeviceClick(dev.id); }}
+            onClick={(e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); if (e.delta <= 5) p.onDeviceClick(dev.id); }}
             onPointerOver={() => { document.body.style.cursor = editMode && editTool === "move" ? "grab" : "pointer"; }}
             onPointerOut={() => { document.body.style.cursor = "default"; }}
           >
-            {(isSel || isPend) && <Ring pos={dev.pos} color={ringColor} />}
+            {(isSel || isPend) && <Ring pos={[0, 0, 0]} color={ringColor} />}
 
             {/* Edit mode ground indicator */}
             {editMode && (
@@ -576,8 +566,8 @@ function EnergyScene(p: SceneProps) {
 
             <DeviceModel type={dev.type} />
 
-            <Html center position={[0, meta.labelY, 0]} distanceFactor={9} style={{ pointerEvents: "none" }}>
-              <div style={{ textAlign: "center", whiteSpace: "nowrap", fontFamily: "Inter, sans-serif" }}>
+            <Html center position={[0, meta.labelY, 0]} zIndexRange={[1, 0]}>
+              <button type="button" aria-label={`查看${meta.label}3D设备`} onClick={() => p.onDeviceClick(dev.id)} style={{ border: 0, padding: 0, background: "transparent", cursor: "pointer", textAlign: "center", whiteSpace: "nowrap", fontFamily: "Inter, sans-serif" }}>
                 <div style={{ fontSize: 16, marginBottom: 2 }}>{meta.emoji}</div>
                 <div style={{
                   fontSize: 10, fontWeight: 700, color: "#24423b",
@@ -589,7 +579,7 @@ function EnergyScene(p: SceneProps) {
                 <div style={{ fontSize: 12, fontWeight: 800, color: info.color, fontFamily: "'JetBrains Mono',monospace" }}>
                   {info.value}<span style={{ fontSize: 9, fontWeight: 400, color: "#76857f", marginLeft: 2 }}>{info.unit}</span>
                 </div>
-              </div>
+              </button>
             </Html>
           </group>
         );
@@ -724,18 +714,24 @@ function EditOverlay({
 
 // ── Main export ───────────────────────────────────────────────────────────────
 export default function EnergyFlow3D({
-  station,
+  metrics,
+  selectedType,
+  onDeviceSelect,
+  fallback,
   devices,
   edges,
-  onEdgesChange,
-  onDevicesChange,
+  onEdgesChange = ignoreChange,
+  onDevicesChange = ignoreChange,
   editable = false,
 }: {
-  station: Station;
+  metrics: EnergyMetrics;
   devices?: DeviceConfig[];
   edges?: EdgeConfig[];
-  onEdgesChange: (e: EdgeConfig[]) => void;
-  onDevicesChange: (d: DeviceConfig[]) => void;
+  selectedType?: DeviceType;
+  onDeviceSelect?: (type: DeviceType) => void;
+  fallback?: ReactNode;
+  onEdgesChange?: (e: EdgeConfig[]) => void;
+  onDevicesChange?: (d: DeviceConfig[]) => void;
   editable?: boolean;
 }) {
   const [editMode, setEditMode] = useState(false);
@@ -772,6 +768,11 @@ export default function EnergyFlow3D({
   const handleDragEnd = useCallback(() => { setDraggingId(null); }, []);
 
   const handleDeviceClick = useCallback((id: string) => {
+    if (!editMode) {
+      const device = devicesRef.current.find(d => d.id === id);
+      if (device) onDeviceSelect?.(device.type);
+      return;
+    }
     const moved = dragMoved.current;
     dragMoved.current = false;
     if (editTool === "move" && moved) return;
@@ -794,7 +795,7 @@ export default function EnergyFlow3D({
         setPendingFrom(null);
       }
     }
-  }, [editTool, pendingFrom, onEdgesChange]);
+  }, [editMode, editTool, pendingFrom, onEdgesChange, onDeviceSelect]);
 
   const handleEdgeClick = useCallback((edgeId: string) => {
     onEdgesChange(edgesRef.current.map(e =>
@@ -824,16 +825,17 @@ export default function EnergyFlow3D({
   return (
     <div style={{ width: "100%", height: "100%", position: "relative", background: "#f0f4f8", borderRadius: 10, overflow: "hidden" }}>
       <Canvas
-        camera={{ position: [10, 8, 10], fov: 36 }}
+        fallback={fallback}
+        camera={{ position: [13, 10.4, 13], fov: 36 }}
         gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
         style={{ width: "100%", height: "100%" }}
         onPointerUp={() => { if (draggingId) setDraggingId(null); }}
       >
         <EnergyScene
-          station={station}
+          metrics={metrics}
           devices={safeDevices} edges={safeEdges}
           editMode={editMode} editTool={editTool}
-          selected={selected} pendingFrom={pendingFrom}
+          selected={editMode ? selected : safeDevices.find(d => d.type === selectedType)?.id ?? null} pendingFrom={pendingFrom}
           draggingId={draggingId} mousePos3D={mousePos3D}
           onDevicePointerDown={handleDevicePointerDown}
           onDeviceClick={handleDeviceClick}
@@ -868,7 +870,7 @@ export default function EnergyFlow3D({
       )}
 
       <div style={{ position: "absolute", bottom: 10, right: 12, fontSize: 10, color: "#76857f", fontFamily: "Inter, sans-serif", pointerEvents: "none" }}>
-        {editMode ? "编辑模式 · 退出后恢复粒子动画" : "拖拽旋转 · 滚轮缩放"}
+        {editMode ? "编辑模式" : "布局示意 · 拖拽旋转 · 滚轮缩放"}
       </div>
     </div>
   );

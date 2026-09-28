@@ -1,5 +1,4 @@
 import { DEMO_MODE, api, send } from "@/api/client"
-import EmsPanel from "./EmsPanel"
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { ReactNode } from "react"
 import { Check, Save, X } from "lucide-react"
@@ -834,7 +833,7 @@ export default function SystemSettingsPage({
         </aside>
 
         <section className="settings-detail">
-          <EmsPanel stations={stations} module="settings" />
+
           <header className="settings-detail-header">
             <div>
               <h1>{category.title}</h1>

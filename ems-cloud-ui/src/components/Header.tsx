@@ -1,6 +1,6 @@
 import { DEMO_MODE } from "@/api/client"
 import { useState, useEffect } from "react"
-import { LogOut } from "lucide-react"
+import { LogOut, Maximize, Minimize } from "lucide-react"
 import { Button } from "./ui/Workspace"
 import { ROLE_CONFIG, type AuthUser } from "@/auth/roles"
 
@@ -38,7 +38,7 @@ export default function Header({
           title={immersive ? "退出沉浸模式" : "沉浸模式（隐藏导航）"}
           aria-label={immersive ? "退出沉浸模式" : "沉浸模式（隐藏导航）"}
         >
-          <img src="/figma/overview/map/imgFullscreenIcon.svg" alt="" />
+          {immersive ? <Minimize size={16} aria-hidden="true" /> : <Maximize size={16} aria-hidden="true" />}
         </Button>}
         <span className="workspace-user">
           <span className="global-user-avatar">{user.name.slice(0, 1)}</span>

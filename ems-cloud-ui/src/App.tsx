@@ -853,7 +853,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
       )}
 
       <div className="workspace-content flex flex-col flex-1 min-w-0 overflow-hidden">
-        {!DEMO_MODE && activeNav === "总览" && (
+        {!DEMO_MODE && activeNav === "总览" && (!immersive || apiError || apiLoading) && (
           <div
             role={apiError ? "alert" : "status"}
             style={{
@@ -999,7 +999,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
             onLogout={requestLogout}
           />
         )}
-        {activeNav === "总览" && <OverviewPage emsStations={operationalStations} stations={scopedStations} user={user} nav={roleConfig.nav} immersive={immersive} onExitImmersive={() => setImmersive(false)} onOpenStation={handleOpenStation} registerLeaveGuard={registerOverviewLeaveGuard} requestLeave={() => overviewLeaveGuard.current?.() ?? Promise.resolve(true)} onNavigate={async nav => { if (roleConfig.nav.includes(nav) && await requestActiveEditorLeave()) setActiveNav(nav) }} />}
+        {activeNav === "总览" && <OverviewPage stations={scopedStations} user={user} nav={roleConfig.nav} immersive={immersive} onExitImmersive={() => setImmersive(false)} onOpenStation={handleOpenStation} registerLeaveGuard={registerOverviewLeaveGuard} requestLeave={() => overviewLeaveGuard.current?.() ?? Promise.resolve(true)} onNavigate={async nav => { if (roleConfig.nav.includes(nav) && await requestActiveEditorLeave()) setActiveNav(nav) }} />}
       </div>
 
       {DEMO_MODE && (

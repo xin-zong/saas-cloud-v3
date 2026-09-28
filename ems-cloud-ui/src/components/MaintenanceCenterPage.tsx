@@ -1,4 +1,3 @@
-import EmsPanel from "./EmsPanel"
 import { hasStationPermission } from "@/auth/apiPermissions"
 import { DEMO_MODE, send, api, type ApiRow } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
@@ -1648,7 +1647,7 @@ export default function MaintenanceCenterPage({
 
   return (
     <main className="operations-page maintenance-page">
-      <EmsPanel stations={stations} module="maintenance" onAlarm={(id) => onOpenStation(id, "告警信息")} />
+
       {ordersOnly && (
         <PageHeader
           title="工单与审批"

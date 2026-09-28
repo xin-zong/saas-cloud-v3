@@ -134,9 +134,10 @@ interface Props {
   selectedStation: Station | null;
   onSelectStation: (s: Station, pos?: { x: number; y: number }) => void;
   region?: string;
+  compact?: boolean;
 }
 
-export default function MapView({ stations, selectedStation, onSelectStation, region = "" }: Props) {
+export default function MapView({ stations, selectedStation, onSelectStation, region = "", compact = false }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Record<string, L.Marker>>({});
@@ -159,6 +160,7 @@ export default function MapView({ stations, selectedStation, onSelectStation, re
       maxZoom: MAP_MAX_ZOOM,
       zoomControl: false,
       attributionControl: false,
+      scrollWheelZoom: !compact,
     });
 
     // 高德地图瓦片 — 标准地图（key 参数）
@@ -207,6 +209,7 @@ export default function MapView({ stations, selectedStation, onSelectStation, re
       map.remove();
       mapRef.current = null;
       markersRef.current = {};
+      coordinateKeyRef.current = "";
     };
   }, []);
 
@@ -226,6 +229,8 @@ export default function MapView({ stations, selectedStation, onSelectStation, re
 
       if (!marker) {
         marker = L.marker(coords, {
+          title: station.name,
+          alt: station.name,
           icon: makeIcon(STATUS_COLOR[station.status], station.status === "fault"),
           zIndexOffset: station.status === "fault" ? 1000 : 0,
         }).addTo(map);
@@ -278,7 +283,7 @@ export default function MapView({ stations, selectedStation, onSelectStation, re
         .filter((point): point is [number, number] => point !== null);
       if (coords.length > 1) {
         map.fitBounds(L.latLngBounds(coords), {
-          padding: [60, 60],
+          padding: compact ? [24, 24] : [60, 60],
           maxZoom: 10,
           animate: false,
         });
@@ -288,7 +293,7 @@ export default function MapView({ stations, selectedStation, onSelectStation, re
         });
       }
     }
-  }, [stations]);
+  }, [stations, compact]);
 
   // Pan to selected station
   useEffect(() => {
@@ -302,6 +307,7 @@ export default function MapView({ stations, selectedStation, onSelectStation, re
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
+    if (compact) return;
     const view = REGION_VIEW[region] ?? REGION_VIEW[""];
     try {
       const size = map.getSize();
@@ -309,7 +315,7 @@ export default function MapView({ stations, selectedStation, onSelectStation, re
         map.flyTo([view[0], view[1]], view[2], { animate: true, duration: 1.0 });
       }
     } catch { /* map not ready yet */ }
-  }, [region]);
+  }, [region, compact]);
 
   const zoom = (dir: 1 | -1) => {
     const map = mapRef.current;
@@ -328,7 +334,7 @@ export default function MapView({ stations, selectedStation, onSelectStation, re
       <div
         className="map-zoom-controls absolute flex flex-col rounded-lg overflow-hidden"
         style={{
-          bottom: 164, right: 16, zIndex: 1200,
+          bottom: compact ? 10 : 164, right: compact ? 10 : 16, zIndex: 1200,
           boxShadow: "0 8px 20px rgba(24,52,45,0.12)",
           border: "1px solid #d8e3dc",
         }}
@@ -361,8 +367,8 @@ export default function MapView({ stations, selectedStation, onSelectStation, re
       </div>
 
       {/* Legend */}
-      <div
-        className="absolute flex items-center gap-4 px-4 py-1.5 rounded-lg"
+      {!compact && <div
+        className="map-status-legend absolute flex items-center gap-4 px-4 py-1.5 rounded-lg"
         style={{
           bottom: 122, left: 16,
           background: "rgba(255,255,255,0.9)",
@@ -378,7 +384,8 @@ export default function MapView({ stations, selectedStation, onSelectStation, re
             <span style={{ fontSize: 10, color: "#61716b" }}>{label}</span>
           </div>
         ))}
-      </div>
+      </div>}
+      {compact && !stations.some(station => getStationCoords(station)) && <div className="overview-map-empty" role="status">{stations.length ? "暂无有效站点坐标" : "暂无授权站点"}</div>}
 
       <style>{`
         @keyframes markerPulse {

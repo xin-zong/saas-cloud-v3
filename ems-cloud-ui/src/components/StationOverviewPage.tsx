@@ -22,7 +22,12 @@ import {
 import { stationDataNow } from "@/data/dataClock"
 import { buildCurveData } from "./StationRunCurvePage"
 import "./station-overview-figma.css"
-import EmsPanel from "./EmsPanel"
+import StationEnergy3D from "./StationEnergy3D"
+import type { DeviceType, EnergyMetrics } from "./EnergyFlow3D"
+
+const modelCategories: Record<DeviceType, string> = {
+  tower: "电网", solar: "光伏", factory: "负荷", pcs: "PCS", battery: "电池",
+}
 
 const root = "/figma/stations/overview/"
 const equipment = [
@@ -120,6 +125,7 @@ export default function StationOverviewPage({
   const [samples, setSamples] = useState<Station["telemetryHistory"]>([])
   const [error, setError] = useState("")
   const [category, setCategory] = useState("电池")
+  const [energyView, setEnergyView] = useState<"diagram" | "3d">("diagram")
   const [deviceId, setDeviceId] = useState("")
   const [date, setDate] = useState(() => {
     const now = stationDataNow(station)
@@ -196,7 +202,7 @@ export default function StationOverviewPage({
         .find((item) => /并网|电网/.test(item.name))
         ?.points.find((item) => item.id === "power"),
     ),
-    光伏: station.pvOutput * 1000,
+    光伏: station.pvOutput == null ? undefined : station.pvOutput * 1000,
     负荷: pointValue(
       devices
         .find((item) => /负荷/.test(item.name))
@@ -207,10 +213,20 @@ export default function StationOverviewPage({
   }
   return (
     <main className="station-overview-figma">
-      <EmsPanel stations={[station]} module="assets" />
+
       <div className="station-overview-top">
         <section className="station-energy-card" aria-label="站点能流图">
-          <div className="station-energy-canvas">
+          <div className="station-energy-view-switch" role="group" aria-label="设备图显示方式">
+            <button aria-pressed={energyView === "diagram"} onClick={() => setEnergyView("diagram")}>设备图</button>
+            <button aria-pressed={energyView === "3d"} onClick={() => setEnergyView("3d")}>3D</button>
+          </div>
+          {energyView === "3d" ? <StationEnergy3D
+            metrics={Object.fromEntries(Object.entries(modelCategories).map(([type, name]) => [type, {
+              value: numeric(metrics[name]), unit: name === "电池" ? "%" : "kW",
+            }])) as EnergyMetrics}
+            selectedType={Object.entries(modelCategories).find(([, name]) => name === category)?.[0] as DeviceType}
+            onDeviceSelect={(type) => { setCategory(modelCategories[type]); setDeviceId("") }}
+          /> : <div className="station-energy-canvas">
             <img
               className="station-energy-arrows"
               src={`${root}imgEnergyFlowUnifiedCoordinatesAlignedArrows.svg`}
@@ -267,7 +283,7 @@ export default function StationOverviewPage({
                 {station.alerts.length}
               </button>
             )}
-          </div>
+          </div>}
         </section>
         <section className="station-device-card" aria-label="选中设备详情">
           <div className="station-device-types">

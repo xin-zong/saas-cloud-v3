@@ -1,0 +1,143 @@
+{
+  "account": "superadmin@prototype.local",
+  "userId": 14,
+  "roleId": 331,
+  "grantId": 20,
+  "availablePermissions": [
+    {
+      "code": "asset.read",
+      "name": "查看站点与设备"
+    },
+    {
+      "code": "asset.edit",
+      "name": "编辑站点"
+    },
+    {
+      "code": "revenue.read",
+      "name": "查看运营收益"
+    },
+    {
+      "code": "strategy.read",
+      "name": "查看运行策略"
+    },
+    {
+      "code": "strategy.manage",
+      "name": "编辑运行策略"
+    },
+    {
+      "code": "alarm.read",
+      "name": "查看告警"
+    },
+    {
+      "code": "alarm.handle",
+      "name": "处理告警"
+    },
+    {
+      "code": "workorder.read",
+      "name": "查看工单"
+    },
+    {
+      "code": "workorder.create",
+      "name": "新建工单"
+    },
+    {
+      "code": "workorder.edit",
+      "name": "编辑工单"
+    },
+    {
+      "code": "workorder.handle",
+      "name": "处理工单"
+    },
+    {
+      "code": "approval.read",
+      "name": "查看审批"
+    },
+    {
+      "code": "approval.review",
+      "name": "审批申请"
+    },
+    {
+      "code": "report.export",
+      "name": "下载数据"
+    },
+    {
+      "code": "customer.read",
+      "name": "查看客户"
+    },
+    {
+      "code": "customer.manage",
+      "name": "管理客户"
+    },
+    {
+      "code": "organization.member.read",
+      "name": "查看组织与成员"
+    },
+    {
+      "code": "organization.manage",
+      "name": "管理组织"
+    },
+    {
+      "code": "member.manage.profile",
+      "name": "管理成员"
+    },
+    {
+      "code": "role.manage",
+      "name": "配置角色权限"
+    },
+    {
+      "code": "member.grant.manage",
+      "name": "分配成员权限"
+    },
+    {
+      "code": "audit.read",
+      "name": "查看安全审计"
+    },
+    {
+      "code": "telemetry.read",
+      "name": "查看遥测点与历史"
+    },
+    {
+      "code": "inspection.manage",
+      "name": "巡检管理"
+    },
+    {
+      "code": "tariff.manage",
+      "name": "电价管理"
+    },
+    {
+      "code": "market.read",
+      "name": "查看市场服务与资质"
+    },
+    {
+      "code": "market.manage",
+      "name": "管理内部市场草稿"
+    },
+    {
+      "code": "revenue.review",
+      "name": "复核收益结算"
+    }
+  ],
+  "unavailableNotGranted": [
+    "asset.create",
+    "asset.delete",
+    "strategy.dispatch",
+    "operations.read",
+    "settlement.read",
+    "dispatch.read",
+    "dispatch.manage",
+    "invitation.read",
+    "invitation.accept",
+    "device.health.read",
+    "alarm.to.workorder",
+    "firmware.upload",
+    "firmware.upgrade",
+    "analytics.realtime.read",
+    "analytics.history.read",
+    "report.generate",
+    "workorder.manage",
+    "member.manage"
+  ],
+  "builtCatalogMatches": true,
+  "databaseReadOnlyVerification": "BEGIN\nems_cloud_v2_proto\navailable=28\ngranted=28\ncustomer_manage_station=4\ncustomer_manage_station=5\ncustomer_records=0\nCOMMIT\n",
+  "exitStatus": 0
+}

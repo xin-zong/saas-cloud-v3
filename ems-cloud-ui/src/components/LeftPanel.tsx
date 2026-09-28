@@ -8,7 +8,7 @@ import {
   PlugZap,
   TreePine,
 } from "lucide-react"
-import { Bar, BarChart, Tooltip, XAxis } from "recharts"
+import { Bar, BarChart, Tooltip, XAxis, ResponsiveContainer } from "recharts"
 import type { Station } from "@/App"
 import type { UserRole } from "@/auth/roles"
 import {
@@ -188,15 +188,13 @@ export default function LeftPanel({ stations, role, onViewStations }: Props) {
             </div>
           </div>
 
-          <div style={{ height: 72, position: "relative" }} data-chart="storage-trend">
+          <div style={{ height: 120, position: "relative" }} data-chart="storage-trend">
             {!DEMO_MODE && <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", borderBottom: "1px solid #e6eee9", background: "repeating-linear-gradient(to top, transparent 0 23px, #f0f5f2 23px 24px)", ...label }}>暂无充放电数据</div>}
-            <BarChart
-              width={226}
-              height={120}
+            <ResponsiveContainer width="100%" height="100%"><BarChart
               data={data}
               barGap={1}
               barSize={tab === "today" ? 5 : 9}
-              margin={{ top: 48, right: 0, bottom: 0, left: 0 }}
+              margin={{ top: 16, right: 0, bottom: 0, left: 0 }}
             >
               <Tooltip
                 content={<ChartTooltip />}
@@ -208,7 +206,7 @@ export default function LeftPanel({ stations, role, onViewStations }: Props) {
                 fill="#4c6ef5"
                 radius={[1, 1, 0, 0]}
               />
-            </BarChart>
+            </BarChart></ResponsiveContainer>
           </div>
 
         </div>
