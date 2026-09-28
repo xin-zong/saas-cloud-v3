@@ -1,0 +1,8 @@
+source.zip: OK
+ems-cloud-api.jar: OK
+ems-cloud-ingestion.jar: OK
+ems_identity.so: OK
+Staged /opt/ems-cloud-v3/releases/ems-4390ae5; activation remains a separate reviewed action
+PASS: files, permissions, dedicated port, TLS and unit validation; DB/Kafka/live acceptance still required
+active
+active

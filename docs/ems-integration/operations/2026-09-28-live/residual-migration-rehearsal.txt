@@ -1,0 +1,33 @@
+source.zip: OK
+BEGIN
+ pg_advisory_xact_lock
+-----------------------
+
+(1 row)
+
+CREATE TABLE
+REVOKE
+CREATE TABLE
+INSERT 0 1
+GRANT
+GRANT
+GRANT
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+REVOKE
+REVOKE
+REVOKE
+GRANT
+DO
+DO
+ROLLBACK
+15|t
+psql:/var/lib/ems-cloud-v3/release-a49ca17/source/ems-cloud-api/database/apply-rehearsal.sql:10: NOTICE:  relation "schema_migration" already exists, skipping

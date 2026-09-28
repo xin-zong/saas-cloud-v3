@@ -159,6 +159,8 @@ assert.equal(adaptObservation({value: null, quality: 'invalid'}).value, null);
 
 ## Task 10: 云端部署、实机和完整目标验收
 
+2026-09-28 部署进度：V16 已升级；独立 MQTT8884、worker、API 已运行并设置开机启动，Kafka 两个消费组 Stable，13 项真实 broker 检查通过。剩余两项代码问题已修复并通过定向复核。真实 EMS 绑定、账号页面验收、正式控制写契约和实机24小时观测仍未完成；下列包含这些条件的复合条目不提前勾选。证据见 [云端部署记录](../../ems-integration/operations/2026-09-28-live/README.md)。
+
 **Files:** worker `deploy/` 服务单元、配置示例、迁移/启动脚本；`docs/ems-integration/operations/` 部署及验收证据。
 
 - [ ] 核实已授权服务器真实 EMS 身份、固件和证书能力；创建专用服务权限/Topic/PG写入/CH写入账号，不打印私钥/密码。MQTT payload/packet 限额与 CN 校验按 spec 实测。

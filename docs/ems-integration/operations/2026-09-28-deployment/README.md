@@ -1,5 +1,7 @@
 # Dedicated EMS deployment preparation
 
+Execution update: the final running release and verified artifact hashes are recorded in [2026-09-28 live deployment](../2026-09-28-live/README.md). That record supersedes the historical staging hashes and API-enable sequencing below; authenticated UI and hardware acceptance remain pending.
+
 Repository preparation only. No service rollout, real EMS registration or hardware acceptance is asserted by this document. The controller records actual deployment evidence separately. PostgreSQL V15 and ClickHouse V3 already exist; do not edit/replay their migrations. The existing 1883/8883 listeners and legacy API service remain untouched.
 
 ## Reviewed artifacts and staging

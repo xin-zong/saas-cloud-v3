@@ -1,0 +1,34 @@
+enabled
+enabled
+enabled
+NRestarts=0
+Id=ems-cloud-v3-mqtt.service
+ActiveState=active
+SubState=running
+
+NRestarts=0
+Id=ems-cloud-v3-ingestion.service
+ActiveState=active
+SubState=running
+
+NRestarts=0
+Id=ems-cloud-v3-api.service
+ActiveState=active
+SubState=running
+State  Recv-Q Send-Q      Local Address:Port  Peer Address:PortProcess
+LISTEN 0      100               0.0.0.0:1883       0.0.0.0:*    users:(("mosquitto",pid=1085411,fd=5))
+LISTEN 0      100               0.0.0.0:8884       0.0.0.0:*    users:(("mosquitto",pid=2360928,fd=4))
+LISTEN 0      100               0.0.0.0:8883       0.0.0.0:*    users:(("mosquitto",pid=2223651,fd=4))
+LISTEN 0      100    [::ffff:127.0.0.1]:18090            *:*    users:(("java",pid=2360929,fd=11))
+4de6b84ca33497f3ec2be2a9552830ca2c8f9930ba6782790575cd571955686d  /etc/chuneng-cloud-v2/mosquitto-v03/mosquitto.conf
+{"version" : 16, "stations" : 2, "devices" : 26, "points" : 258, "alarms" : 30, "gateways" : 0, "links" : 0}
+ems_cell	0
+legacy_measurement_sample	3559514
+ems_observation	0
+Access-Control-Allow-Origin: http://localhost:8443
+
+Access-Control-Allow-Origin: http://127.0.0.1:8443
+
+{"code":200,"msg":"Success","data":{"status":"UP"}}Created symlink /etc/systemd/system/multi-user.target.wants/ems-cloud-v3-mqtt.service → /etc/systemd/system/ems-cloud-v3-mqtt.service.
+Created symlink /etc/systemd/system/multi-user.target.wants/ems-cloud-v3-ingestion.service → /etc/systemd/system/ems-cloud-v3-ingestion.service.
+Created symlink /etc/systemd/system/multi-user.target.wants/ems-cloud-v3-api.service → /etc/systemd/system/ems-cloud-v3-api.service.

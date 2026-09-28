@@ -1,0 +1,57 @@
+{
+  "scope": "controlled broker checks only; no real EMS binding",
+  "results": [
+    {
+      "check": "public_ip_hairpin_tls_hostname_and_cloud_identity",
+      "passed": true
+    },
+    {
+      "check": "original_client_id_must_match_certificate",
+      "passed": true
+    },
+    {
+      "check": "mqtt5_rejected",
+      "passed": true
+    },
+    {
+      "check": "client_certificate_required",
+      "passed": true
+    },
+    {
+      "check": "unsupported_certificate_cn_rejected",
+      "passed": true
+    },
+    {
+      "check": "payload_131072_delivered_exactly",
+      "passed": true
+    },
+    {
+      "check": "cloud_down_to_explicit_device_allowed",
+      "passed": true
+    },
+    {
+      "check": "spoofed_connect_username_cannot_publish_down",
+      "passed": true
+    },
+    {
+      "check": "device_cannot_read_other_identity",
+      "passed": true
+    },
+    {
+      "check": "payload_131073_not_delivered",
+      "passed": true
+    },
+    {
+      "check": "cloud_cannot_publish_device_up",
+      "passed": true
+    },
+    {
+      "check": "packet_147456_accepted",
+      "passed": true
+    },
+    {
+      "check": "packet_147457_rejected",
+      "passed": true
+    }
+  ]
+}

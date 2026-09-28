@@ -1,0 +1,3 @@
+WORKER_PG_CONNECTION_EXIT=0
+ems_ingestion_worker|ems_cloud_v2_proto
+WORKER_CH_CONNECTION_OK

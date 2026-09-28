@@ -1,0 +1,27 @@
+
+GROUP                     COORDINATOR (ID)          ASSIGNMENT-STRATEGY  STATE           #MEMBERS
+ems-cloud-v3.ingestion.reliable.v1 127.0.0.1:19094  (1)      range                Stable          1
+
+GROUP                     COORDINATOR (ID)          ASSIGNMENT-STRATEGY  STATE           #MEMBERS
+ems-cloud-v3.ingestion.telemetry.v1 127.0.0.1:19094  (1)      range                Stable          1
+NRestarts=0
+Id=ems-cloud-v3-ingestion.service
+ActiveState=active
+SubState=running
+ActiveEnterTimestamp=Mon 2026-09-28 09:38:23 CST
+
+NRestarts=0
+Id=ems-cloud-v3-mqtt.service
+ActiveState=active
+SubState=running
+ActiveEnterTimestamp=Mon 2026-09-28 09:37:40 CST
+
+NRestarts=0
+Id=ems-cloud-v3-api.service
+ActiveState=active
+SubState=running
+ActiveEnterTimestamp=Mon 2026-09-28 09:37:40 CST
+1790559477: New client connected from 120.27.23.229:52604 as ems-cloud-v3-ingestion (p2, c1, k30, u'ems-cloud-v3-ingestion').
+1790559477: New client connected from 127.0.0.1:43026 as ems-cloud-v3-ingestion (p2, c1, k30, u'ems-cloud-v3-ingestion').
+1790559509: New client connected from 120.27.23.229:57716 as ems-cloud-v3-ingestion (p2, c0, k30, u'ems-cloud-v3-ingestion').
+postgres|1
