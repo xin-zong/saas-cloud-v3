@@ -44,24 +44,27 @@ type Preview={job:Job,summary:{label:string,value:string|null,unit?:string}[],se
 ## Task 3: 分析与报告前端（independent implementer）
 Files: components/apiAnalytics.ts、StationAnalysisPage.tsx、stationAnalysisData.ts、ApiAnalyticsPage.tsx、AnalyticsDataDownload.tsx，及新辅助模块/测试。不得编辑 App.tsx（controller负责）。
 
-- [ ] 用已确认测点目录自动选择 EMS / legacy 数据源。EMS history 使用允许的 aggregation，默认last，解析强类型返回并保留间断。
-- [ ] 接 Task1 SSE，停止时不继续追加、重连恢复、权限改变取消、不伪报采样率。
-- [ ] 接 Task2 任务接口完成原始/聚合多点下载及持久记录、重试、报告生成/正文预览/下载。
-- [ ] 复用最新 Figma 四画板的现有布局，必要的表单细节按设计上下文，未采样空态；测点显示真实设备名、限制默认曲线数量，文本/位图不强画数值曲线。
-- [ ] 测试 source选择、类型/精度、时间窗、暂停/重连、记录隔离、API失败/权限撤销，tsc和build。
+- [x] 用已确认测点目录自动选择 EMS / legacy 数据源。EMS history 使用允许的 aggregation，默认last，解析强类型返回并保留间断。
+- [x] 接 Task1 SSE，停止时不继续追加、重连恢复、权限改变取消、不伪报采样率。
+- [x] 接 Task2 任务接口完成原始/聚合多点下载及持久记录、重试、报告生成/正文预览/下载。
+- [x] 复用最新 Figma 四画板的现有布局，必要的表单细节按设计上下文，未采样空态；测点显示真实设备名、限制默认曲线数量，文本/位图不强画数值曲线。
+- [x] 测试 source选择、类型/精度、时间窗、暂停/重连、记录隔离、API失败/权限撤销，tsc和build。
 
 ## Task 4: 全点位测试资料与模拟器（independent implementer）
 Files: scripts/ems-simulator/*（新）；docs/ems-integration/2026-09-29-full-point-test.md；生成 SQL 与接入配置。原有个人证书/口令不入库。
 
-- [ ] 读源协议、catalog、fixture；自动核对295普通点/6EMS点/173配置项，角色映射至合肥站现有设备（必要的EMU独立模拟设备通过约束创建）。
-- [ ] 生成可重复执行、事务化 SQL：只为现有新库创建测试设备/测点/definition/binding，保留已有SOC20018→point19等映射。
-- [ ] 生成 MQTTX 场景，心跳和30/60秒帧、EMS配置、单体数组/匹配结构分开；可靠结构需要QoS1和严格connectionId/seq，同一EMS不得双客户端连接。
-- [ ] 动态SOC/电压/电流/功率/计数器，未知质量和位图保留类型；不向ClickHouse直接插入事实。
-- [ ] 单元验证数量/类型/数组维度/时间/一致性，controller执行SQL与证书配置并在云端验证观测覆盖。
+- [x] 读源协议、catalog、fixture；自动核对295普通点/6EMS点/173配置项，角色映射至合肥站现有设备（必要的EMU独立模拟设备通过约束创建）。
+- [x] 生成可重复执行、事务化 SQL：只为现有新库创建测试设备/测点/definition/binding，保留已有SOC20018→point19等映射。
+- [x] 生成 MQTTX 场景，心跳和30/60秒帧、EMS配置、单体数组/匹配结构分开；可靠结构需要QoS1和严格connectionId/seq，同一EMS不得双客户端连接。
+- [x] 动态SOC/电压/电流/功率/计数器，未知质量和位图保留类型；不向ClickHouse直接插入事实。
+- [x] 单元验证数量/类型/数组维度/时间/一致性，controller执行SQL与证书配置并在云端验证观测覆盖。
 
 ## Task 5: 集成、复核与发布（controller + reviewer）
-- [ ] Task级差异/报告复核；统一接口与整条数据链，修复发现的问题。
-- [ ] 本地/云端DB迁移验证、API&UI构建、权限边界/导出/断线恢复/报告历史浏览器验收。
-- [ ] 只stage任务文件，排除个人截图/证书/环境秘密，main提交并push origin/main。
-- [ ] 确认线上现有部署路径/服务、备份制品、部署前后端18085，校验hash与健康，配置SSE反代关闭buffering，报告目录持久化。
-- [ ] 记录实际commit、release、验证结果与剩余仅真实硬件限制；总目标全部完成前不标完成。
+- [x] Task级差异/报告复核；统一接口与整条数据链，修复发现的问题。
+- [x] 本地/云端 DB 迁移、API/UI 构建、权限边界、13 项隔离浏览器用例与实际 MQTT 入库验证。
+- [ ] 用户真实账号重新登录后的曲线、报告预览/下载页面验收；本地 API 重启后需要用户登录，已异步请求。
+- [x] 只stage任务文件，排除个人截图/证书/环境秘密，main提交并push origin/main。
+- [x] 确认线上现有部署路径/服务、备份制品、部署前后端18085，校验hash与健康，配置SSE反代关闭buffering，报告制品在 PostgreSQL 不可变关系中持久化。
+- [x] 记录实际commit、release、验证结果与剩余仅真实硬件限制；总目标全部完成前不标完成。
+
+发布源码 `b3b432521f5c20607147bfd471751236a3fd5780`，main 已推送；release `main-b3b432521f5c` 已部署 18085。详见 ../../superpowers/verification/2026-09-29-ems-business-acceptance.md。仍待真实账号页面验收，不将 mock 浏览器测试当作真实登录验收。
