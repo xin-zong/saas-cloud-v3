@@ -8,8 +8,14 @@ fail() { echo "FAIL: $1" >&2; exit 1; }
 verify_mosquitto_version() {
     [[ $1 =~ ^mosquitto\ version\ 2\.0\.18($|[[:space:]]) ]] || fail 'Unmeasured Mosquitto version; remeasure full packet boundaries before deployment'
 }
-broker_banner=$(/usr/sbin/mosquitto -h 2>&1) || fail 'Cannot identify installed Mosquitto version'
-verify_mosquitto_version "$broker_banner"
+check_mosquitto_binary() {
+    local broker_banner help_status=0
+    # Installed 2.0.18 emits valid help with status3; capture without errexit.
+    broker_banner=$("$1" -h 2>&1) || help_status=$?
+    [[ $help_status == 0 || $help_status == 3 ]] || fail 'Cannot identify installed Mosquitto version: unexpected help status'
+    verify_mosquitto_version "$broker_banner"
+}
+check_mosquitto_binary /usr/sbin/mosquitto
 for tool in ss openssl runuser systemd-analyze sha256sum; do command -v "$tool" >/dev/null || fail "missing tool $tool"; done
 [[ -x /usr/lib/jvm/java-21-openjdk-amd64/bin/java ]] || fail 'Java21 missing'
 [[ -z $(ss -H -ltn 'sport = :8884') ]] || fail '8884 already listening; investigate without stopping legacy services'

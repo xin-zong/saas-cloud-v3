@@ -20,7 +20,7 @@ test('preflight rejects unmeasured broker versions before applying the adjustmen
   const preflight=readFileSync(path.join(__dirname,'preflight.sh'),'utf8');
   const guard=preflight.match(/verify_mosquitto_version\(\) \{[\s\S]*?\n\}/)?.[0];
   assert.ok(guard,'installed broker version guard missing');
-  assert.ok(preflight.includes('/usr/sbin/mosquitto -h'));
+  assert.ok(preflight.includes('check_mosquitto_binary /usr/sbin/mosquitto'));
   assert.ok(preflight.includes('verify_mosquitto_version "$broker_banner"'));
   const check=banner=>run('-c',`fail() { echo "$1" >&2; exit 1; }\n${guard}\nverify_mosquitto_version "$1"`,'guard',banner);
   assert.equal(check('mosquitto version 2.0.18\n\nhelp text').status,0);
@@ -29,6 +29,19 @@ test('preflight rejects unmeasured broker versions before applying the adjustmen
     assert.notEqual(result.status,0);
     assert.match(result.stderr,/remeasure/);
   }
+});
+test('installed help exit 0 or 3 requires an exact measured banner; other statuses fail', () => {
+  const preflight=readFileSync(path.join(__dirname,'preflight.sh'),'utf8');
+  const version=preflight.match(/verify_mosquitto_version\(\) \{[\s\S]*?\n\}/)?.[0];
+  const binary=preflight.match(/check_mosquitto_binary\(\) \{[\s\S]*?\n\}/)?.[0];
+  assert.ok(binary,'help status handler missing');
+  const check=(status,banner)=>run('-c',`set -euo pipefail\nfail() { echo "$1" >&2; exit 1; }\n${version}\n${binary}\nhelper() { printf '%s\\n' "$2"; return "$1"; }\nprobe() { helper "$STATUS" "$BANNER"; }\nSTATUS=$1 BANNER=$2 check_mosquitto_binary probe`,'guard',String(status),banner);
+  for(const status of [0,3]) {
+    assert.equal(check(status,'mosquitto version 2.0.18\nhelp text').status,0);
+    assert.notEqual(check(status,'mosquitto version 2.0.19').status,0);
+    assert.notEqual(check(status,'').status,0);
+  }
+  for(const status of [1,2,4,127]) assert.notEqual(check(status,'mosquitto version 2.0.18').status,0);
 });
 test('permanent and recreated preview preserve the active 8443 CORS origins', () => {
   const origins='http://localhost:8443,http://127.0.0.1:8443';
