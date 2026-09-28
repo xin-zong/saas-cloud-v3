@@ -46,12 +46,9 @@ public final class WireDecoder {
           catch (Exception e) { throw new ProtocolException("Invalid UTF-8 JSON document"); }
         validateUnicode(body);
         String type = EnvelopeValidation.validate(channel, body, emsId);
-        int limit = channel.equals("response") || type.equals("structure") ? 65536 : type.equals("alarm_data") ? 131072 : 6144;
+        // 2026-09-28 capacity amendment: 64 KiB for every up envelope; keep alarm_data at 128 KiB.
+        int limit = type.equals("alarm_data") ? 131072 : 65536;
         if (payload.length > limit) throw new ProtocolException("Payload size exceeded");
-        // alarm.current.get response has the stricter whole-envelope 6 KiB limit (§4.2).
-        if (channel.equals("response") && body.path("ok").asBoolean()
-            && body.path("data").path("type").asText().equals("alarm_current") && payload.length > 6144)
-            throw new ProtocolException("Payload size exceeded");
         return new WireMessage(emsId, channel, type, body, hash(body));
     }
 

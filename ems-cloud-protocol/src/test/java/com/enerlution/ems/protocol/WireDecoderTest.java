@@ -77,7 +77,7 @@ class WireDecoderTest {
   }
   @Test void limitsAreAppliedByChannelAndType() throws Exception {
     String pad="x".repeat(7000);
-    reject("heartbeat",HEART.substring(0,HEART.length()-1)+",\"extra\":\""+pad+"\"}");
+    assertNotNull(decode("heartbeat",HEART.substring(0,HEART.length()-1)+",\"extra\":\""+pad+"\"}"));
     String error="{\"v\":1,\"emsId\":\""+ID+"\",\"id\":\"r\",\"ok\":false,\"error\":{\"code\":\"INTERNAL_ERROR\",\"message\":\""+pad+"\"}}";
     assertNotNull(decode("response",error)); reject("response",error.replace(pad,"x".repeat(65536)));
   }
@@ -122,11 +122,36 @@ class WireDecoderTest {
     String data=Files.readString(Path.of("src/test/resources/wire/05_故障关联数据完整报文参考.json"));
     assertNotNull(decode("telemetry",padded(structure,65536))); reject("telemetry",padded(structure,65537));
     assertNotNull(decode("alarm",padded(data,131072))); reject("alarm",padded(data,131073));
-    assertNotNull(decode("heartbeat",padded(HEART,6144))); reject("heartbeat",padded(HEART,6145));
+    assertNotNull(decode("heartbeat",padded(HEART,65536))); reject("heartbeat",padded(HEART,65537));
     String success="{\"v\":1,\"emsId\":\""+ID+"\",\"id\":\"r\",\"ok\":true,\"data\":"+structure+"}";
     assertNotNull(decode("response",padded(success,65536))); reject("response",padded(success,65537));
     String alarms="{\"v\":1,\"emsId\":\""+ID+"\",\"id\":\"r\",\"ok\":true,\"data\":"+current()+"}";
-    assertNotNull(decode("response",padded(alarms,6144))); reject("response",padded(alarms,6145));
+    assertNotNull(decode("response",padded(alarms,65536))); reject("response",padded(alarms,65537));
+  }
+  @Test void everyOrdinaryTypeAccepts64KiBAndRejectsOneMoreUtf8Byte() throws Exception {
+    var samples=new ArrayList<Map.Entry<String,String>>();
+    try(var files=Files.list(Path.of("src/test/resources/wire"))) {
+      for(var path:files.toList()) {
+        String json=Files.readString(path);
+        String type=new ObjectMapper().readTree(json).path("type").asText();
+        if(type.equals("alarm_data")) continue; // Its existing 128 KiB boundary is tested separately.
+        String channel=type.equals("important_history")?"important":type.startsWith("alarm_")?"alarm":"telemetry";
+        samples.add(Map.entry(channel,json));
+      }
+    }
+    samples.add(Map.entry("heartbeat",HEART));
+    samples.add(Map.entry("status","{\"v\":1,\"emsId\":\""+ID+"\",\"state\":\"connected\"}"));
+    samples.add(Map.entry("alarm",current()));
+    for(var sample:samples) {
+      String atLimit=padded(sample.getValue(),65536);
+      assertNotNull(decode(sample.getKey(),atLimit),sample.getKey());
+      reject(sample.getKey(),padded(sample.getValue(),65537));
+      // A three-byte character replaces one ASCII byte: character count stays below the byte cap.
+      String multibyte=padded(sample.getValue(),65534).replaceFirst("xxx","中xx");
+      assertEquals(65536,multibyte.getBytes(StandardCharsets.UTF_8).length);
+      assertNotNull(decode(sample.getKey(),multibyte));
+      reject(sample.getKey(),multibyte.replaceFirst("中","中文"));
+    }
   }
   static String padded(String json,int bytes) {
     String compact;
