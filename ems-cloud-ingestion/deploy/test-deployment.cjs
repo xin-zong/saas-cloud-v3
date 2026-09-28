@@ -5,6 +5,31 @@ const {readFileSync} = require('node:fs');
 const path = require('node:path');
 const bash = process.env.BASH_BIN || (process.platform === 'win32' ? 'C:/Program Files/Git/bin/bash.exe' : '/bin/bash');
 const run = (...args) => spawnSync(bash, args, {encoding:'utf8', cwd:__dirname});
+test('Mosquitto 2.0.18 config enforces the full 147456-byte PUBLISH boundary', () => {
+  const config=readFileSync(path.join(__dirname,'mqtt/strict.conf'),'utf8');
+  const limit=Number(config.match(/^max_packet_size (\d+)$/m)?.[1]);
+  assert.equal(limit,147453);
+  assert.match(config,/^message_size_limit 131072$/m);
+  // At this boundary Remaining Length has three encoding bytes; v2.0.18
+  // ingress checks remaining_length+1 rather than the complete packet length.
+  const accepted=fullPacket => (fullPacket-4)+1 <= limit;
+  assert.equal(accepted(147456),true);
+  assert.equal(accepted(147457),false);
+});
+test('preflight rejects unmeasured broker versions before applying the adjustment', () => {
+  const preflight=readFileSync(path.join(__dirname,'preflight.sh'),'utf8');
+  const guard=preflight.match(/verify_mosquitto_version\(\) \{[\s\S]*?\n\}/)?.[0];
+  assert.ok(guard,'installed broker version guard missing');
+  assert.ok(preflight.includes('/usr/sbin/mosquitto -h'));
+  assert.ok(preflight.includes('verify_mosquitto_version "$broker_banner"'));
+  const check=banner=>run('-c',`fail() { echo "$1" >&2; exit 1; }\n${guard}\nverify_mosquitto_version "$1"`,'guard',banner);
+  assert.equal(check('mosquitto version 2.0.18\n\nhelp text').status,0);
+  for(const banner of ['mosquitto version 2.0.19','mosquitto version 2.0.180','mosquitto version 2.1.0','','unknown']) {
+    const result=check(banner);
+    assert.notEqual(result.status,0);
+    assert.match(result.stderr,/remeasure/);
+  }
+});
 test('permanent and recreated preview preserve the active 8443 CORS origins', () => {
   const origins='http://localhost:8443,http://127.0.0.1:8443';
   const unit=readFileSync(path.join(__dirname,'systemd/ems-cloud-v3-api.service'),'utf8');

@@ -5,6 +5,11 @@ set -euo pipefail
 release=$(realpath -e "$1")
 [[ $release =~ ^/opt/ems-cloud-v3/releases/[a-z0-9][a-z0-9-]{7,63}$ ]] || { echo 'Invalid managed release path' >&2; exit 1; }
 fail() { echo "FAIL: $1" >&2; exit 1; }
+verify_mosquitto_version() {
+    [[ $1 =~ ^mosquitto\ version\ 2\.0\.18($|[[:space:]]) ]] || fail 'Unmeasured Mosquitto version; remeasure full packet boundaries before deployment'
+}
+broker_banner=$(/usr/sbin/mosquitto -h 2>&1) || fail 'Cannot identify installed Mosquitto version'
+verify_mosquitto_version "$broker_banner"
 for tool in ss openssl runuser systemd-analyze sha256sum; do command -v "$tool" >/dev/null || fail "missing tool $tool"; done
 [[ -x /usr/lib/jvm/java-21-openjdk-amd64/bin/java ]] || fail 'Java21 missing'
 [[ -z $(ss -H -ltn 'sport = :8884') ]] || fail '8884 already listening; investigate without stopping legacy services'
