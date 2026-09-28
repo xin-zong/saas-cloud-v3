@@ -5,6 +5,9 @@ export type DevicePoint = {
   id: string;
   label: string;
   value: number | null;
+  exactValue?: string;
+  sourceId?: number;
+  metric?: string;
   unit: string;
   quality: "good" | "bad";
 };
@@ -42,6 +45,7 @@ export function pointValue(point?: DevicePoint) {
 
 export function formatPoint(point?: DevicePoint) {
   const value = pointValue(point);
+  if (point?.quality === 'good' && point.exactValue !== undefined) return `${point.exactValue} ${point.unit}`.trim();
   return value === null ? "--" : `${value.toLocaleString("zh-CN", { maximumFractionDigits: point?.id === "powerFactor" ? 3 : 2 })} ${point?.unit ?? ""}`.trim();
 }
 

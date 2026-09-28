@@ -1,0 +1,224 @@
+{
+  "synthetic": true,
+  "catalogVersion": "ems-v1-profile-20260917",
+  "catalogSourceHash": "2cbcd2f907bb8225a5bc9a3e3006f2fd7956575a36e151cca24dad86adbfd6fc",
+  "counts": {
+    "ordinary": 295,
+    "cabinet30s": 241,
+    "cabinet60s": 54,
+    "ems": 6,
+    "config": 173,
+    "configNulls": 9,
+    "reservedCellSlots": 1000,
+    "voltageSlots": 160,
+    "temperatureSlots": 80
+  },
+  "identity": {
+    "emsId": "4a8be161-7ee9-458f-b412-7d256e64eed9",
+    "stationId": 4,
+    "bindingPeriodId": 2,
+    "gatewayDeviceId": 57,
+    "cabinetNo": 1,
+    "structureVersion": 2026092901,
+    "configRevision": 2026092901
+  },
+  "roles": [
+    {
+      "role": "ems",
+      "deviceId": 57,
+      "deviceCode": null,
+      "existingBindingId": 1
+    },
+    {
+      "role": "emu",
+      "deviceId": null,
+      "deviceCode": "SIM-EMU-01",
+      "existingBindingId": null
+    },
+    {
+      "role": "bms",
+      "deviceId": 5,
+      "deviceCode": "SIM-BMS-01",
+      "existingBindingId": 2
+    },
+    {
+      "role": "pcs",
+      "deviceId": 4,
+      "deviceCode": "SIM-PCS-02",
+      "existingBindingId": null
+    },
+    {
+      "role": "dcdc",
+      "deviceId": 13,
+      "deviceCode": "SIM-DCDC-01",
+      "existingBindingId": null
+    },
+    {
+      "role": "tms",
+      "deviceId": 11,
+      "deviceCode": "SIM-HVAC-01",
+      "existingBindingId": null
+    },
+    {
+      "role": "meter",
+      "deviceId": 8,
+      "deviceCode": "SIM-MTR-01",
+      "existingBindingId": null
+    }
+  ],
+  "preserved": [
+    {
+      "source": "cabinet:20018",
+      "pointId": 19
+    },
+    {
+      "source": "cabinet:20021",
+      "pointId": 21
+    },
+    {
+      "source": "cabinet:20023",
+      "pointId": 22
+    },
+    {
+      "source": "ems:90002",
+      "pointId": 441
+    },
+    {
+      "source": "ems:90003",
+      "pointId": 442
+    },
+    {
+      "source": "ems:90004",
+      "pointId": 443
+    },
+    {
+      "source": "ems:90005",
+      "pointId": 444
+    },
+    {
+      "source": "ems:90006",
+      "pointId": 445
+    },
+    {
+      "source": "ems:90007",
+      "pointId": 446
+    }
+  ],
+  "frames": [
+    {
+      "kind": "heartbeat",
+      "qos": 0,
+      "retain": false,
+      "bytes": 126
+    },
+    {
+      "kind": "structure",
+      "qos": 1,
+      "retain": false,
+      "bytes": 728
+    },
+    {
+      "kind": "ems",
+      "qos": 0,
+      "retain": false,
+      "bytes": 1816
+    },
+    {
+      "kind": "cabinet_30s",
+      "qos": 0,
+      "retain": false,
+      "bytes": 2910
+    },
+    {
+      "kind": "cabinet_60s",
+      "qos": 0,
+      "retain": false,
+      "bytes": 1007
+    },
+    {
+      "kind": "cell_voltage",
+      "qos": 0,
+      "retain": false,
+      "bytes": 1024
+    },
+    {
+      "kind": "cell_temperature",
+      "qos": 0,
+      "retain": false,
+      "bytes": 355
+    }
+  ],
+  "limitations": [
+    "All data synthetic; unknown semantics remain unverified.",
+    "Only cabinet 1; no alarm placeholder registration.",
+    "Cell dimensions intentionally derived from matched synthetic fixture.",
+    "Cloud observation coverage must be verified after root applies SQL and starts the sender."
+  ],
+  "verifiedOriginalSources": [
+    {
+      "name": "05_单体电压完整报文参考.json",
+      "bytes": 1253,
+      "sha256": "5840d249e753c7d52a00f14e9f020d90e681e0fec6d7e0013c18082bf3e66e97"
+    },
+    {
+      "name": "05_单体温度完整报文参考.json",
+      "bytes": 504,
+      "sha256": "b35c00aa9d39c7e4aa7c0ce8653d37733ca1199ac4bdf086679b73aa7528dbe1"
+    },
+    {
+      "name": "05_故障关联数据完整报文参考.json",
+      "bytes": 11690,
+      "sha256": "28efc9ba7176dc661bfdb720a3782a82485c3169e907a5deca6b969983075ced"
+    },
+    {
+      "name": "05_故障事件完整报文参考.json",
+      "bytes": 273,
+      "sha256": "9e99180ff9798fe4bd4957381305ed50f40cc49da3225ba65da660bc6faf534f"
+    },
+    {
+      "name": "05_机柜30秒完整报文参考.json",
+      "bytes": 5573,
+      "sha256": "c314ef965e4c42bec3fd0e34021260bdd9d8f3be2d53c58d0417cea0d453e93a"
+    },
+    {
+      "name": "05_机柜60秒完整报文参考.json",
+      "bytes": 1832,
+      "sha256": "6eedb3de51c7d9b5deb2e643187b06d2df4054051b00d849fcb5909bc92a5cce"
+    },
+    {
+      "name": "05_设备结构完整报文参考.json",
+      "bytes": 2315,
+      "sha256": "94d47545122c0326483fcacb18ca3637cdc77c916e2e498142126db585ed9fb1"
+    },
+    {
+      "name": "05_重要数据补传完整报文参考.json",
+      "bytes": 482,
+      "sha256": "14e3f150c15664ee727fcf90bce36ca384da26254f004a801599efe567a3bbc2"
+    },
+    {
+      "name": "05_EMS完整报文参考.json",
+      "bytes": 4038,
+      "sha256": "50acb2ed88c2ac381e87328a5ff568eef2a6f3ac3196df01293c3b7a7063c500"
+    },
+    {
+      "name": "05_EMS与云端MQTT交互协议.md",
+      "bytes": 100945,
+      "sha256": "c00d096a3d4e418a5fcc411c51b03801132f657695e5db5ecae5540ec1d93e0d"
+    },
+    {
+      "name": "06_EMS故障与告警方案.md",
+      "bytes": 35938,
+      "sha256": "8ec22042991265467b6670a1485998937d99d990a53397bd287afe65fd2a37de"
+    },
+    {
+      "name": "point_catalog(1).sql",
+      "bytes": 106079,
+      "sha256": "dfdf055b53755549962c6ef84e205c47d4399070803e3711cbe0efb6d5f020c5"
+    },
+    {
+      "name": "telemetry数据库结构说明.md",
+      "bytes": 2608,
+      "sha256": "c9c57c686b0ab3462b232e57965ebcbd68869cebc8ebc8e457fc34a80c06ea04"
+    }
+  ]
+}

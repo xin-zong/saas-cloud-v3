@@ -153,7 +153,7 @@ export default function StationOverviewPage({
             : /光伏|PV/i.test(device.group + device.name),
   )
   const device = matches.find((item) => item.id === deviceId) ?? matches[0]
-  const point = (id: string) => device?.points.find((item) => item.id === id)
+  const point = (id: string) => device?.points.find((item) => item.metric === id || item.id === id)
   const soc = pointValue(point("soc"))
   useEffect(() => {
     if (DEMO_MODE) return
@@ -200,13 +200,13 @@ export default function StationOverviewPage({
     电网: pointValue(
       devices
         .find((item) => /并网|电网/.test(item.name))
-        ?.points.find((item) => item.id === "power"),
+        ?.points.find((item) => item.metric === "power" || item.id === "power"),
     ),
     光伏: station.pvOutput == null ? undefined : station.pvOutput * 1000,
     负荷: pointValue(
       devices
         .find((item) => /负荷/.test(item.name))
-        ?.points.find((item) => item.id === "power"),
+        ?.points.find((item) => item.metric === "power" || item.id === "power"),
     ),
     PCS: station.activePower,
     电池: station.soc,

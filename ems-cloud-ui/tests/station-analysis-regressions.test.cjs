@@ -31,7 +31,7 @@ test('aggregate API mapping remains conservative and carries bucket duration int
       { id: '27', device_id: '5', name: '柜内湿度', unit: '%RH' },
       { id: '30', device_id: '4', name: '充放电功率', unit: 'kW' },
     ],
-    loadHistory: async id => { calls.push(id); return [0, 15, 30, 45].map(minute => ({ timestamp: start + minute * 60000, value: 100, samples: 1 })) },
+    loadHistory: async point => { calls.push(point.id); return [0, 15, 30, 45].map(minute => ({ timestamp: start + minute * 60000, value: 100, samples: 1 })) },
   }
   const aggregate = load('components/stationTelemetryQuery', { '@/data/stationTelemetry': telemetry, './apiAnalytics': api })
   const samples = await aggregate.queryStationTelemetry({ id: '12' }, new Date(start), new Date(start + 3600000), 15, new AbortController().signal)
@@ -54,8 +54,8 @@ test('registered channels retain duplicate SOC and arbitrary point IDs and selec
     { id: '27', device_id: '5', name: '柜内湿度', unit: '%RH' },
   ]
   const calls = []
-  const service = load('components/stationAnalysisData', { './apiAnalytics': { loadHistory: async (id, from, to, minutes) => {
-    calls.push({ id, minutes }); return [{ timestamp: 0, value: Number(id), samples: 1 }, { timestamp: 600000, value: Number(id) + 1, samples: 1 }]
+  const service = load('components/stationAnalysisData', { './apiAnalytics': { loadHistory: async (point, from, to, minutes) => {
+    const id = point.id; calls.push({ id, minutes }); return [{ timestamp: 0, value: Number(id), samples: 1 }, { timestamp: 600000, value: Number(id) + 1, samples: 1 }]
   } } })
   const channels = service.registeredChannels(points)
   assert.equal(new Set(channels.map(c => c.id)).size, 3)

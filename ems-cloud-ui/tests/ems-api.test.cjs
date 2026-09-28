@@ -2,6 +2,30 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const ts = require('typescript')
+
+test('native device points use matching fresh EMS observations and preserve missing values',()=>{
+ const {mergeDeviceObservations}=setup()
+ const device={id:'57',updatedAt:'',primaryPointId:'',points:[{id:'444',label:'CPU',value:null,unit:'%',quality:'bad'},{id:'445',label:'Memory',value:null,unit:'%',quality:'bad'}]}
+ const row={pointId:'444',value:'23.450000000000000001',valueType:'number',quality:'valid',receivedAt:1000,sourceTime:900,staleReason:null}
+ const [result]=mergeDeviceObservations([device],[row])
+ assert.equal(result.points[0].exactValue,row.value)
+ assert.equal(result.points[0].quality,'good')
+ assert.equal(result.points[1].value,null)
+ assert.equal(result.updatedAt,new Date(1000).toISOString())
+ assert.equal(result.primaryPointId,'444')
+ for(const invalid of [{...row,quality:'invalid'},{...row,staleReason:'heartbeat_expired'},{...row,value:null}]) {
+  const [bad]=mergeDeviceObservations([device],[invalid]);assert.equal(bad.points[0].quality,'bad');assert.equal(bad.points[0].value,null)
+ }
+ assert.equal(device.points[0].value,null)
+ assert.deepEqual(mergeDeviceObservations([device],[{...row,pointId:'other'}]),[device])
+})
+
+test('device telemetry pagination continues past mapped points with no observations',async()=>{
+ const service=setup(), calls=[]
+ global.fetch=async url=>{calls.push(String(url));return {ok:true,status:200,json:async()=>({code:0,data:calls.length===1?{items:[],hasMore:true}:{items:[{pointId:'444',value:'23.45',valueType:'number',quality:'valid'}],hasMore:false}})}}
+ const rows=await service.loadDeviceObservations('4',new AbortController().signal)
+ assert.equal(rows[0].pointId,'444');assert.match(calls[1],/offset=200/)
+})
 test('history chart type follows selected source evidence and only falls back for absent policy',()=>{
  const {historyChartNumber}=setup()
  const source={sourceTimeKind:'source',sourceTime:1000,receivedAt:1100,valueType:'number',value:'12.5',quality:'valid'}

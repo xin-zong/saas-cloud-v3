@@ -1,0 +1,9 @@
+{
+  "name": "enerlution-ems-fullpoint-simulator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Synthetic EMS protocol fixture and mixed-QoS MQTT.js launcher",
+  "scripts": { "test": "node --test simulator.test.cjs", "start": "node run.cjs" },
+  "engines": { "node": ">=18" },
+  "dependencies": { "mqtt": "4.3.8" }
+}

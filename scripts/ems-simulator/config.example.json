@@ -1,0 +1,17 @@
+{
+  "host": "120.27.23.229",
+  "port": 8884,
+  "emsId": "4a8be161-7ee9-458f-b412-7d256e64eed9",
+  "stationId": 4,
+  "bindingPeriodId": 2,
+  "gatewayDeviceId": 57,
+  "cabinetNo": 1,
+  "structureVersion": 2026092901,
+  "configRevision": 2026092901,
+  "qualityMode": "normal",
+  "caPath": "C:/Users/Laptop/Documents/Enerlution-MQTTX-Hefei-Test/ca.crt",
+  "certPath": "C:/Users/Laptop/Documents/Enerlution-MQTTX-Hefei-Test/client.crt",
+  "keyPath": "C:/Users/Laptop/Documents/Enerlution-MQTTX-Hefei-Test/client.key",
+  "stateDirectory": "C:/Users/Laptop/Documents/Enerlution-MQTTX-Hefei-Test",
+  "mqttModulePath": "C:/Users/Laptop/Documents/Enerlution-MQTTX-Hefei-Test/mqttx-cli/node_modules/mqtt"
+}

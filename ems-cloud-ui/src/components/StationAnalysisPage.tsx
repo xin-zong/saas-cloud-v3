@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { DEMO_MODE } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
 import { hasStationPermission } from "@/auth/apiPermissions"
-import { loadPoints, type MeasurementPoint } from "./apiAnalytics"
-import { registeredChannels, queryRegisteredTelemetry, metricSignals, pointMatchesMetric, type AnalysisMetric, type AnalysisRow as TelemetryRow } from "./stationAnalysisData"
+import { loadPoints, historyCsv, exactValueText, type MeasurementPoint } from "./apiAnalytics"
+import { subscribeStationTelemetry } from "@/api/stationRealtime"
+import { registeredChannels, queryRegisteredTelemetry, metricSignals, defaultAnalysisPoints, analysisEvidence, latestChannelEvidence, liveChannelEvidence, validChannelSample, mergeAnalysisSnapshot, type AnalysisMetric, type AnalysisRow as TelemetryRow } from "./stationAnalysisData"
 import {
   Brush,
   CartesianGrid,
@@ -65,7 +66,8 @@ const historyQueryKey = (
   end: number,
   minutes: number,
   selected: string[],
-) => JSON.stringify([stationId, start, end, minutes, [...selected].sort()])
+  aggregation = "",
+) => JSON.stringify([stationId, start, end, minutes, [...selected].sort(), aggregation])
 
 const clockTime = (timestamp: number) =>
   new Date(timestamp).toLocaleTimeString("zh-CN", { hour12: false })
@@ -149,6 +151,12 @@ export default function StationAnalysisPage({
     ) * 1000
   const [view, setView] = useState<"live" | "history">(initialView)
   const [running, setRunning] = useState(true)
+  const [pageVisible, setPageVisible] = useState(() => !document.hidden)
+  useEffect(() => {
+    const changed = () => setPageVisible(!document.hidden)
+    document.addEventListener("visibilitychange", changed)
+    return () => document.removeEventListener("visibilitychange", changed)
+  }, [])
 
   const [now, setNow] = useState(stationNow)
 
@@ -167,6 +175,8 @@ export default function StationAnalysisPage({
   const [pointRetry, setPointRetry] = useState(0)
   const SIGNALS = useMemo(() => DEMO_MODE ? [...DEMO_SIGNALS] : registeredChannels(points), [points])
   const [minutes, setMinutes] = useState(initialView === "live" ? 1 : 15)
+  const [aggregation, setAggregation] = useState("")
+  const [streamStatus, setStreamStatus] = useState("connecting")
   const [selected, setSelected] = useState<string[]>(DEMO_MODE ? initialMetric ? metricSignals(initialMetric) : INITIAL_SIGNALS : [])
 
   const [visible, setVisible] = useState<string[]>(DEMO_MODE ? initialMetric ? metricSignals(initialMetric) : INITIAL_CURVES : [])
@@ -224,12 +234,6 @@ export default function StationAnalysisPage({
   const [notice, setNotice] = useState("")
   const [poll, setPoll] = useState(0)
   useEffect(() => {
-    if (DEMO_MODE || view !== "live" || !running || !canRead) return
-    const timer = window.setInterval(() => setPoll((value) => value + 1), 10000)
-    return () => window.clearInterval(timer)
-  }, [view, running, canRead])
-
-  useEffect(() => {
     if (DEMO_MODE) return
     const controller = new AbortController()
     setPoints([])
@@ -243,7 +247,7 @@ export default function StationAnalysisPage({
     if (canRead) loadPoints(station.id, controller.signal).then(result => {
       if (controller.signal.aborted) return
       setPoints(result)
-      const ids = result.filter(point => !initialMetric || pointMatchesMetric(point, initialMetric)).map(point => `point:${point.id}`)
+      const ids = defaultAnalysisPoints(result, initialMetric).map(point => `point:${point.id}`)
       setSelected(ids)
       setVisible(ids)
       setPointsReady(true)
@@ -262,6 +266,7 @@ export default function StationAnalysisPage({
       return
     }
     if (!pointsReady) return
+    if (view !== "history") return
     const controller = new AbortController()
     const start =
       view === "history"
@@ -269,11 +274,11 @@ export default function StationAnalysisPage({
         : new Date(Date.now() - windowMinutes * 60000)
     const end =
       view === "history" ? (requestRange?.end ?? new Date()) : new Date()
-    const key = historyQueryKey(station.id, start.getTime(), end.getTime(), minutes, selected)
+    const key = historyQueryKey(station.id, start.getTime(), end.getTime(), minutes, selected, aggregation)
     setHistoryQuery({ key, status: "loading" })
     setQueryLoading(true)
     setQueryError("")
-    queryRegisteredTelemetry(points.filter(point => selected.includes(`point:${point.id}`)), start, end, minutes, controller.signal)
+    queryRegisteredTelemetry(points.filter(point => selected.includes(`point:${point.id}`)), start, end, minutes, controller.signal, aggregation || undefined)
       .then((result) => {
         if (controller.signal.aborted) return
         const normalized = result
@@ -295,7 +300,27 @@ export default function StationAnalysisPage({
         if (!controller.signal.aborted) setQueryLoading(false)
       })
     return () => controller.abort()
-  }, [station.id, requestRange, canRead, poll, view, windowMinutes, minutes, pointsReady, points, selected])
+  }, [station.id, requestRange, canRead, poll, view, windowMinutes, minutes, aggregation, pointsReady, points, selected])
+
+  useEffect(() => {
+    if (DEMO_MODE || view !== "live" || !running || !pageVisible || !canRead || !pointsReady || !selected.length) return
+    const controller = new AbortController()
+    setQueryLoading(false)
+    setQueryError("")
+    setStreamStatus("connecting")
+    void subscribeStationTelemetry(station.id, selected.map(id => id.replace(/^point:/, "")), {
+      onSnapshot: snapshot => {
+        if (controller.signal.aborted) return
+        setSamples(current => mergeAnalysisSnapshot(current, snapshot, selected))
+        setNow(snapshot.serverTime)
+        setSampleSource("connected")
+        setQueryError("")
+      },
+      onStatus: status => { if (!controller.signal.aborted) setStreamStatus(status) },
+      onError: error => { if (!controller.signal.aborted) setQueryError(error.message) },
+    }, controller.signal).catch(error => { if (!controller.signal.aborted) setQueryError(error instanceof Error ? error.message : "实时读取失败") })
+    return () => controller.abort()
+  }, [station.id, canRead, view, running, pageVisible, pointsReady, selected, poll])
 
   useEffect(() => {
     if (!running || view !== "live") return
@@ -337,7 +362,7 @@ export default function StationAnalysisPage({
     if (view === "history")
       return historySource.filter(
         (sample) =>
-          sample.timestamp >= historyStart && sample.timestamp <= historyEnd,
+          sample.timestamp >= historyStart && sample.timestamp < historyEnd,
       )
 
     return samples.filter(
@@ -393,16 +418,24 @@ export default function StationAnalysisPage({
   }, [plotRows, selected, visible])
 
   const last = rows[rows.length - 1]
+  const currentEvidence = (id: string) => {
+    const evidence = latestChannelEvidence(rows, id, view === "live")
+    return view === "live" && !DEMO_MODE ? liveChannelEvidence(evidence, now) : evidence
+  }
+  const currentValueText = (id: string) => {
+    const detail = currentEvidence(id)
+    return detail?.staleReason ? "—" : exactValueText(detail?.exactValue)
+  }
 
   const activeSignals = SIGNALS.filter((signal) => selected.includes(signal.id))
 
   const plottedSignals = SIGNALS.filter(
-    (signal) => selected.includes(signal.id) && visible.includes(signal.id),
+    (signal) => selected.includes(signal.id) && visible.includes(signal.id) && ("numeric" in signal ? signal.numeric !== false : true) && (DEMO_MODE || rows.some(row => typeof row[signal.id] === "number")),
   )
 
   const validCount = rows.reduce(
     (sum, row) =>
-      sum + selected.filter((id) => typeof row[id] === "number").length,
+      sum + selected.filter((id) => validChannelSample(row, id)).length,
     0,
   )
 
@@ -467,14 +500,14 @@ export default function StationAnalysisPage({
   }, [displayedRows, statsSignal])
 
   const currentHistoryKey = historyQueryKey(
-    station.id, Date.parse(range.start), Date.parse(range.end), minutes, selected,
+    station.id, Date.parse(range.start), Date.parse(range.end), minutes, selected, aggregation,
   )
   const matchingHistoryQuery = canRead && historyQuery?.key === currentHistoryKey
   const expectedSamples =
     Math.ceil((historyEnd - historyStart) / (minutes * 60000)) * activeSignals.length
   const availableSamples = rows.reduce(
     (count, row) => row.timestamp < historyEnd
-      ? count + activeSignals.filter(signal => typeof row[signal.id] === "number").length
+      ? count + activeSignals.filter(signal => validChannelSample(row, signal.id)).length
       : count,
     0,
   )
@@ -511,6 +544,8 @@ export default function StationAnalysisPage({
 
   function toggleSignal(id: string) {
     const removing = selected.includes(id)
+    if (!removing && selected.length >= 200) { setNotice("最多选择 200 个监测通道"); return }
+    setAggregation("")
 
     setSelected((current) =>
       removing ? current.filter((value) => value !== id) : [...current, id],
@@ -582,6 +617,21 @@ export default function StationAnalysisPage({
 
   function exportCsv() {
     if (!canRead || !plotRows.length || !activeSignals.length) return
+    if (!DEMO_MODE) {
+      const contents = activeSignals.map(signal => {
+        const point = points.find(point => `point:${point.id}` === signal.id)!
+        return historyCsv(point, plotRows.flatMap(row => {
+          const evidence = analysisEvidence(row, signal.id)
+          return evidence ? [evidence] : []
+        }))
+      })
+      const csv = contents.map((content, index) => index ? content.slice(content.indexOf("\r\n") + 2) : content).join("")
+      const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }))
+      const anchor = document.createElement("a"); anchor.href = url; anchor.download = `${station.code}-${view}-telemetry.csv`; anchor.click()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+      setNotice("已导出当前视窗的精确值、类型与质量。完整原始数据可在数据下载中生成。")
+      return
+    }
     const lines = [
       [
         "时间",
@@ -773,8 +823,8 @@ export default function StationAnalysisPage({
         </span>}
         <div className="analysis-acquisition">
           <i className={running && view === "live" ? "is-running" : ""} />
-          {view === "history" ? "历史快照" : running ? "采集中" : "已暂停"}
-          <span>· 质量 {quality}</span>
+          {view === "history" ? "历史快照" : !running ? "已暂停" : DEMO_MODE ? "采集中" : streamStatus === "connected" ? "已连接" : streamStatus === "reconnecting" ? "重连中" : streamStatus === "closed" ? "连接已关闭" : "连接中"}
+          <span>· 采样质量 {quality}</span>
         </div>
         {stationSelector}
         <button
@@ -926,7 +976,7 @@ export default function StationAnalysisPage({
                       <i style={{ background: signal.color }} />
                       <span>{signal.name}</span>
                       <small>
-                        {valueText(last?.[signal.id])} <em>{signal.unit}</em>
+                        {DEMO_MODE ? valueText(last?.[signal.id]) : currentValueText(signal.id)} <em>{signal.unit}</em>
                       </small>
                     </label>
                   ))}
@@ -962,14 +1012,15 @@ export default function StationAnalysisPage({
                 <option value={60}>60 min</option>
               </select>
             </label>
-            <label className="analysis-window">
+            <label className="analysis-window" hidden={view === "live" && !DEMO_MODE}>
               采样粒度
               <select aria-label="采样粒度" value={minutes} onChange={event => { setMinutes(Number(event.target.value)); setZoomRange(null) }}>
                 {[1, 5, 15, 30, 60].map(value => <option key={value} value={value}>{value} min</option>)}
               </select>
             </label>
+            {!DEMO_MODE && view === "history" && <label className="analysis-window">聚合方式<select aria-label="聚合方式" value={aggregation} onChange={event => setAggregation(event.target.value)}><option value="">测点默认</option>{["last", "avg", "min", "max", "delta"].filter(value => points.filter(point => selected.includes(`point:${point.id}`)).every(point => (point.aggregation ?? (point.source === "ems" ? ["last"] : ["avg", "min", "max", "last"])).includes(value))).map(value => <option key={value} value={value}>{({last:"末值",avg:"平均值",min:"最小值",max:"最大值",delta:"差值"})[value]}</option>)}</select></label>}
             <span className="analysis-small">
-              {analyticsFeatures && !DEMO_MODE ? `聚合 ${minutes} min` : `采样 ${sampleInterval ? `${sampleInterval.toFixed(1)} s` : "--"}`}
+              {!DEMO_MODE ? view === "history" ? `聚合 ${minutes} min` : "云端采样推送" : `采样 ${sampleInterval ? `${sampleInterval.toFixed(1)} s` : "--"}`}
             </span>
             <div className="analysis-chart-tools">
               <div
@@ -1092,7 +1143,7 @@ export default function StationAnalysisPage({
                 <i style={{ background: signal.color }} />
                 {signal.name}
                 <span>
-                  {valueText(last?.[signal.id])} {signal.unit}
+                  {DEMO_MODE ? valueText(last?.[signal.id]) : currentValueText(signal.id)} {signal.unit}
                 </span>
               </button>
             ))}
@@ -1103,6 +1154,8 @@ export default function StationAnalysisPage({
               <p>
                 {!selected.length
                   ? "请选择需要分析的信号"
+                  : !chartRows.length
+                    ? "当前时间范围暂无采样数据"
                   : !plottedSignals.length
                     ? "暂无显示的曲线"
                     : "当前时间范围暂无采样数据"}
@@ -1220,7 +1273,7 @@ export default function StationAnalysisPage({
           <span>
             {selected.length} 个通道 ·{" "}
             {last
-              ? selected.filter((id) => typeof last[id] === "number").length
+              ? selected.filter((id) => { const detail = currentEvidence(id); return DEMO_MODE ? typeof last[id] === "number" : detail?.quality === "valid" && !detail.staleReason }).length
               : 0}
             /{selected.length} 有效 · 最近更新{" "}
             {last ? clockTime(last.timestamp) : "--"}
@@ -1236,7 +1289,7 @@ export default function StationAnalysisPage({
             onClick={exportCsv}
           >
             <Download size={13} />
-            下载有效数据 CSV
+            下载视窗数据 CSV
           </button>
         </header>
         <div className="analysis-table-scroll">
@@ -1251,7 +1304,7 @@ export default function StationAnalysisPage({
                   "数据龄期",
                   "时间戳",
                   analyticsFeatures && !DEMO_MODE ? "有效时间点" : "样本数",
-                  analyticsFeatures && !DEMO_MODE ? "聚合粒度" : "采样率",
+                  !DEMO_MODE ? view === "history" ? "聚合粒度" : "接收时间" : "采样率",
                   "显示",
                 ].map((label) => (
                   <th key={label}>{label}</th>
@@ -1261,33 +1314,35 @@ export default function StationAnalysisPage({
             <tbody>
               {activeSignals.map((signal) => {
                 const validRows = rows.filter(
-                  (row) => typeof row[signal.id] === "number",
+                  (row) => validChannelSample(row, signal.id),
                 )
 
                 const latestValid = validRows[validRows.length - 1]
 
-                const good = typeof last?.[signal.id] === "number"
+                const detail = currentEvidence(signal.id)
+                const good = DEMO_MODE ? typeof last?.[signal.id] === "number" : detail?.quality === "valid" && !detail.staleReason
 
                 return (
                   <tr key={signal.id}>
                     <td>
                       <i style={{ background: signal.color }} />
                       {signal.group} / {signal.name}
+                      {!DEMO_MODE && "source" in signal && <small> · {signal.source === "ems" ? "EMS" : "历史来源"}</small>}
                     </td>
-                    <td>{valueText(last?.[signal.id])}</td>
+                    <td title={detail ? `${exactValueText(detail.exactValue)} · ${detail.valueType} · ${detail.quality}${detail.staleReason ? ` · ${detail.staleReason}` : ""}` : undefined}>{DEMO_MODE ? valueText(last?.[signal.id]) : currentValueText(signal.id)}</td>
                     <td>{signal.unit}</td>
                     <td className={good ? "analysis-good" : "analysis-bad"}>
-                      {good ? "有效" : "无效 / 缺失"}
+                      {DEMO_MODE ? good ? "有效" : "无效 / 缺失" : detail ? `${detail.staleReason === "source_time_expired" || detail.staleReason === "received_time_expired" ? "过期 · " : view === "live" && !running ? "暂停快照 · " : ""}${({valid:"有效",invalid:"无效",unknown:"未知"})[detail.quality as "valid" | "invalid" | "unknown"] ?? detail.quality}${detail.staleReason ? ` / ${detail.staleReason}` : ""} · ${detail.valueType}` : "未采样"}
                     </td>
                     <td>
-                      {latestValid
-                        ? `${Math.max(0, ((view === "live" ? now : historyEnd) - latestValid.timestamp) / 1000).toFixed(1)} s`
+                      {(DEMO_MODE ? latestValid?.timestamp : detail?.receivedAt) != null
+                        ? `${Math.max(0, ((view === "live" ? now : historyEnd) - (DEMO_MODE ? latestValid!.timestamp : detail!.receivedAt!)) / 1000).toFixed(1)} s`
                         : "--"}
                     </td>
-                    <td>{last ? clockTime(last.timestamp) : "--"}</td>
+                    <td>{DEMO_MODE ? last ? clockTime(last.timestamp) : "--" : detail?.sourceTime != null ? clockTime(detail.sourceTime) : "--"}</td>
                     <td>{validRows.length.toLocaleString()}</td>
                     <td>
-                      {analyticsFeatures && !DEMO_MODE ? `${minutes} min` : sampleInterval
+                      {!DEMO_MODE ? view === "history" ? `${minutes} min` : detail?.receivedAt != null ? clockTime(detail.receivedAt) : "--" : sampleInterval
                         ? `${(1 / sampleInterval).toFixed(2)} Hz`
                         : "--"}
                     </td>
@@ -1297,6 +1352,7 @@ export default function StationAnalysisPage({
                           type="checkbox"
                           aria-label={`显示${signal.name}曲线`}
                           checked={visible.includes(signal.id)}
+                          disabled={!DEMO_MODE && "numeric" in signal && signal.numeric === false}
                           onChange={() =>
                             setVisible((current) =>
                               current.includes(signal.id)

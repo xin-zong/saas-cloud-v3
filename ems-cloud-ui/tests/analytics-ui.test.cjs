@@ -4,7 +4,7 @@ const { chromium } = require("playwright")
 
 test("API analytics renders sparse history and downloads only successful server reports", async () => {
   const browser = await chromium.launch({ channel: "msedge", headless: true })
-  const context = await browser.newContext({ viewport: { width: 1440, height: 1050 }, acceptDownloads: true })
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1050 }, acceptDownloads: true, timezoneId:'Asia/Shanghai' })
   await context.addInitScript(() => sessionStorage.setItem("enerlution-api-token", "analytics-token"))
   const page = await context.newPage()
   page.setDefaultTimeout(12000)
@@ -18,6 +18,7 @@ test("API analytics renders sparse history and downloads only successful server 
   let historyCalls = 0
   let reportCalls = 0
   let reportFails = false
+  let job
   await page.route("http://127.0.0.1:18090/api/**", async (route) => {
     const request = route.request()
     const url = new URL(request.url())
@@ -41,10 +42,18 @@ test("API analytics renders sparse history and downloads only successful server 
           { timestamp: Date.parse("2025-10-09T00:10:00Z"), value: 42, samples: 3 },
         ]
       }
-      else if (path === "/stations/12/reports/revenue") {
+      else if (path === "/stations/12/telemetry/snapshot") data = { items: [], serverTime: Date.now(), presence: null }
+      else if (path === "/stations/12/analysis-jobs") {
+        if (request.method() === 'POST') {
+          const body = request.postDataJSON()
+          assert.equal(body.kind, 'revenue');assert.equal(body.from,'2025-09-30T16:00:00.000Z');assert.equal(body.to,'2025-10-09T16:00:00.000Z')
+          job = { id:'report-1',stationId:'12',...body,minutes:null,pointIds:[],status:'completed',createdAt:new Date().toISOString(),completedAt:new Date().toISOString(),error:null }
+          data = job
+        } else data = job && job.kind === url.searchParams.get('kind') ? [job] : []
+      }
+      else if (path === "/analysis-jobs/report-1") data = { job, summary:[{label:'确认收益',value:'125',unit:'CNY'}],sections:[{title:'结算明细',columns:[{key:'amount',label:'金额'}],rows:[{amount:'125'}]}] }
+      else if (path === "/analysis-jobs/report-1/download") {
         reportCalls++
-        assert.equal(url.searchParams.get("from"), "2025-10-01")
-        assert.equal(url.searchParams.get("to"), "2025-10-09")
         if (reportFails) {
           await route.fulfill({ status: 403, contentType: "application/json", body: JSON.stringify({ code: 403, msg: "没有导出权限" }) })
           return
@@ -73,10 +82,12 @@ test("API analytics renders sparse history and downloads only successful server 
     await page.getByLabel("报告类型", { exact: true }).selectOption("revenue")
     await page.getByLabel("报告开始日期", { exact: true }).fill("2025-10-01")
     await page.getByLabel("报告结束日期", { exact: true }).fill("2025-10-09")
+    await page.getByRole("button", { name: "生成报告", exact: true }).click()
+    await page.getByText('结算明细', { exact: true }).waitFor()
     const downloadPromise = page.waitForEvent("download")
     await page.getByRole("button", { name: "下载 CSV 报告" }).click()
     const download = await downloadPromise
-    assert.match(download.suggestedFilename(), /report-12-revenue/)
+    assert.match(download.suggestedFilename(), /revenue-12-report-1/)
     assert.equal(downloads, 1)
     assert.equal(reportCalls, 1)
     reportFails = true

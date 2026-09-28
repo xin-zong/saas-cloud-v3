@@ -3,15 +3,16 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs/promises')
 const path = require('node:path')
 const { chromium } = require('playwright')
-const evidence = path.resolve(__dirname, '../../.superpowers/sdd/2026-09-26-all-modules-figma')
+const evidence = path.resolve(__dirname, '../../.superpowers/sdd/2026-09-29-ems-business-completion/task3-ui')
 async function setup(role = 'owner') {
+  await fs.mkdir(evidence,{recursive:true})
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true, timezoneId: 'Asia/Shanghai' })
   await context.addInitScript(() => sessionStorage.setItem('enerlution-api-token', 'module06-token'))
   const page = await context.newPage(); page.setDefaultTimeout(12000)
-  const permissions = ['asset.read', 'telemetry.read', 'report.export', 'strategy.read', 'revenue.read', 'audit.read']
-  const user = { id: '7', name: '分析用户', account: 'analytics@test', role, organization: '测试', stationIds: ['12', '13'], permissions, stationPermissions: { 12: [...permissions], 13: ['asset.read', 'telemetry.read', 'report.export', 'asset.read'] }, organizationPermissions: {} }
-  const state = { user, calls: [], failPoints: false, failReport: false, delayReport: null, downloads: [], errors: [] }
+  const permissions = ['asset.read', 'telemetry.read', 'report.export', 'strategy.read', 'revenue.read', 'audit.read', 'alarm.read']
+  const user = { id: '7', name: '分析用户', account: 'analytics@test', role, organization: '测试', stationIds: ['12', '13'], permissions, stationPermissions: { 12: [...permissions], 13: ['asset.read', 'telemetry.read', 'report.export', 'alarm.read'] }, organizationPermissions: {} }
+  const state = { user, calls: [], jobs: [], failPoints: false, failReport: false, delayReport: null, downloads: [], errors: [] }
   page.on('pageerror', e => state.errors.push(e.message)); page.on('download', d => state.downloads.push(d))
   await page.route('http://127.0.0.1:18090/api/**', async route => {
     const url = new URL(route.request().url()), p = url.pathname.slice(4); state.calls.push(url)
@@ -30,10 +31,30 @@ async function setup(role = 'owner') {
         const step = Number(url.searchParams.get('minutes')) * 60000
         data = Array.from({ length: Math.ceil((Date.parse(url.searchParams.get('to')) - time) / step) }, (_, i) => ({ timestamp: time + i * step, value: i, samples: 1 }))
       } else if (state.historyMode === 'empty') data = []
-    } else if (/\/reports\//.test(p)) {
+    } else if (/\/telemetry\/snapshot$/.test(p)) data = { items: [], serverTime: Date.now(), presence: null }
+    else if (/\/telemetry\/stream$/.test(p)) {
+      if(state.liveDisconnected) return route.abort('failed')
+      const time = Date.now(), points = p.includes('/12/') ? ['17','18','27'] : ['99']
+      const frames = [0,state.liveValue ?? 42].map((value,index) => `event: snapshot\ndata: ${JSON.stringify({serverTime:time,items:points.map(pointId => ({pointId,value:String(value),valueType:'number',quality:'valid',sourceTime:time - (index ? 0 : 120000),receivedAt:time,staleReason:null})),presence:null})}\n\n`).join('')
+      return route.fulfill({ contentType: 'text/event-stream', body: frames })
+    } else if (/\/stations\/\d+\/analysis-jobs$/.test(p)) {
+      const stationId = p.split('/')[2]
+      if (route.request().method() === 'POST') {
+        if (state.delayReport) await state.delayReport
+        const body = route.request().postDataJSON()
+        data = { id:`job-${state.jobs.length+1}`,stationId,...body,minutes:body.minutes ?? null,pointIds:body.pointIds ?? [],status:state.failReport?'failed':'completed',createdAt:new Date().toISOString(),completedAt:new Date().toISOString(),error:state.failReport?'报告服务暂不可用':null }
+        state.jobs.unshift(data)
+      } else data = state.jobs.filter(job => job.stationId === stationId && job.kind === url.searchParams.get('kind')).slice(Number(url.searchParams.get('offset')),Number(url.searchParams.get('offset'))+20)
+    } else if (/\/analysis-jobs\/[^/]+\/retry$/.test(p)) {
+      data = state.jobs.find(job => job.id === p.split('/')[2]);data.status='completed';data.error=null
+    } else if (/\/analysis-jobs\/[^/]+\/download$/.test(p)) {
       if (state.delayReport) await state.delayReport
       if (state.failReport) return route.fulfill({ status: 500, json: { msg: '报告服务暂不可用' } })
-      return route.fulfill({ contentType: 'text/csv', body: 'date,amount\n2026-09-20,125\n' })
+      const job=state.jobs.find(job=>job.id===p.split('/')[2])
+      return route.fulfill({ contentType: 'text/csv', body: job?.kind==='telemetry'?`point_name,exact_value,quality\n${job.pointIds.map(id=>`${({'17':'有功功率','18':'电池 SOC','27':'柜内湿度','99':'乙站电流'})[id]},"0",valid`).join('\n')}\n`:'date,amount\n2026-09-20,125\n' })
+    } else if (/\/analysis-jobs\/[^/]+$/.test(p)) {
+      const job=state.jobs.find(job=>job.id===p.split('/')[2])
+      data={job,summary:[{label:'确认收益',value:'125',unit:'CNY'}],sections:[{title:'收益明细',columns:[{key:'date',label:'日期'},{key:'amount',label:'金额'}],rows:[{date:'2026-09-20',amount:'125'}]}]}
     } else if (p === '/audit') data = state.audits ?? [{ id: 8, actor_id: 7, occurred_at: '2026-09-26T08:00:00Z', action: 'report.export', detail: 'station=12,kind=revenue' }]
     await route.fulfill({ json: { code: 0, data } })
   })
@@ -47,7 +68,7 @@ test('current multi-signal analysis, searchable station picker and older trend/a
     await page.getByRole('tab', { name: '实时分析', exact: true }).waitFor()
     await page.getByLabel('搜索设备或信号').fill('湿度')
     await page.getByText('柜内湿度 · 27', { exact: true }).first().waitFor()
-    await page.getByRole('button', { name: '分析站点', exact: true }).click()
+    await page.getByRole('button', { name: '分析站点', exact: true }).click({force:true})
     await page.getByPlaceholder('搜索站点名称', { exact: true }).fill('乙')
     await page.getByRole('option', { name: '分析乙站' }).click()
     await page.getByText('乙站电流 · 99', { exact: true }).first().waitFor()
@@ -75,14 +96,14 @@ test('download selects registered points/device, validates range, exports real C
     assert.equal(await page.getByRole('checkbox', { name: /有功功率/ }).count(), 0)
     await page.getByRole('checkbox', { name: /柜内湿度/ }).check()
     await page.getByRole('button', { name: '应用参数', exact: true }).click()
-    await page.getByLabel('下载开始时间').fill('2026-08-01T00:00')
+    await page.getByLabel('下载开始时间').fill('2026-09-01T00:00')
     await page.getByLabel('下载结束时间').fill('2026-09-02T00:00')
     await page.getByLabel('数据粒度', { exact: true }).selectOption('5')
     const before = state.calls.length
     await page.getByRole('button', { name: '生成文件', exact: true }).click()
     await page.getByText('可下载', { exact: true }).waitFor()
-    const queries = state.calls.slice(before).filter(u => u.pathname.includes('/history'))
-    assert.equal(queries.length, 2); assert(queries.every(u => u.pathname === '/api/points/27/history' && u.searchParams.get('minutes') === '5'))
+    const queries = state.calls.slice(before).filter(u => u.pathname.endsWith('/analysis-jobs'))
+    assert(queries.length > 0);assert.deepEqual(state.jobs[0].pointIds,['27']);assert.equal(state.jobs[0].minutes,5)
     const wait = page.waitForEvent('download')
     await page.getByRole('button', { name: '下载 CSV', exact: true }).click()
     const csv = await fs.readFile(await (await wait).path(), 'utf8')
@@ -108,14 +129,18 @@ test('report station permissions, retries, validation and late revoked responses
     await page.getByLabel('报告开始日期').fill('2026-09-01')
     await page.getByLabel('报告结束日期').fill('2026-09-26')
     state.failReport = true
-    await page.getByRole('button', { name: '下载 CSV 报告', exact: true }).click()
-    await page.getByRole('alert').getByText('报告服务暂不可用').waitFor()
+    await page.getByRole('button', { name: '生成报告', exact: true }).click()
+    await page.getByText('生成失败', { exact: true }).waitFor()
     state.failReport = false
+    await page.getByRole('button', { name: '重试', exact: true }).click()
+    await page.getByRole('button', { name: '预览', exact: true }).click()
+    await page.getByText('收益明细', { exact: true }).waitFor()
     const wait = page.waitForEvent('download')
     await page.getByRole('button', { name: '下载 CSV 报告', exact: true }).click(); await wait
+    await page.getByRole('button', { name: '关闭', exact: true }).click()
     let release; state.delayReport = new Promise(resolve => { release = resolve })
-    await page.getByRole('button', { name: '下载 CSV 报告', exact: true }).click()
-    await page.getByText('下载中…', { exact: true }).waitFor()
+    await page.getByRole('button', { name: '下载 CSV', exact: true }).click()
+    await page.getByRole('button', { name: '取消等待', exact: true }).waitFor()
     state.user.stationPermissions['12'] = ['asset.read', 'telemetry.read', 'report.export']
     await page.evaluate(() => window.dispatchEvent(new Event('enerlution:permissions-changed')))
     await page.getByLabel('报告类型', { exact: true }).selectOption('health')
@@ -125,6 +150,78 @@ test('report station permissions, retries, validation and late revoked responses
   } finally { await browser.close() }
 })
 module.exports = { setup, evidence }
+
+test('disconnected live channels expire on the local clock while paused snapshots and historical quality stay intact', async () => {
+  const { browser, page, state } = await setup()
+  try {
+    await page.clock.install()
+    const row=page.locator('.analysis-channels tbody tr').first(),current=row.locator('td').nth(1)
+    await current.getByText('42',{exact:true}).waitFor()
+    await page.getByRole('button',{name:'暂停',exact:true}).click()
+    await page.clock.fastForward(91001)
+    assert.equal(await current.innerText(),'42')
+    await row.getByText('暂停快照',{exact:false}).waitFor()
+    state.liveDisconnected=true
+    await page.getByRole('button',{name:'开启',exact:true}).click()
+    await page.clock.fastForward(91001)
+    await current.getByText('—',{exact:true}).waitFor()
+    await row.getByText('过期',{exact:false}).waitFor()
+    assert.match(await page.locator('.analysis-channels header').innerText(),/0\/3 有效/)
+    await page.getByRole('tab',{name:'历史趋势',exact:true}).click()
+    await row.locator('td').nth(3).getByText('有效 · number',{exact:true}).waitFor()
+    assert.deepEqual(state.errors,[])
+  } finally { await browser.close() }
+})
+
+test('report options and station picker omit kinds missing any required station capability', async () => {
+  const { browser, page, state } = await setup()
+  try {
+    state.user.stationPermissions['12']=['report.export','strategy.read','revenue.read','asset.read']
+    state.user.stationPermissions['13']=['report.export','asset.read','telemetry.read']
+    await page.evaluate(()=>window.dispatchEvent(new Event('enerlution:permissions-changed')))
+    await page.evaluate(()=>window.dispatchEvent(new Event('focus')))
+    await page.getByRole('tab',{name:'报告中心',exact:true}).click()
+    await page.waitForFunction(()=>document.querySelector('[aria-label="报告站点"]')?.querySelectorAll('option').length===1)
+    assert.deepEqual(await page.getByLabel('报告站点').locator('option').allTextContents(),['分析甲站'])
+    assert.deepEqual(await page.getByLabel('报告类型',{exact:true}).locator('option').allTextContents(),['收益报告'])
+    assert.deepEqual(state.errors,[])
+  } finally { await browser.close() }
+})
+
+test('live SSE pauses without new requests, reconnects, and closes after permission revocation', async () => {
+  const { browser, page, state } = await setup()
+  try {
+    const current = page.locator('.analysis-channels tbody tr').first().locator('td').nth(1)
+    await current.getByText('42',{exact:true}).waitFor()
+    await page.getByRole('button',{name:'暂停',exact:true}).click()
+    const requests = state.calls.filter(url=>url.pathname.endsWith('/telemetry/stream')).length
+    state.liveValue=77
+    await page.waitForTimeout(1300)
+    assert.equal(state.calls.filter(url=>url.pathname.endsWith('/telemetry/stream')).length,requests)
+    assert.equal(await current.innerText(),'42')
+    await page.getByRole('button',{name:'开启',exact:true}).click()
+    await current.getByText('77',{exact:true}).waitFor()
+    await page.waitForFunction(() => document.querySelector('.analysis-channels tbody td:nth-child(2)')?.textContent === '77')
+    state.liveValue=88
+    await current.getByText('88',{exact:true}).waitFor()
+    await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'))})
+    const hiddenRequests=state.calls.filter(url=>url.pathname.endsWith('/telemetry/stream')).length
+    state.liveValue=89
+    await page.waitForTimeout(1300)
+    assert.equal(state.calls.filter(url=>url.pathname.endsWith('/telemetry/stream')).length,hiddenRequests)
+    await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'))})
+    await current.getByText('89',{exact:true}).waitFor()
+    state.user.stationPermissions['12']=['asset.read']
+    await page.evaluate(()=>window.dispatchEvent(new Event('enerlution:permissions-changed')))
+    await page.getByRole('button',{name:'分析站点',exact:true}).click({force:true})
+    await page.getByRole('option',{name:'分析乙站'}).click()
+    await page.getByText('乙站电流 · 99',{exact:true}).first().waitFor()
+    const after = state.calls.filter(url=>url.pathname.includes('/stations/12/telemetry/stream')).length
+    await page.waitForTimeout(1300)
+    assert.equal(state.calls.filter(url=>url.pathname.includes('/stations/12/telemetry/stream')).length,after)
+    assert.deepEqual(state.errors,[])
+  } finally { await browser.close() }
+})
 
 async function completeHistory(page, state) {
   state.historyMode = 'complete'
@@ -261,12 +358,12 @@ test('download validation and point failure retry preserve parameter choices wit
     await page.getByLabel('下载结束时间').fill('2026-09-25T00:00')
     const before = state.calls.length
     await page.getByRole('button', { name: '生成文件', exact: true }).click()
-    await page.getByRole('alert').getByText('请选择一年内有效时间范围，结束时间须晚于开始时间。').waitFor()
+    await page.getByRole('alert').getByText('请选择 31 天内有效时间范围。').waitFor()
     assert.equal(state.calls.slice(before).filter(u => u.pathname.includes('/history')).length, 0)
     await page.getByRole('tab', { name: '报告中心', exact: true }).click()
     await page.getByLabel('报告开始日期').fill('2024-01-01')
-    await page.getByRole('button', { name: '下载 CSV 报告', exact: true }).click()
-    await page.getByRole('alert').getByText('请选择一年内有效的报告日期范围。').waitFor()
+    await page.getByRole('button', { name: '生成报告', exact: true }).click()
+    await page.getByRole('alert').getByText('请选择 366 天内有效时间范围。').waitFor()
     assert.equal(state.downloads.length, 0)
   } finally { await browser.close() }
 })

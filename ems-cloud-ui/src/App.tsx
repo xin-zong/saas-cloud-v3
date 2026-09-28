@@ -1,4 +1,6 @@
-import { DEMO_MODE, send, type ApiRow } from "@/api/client"
+import { api, DEMO_MODE, send, type ApiRow } from "@/api/client"
+import { mergePresence, type Presence } from "@/api/presence"
+import { loadStationSnapshot, mergeStationSnapshot, type StationSnapshot } from "@/api/stationRealtime"
 
 import { adaptStation } from "@/api/adapters"
 import { loadStations } from "@/api/stations"
@@ -353,6 +355,34 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
 
     return () => controller.abort()
   }, [user, revision])
+
+  const presenceIds = stations.filter(station => hasStationPermission(user, station.id, "asset.read") || hasStationPermission(user, station.id, "telemetry.read")).map(station => station.id).join(",")
+  useEffect(() => {
+    if (DEMO_MODE || !presenceIds) return
+    const controller = new AbortController()
+    let timer: ReturnType<typeof setTimeout>
+    const refreshPresence = async () => {
+      if (!document.hidden) {
+        const rows = await Promise.all(presenceIds.split(",").map(async (id):Promise<{id:string;snapshot?:StationSnapshot;presence?:Presence;failed?:boolean}> => {
+          try {
+            if(hasStationPermission(user,id,"telemetry.read")) return {id,snapshot:await loadStationSnapshot(id,controller.signal)}
+            return {id,presence:await api<Presence>(`/stations/${encodeURIComponent(id)}/presence`,{signal:controller.signal})}
+          } catch {return {id,failed:true}}
+        }))
+        if (!controller.signal.aborted) setStations(current => current.map(station=>{
+          const row=rows.find(item=>item.id===station.id)
+          if(!row)return station
+          if(row.snapshot)return mergeStationSnapshot(station,row.snapshot)
+          if(row.presence)return mergePresence([station],[row.presence])[0]
+          const cleared=mergeStationSnapshot(station,{items:[],serverTime:Date.now(),presence:null})
+          return mergePresence([cleared],[{stationId:station.id,status:null,unavailable:true,devices:(station.deviceInventory??[]).map(device=>({id:device.id,status:null}))}])[0]
+        }))
+      }
+      if (!controller.signal.aborted) timer = setTimeout(refreshPresence, 10000)
+    }
+    void refreshPresence()
+    return () => { controller.abort(); clearTimeout(timer) }
+  }, [user, presenceIds])
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 

@@ -6,7 +6,11 @@ import {
 } from "@/data/stationTelemetry"
 import { loadHistory, loadPoints } from "./apiAnalytics"
 
-// Only unambiguous measurement names are mapped; unknown channels remain empty.
+// EMS uses protocol identities. Legacy names are accepted only when unambiguous.
+const sources: Partial<Record<SignalId, number>> = {
+  soc: 20018, storage: 20024, pcs: 20197, pv: 20107,
+  grid: 20248, temperature: 20029, dcVoltage: 20021, gridVoltage: 20236,
+}
 export async function queryStationTelemetry(
   station: Station,
   from: Date,
@@ -39,7 +43,10 @@ export async function queryStationTelemetry(
     const names = (aliases[item.id] ?? [item.name]).map(normalize)
     const candidates = points.filter(
       (point) =>
-        names.includes(normalize(point.name)) && point.unit === item.unit,
+        (point.source === 'ems'
+          ? point.namespace === 'cabinet' && Number(point.sourceId) === sources[item.id]
+          : names.includes(normalize(point.name))) &&
+        point.unit.replace('℃', '°C') === item.unit,
     )
     return candidates.length === 1
       ? [{ id: item.id, point: candidates[0] }]
@@ -52,7 +59,7 @@ export async function queryStationTelemetry(
         const end = Math.min(to.getTime(), cursor + 31 * 86400000)
         rows.push(
           ...(await loadHistory(
-            item.point.id,
+            item.point,
             new Date(cursor),
             new Date(end),
             minutes,
@@ -61,7 +68,7 @@ export async function queryStationTelemetry(
         )
         cursor = end
       }
-      return { id: item.id, rows }
+      return { id: item.id, rows, isLegacy: item.point.source !== 'ems' }
     }),
   )
   const rows = new Map<number, TelemetrySample>()
@@ -70,8 +77,10 @@ export async function queryStationTelemetry(
       const sample = rows.get(row.timestamp) ?? {
         timestamp: new Date(row.timestamp).toISOString(),
         values: {},
-        intervalMinutes: minutes,
       }
+      // Only the legacy average-power series has a known interval-average meaning.
+      // An EMS last-value bucket is not measured interval energy.
+      if (batch.id === 'storage' && batch.isLegacy) sample.intervalMinutes = minutes
       sample.values[batch.id] = row.value
       rows.set(row.timestamp, sample)
     }

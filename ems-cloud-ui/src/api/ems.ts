@@ -1,4 +1,34 @@
 import { api, type ApiRow } from './client'
+import type { StationDevice } from '../data/stationDevices'
+
+export async function loadDeviceObservations(stationId: string, signal: AbortSignal): Promise<Observation[]> {
+  const rows: Observation[] = []
+  for (let offset = 0; ; offset += 200) {
+    const page = await api<Latest>(`/stations/${encodeURIComponent(stationId)}/telemetry/latest?limit=200&offset=${offset}`, { signal })
+    rows.push(...page.items.map(adaptObservation))
+    if (!page.hasMore) return rows
+  }
+}
+
+/** Join by physical point ID; never fill absent or stale observations with zeros. */
+export function mergeDeviceObservations(devices: StationDevice[], rows: Observation[]): StationDevice[] {
+  const observations = new Map(rows.map(row => [row.pointId, row]))
+  return devices.map(device => {
+    const matching = device.points.map(point => observations.get(point.id)).filter((row): row is Observation => !!row)
+    if (!matching.length) return device
+    const points = device.points.map(point => {
+      const row = observations.get(point.id)
+      if (!row) return point
+      const value = row.staleReason ? null : chartNumber(row)
+      const valid = !row.staleReason && row.quality === 'valid' && row.value != null && (value !== null || row.valueType === 'text' || row.valueType === 'u16_words')
+      return { ...point, value, quality: valid ? 'good' as const : 'bad' as const,
+        exactValue: valid ? (Array.isArray(row.value) ? JSON.stringify(row.value) : String(row.value)) : undefined }
+    })
+    const received = matching.map(row => row.receivedAt).filter((at): at is number => typeof at === 'number' && Number.isFinite(at))
+    return { ...device, points, primaryPointId: device.primaryPointId || points.find(point => point.quality === 'good')?.id || '',
+      updatedAt: received.length ? new Date(Math.max(...received)).toISOString() : device.updatedAt }
+  })
+}
 
 export type EmsAccess = { stationPermissions?: Record<string, string[]> }
 export const emsAllowed = (user: EmsAccess | null | undefined, station: string, code: string) => !!user?.stationPermissions?.[station]?.includes(code)

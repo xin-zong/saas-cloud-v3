@@ -62,9 +62,9 @@ export function apiRoleConfig(user: AuthUser): RoleConfig {
     config.workOrderViews.push("我的待办")
   if (config.workOrderViews.length) config.nav.push("工单与审批")
   if (has("report.export")) {
-    if (has("strategy.read")) config.reportTypes.push("运营报告")
+    if (has("strategy.read") && has("telemetry.read")) config.reportTypes.push("运营报告")
     if (has("revenue.read")) config.reportTypes.push("收益报告")
-    if (has("asset.read")) config.reportTypes.push("设备健康报告")
+    if (has("asset.read") && has("alarm.read") && has("telemetry.read")) config.reportTypes.push("设备健康报告")
     if (config.reportTypes.length) config.analysisTabs.push("报告中心")
   }
   if (config.analysisTabs.length) config.nav.push("分析与报告")
