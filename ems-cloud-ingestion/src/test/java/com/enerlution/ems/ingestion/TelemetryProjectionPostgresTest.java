@@ -14,6 +14,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @EnabledIfEnvironmentVariable(named="EMS_TEST_SCHEMA", matches="ems_ingestion_tests")
 class TelemetryProjectionPostgresTest {
+    @Test void negativeLinkTimestampIsDiagnosedThenValidFrameCanProgress()throws Exception {
+        var diagnostics=new TransportDiagnostics();var consumer=new TelemetryConsumer(source,sink,diagnostics);
+        var raw=(ObjectNode)new com.fasterxml.jackson.databind.ObjectMapper().readTree(ordinary(1).rawBody());
+        ((ObjectNode)raw.path("d").path("link")).put("ts",-1);
+        // true is the poll loop's definitive-consumption contract: it may commit this offset.
+        assertTrue(consumer.accept(envelope("telemetry",raw.toString())));
+        assertTrue(written.isEmpty());assertEquals(1,count("telemetry_diagnostic_evidence","reason='invalid_profile'"));
+        assertEquals(0,diagnostics.count(TransportDiagnostics.Signal.DATABASE_FAILURE));
+        try(var c=source.getConnection()){assertEquals(0,scalar(c,"SELECT count(*) FROM cabinet_link_current WHERE binding_period_id="+period));}
+        assertTrue(consumer.accept(ordinary(2)));assertEquals(1,written.size());
+        try(var c=source.getConnection()){assertEquals(1,scalar(c,"SELECT count(*) FROM cabinet_link_current WHERE binding_period_id="+period));}
+    }
     PGSimpleDataSource source;
     UUID ems;
     long period, device, binding, point;

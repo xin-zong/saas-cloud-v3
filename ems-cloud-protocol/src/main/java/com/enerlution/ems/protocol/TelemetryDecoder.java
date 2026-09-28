@@ -39,7 +39,9 @@ public final class TelemetryDecoder {
             require(seen.equals(definedIds("cabinet",type)),"Incomplete cabinet profile");
             if(type.equals("cabinet_30s")) {
                 var observation=d.path("link");
-                link=new TelemetryBatch.LinkObservation(observation.path("online").isNull()?null:observation.path("online").booleanValue(),timestamp(observation.path("ts")));
+                Long linkTimestamp=timestamp(observation.path("ts"));
+                require(linkTimestamp==null||linkTimestamp>=0,"Negative link timestamp");
+                link=new TelemetryBatch.LinkObservation(observation.path("online").isNull()?null:observation.path("online").booleanValue(),linkTimestamp);
             }
         }
         return new TelemetryBatch(message.emsId(),cabinet,type,observations,configuration,null,link);

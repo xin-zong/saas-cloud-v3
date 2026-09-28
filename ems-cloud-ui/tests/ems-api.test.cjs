@@ -2,6 +2,24 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const ts = require('typescript')
+test('history chart type follows selected source evidence and only falls back for absent policy',()=>{
+ const {historyChartNumber}=setup()
+ const source={sourceTimeKind:'source',sourceTime:1000,receivedAt:1100,valueType:'number',value:'12.5',quality:'valid'}
+ for(const archive of [
+  {sourceTimeKind:'archive',sourceTime:2000,receivedAt:2100,valueType:'null',value:null,quality:'invalid'},
+  {sourceTimeKind:'archive',sourceTime:1000,receivedAt:1200,valueType:'null',value:null,quality:'invalid'},
+ ]) {
+  const row={value:'12.5',quality:'valid',aggregation:'last',selectedSourceTimeKind:'source',evidence:[source,archive]}
+  assert.equal(historyChartNumber(row),12.5)
+  const {selectedSourceTimeKind,...legacy}=row;assert.equal(historyChartNumber(legacy),null)
+  assert.equal(historyChartNumber({...row,selectedSourceTimeKind:null}),null)
+  assert.equal(historyChartNumber({...row,selectedSourceTimeKind:'missing'}),null)
+ }
+ const excludedText={sourceTimeKind:'archive',sourceTime:2000,receivedAt:2100,valueType:'text',value:'opaque',quality:'valid'}
+ for(const aggregation of ['avg','min','max','delta'])assert.equal(historyChartNumber({value:'12.5',quality:'valid',aggregation,selectedSourceTimeKind:'source',evidence:[source,excludedText]}),12.5)
+ assert.equal(historyChartNumber({value:'12.5',quality:'valid',aggregation:'last',selectedSourceTimeKind:'archive',evidence:[{...source,sourceTime:3000,valueType:'text'},{...source,sourceTimeKind:'archive'}]}),12.5)
+ assert.equal(historyChartNumber({value:null,quality:'invalid',aggregation:'last',selectedSourceTimeKind:'source',evidence:[{...source,value:null,valueType:'null',quality:'invalid'},{...source,sourceTimeKind:'archive'}]}),null)
+})
 function load(name, cache = new Map()) {
  if(cache.has(name)) return cache.get(name)
  const filename = `${__dirname}/../src/api/${name}.ts`

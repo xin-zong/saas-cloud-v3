@@ -8,6 +8,16 @@ import java.nio.file.*;
 import java.math.*;
 import java.util.*;
 class TelemetryDecoderTest {
+ @Test void negativeLinkTimeIsDefinitivelyInvalidWithoutChangingOtherTimestampRules()throws Exception {
+  var negative=fixture("机柜30秒");block(negative,"link").put("ts",-1);
+  assertThrows(ProtocolException.class,()->decode(negative));
+  var unknown=fixture("机柜30秒");block(unknown,"link").putNull("ts");
+  assertNull(decode(unknown).link().sourceTimestampMs());
+  var zero=fixture("机柜30秒");block(zero,"link").put("ts",0);
+  block(zero,"bms").put("ts",-1);
+  assertEquals(0L,decode(zero).link().sourceTimestampMs());
+  assertTrue(decode(zero).observations().stream().filter(p->p.subsystem().equals("bms")).allMatch(p->p.sourceTimestampMs()==-1L));
+ }
  @Test void cabinetLinkPreservesBooleanNullAndOriginalTimestamp()throws Exception {
   var accessor=assertDoesNotThrow(()->TelemetryBatch.class.getMethod("link"));
   for(Boolean online:Arrays.asList(true,false,null)) {

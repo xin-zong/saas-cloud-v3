@@ -52,7 +52,9 @@ export const exactText = (value: unknown): string => value == null ? '—（未�
 /** Bucket types come from original historical evidence, never a current sample. */
 export function historyChartNumber(row: ApiRow): number | null {
   if (row.conflict || row.resetUnknown || !Array.isArray(row.evidence) || !row.evidence.length) return null
-  const evidence = row.evidence as ApiRow[]
+  const evidence = Object.prototype.hasOwnProperty.call(row,'selectedSourceTimeKind')
+    ? (row.evidence as ApiRow[]).filter(item=>item.sourceTimeKind === row.selectedSourceTimeKind)
+    : row.evidence as ApiRow[]
   const ordered = [...evidence].sort((a,b)=>Number(a.sourceTime)-Number(b.sourceTime)||Number(a.receivedAt)-Number(b.receivedAt))
   const samples = evidence.filter(item=>item.quality === 'valid' && item.valueType !== 'null')
   const numeric = row.aggregation === 'last' ? ordered[ordered.length - 1]?.valueType === 'number' : samples.length > 0 && samples.every(item => item.valueType === 'number')
