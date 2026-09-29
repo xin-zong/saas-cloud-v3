@@ -62,9 +62,9 @@ Files: scripts/ems-simulator/*（新）；docs/ems-integration/2026-09-29-full-p
 ## Task 5: 集成、复核与发布（controller + reviewer）
 - [x] Task级差异/报告复核；统一接口与整条数据链，修复发现的问题。
 - [x] 本地/云端 DB 迁移、API/UI 构建、权限边界、13 项隔离浏览器用例与实际 MQTT 入库验证。
-- [ ] 用户真实账号重新登录后的曲线、报告预览/下载页面验收；本地 API 重启后需要用户登录，已异步请求。
+- [x] 用户真实账号页面验收：SSE 实际测点、报告失败重试及正文、多点 CSV 生成与下载审计已核对；内置浏览器未返回最终保存路径，见验收记录。
 - [x] 只stage任务文件，排除个人截图/证书/环境秘密，main提交并push origin/main。
 - [x] 确认线上现有部署路径/服务、备份制品、部署前后端18085，校验hash与健康，配置SSE反代关闭buffering，报告制品在 PostgreSQL 不可变关系中持久化。
 - [x] 记录实际commit、release、验证结果与剩余仅真实硬件限制；总目标全部完成前不标完成。
 
-发布源码 `b3b432521f5c20607147bfd471751236a3fd5780`，main 已推送；release `main-b3b432521f5c` 已部署 18085。详见 ../../superpowers/verification/2026-09-29-ems-business-acceptance.md。仍待真实账号页面验收，不将 mock 浏览器测试当作真实登录验收。
+发布源码 `b3b432521f5c20607147bfd471751236a3fd5780`，main 已推送；release `main-b3b432521f5c` 已部署 18085。详见 ../../superpowers/verification/2026-09-29-ems-business-acceptance.md。真实账号验收已在 08:44 后执行，补修运行角色诊断表读取授权及异步鉴权上下文；详见验收记录。

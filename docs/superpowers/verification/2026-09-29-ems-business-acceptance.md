@@ -55,3 +55,7 @@
 - 切换离开 SSE 时发现异步 redispatch 缺少 Sa-Token 线程上下文。新增真实嵌入式 HTTP 回归先复现异常，再显式为原上下文过滤器注册 REQUEST/ASYNC/ERROR，保留初始及异步分派两次鉴权。18 项相关测试通过，生产打包通过。
 - 早间登录 500 是本地数据库 SSH 隧道进程退出；恢复独立后台隧道（带 keepalive 与重连）后，登录接口恢复正常认证响应，用户已实际登录。未更改用户密码。
 - 本轮仅更新后端上下文配置和运行权限，不改变前端制品。截图保存在本地 .local-tools/report-real-preview.png、telemetry-real-export.png。
+
+## 补修发布结果
+
+后端补修提交 32b2cea43a3b9fa638693ec0e35b2c44394d3b95 已推送 main 并部署至 release main-32b2cea43a3b；API SHA256 为 51a1d54de2f68abb34548cf6550e16fc307fb6b8b72a56b9f0f2133e3eccd66e。前端仍为已验收的 main-b3b432521f5c 制品。新后端同时在本地启动，数据库连接池成功连接；重启导致内存会话失效，已生成任务与制品保留。本次浏览器下载请求与服务器制品已验证，浏览器最终保存位置未验证。
