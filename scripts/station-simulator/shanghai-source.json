@@ -1,0 +1,692 @@
+{
+  "schema": 1,
+  "nodes": [
+    {
+      "id": "GRID-01",
+      "type": "grid",
+      "name": "公共电网",
+      "x": 430,
+      "y": 50,
+      "voltage": "10 kV"
+    },
+    {
+      "id": "M-01",
+      "type": "meter",
+      "name": "并网计量点",
+      "x": 430,
+      "y": 180,
+      "voltage": "10 kV",
+      "role": "并网点计量",
+      "polarity": "",
+      "scope": "PCC-01",
+      "communication": {
+        "parent": "EMS-01",
+        "port": "RS485-1",
+        "protocol": "rtu",
+        "devicePort": "RS485-1",
+        "host": "192.168.10.101",
+        "tcpPort": "502",
+        "unit": "1",
+        "slave": "1",
+        "canId": "1",
+        "mapping": "",
+        "poll": "1000",
+        "timeout": "3000",
+        "configured": false
+      },
+      "commPorts": [
+        {
+          "id": "P01",
+          "protocol": "rtu",
+          "actual": "RS485-1",
+          "role": "server",
+          "host": "192.168.10.101",
+          "address": "1",
+          "baud": "9600",
+          "parity": "Even",
+          "bitrate": "500",
+          "version": "",
+          "tcpPort": "502"
+        }
+      ]
+    },
+    {
+      "id": "T-01",
+      "type": "transformer",
+      "name": "1# 变压器",
+      "x": 430,
+      "y": 310,
+      "rating": "1250",
+      "unit": "kVA",
+      "voltage": "10 kV / 400 V"
+    },
+    {
+      "id": "BUS-01",
+      "type": "bus",
+      "name": "低压交流母线",
+      "x": 70,
+      "y": 440,
+      "voltage": "400 V",
+      "busWidth": 872
+    },
+    {
+      "id": "INV-01",
+      "type": "pv",
+      "name": "光伏逆变器",
+      "x": 70,
+      "y": 503,
+      "rating": "200",
+      "unit": "kW",
+      "voltage": "400 V",
+      "controllable": false,
+      "communication": {
+        "parent": "EMS-01",
+        "port": "ETH-1",
+        "protocol": "tcp",
+        "devicePort": "LAN-1",
+        "host": "192.168.10.102",
+        "tcpPort": "502",
+        "unit": "1",
+        "slave": "2",
+        "canId": "2",
+        "mapping": "",
+        "poll": "1000",
+        "timeout": "3000",
+        "configured": false
+      },
+      "commPorts": [
+        {
+          "id": "P01",
+          "protocol": "tcp",
+          "actual": "LAN-1",
+          "role": "server",
+          "host": "192.168.10.102",
+          "address": "1",
+          "baud": "19200",
+          "parity": "Even",
+          "bitrate": "500",
+          "version": "",
+          "tcpPort": "502"
+        }
+      ]
+    },
+    {
+      "id": "PCS-01",
+      "type": "pcs",
+      "name": "1# 储能 PCS",
+      "x": 310,
+      "y": 503,
+      "rating": "125",
+      "unit": "kW",
+      "voltage": "400 V",
+      "controllable": true,
+      "scope": "T-01 储能控制组",
+      "communication": {
+        "parent": "EMS-01",
+        "port": "ETH-1",
+        "protocol": "tcp",
+        "devicePort": "LAN-1",
+        "host": "192.168.10.103",
+        "tcpPort": "502",
+        "unit": "1",
+        "slave": "3",
+        "canId": "3",
+        "mapping": "",
+        "poll": "1000",
+        "timeout": "3000",
+        "configured": false
+      },
+      "commPorts": [
+        {
+          "id": "P01",
+          "protocol": "tcp",
+          "actual": "LAN-1",
+          "role": "server",
+          "host": "192.168.10.103",
+          "address": "1",
+          "baud": "19200",
+          "parity": "Even",
+          "bitrate": "500",
+          "version": "",
+          "tcpPort": "502"
+        },
+        {
+          "id": "P02",
+          "protocol": "can",
+          "actual": "CAN-BMS-1",
+          "role": "peer",
+          "host": "",
+          "address": "1",
+          "baud": "19200",
+          "parity": "Even",
+          "bitrate": "500",
+          "version": "",
+          "tcpPort": "502"
+        }
+      ]
+    },
+    {
+      "id": "PCS-02",
+      "type": "pcs",
+      "name": "2# 储能 PCS",
+      "x": 550,
+      "y": 503,
+      "rating": "125",
+      "unit": "kW",
+      "voltage": "400 V",
+      "controllable": true,
+      "scope": "",
+      "communication": {
+        "parent": "EMS-01",
+        "port": "ETH-1",
+        "protocol": "tcp",
+        "devicePort": "LAN-1",
+        "host": "192.168.10.104",
+        "tcpPort": "502",
+        "unit": "1",
+        "slave": "4",
+        "canId": "4",
+        "mapping": "",
+        "poll": "1000",
+        "timeout": "3000",
+        "configured": false
+      },
+      "commPorts": [
+        {
+          "id": "P01",
+          "protocol": "tcp",
+          "actual": "LAN-1",
+          "role": "server",
+          "host": "192.168.10.104",
+          "address": "1",
+          "baud": "19200",
+          "parity": "Even",
+          "bitrate": "500",
+          "version": "",
+          "tcpPort": "502"
+        },
+        {
+          "id": "P02",
+          "protocol": "can",
+          "actual": "CAN-BMS-1",
+          "role": "peer",
+          "host": "",
+          "address": "1",
+          "baud": "19200",
+          "parity": "Even",
+          "bitrate": "500",
+          "version": "",
+          "tcpPort": "502"
+        }
+      ]
+    },
+    {
+      "id": "LOAD-01",
+      "type": "load",
+      "name": "园区生产负荷",
+      "x": 790,
+      "y": 503,
+      "rating": "800",
+      "unit": "kW",
+      "voltage": "400 V",
+      "controllable": false
+    },
+    {
+      "id": "BAT-01",
+      "type": "battery",
+      "name": "1# 电池系统",
+      "x": 310,
+      "y": 633,
+      "rating": "261",
+      "unit": "kWh",
+      "voltage": "750 V",
+      "communication": {
+        "parent": "EMS-01",
+        "port": "CAN-1",
+        "protocol": "can",
+        "devicePort": "CAN-1",
+        "host": "192.168.10.105",
+        "tcpPort": "502",
+        "unit": "1",
+        "slave": "5",
+        "canId": "5",
+        "mapping": "",
+        "poll": "1000",
+        "timeout": "3000",
+        "configured": false
+      },
+      "commPorts": [
+        {
+          "id": "P01",
+          "protocol": "can",
+          "actual": "CAN-1",
+          "role": "peer",
+          "host": "192.168.10.105",
+          "address": "5",
+          "baud": "19200",
+          "parity": "Even",
+          "bitrate": "500",
+          "version": "",
+          "tcpPort": "502"
+        },
+        {
+          "id": "P02",
+          "protocol": "can",
+          "actual": "CAN-PCS-1",
+          "role": "peer",
+          "host": "",
+          "address": "1",
+          "baud": "19200",
+          "parity": "Even",
+          "bitrate": "500",
+          "version": "",
+          "tcpPort": "502"
+        }
+      ]
+    },
+    {
+      "id": "BAT-02",
+      "type": "battery",
+      "name": "2# 电池系统",
+      "x": 550,
+      "y": 633,
+      "rating": "261",
+      "unit": "kWh",
+      "voltage": "750 V",
+      "communication": {
+        "parent": "EMS-01",
+        "port": "CAN-1",
+        "protocol": "can",
+        "devicePort": "CAN-1",
+        "host": "192.168.10.106",
+        "tcpPort": "502",
+        "unit": "1",
+        "slave": "6",
+        "canId": "6",
+        "mapping": "",
+        "poll": "1000",
+        "timeout": "3000",
+        "configured": false
+      },
+      "commPorts": [
+        {
+          "id": "P01",
+          "protocol": "can",
+          "actual": "CAN-1",
+          "role": "peer",
+          "host": "192.168.10.106",
+          "address": "6",
+          "baud": "19200",
+          "parity": "Even",
+          "bitrate": "500",
+          "version": "",
+          "tcpPort": "502"
+        },
+        {
+          "id": "P02",
+          "protocol": "can",
+          "actual": "CAN-PCS-1",
+          "role": "peer",
+          "host": "",
+          "address": "1",
+          "baud": "19200",
+          "parity": "Even",
+          "bitrate": "500",
+          "version": "",
+          "tcpPort": "502"
+        }
+      ]
+    },
+    {
+      "id": "EMS-01",
+      "type": "ems",
+      "name": "站级 EMS",
+      "x": 442,
+      "y": 140,
+      "communication": {
+        "parent": "",
+        "port": "ETH-1",
+        "protocol": "tcp",
+        "devicePort": "LAN-1",
+        "host": "192.168.10.107",
+        "tcpPort": "502",
+        "unit": "1",
+        "slave": "7",
+        "canId": "7",
+        "mapping": "",
+        "poll": "1000",
+        "timeout": "3000",
+        "configured": false
+      },
+      "channels": [
+        {
+          "id": "ETH-1",
+          "medium": "ethernet",
+          "ip": "192.168.10.1",
+          "mask": "255.255.255.0"
+        },
+        {
+          "id": "ETH-2",
+          "medium": "ethernet",
+          "ip": "192.168.20.1",
+          "mask": "255.255.255.0"
+        },
+        {
+          "id": "RS485-1",
+          "medium": "serial",
+          "baud": "9600",
+          "dataBits": "8",
+          "parity": "Even",
+          "stopBits": "1"
+        },
+        {
+          "id": "RS485-2",
+          "medium": "serial",
+          "baud": "19200",
+          "dataBits": "8",
+          "parity": "Even",
+          "stopBits": "1"
+        },
+        {
+          "id": "CAN-1",
+          "medium": "can",
+          "bitrate": "500",
+          "frame": "standard"
+        }
+      ],
+      "commPorts": [
+        {
+          "id": "P01",
+          "protocol": "rtu",
+          "actual": "RS485-1",
+          "role": "client",
+          "host": "",
+          "address": "1",
+          "baud": "9600",
+          "parity": "Even",
+          "bitrate": "500",
+          "version": "",
+          "tcpPort": "502"
+        },
+        {
+          "id": "P02",
+          "protocol": "tcp",
+          "actual": "ETH-1",
+          "role": "client",
+          "host": "",
+          "address": "1",
+          "baud": "19200",
+          "parity": "Even",
+          "bitrate": "500",
+          "version": "",
+          "tcpPort": "502"
+        },
+        {
+          "id": "P03",
+          "protocol": "can",
+          "actual": "CAN-1",
+          "role": "peer",
+          "host": "",
+          "address": "1",
+          "baud": "19200",
+          "parity": "Even",
+          "bitrate": "500",
+          "version": "",
+          "tcpPort": "502"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "E4",
+      "from": "BUS-01",
+      "fromPort": "AC",
+      "to": "PCS-01",
+      "toPort": "AC",
+      "kind": "ac"
+    },
+    {
+      "id": "E5",
+      "from": "BUS-01",
+      "fromPort": "AC",
+      "to": "PCS-02",
+      "toPort": "AC",
+      "kind": "ac"
+    },
+    {
+      "id": "E6",
+      "from": "BUS-01",
+      "fromPort": "AC",
+      "to": "LOAD-01",
+      "toPort": "AC",
+      "kind": "ac"
+    },
+    {
+      "id": "E7",
+      "from": "PCS-01",
+      "fromPort": "DC",
+      "to": "BAT-01",
+      "toPort": "DC",
+      "kind": "dc"
+    },
+    {
+      "id": "E8",
+      "from": "PCS-02",
+      "fromPort": "DC",
+      "to": "BAT-02",
+      "toPort": "DC",
+      "kind": "dc"
+    },
+    {
+      "id": "BOUNDARY-PCC-01-0",
+      "from": "GRID-01",
+      "fromPort": "AC",
+      "to": "M-01",
+      "toPort": "IN",
+      "kind": "ac"
+    },
+    {
+      "id": "BOUNDARY-PCC-01-1",
+      "from": "M-01",
+      "fromPort": "OUT",
+      "to": "T-01",
+      "toPort": "HV",
+      "kind": "ac"
+    },
+    {
+      "id": "BOUNDARY-PCC-01-2",
+      "from": "T-01",
+      "fromPort": "LV",
+      "to": "BUS-01",
+      "toPort": "AC",
+      "kind": "ac"
+    },
+    {
+      "id": "E1790585005348",
+      "from": "INV-01",
+      "fromPort": "AC",
+      "to": "BUS-01",
+      "toPort": "AC",
+      "kind": "ac"
+    }
+  ],
+  "site": {
+    "name": "苏州工业园 · 光储站",
+    "scene": "光储协同",
+    "grid": "单并网点",
+    "mode": "并网运行",
+    "scope": "全站监测 · 储能可控",
+    "boundaries": [
+      {
+        "id": "PCC-01",
+        "name": "公共电网",
+        "voltage": "10 kV",
+        "gridId": "GRID-01",
+        "meterId": "M-01",
+        "busId": "BUS-01",
+        "transformerId": "T-01",
+        "switchId": "",
+        "path": [
+          "GRID-01",
+          "M-01",
+          "T-01",
+          "BUS-01"
+        ]
+      }
+    ]
+  },
+  "submitted": false,
+  "revision": 1,
+  "legacyGateways": [
+    {
+      "id": "GW-01",
+      "type": "gateway",
+      "name": "采集网关",
+      "x": 442,
+      "y": 300,
+      "communication": {
+        "parent": "EMS-01",
+        "port": "ETH-1",
+        "protocol": "tcp",
+        "devicePort": "LAN-1",
+        "host": "192.168.10.108",
+        "tcpPort": "502",
+        "unit": "1",
+        "slave": "8",
+        "canId": "8",
+        "mapping": "",
+        "poll": "1000",
+        "timeout": "3000",
+        "configured": false
+      },
+      "channels": [
+        {
+          "id": "ETH-1",
+          "medium": "ethernet",
+          "ip": "192.168.10.1",
+          "mask": "255.255.255.0"
+        },
+        {
+          "id": "ETH-2",
+          "medium": "ethernet",
+          "ip": "192.168.20.1",
+          "mask": "255.255.255.0"
+        },
+        {
+          "id": "RS485-1",
+          "medium": "serial",
+          "baud": "9600",
+          "dataBits": "8",
+          "parity": "Even",
+          "stopBits": "1"
+        },
+        {
+          "id": "RS485-2",
+          "medium": "serial",
+          "baud": "19200",
+          "dataBits": "8",
+          "parity": "Even",
+          "stopBits": "1"
+        },
+        {
+          "id": "CAN-1",
+          "medium": "can",
+          "bitrate": "500",
+          "frame": "standard"
+        }
+      ]
+    }
+  ],
+  "commLinks": [
+    {
+      "id": "UP-M-01",
+      "a": {
+        "node": "EMS-01",
+        "port": "P01"
+      },
+      "b": {
+        "node": "M-01",
+        "port": "P01"
+      }
+    },
+    {
+      "id": "UP-INV-01",
+      "a": {
+        "node": "EMS-01",
+        "port": "P02"
+      },
+      "b": {
+        "node": "INV-01",
+        "port": "P01"
+      }
+    },
+    {
+      "id": "UP-PCS-01",
+      "a": {
+        "node": "EMS-01",
+        "port": "P02"
+      },
+      "b": {
+        "node": "PCS-01",
+        "port": "P01"
+      }
+    },
+    {
+      "id": "UP-PCS-02",
+      "a": {
+        "node": "EMS-01",
+        "port": "P02"
+      },
+      "b": {
+        "node": "PCS-02",
+        "port": "P01"
+      }
+    },
+    {
+      "id": "UP-BAT-01",
+      "a": {
+        "node": "EMS-01",
+        "port": "P03"
+      },
+      "b": {
+        "node": "BAT-01",
+        "port": "P01"
+      }
+    },
+    {
+      "id": "UP-BAT-02",
+      "a": {
+        "node": "EMS-01",
+        "port": "P03"
+      },
+      "b": {
+        "node": "BAT-02",
+        "port": "P01"
+      }
+    },
+    {
+      "id": "LOCAL-BAT-01",
+      "a": {
+        "node": "PCS-01",
+        "port": "P02"
+      },
+      "b": {
+        "node": "BAT-01",
+        "port": "P02"
+      }
+    },
+    {
+      "id": "LOCAL-BAT-02",
+      "a": {
+        "node": "PCS-02",
+        "port": "P02"
+      },
+      "b": {
+        "node": "BAT-02",
+        "port": "P02"
+      }
+    }
+  ],
+  "portGraphVersion": 1
+}

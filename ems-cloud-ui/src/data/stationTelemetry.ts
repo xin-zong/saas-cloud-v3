@@ -22,6 +22,12 @@ export type TelemetrySample = {
 };
 export type TelemetryRow = { timestamp: number; intervalMinutes?: number } & Partial<Record<SignalId, number | null>>;
 
+/** A valid sample without a valid neighbour cannot form a line segment. */
+export function hasIsolatedTelemetryValue<T>(rows: readonly T[], key: keyof T): boolean {
+  const valid = (index: number) => typeof rows[index]?.[key] === "number" && Number.isFinite(rows[index][key])
+  return rows.some((_, index) => valid(index) && !valid(index - 1) && !valid(index + 1))
+}
+
 export function normalizeTelemetry(samples: TelemetrySample[]): TelemetryRow[] {
   const rows = new Map<number, TelemetryRow>();
   samples.forEach((sample) => {

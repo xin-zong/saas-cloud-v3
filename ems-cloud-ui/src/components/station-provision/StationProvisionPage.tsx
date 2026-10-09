@@ -17,52 +17,19 @@ import { Asset, Field, Modal } from "./Common"
 
 import {
   provisionDraftKey,
-  deviceTypes,
   emptyProvision,
   parseDraft,
   validateBasics,
-  validateTopology,
   deploymentStages,
-  type Device,
   type DeviceType,
   type ProvisionDraft,
 } from "./model"
 
 import "./station-entry.css"
 
-const icon: Record<DeviceType, string> = {
-  电网: "imgGrid",
+import TopologyEditor, { NodeIcon } from "./TopologyEditor"
 
-  光伏: "imgPv",
-
-  "光伏 DC/DC": "imgPvDcDc",
-
-  PCS: "imgPcs",
-
-  "电池 / BMS": "imgBattery",
-
-  负载: "imgLoad",
-
-  电表: "img",
-}
-
-const positions: Record<DeviceType, [number, number]> = {
-  电网: [18, 15],
-
-  光伏: [72, 43],
-
-  "光伏 DC/DC": [72, 66],
-
-  PCS: [39, 52],
-
-  "电池 / BMS": [62, 83],
-
-  负载: [83, 15],
-
-  电表: [18, 30],
-}
-
-type PositionedDevice = Device & { x?: number; y?: number }
+import { templates, buildTemplate, validateGraph } from "./model"
 
 function initialFor(station?: Station): ProvisionDraft {
   return station
@@ -99,7 +66,9 @@ export default function StationProvisionPage(props: Props) {
 
   const storageKey = provisionDraftKey(
     user?.id ?? "anonymous",
+
     DEMO_MODE,
+
     props.station?.id,
   )
 
@@ -127,7 +96,9 @@ function ProvisionEditor({
 
   const [customers, setCustomers] = useState<{
     id: number
+
     name: string
+
     can_edit: boolean
   }[]>([])
 
@@ -141,14 +112,19 @@ function ProvisionEditor({
     !DEMO_MODE && !!user?.permissions.includes("customer.read")
 
   function revokeDraftCustomer() {
-    setDraft((d) => d.customerId ? { ...d, customerId: null } : d)
+    setDraft((d) => (d.customerId ? { ...d, customerId: null } : d))
+
     setPast([])
+
     setFuture([])
+
     try {
       const stored = parseDraft(localStorage.getItem(key))
+
       if (stored)
         localStorage.setItem(
           key,
+
           JSON.stringify({ ...stored, customerId: null }),
         )
     } catch {}
@@ -158,64 +134,90 @@ function ProvisionEditor({
 
   async function loadCustomers(signal?: AbortSignal) {
     const request = ++customerRequest.current
+
     setCustomerLoading(true)
+
     setCustomerError("")
+
     setCustomers([])
+
     try {
       const data = await api<{ id: number; name: string; can_edit: boolean }[]>(
         "/platform/customers",
+
         { signal },
       )
+
       if (signal?.aborted || request !== customerRequest.current) return
+
       const allowed = data.filter((c) => c.can_edit)
+
       setCustomers(allowed)
+
       setDraft((d) =>
         d.customerId && !allowed.some((c) => String(c.id) === d.customerId)
           ? { ...d, customerId: null }
           : d,
       )
+
       try {
         const stored = parseDraft(localStorage.getItem(key))
+
         if (
           stored?.customerId &&
           !allowed.some((c) => String(c.id) === stored.customerId)
         ) {
           localStorage.setItem(
             key,
+
             JSON.stringify({ ...stored, customerId: null }),
           )
+
           setPast([])
+
           setFuture([])
         }
       } catch {}
     } catch (e) {
       if (!signal?.aborted && request === customerRequest.current) {
         setCustomerError(e instanceof Error ? e.message : "客户加载失败")
+
         revokeDraftCustomer()
       }
     } finally {
-      if (!signal?.aborted && request === customerRequest.current) setCustomerLoading(false)
+      if (!signal?.aborted && request === customerRequest.current)
+        setCustomerLoading(false)
     }
   }
 
   useEffect(() => {
     const controller = new AbortController()
+
     if (canReadCustomers) void loadCustomers(controller.signal)
     else {
       setCustomerLoading(false)
+
       setCustomerError("")
+
       setCustomers([])
+
       revokeDraftCustomer()
     }
+
     return () => {
       customerRequest.current++
+
       controller.abort()
     }
   }, [
     user?.id,
+
     canReadCustomers,
+
     JSON.stringify(user?.stationPermissions),
+
     JSON.stringify(user?.organizationPermissions),
+
     JSON.stringify(user?.permissions),
   ])
 
@@ -229,13 +231,28 @@ function ProvisionEditor({
 
   const [notice, setNotice] = useState("")
 
+  const [pendingTemplate, setPendingTemplate] = useState<string | null>(null)
+
   const [modal, setModal] = useState<"leave" | "clear" | "publish" | null>(null)
 
   const [past, setPast] = useState<ProvisionDraft[]>([])
 
   const [future, setFuture] = useState<ProvisionDraft[]>([])
 
-  const canvas = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (DEMO_MODE || !station || localStorage.getItem(key)) return
+    const controller = new AbortController()
+    const initial = JSON.stringify(draft)
+    api<ProvisionDraft>(`/stations/${station.id}/provision-design`, { signal: controller.signal })
+      .then((record) => {
+        const parsed = parseDraft(JSON.stringify(record))
+        if (!parsed || controller.signal.aborted) return
+        setDraft((current) => JSON.stringify(current) === initial ? parsed : current)
+        setSaved(JSON.stringify(parsed))
+      })
+      .catch(() => { /* Existing stations without a saved engineering design keep their local draft. */ })
+    return () => controller.abort()
+  }, [station?.id, key])
 
   const file = useRef<HTMLInputElement>(null)
 
@@ -243,9 +260,11 @@ function ProvisionEditor({
 
   const { settleLeave } = useEditorLeaveGuard({
     dirty,
+
     registerLeaveGuard,
 
     onConfirm: () => setModal("leave"),
+
     onCancel: () => setModal(null),
   })
 
@@ -255,12 +274,10 @@ function ProvisionEditor({
     onBack()
   }
 
-  const device = draft.devices.find((d) => d.id === selected)
-
-  const issues = validateTopology(draft.devices)
+  const issues = validateGraph(draft)
 
   const communication = draft.devices.filter(
-    (d) => !["电网", "光伏", "负载"].includes(d.type),
+    (d) => !["电网", "负载", "变压器", "交流母线", "断路器"].includes(d.type),
   )
 
   useEffect(() => {
@@ -293,48 +310,6 @@ function ProvisionEditor({
     setErrors([])
   }
 
-  function updateDevice(patch: Partial<PositionedDevice>) {
-    change({
-      devices: draft.devices.map((d) =>
-        d.id === selected ? { ...d, ...patch } : d,
-      ),
-    })
-  }
-
-  function addDevice(type: DeviceType) {
-    const count = draft.devices.filter((d) => d.type === type).length
-
-    const d: Device = {
-      id: crypto.randomUUID(),
-
-      type,
-
-      name: `${type === "电池 / BMS" ? "电池簇" : type} ${count + 1}`,
-
-      protocol: "",
-
-      interface: type === "电池 / BMS" ? "COM 1" : "LAN 1",
-
-      ip: "",
-
-      port: "502",
-
-      address: String(communication.length + 1),
-
-      bus: draft.buses[0] ?? "",
-
-      baud: "9600",
-
-      parity: "无校验",
-
-      bits: "8 / 1",
-    }
-
-    change({ devices: [...draft.devices, d] })
-
-    setSelected(d.id)
-  }
-
   function save() {
     try {
       if (
@@ -344,6 +319,7 @@ function ProvisionEditor({
           !customers.some((c) => String(c.id) === draft.customerId))
       ) {
         setErrors(["客户选项已失效，请重新选择后保存草稿"])
+
         return
       }
 
@@ -459,7 +435,7 @@ function ProvisionEditor({
         </h1>
       </header>
       <nav className="provision-steps" aria-label="建站步骤">
-        {["基础信息", "拓扑与设备", "校验发布", "部署结果"].map((label, i) => (
+        {["基本信息", "搭建拓扑", "校验发布", "部署结果"].map((label, i) => (
           <button
             key={label}
             aria-current={step === i ? "step" : undefined}
@@ -488,6 +464,31 @@ function ProvisionEditor({
           ))}
         </div>
       )}
+      {pendingTemplate && (
+        <Modal
+          title="替换当前拓扑？"
+          onClose={() => setPendingTemplate(null)}
+          actions={
+            <>
+              <Button onClick={() => setPendingTemplate(null)}>取消</Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  change(buildTemplate(pendingTemplate))
+                  setPendingTemplate(null)
+                }}
+              >
+                替换拓扑
+              </Button>
+            </>
+          }
+        >
+          <p>
+            将使用“{pendingTemplate}
+            ”替换当前节点和连接。基本信息保留，替换后可撤销。
+          </p>
+        </Modal>
+      )}
       <main className="provision-main">
         {step === 0 && (
           <section className="station-panel provision-basics">
@@ -500,7 +501,7 @@ function ProvisionEditor({
                   placeholder="请输入站点名称"
                 />
               </Field>
-              <Field label="站点 ID">
+              <Field label="站点 ID *">
                 <input
                   value={draft.code}
                   onChange={(e) => setField("code", e.target.value)}
@@ -537,11 +538,13 @@ function ProvisionEditor({
                         {customerLoading ? "正在加载客户…" : "未关联客户"}
                       </option>
                       {customers
+
                         .filter(
                           (c) =>
                             String(c.id) === draft.customerId ||
                             c.name.includes(customerSearch),
                         )
+
                         .map((c) => (
                           <option key={c.id} value={c.id}>
                             {c.name}
@@ -567,7 +570,7 @@ function ProvisionEditor({
                   </div>
                 </Field>
               )}
-              <Field label="所属组织">
+              <Field label="所属组织 *">
                 <input
                   value={draft.organization}
                   onChange={(e) => setField("organization", e.target.value)}
@@ -684,357 +687,84 @@ function ProvisionEditor({
                 </div>
               </Field>
             </div>
+            <section className="provision-templates">
+              <h3>拓扑起始模板</h3>
+              <div role="radiogroup" aria-label="拓扑起始模板">
+                {templates.map((t) => (
+                  <label key={t}>
+                    <input
+                      type="radio"
+                      name="topology-template"
+                      checked={(draft.template ?? "自定义空白拓扑") === t}
+                      onChange={() => {
+                        if (draft.devices.length) setPendingTemplate(t)
+                        else change(buildTemplate(t))
+                      }}
+                    />
+                    {t}
+                  </label>
+                ))}
+              </div>
+              <div className="template-preview">
+                <div>
+                  <strong>{draft.template ?? "自定义空白拓扑"}</strong>
+                  <p>
+                    {draft.template === "工商业储能"
+                      ? "储能接入交流母线，为工商业负荷供能。"
+                      : draft.template === "光储充"
+                        ? "光伏、储能与充电设施共用交流母线。"
+                        : draft.template === "光储协同"
+                          ? "光伏发电与储能协同，接入站内负荷。"
+                          : "从空白画布开始，自行添加设备和连接。"}
+                  </p>
+                </div>
+                <div className="template-diagram">
+                  {draft.template && draft.template !== "自定义空白拓扑" ? (
+                    <>
+                      <div>
+                        <NodeIcon type="电网" />
+                        公共电网
+                      </div>
+                      <div className="template-branches">
+                        {(draft.template === "工商业储能"
+                          ? ["PCS", "负载"]
+                          : ["光伏", "PCS", "负载"]
+                        ).map((t) => (
+                          <div key={t}>
+                            <NodeIcon type={t as DeviceType} />
+                            {t === "PCS"
+                              ? "储能"
+                              : t === "负载"
+                                ? draft.template === "光储充"
+                                  ? "充电设施"
+                                  : "负荷"
+                                : "光伏"}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <p>
+                      ＋<br />
+                      添加节点 · 自由连接
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
           </section>
         )}
         {step === 1 && (
-          <div className="provision-topology">
-            <aside className="station-panel provision-palette">
-              <h2>设备与母线</h2>
-              {["交流母线", "直流母线"].map((bus) => (
-                <Button
-                  key={bus}
-                  className={bus === "直流母线" ? "dc" : "ac"}
-                  disabled={draft.buses.includes(bus)}
-                  onClick={() => change({ buses: [...draft.buses, bus] })}
-                >
-                  ＋ {bus}
-                </Button>
-              ))}
-              <div className="palette-devices">
-                {deviceTypes.map((type) => (
-                  <Button key={type} onClick={() => addDevice(type)}>
-                    <span className="palette-icon">
-                      <Asset name={`topology-${icon[type]}`} />
-                    </span>
-                    {type}
-                  </Button>
-                ))}
-              </div>
-            </aside>
-            <section className="station-panel provision-canvas-panel">
-              <header>
-                <h2>电气拓扑</h2>
-                <div>
-                  <Button
-                    aria-label="撤销"
-                    disabled={!past.length}
-                    onClick={undo}
-                  >
-                    <Asset name="topology-imgFrame" />
-                    撤销
-                  </Button>
-                  <Button
-                    aria-label="重做"
-                    disabled={!future.length}
-                    onClick={redo}
-                  >
-                    <Asset name="topology-imgFrame1" />
-                    重做
-                  </Button>
-                  <Button
-                    disabled={!device}
-                    onClick={() => {
-                      change({
-                        devices: draft.devices.filter((d) => d.id !== selected),
-                      })
-
-                      setSelected("")
-                    }}
-                  >
-                    删除
-                  </Button>
-                  <Button
-                    disabled={!draft.devices.length && !draft.buses.length}
-                    onClick={() => setModal("clear")}
-                  >
-                    清空
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      change({
-                        devices: draft.devices.map(
-                          ({ x: _, y: __, ...d }: PositionedDevice) => d,
-                        ),
-                      })
-                    }}
-                  >
-                    适应画布
-                  </Button>
-                </div>
-              </header>
-              <div
-                ref={canvas}
-                className="provision-canvas"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault()
-
-                  const id = e.dataTransfer.getData("text/plain")
-
-                  const rect = canvas.current?.getBoundingClientRect()
-
-                  if (!rect) return
-
-                  const x = Math.max(
-                    8,
-
-                    Math.min(90, ((e.clientX - rect.left) / rect.width) * 100),
-                  )
-
-                  const y = Math.max(
-                    9,
-
-                    Math.min(90, ((e.clientY - rect.top) / rect.height) * 100),
-                  )
-
-                  change({
-                    devices: draft.devices.map((d) =>
-                      d.id === id ? { ...d, x, y } : d,
-                    ),
-                  })
-                }}
-              >
-                <svg
-                  className="topology-lines"
-                  width="100%"
-                  height="100%"
-                  aria-hidden="true"
-                >
-                  {draft.buses.map((b, i) => (
-                    <line
-                      key={b}
-                      x1="8%"
-                      x2="93%"
-                      y1={`${i === 0 ? 41 : 73}%`}
-                      y2={`${i === 0 ? 41 : 73}%`}
-                      stroke={b === "交流母线" ? "#4a7ea1" : "#d99000"}
-                      strokeWidth="2"
-                    />
-                  ))}
-                  {draft.devices.map((d: PositionedDevice, i) => {
-                    const b = draft.buses.indexOf(d.bus)
-
-                    const p = positions[d.type]
-
-                    const duplicate = draft.devices
-
-                      .slice(0, i)
-
-                      .filter((x) => x.type === d.type).length
-
-                    const x = d.x ?? Math.min(90, p[0] + duplicate * 12),
-                      y = d.y ?? p[1]
-
-                    return b >= 0 ? (
-                      <line
-                        key={d.id}
-                        x1={`${x}%`}
-                        x2={`${x}%`}
-                        y1={`${y}%`}
-                        y2={`${b === 0 ? 41 : 73}%`}
-                        stroke={d.bus === "交流母线" ? "#4a7ea1" : "#d99000"}
-                        strokeWidth="2"
-                      />
-                    ) : null
-                  })}
-                </svg>
-                {draft.buses.map((b, i) => (
-                  <span
-                    className={`topology-bus ${b === "交流母线" ? "ac" : "dc"}`}
-                    key={b}
-                    style={{ top: `${i === 0 ? 36 : 68}%` }}
-                  >
-                    {b}
-                    {b === "交流母线" ? " · 400 V" : ""}
-                  </span>
-                ))}
-                {!draft.devices.length && (
-                  <div className="provision-empty">
-                    <strong>开始配置电气拓扑</strong>
-                    <p>添加母线和设备，在右侧选择连接的母线。</p>
-                    <p>设备支持拖动；所有内容仅保存为本地草稿。</p>
-                  </div>
-                )}
-                {draft.devices.map((d: PositionedDevice, i) => {
-                  const p = positions[d.type],
-                    duplicate = draft.devices
-
-                      .slice(0, i)
-
-                      .filter((x) => x.type === d.type).length
-
-                  return (
-                    <button
-                      key={d.id}
-                      draggable
-                      onDragStart={(e) =>
-                        e.dataTransfer.setData("text/plain", d.id)
-                      }
-                      onClick={() => setSelected(d.id)}
-                      className={`topology-device ${
-                        d.id === selected ? "selected" : ""
-                      }`}
-                      style={{
-                        left: `${d.x ?? Math.min(90, p[0] + duplicate * 12)}%`,
-
-                        top: `${d.y ?? p[1]}%`,
-                      }}
-                      aria-label={`配置 ${d.name}`}
-                    >
-                      <span>{d.name}</span>
-                      <Asset name={`topology-${icon[d.type]}`} />
-                      {d.type === "电池 / BMS" && <small>BMS 配置</small>}
-                    </button>
-                  )
-                })}
-              </div>
-            </section>
-            <aside className="station-panel provision-properties">
-              <h2>
-                {device
-                  ? `${device.name}${
-                      device.type === "电池 / BMS" ? " · BMS 配置" : ""
-                    }`
-                  : "设备属性"}
-              </h2>
-              {device ? (
-                <>
-                  <Field label="逻辑设备名称">
-                    <input
-                      value={device.name}
-                      onChange={(e) => updateDevice({ name: e.target.value })}
-                    />
-                  </Field>
-                  <Field label="设备类型">
-                    <input readOnly value={device.type} />
-                  </Field>
-                  <Field label="连接母线 *">
-                    <select
-                      value={device.bus}
-                      onChange={(e) => updateDevice({ bus: e.target.value })}
-                    >
-                      <option value="">请选择母线</option>
-                      {draft.buses.map((b) => (
-                        <option key={b}>{b}</option>
-                      ))}
-                    </select>
-                  </Field>
-                  {!["电网", "光伏", "负载"].includes(device.type) && (
-                    <>
-                      <Field label="协议模板 *">
-                        <select
-                          value={device.protocol}
-                          onChange={(e) =>
-                            updateDevice({ protocol: e.target.value })
-                          }
-                        >
-                          <option value="">请选择通信协议</option>
-                          <option>Modbus TCP</option>
-                          <option>Modbus RTU</option>
-                        </select>
-                      </Field>
-                      <small>本地协议设置，服务端模板尚未接通</small>
-                      <Field label="EMS 接口 *">
-                        <select
-                          value={device.interface}
-                          onChange={(e) =>
-                            updateDevice({ interface: e.target.value })
-                          }
-                        >
-                          {["LAN 1", "LAN 2", "COM 1", "COM 2"].map((x) => (
-                            <option key={x}>{x}</option>
-                          ))}
-                        </select>
-                      </Field>
-                      {device.interface.startsWith("LAN") ? (
-                        <>
-                          <Field label="IP 地址 *">
-                            <input
-                              value={device.ip}
-                              onChange={(e) =>
-                                updateDevice({ ip: e.target.value })
-                              }
-                              placeholder="例如 192.168.1.101"
-                            />
-                          </Field>
-                          <Field label="端口 *">
-                            <input
-                              inputMode="numeric"
-                              value={device.port}
-                              onChange={(e) =>
-                                updateDevice({ port: e.target.value })
-                              }
-                            />
-                          </Field>
-                        </>
-                      ) : (
-                        <div className="bms-fields">
-                          <Field label="波特率 *">
-                            <select
-                              value={device.baud}
-                              onChange={(e) =>
-                                updateDevice({ baud: e.target.value })
-                              }
-                            >
-                              {[
-                                "9600",
-
-                                "19200",
-
-                                "38400",
-
-                                "57600",
-
-                                "115200",
-                              ].map((x) => (
-                                <option key={x}>{x}</option>
-                              ))}
-                            </select>
-                          </Field>
-                          <Field label="校验位 *">
-                            <select
-                              value={device.parity}
-                              onChange={(e) =>
-                                updateDevice({ parity: e.target.value })
-                              }
-                            >
-                              {["无校验", "奇校验", "偶校验"].map((x) => (
-                                <option key={x}>{x}</option>
-                              ))}
-                            </select>
-                          </Field>
-                          <Field label="数据位 / 停止位">
-                            <select
-                              value={device.bits}
-                              onChange={(e) =>
-                                updateDevice({ bits: e.target.value })
-                              }
-                            >
-                              <option>8 / 1</option>
-                              <option>8 / 2</option>
-                            </select>
-                          </Field>
-                        </div>
-                      )}
-                      <Field label="设备地址 *">
-                        <input
-                          inputMode="numeric"
-                          value={device.address}
-                          onChange={(e) =>
-                            updateDevice({ address: e.target.value })
-                          }
-                        />
-                      </Field>
-                    </>
-                  )}
-                </>
-              ) : (
-                <p className="station-subtle">
-                  从画布选择设备，或在左侧添加新设备。
-                </p>
-              )}
-            </aside>
-          </div>
+          <TopologyEditor
+            draft={draft}
+            change={change}
+            undo={undo}
+            redo={redo}
+            canUndo={!!past.length}
+            canRedo={!!future.length}
+            onClear={() => setModal("clear")}
+            onExport={download}
+          />
         )}
         {step === 2 && (
           <div className="provision-validation">
@@ -1047,35 +777,63 @@ function ProvisionEditor({
                   ? `发现 ${issues.length} 项待修正`
                   : "本地校验通过"}
               </p>
+              <table className="station-table provision-checks">
+                <thead>
+                  <tr>
+                    <th>状态</th>
+                    <th>检查项</th>
+                    <th>结果</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {["电气结构", "通信端口", "计量配置", "设计属性"].map(
+                    (name, i) => {
+                      const words = [
+                        ["电气", "连接", "直流", "交流", "节点"],
+                        ["通信", "端口", "协议", "地址", "IP", "接口"],
+                        ["并网点"],
+                        ["名称", "编号", "额定"],
+                      ][i]
+                      const findings = issues.filter((e) =>
+                        words.some((w) => e.includes(w)),
+                      )
+                      return (
+                        <tr key={name}>
+                          <td>{findings.length ? "待修正" : "本地通过"}</td>
+                          <td>{name}</td>
+                          <td>
+                            {findings.length
+                              ? findings.join("；")
+                              : "当前本地配置检查通过"}
+                          </td>
+                          <td>
+                            <button
+                              className="station-text-button"
+                              onClick={() => setStep(1)}
+                            >
+                              查看
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    },
+                  )}
+                </tbody>
+              </table>
+              <h3>待现场确认</h3>
               {[
-                [
-                  "电气连接",
-
-                  draft.devices.length && draft.devices.every((d) => d.bus)
-                    ? "设备已连接到所选母线"
-                    : "请添加设备并配置母线连接",
-                ],
-
-                ["设备协议", "仅检查本地通信字段；协议模板兼容性需服务端核验"],
-
-                [
-                  "通信地址",
-
-                  issues.length
-                    ? issues.join("；")
-                    : "IP、端口与设备地址格式正确，未发现重复地址",
-                ],
-
-                ["配置完整性", "发布服务未接通，尚未进行现场可用性校验"],
-              ].map(([title, detail]) => (
-                <div className="validation-item" key={title}>
-                  <strong>{title}</strong>
-                  <p>{detail}</p>
-                </div>
+                "设备绑定 · EMS 与实际设备关联",
+                "现场通信 · 接线、地址与协议联调",
+                "部署生效 · 配置传输及现场应用结果",
+              ].map((x) => (
+                <p className="station-subtle" key={x}>
+                  待确认　{x}
+                </p>
               ))}
             </section>
             <aside className="station-panel">
-              <h2>发布内容</h2>
+              <h2>发布摘要</h2>
               <h3>{draft.name || "未命名站点"}配置</h3>
               <p>配置版本　{version} · 本地草稿</p>
               <dl>
@@ -1083,6 +841,15 @@ function ProvisionEditor({
                 <dd>未接通，未绑定</dd>
                 <dt>拓扑对象</dt>
                 <dd>{draft.devices.length + draft.buses.length}</dd>
+                <dt>通信连接</dt>
+                <dd>
+                  {draft.devices.reduce(
+                    (sum, d) =>
+                      sum +
+                      (d.ports ?? []).reduce((n, p) => n + p.targets.length, 0),
+                    0,
+                  )}
+                </dd>
                 <dt>通信设备</dt>
                 <dd>{communication.length}</dd>
                 <dt>部署方式</dt>
@@ -1244,7 +1011,7 @@ function ProvisionEditor({
               <Button
                 className="station-danger-button"
                 onClick={() => {
-                  change({ devices: [], buses: [] })
+                  change({ devices: [], buses: [], connections: [] })
 
                   setSelected("")
 
@@ -1264,6 +1031,7 @@ function ProvisionEditor({
           title="未保存的更改"
           onClose={() => {
             settleLeave(false)
+
             setModal(null)
           }}
           actions={
@@ -1271,6 +1039,7 @@ function ProvisionEditor({
               <Button
                 onClick={() => {
                   settleLeave(false)
+
                   setModal(null)
                 }}
               >

@@ -19,8 +19,9 @@ import {
   formatPoint,
   pointValue,
 } from "@/data/stationDevices"
-import { stationDataNow } from "@/data/dataClock"
+import { stationDataNow, stationTrendDate } from "@/data/dataClock"
 import { buildCurveData } from "./StationRunCurvePage"
+import { hasIsolatedTelemetryValue } from "@/data/stationTelemetry"
 import "./station-overview-figma.css"
 import StationEnergy3D from "./StationEnergy3D"
 import type { DeviceType, EnergyMetrics } from "./EnergyFlow3D"
@@ -127,10 +128,7 @@ export default function StationOverviewPage({
   const [category, setCategory] = useState("电池")
   const [energyView, setEnergyView] = useState<"diagram" | "3d">("diagram")
   const [deviceId, setDeviceId] = useState("")
-  const [date, setDate] = useState(() => {
-    const now = stationDataNow(station)
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
-  })
+  const [date, setDate] = useState(() => stationTrendDate(station, DEMO_MODE))
   const [range, setRange] = useState<"D" | "M" | "Y" | "A">("D")
   const [hidden, setHidden] = useState<string[]>([])
   const devices = useMemo(
@@ -449,7 +447,7 @@ export default function StationOverviewPage({
                     dataKey={item.key}
                     name={item.label}
                     stroke={item.color}
-                    dot={false}
+                    dot={hasIsolatedTelemetryValue(model.points, item.key as keyof typeof model.points[number]) ? { r: 3 } : false}
                     isAnimationActive={false}
                   />
                 ))}
@@ -491,7 +489,7 @@ export default function StationOverviewPage({
                 dataKey="soc"
                 name="SOC"
                 stroke="#277e68"
-                dot={false}
+                dot={hasIsolatedTelemetryValue(model.points, "soc") ? { r: 3 } : false}
                 isAnimationActive={false}
               />
             </LineChart>

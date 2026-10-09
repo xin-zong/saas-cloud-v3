@@ -72,6 +72,12 @@ export function stationDataNow(station: Station) {
   return new Date(latestStationTimestamp(station) ?? Date.now())
 }
 
+/** Live trends start today; old alarms and work orders do not select the telemetry day. */
+export function stationTrendDate(station: Station, demoMode: boolean, now = new Date()) {
+  const date = demoMode ? stationDataNow(station) : now
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+}
+
 export function stationsDataNow(stations: Station[]) {
   const values = stations
     .map(latestStationTimestamp)

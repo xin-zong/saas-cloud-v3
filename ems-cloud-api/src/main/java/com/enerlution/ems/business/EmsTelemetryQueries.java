@@ -87,9 +87,17 @@ public class EmsTelemetryQueries {
   }
   List<Map<String,Object>> latest(List<Long> periods,List<Long> points) {
     if(periods.isEmpty()||points.isEmpty())return List.of();
-    var rows=query("SELECT * FROM "+database+"."+observationTable+" WHERE binding_period_id IN ("+ids(periods)
+    // Keep one complete row per point, rather than sorting the entire telemetry history.
+    // A tuple preserves null fields in the newest row; independent argMax calls would skip them.
+    var rows=query("SELECT point_id,latest.1 AS binding_period_id,latest.2 AS source_type,"
+        +"latest.3 AS source_time_kind,latest.4 AS source_at_ms,latest.5 AS received_at_ms,"
+        +"latest.6 AS quality,latest.7 AS value_kind,latest.8 AS number_exact,"
+        +"latest.9 AS text_value,latest.10 AS u16_words FROM (SELECT point_id,"
+        +"argMax(tuple(binding_period_id,source_type,source_time_kind,source_at_ms,received_at_ms,"
+        +"quality,value_kind,number_exact,text_value,u16_words),tuple(received_at_ms,fact_id)) AS latest"
+        +" FROM "+database+"."+observationTable+" WHERE binding_period_id IN ("+ids(periods)
         +") AND point_id IN ("+ids(points)+") AND source_type IN ('ems','cabinet_30s','cabinet_60s')"
-        +" ORDER BY received_at_ms DESC,fact_id DESC LIMIT 1 BY point_id LIMIT "+(MAX_ROWS+1));
+        +" GROUP BY point_id) LIMIT "+(MAX_ROWS+1));
     var result=new ArrayList<Map<String,Object>>();rows.forEach(r->result.add(observation(r)));
     result.sort(Comparator.comparing(r->new BigInteger(r.get("pointId").toString())));return result;
   }

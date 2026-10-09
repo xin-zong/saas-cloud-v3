@@ -88,6 +88,8 @@ test(
       await page.getByRole("button", { name: "下一步", exact: true }).click()
       assert.match(await page.getByRole("alert").textContent(), /站点名称/)
       await page.getByLabel("站点名称 *", { exact: true }).fill("测试新站")
+      await page.getByLabel("站点 ID *", { exact: true }).fill("NEW-001")
+      await page.getByLabel("所属组织 *", { exact: true }).fill("测试组织")
       await page.getByLabel("所在地区 *", { exact: true }).selectOption("华东")
       await page.getByLabel("详细地址 *", { exact: true }).fill("工业园 1 号")
       await page.screenshot({
@@ -97,20 +99,11 @@ test(
       await page.getByRole("button", { name: "校验配置", exact: true }).click()
       await page.getByText("发现 1 项待修正", { exact: true }).waitFor()
       await page.getByRole("button", { name: "返回修改", exact: true }).click()
-      await page
-        .getByRole("button", { name: "＋ 交流母线", exact: true })
-        .click()
-      await page.getByRole("button", { name: "PCS", exact: true }).click()
-      await page
-        .getByLabel("协议模板 *", { exact: true })
-        .selectOption("Modbus TCP")
-      await page.getByLabel("IP 地址 *", { exact: true }).fill("192.168.1.101")
-      await page
-        .getByRole("button", { name: "电池 / BMS", exact: true })
-        .click()
-      await page
-        .getByLabel("协议模板 *", { exact: true })
-        .selectOption("Modbus RTU")
+      await page.getByRole("button", { name: "公共电网", exact: true }).click()
+      await page.getByRole("button", { name: "负荷", exact: true }).click()
+      await page.getByRole("button", { name: "连线", exact: true }).click()
+      await page.getByRole("button", { name: "配置 公共电网 1", exact: true }).click()
+      await page.getByRole("button", { name: "配置 负荷 1", exact: true }).click()
       await page.screenshot({ path: path.join(artifacts, "provision-bms.png") })
       await page.getByRole("button", { name: "清空", exact: true }).click()
       await page.getByRole("dialog", { name: "清空画布？" }).waitFor()

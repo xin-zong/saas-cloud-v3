@@ -41,11 +41,16 @@ export async function queryStationTelemetry(
     value.replace(/[\s_/-]/g, "").toLowerCase()
   const mapped = SIGNALS.flatMap((item) => {
     const names = (aliases[item.id] ?? [item.name]).map(normalize)
-    const candidates = points.filter(
+    const emsCandidates = points.filter(
       (point) =>
-        (point.source === 'ems'
-          ? point.namespace === 'cabinet' && Number(point.sourceId) === sources[item.id]
-          : names.includes(normalize(point.name))) &&
+        point.source === 'ems' && point.namespace === 'cabinet' &&
+        Number(point.sourceId) === sources[item.id] &&
+        point.unit.replace('℃', '°C') === item.unit,
+    )
+    // A historical summary point must not make an explicit protocol mapping ambiguous.
+    // Multiple EMS mappings still require a defined station aggregation before use.
+    const candidates = emsCandidates.length ? emsCandidates : points.filter(
+      point => point.source !== 'ems' && names.includes(normalize(point.name)) &&
         point.unit.replace('℃', '°C') === item.unit,
     )
     return candidates.length === 1
