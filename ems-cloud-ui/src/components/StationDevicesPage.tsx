@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { DEMO_MODE } from "@/api/client"
 import "./station-devices-figma.css"
@@ -41,12 +42,12 @@ type DeviceTab = "概况" | "参数" | "告警" | "版本" | "操作记录"
 const TABS: DeviceTab[] = ["概况", "告警", "操作记录"]
 const timeText = (value: string) =>
   Number.isFinite(Date.parse(value))
-    ? new Date(value).toLocaleTimeString("zh-CN", { hour12: false })
+    ? __locale(new Date(value), 'toLocaleTimeString', "zh-CN", { hour12: false })
     : "--"
 
 const dateText = (value: string) =>
   Number.isFinite(Date.parse(value))
-    ? new Date(value).toLocaleString("zh-CN", { hour12: false })
+    ? __locale(new Date(value), 'toLocaleString', "zh-CN", { hour12: false })
     : "--"
 
 function StatusBadge({ status }: { status: DeviceStatus }) {

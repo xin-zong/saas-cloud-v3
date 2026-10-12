@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { useEffect, useRef, useState } from 'react'
 import type { Station } from '@/App'
 import { api, DEMO_MODE, CAPABILITIES_CHANGED, type ApiRow } from '@/api/client'
@@ -11,7 +12,7 @@ import './ems-panel.css'
 
 export type EmsModule = 'overview' | 'assets' | 'operations' | 'maintenance' | 'workorders' | 'analysis' | 'platform' | 'settings'
 const titles: Record<EmsModule,string> = { overview:'EMS 实时概况',assets:'EMS 设备与实时点',operations:'EMS 实际运行',maintenance:'EMS 通信与告警证据',workorders:'EMS 告警关联',analysis:'EMS 历史与统计',platform:'EMS 身份与映射',settings:'EMS 生效配置（只读）' }
-const time = (value: unknown) => value == null ? '—（未知）' : typeof value === 'number' ? new Date(value).toLocaleString('zh-CN') : String(value)
+const time = (value: unknown) => value == null ? '—（未知）' : typeof value === 'number' ? __locale(new Date(value), 'toLocaleString', 'zh-CN') : String(value)
 
 /** Composed at native module surfaces; the business workflow beside it remains separate. */
 export default function EmsPanel({stations,module,deviceId,visible=true,onAlarm}:{stations:Station[];module:EmsModule;deviceId?:string;visible?:boolean;onAlarm?:(stationId:string,alarmId:string)=>void}) {

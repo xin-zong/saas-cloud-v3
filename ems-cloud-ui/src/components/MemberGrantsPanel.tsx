@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { useAuth } from "@/auth/AuthContext"
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
 import { ArrowLeft, Plus, Search, X } from "lucide-react"
@@ -10,7 +11,7 @@ type Draft = { grant: MemberGrant | null; organizationId: number | null; roleId:
 type Preview = { name: string; codes: string[]; catalog: PermissionItem[] }
 const errorText = (e: unknown) => e instanceof Error ? e.message : "请求失败"
 const supportedTerm = (term: string): term is GrantTerm => ["permanent", "30d", "90d", "1y"].includes(term)
-const time = (value: string | null) => value ? new Date(value).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }) : "永久有效"
+const time = (value: string | null) => value ? __locale(new Date(value), 'toLocaleString', "zh-CN", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }) : "永久有效"
 const stationText = (grant: MemberGrant) => grant.stations.map(station => station.name).join("、") || "组织管理范围"
 const statusText: Record<string, string> = { active: "有效", expired: "已过期", scheduled: "未生效", disabled: "成员已停用" }
 

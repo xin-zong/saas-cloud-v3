@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { hasStationPermission } from "@/auth/apiPermissions"
 import { DEMO_MODE, api, allRows, send, type ApiRow } from "@/api/client"
 
@@ -51,7 +52,7 @@ const NOTE_KEY = "enerlution-settlement-review-notes-v1"
 const digits = (value: number | null | undefined, decimals = 2) =>
   value == null
     ? "--"
-    : value.toLocaleString("zh-CN", {
+    : __locale(value, 'toLocaleString', "zh-CN", {
         minimumFractionDigits: decimals,
 
         maximumFractionDigits: decimals,

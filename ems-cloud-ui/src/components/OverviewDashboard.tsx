@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { useEffect, useRef, useState } from "react"
 import { Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { DEMO_MODE } from "@/api/client"
@@ -9,7 +10,7 @@ import { Button } from "./ui/Workspace"
 import MapView from "./MapView"
 
 const sections = ["运行健康分布", "当前各区域储能负荷分布 (MWh)", "储能充放量趋势", "核心站点区域分布", "最近运维工单", "待审批事项"] as const
-const dateString = (date: Date) => date.toLocaleDateString("en-CA")
+const dateString = (date: Date) => __locale(date, 'toLocaleDateString', "en-CA")
 const initialRange = () => { const end = new Date(); const start = new Date(); start.setDate(start.getDate() - 6); return { start: dateString(start), end: dateString(end) } }
 type Props = { stations: Station[]; user: AuthUser; nav: NavLabel[]; onNavigate: (nav: NavLabel) => void; onOpenStation: (id: string) => void; registerLeaveGuard: (guard: null | (() => Promise<boolean>)) => void }
 

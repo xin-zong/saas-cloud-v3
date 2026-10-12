@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import type { Station } from "@/App";
 
 export type DeviceStatus = "online" | "warning" | "offline" | "unknown";
@@ -46,7 +47,7 @@ export function pointValue(point?: DevicePoint) {
 export function formatPoint(point?: DevicePoint) {
   const value = pointValue(point);
   if (point?.quality === 'good' && point.exactValue !== undefined) return `${point.exactValue} ${point.unit}`.trim();
-  return value === null ? "--" : `${value.toLocaleString("zh-CN", { maximumFractionDigits: point?.id === "powerFactor" ? 3 : 2 })} ${point?.unit ?? ""}`.trim();
+  return value === null ? "--" : `${__locale(value, 'toLocaleString', "zh-CN", { maximumFractionDigits: point?.id === "powerFactor" ? 3 : 2 })} ${point?.unit ?? ""}`.trim();
 }
 
 export function demoStationDevices(station: Station, now: number): StationDevice[] {

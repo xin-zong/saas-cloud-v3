@@ -1,0 +1,43 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Google Maps</title><style>html,body,#map{height:100%;width:100%;margin:0;background:#e9efed}body{overflow:hidden}</style></head><body><div id="map"></div><script>
+// SDK isolation allows language changes without unmounting application editors.
+let map,markers=[],latest,loading=false;
+const tell=(type,data={})=>parent.postMessage({source:'ems-google-map',type,...data},location.origin);
+function update(data){
+ latest=data;if(!map)return;
+ for(const marker of markers){google.maps.event.clearInstanceListeners(marker);marker.setMap(null)}markers=[];
+ if(data.defaultLocation)markers.push(new google.maps.Marker({map,position:{lat:50,lng:10},title:data.defaultLocation,opacity:.75}));
+ for(const site of data.stations){
+  const marker=new google.maps.Marker({map,position:site.position,title:site.name,icon:{path:google.maps.SymbolPath.CIRCLE,scale:8,fillColor:site.color,fillOpacity:1,strokeColor:'#fff',strokeWeight:3}});
+  marker.addListener('click',()=>tell('select',{id:site.id}));markers.push(marker);
+ }
+ map.setOptions({gestureHandling:data.compact?'cooperative':'greedy'});
+}
+window.addEventListener('message',event=>{
+ if(event.source!==parent||event.origin!==location.origin||event.data?.source!=='ems-map-host')return;
+ const {type,data}=event.data;
+ if(type==='handshake'){tell('ready');return}
+ if(type==='initialize'){
+  latest=data;if(loading)return;loading=true;
+  window.gm_authFailure=()=>tell('error');
+  window.initializeEmsMap=async()=>{
+   try {
+   // Unmodified styles from the supplied repository's homePage/mapStyle.json.
+   const response=await fetch('/google-map-style.json',{cache:'no-cache'});
+   if(!response.ok)throw new Error('Map style unavailable');
+   const styles=await response.json();
+   map=new google.maps.Map(document.getElementById('map'),{center:data.view,zoom:data.view.zoom,minZoom:2,maxZoom:18,mapTypeId:'roadmap',styles,disableDefaultUI:true,clickableIcons:false,backgroundColor:'#e9efed',gestureHandling:data.compact?'cooperative':'greedy'});
+   map.addListener('zoom_changed',()=>tell('zoom',{zoom:map.getZoom()}));
+   update(latest);tell('loaded');
+   }catch{tell('error')}
+  };
+  const query=new URLSearchParams({key:data.key,loading:'async',callback:'initializeEmsMap',language:data.language,region:'DE',v:'quarterly'});
+  const script=document.createElement('script');script.src='https://maps.googleapis.com/maps/api/js?'+query;script.async=true;script.onerror=()=>tell('error');document.head.appendChild(script);
+ }else if(type==='update')update(data);
+ else if(type==='view'&&map){map.setCenter(data);map.setZoom(data.zoom)}
+ else if(type==='pan'&&map)map.panTo(data);
+ else if(type==='zoom'&&map)map.setZoom(Math.max(2,Math.min(18,map.getZoom()+data)));
+ else if(type==='resize'&&map){const center=map.getCenter();google.maps.event.trigger(map,'resize');map.setCenter(center)}
+});
+tell('ready');
+</script></body></html>

@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { DEMO_MODE } from "@/api/client"
 import { useMemo, useState } from "react"
 import {
@@ -58,7 +59,7 @@ interface Props {
 }
 
 function formatMwh(value: number) {
-  return value >= 1000 ? value.toLocaleString() : value.toFixed(2)
+  return value >= 1000 ? __locale(value, 'toLocaleString') : value.toFixed(2)
 }
 
 function EnvironmentalIcon({ kind }: { kind: string }) {
@@ -288,7 +289,7 @@ export default function LeftPanel({ stations, role, onViewStations }: Props) {
                     lineHeight: 1,
                   }}
                 >
-                  {DEMO_MODE ? item.value.toLocaleString() : "—"}
+                  {DEMO_MODE ? __locale(item.value, 'toLocaleString') : "—"}
                 </div>
                 <div style={{ fontSize: 8, color: "#76857f", marginTop: 2 }}>
                   {item.unit}

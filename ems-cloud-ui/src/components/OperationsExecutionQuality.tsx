@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { useMemo, useState } from "react"
 import { ResponsiveContainer, ComposedChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line, Bar, Cell } from "recharts"
 import { DEMO_MODE } from "@/api/client"
@@ -5,7 +6,7 @@ import type { Station } from "@/App"
 import { executionQuality } from "@/data/operationsExecution"
 import { operationsDate } from "@/data/operations"
 
-const number = (value: number | null | undefined) => value == null || !Number.isFinite(value) ? "--" : value.toLocaleString("zh-CN",{maximumFractionDigits:2})
+const number = (value: number | null | undefined) => value == null || !Number.isFinite(value) ? "--" : __locale(value, 'toLocaleString', "zh-CN", {maximumFractionDigits:2})
 export default function OperationsExecutionQuality({stations, date, now, onBack, onTools}: {
   stations:Station[]; date:string; now:Date; onBack:()=>void; onTools:(id:string)=>void
 }) {

@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { useEffect, useRef, useState } from "react"
 import { allRows, DEMO_MODE } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
@@ -48,7 +49,7 @@ export default function AnalyticsAudit({ stations = [] }: { stations?: Station[]
     return () => controller.abort()
   }, [canRead, user?.id, retry])
   const visible = canRead ? rows.filter(row =>
-    (!filters.date || new Date(row.occurred_at).toLocaleDateString("en-CA", { timeZone: "Asia/Shanghai" }) === filters.date)
+    (!filters.date || __locale(new Date(row.occurred_at), 'toLocaleDateString', "en-CA", { timeZone: "Asia/Shanghai" }) === filters.date)
     && (!filters.types.length || filters.types.includes(row.action))
     && (!filters.actor || String(row.actor_id) === filters.actor)
     && (!filters.station || recordedStation(row) === filters.station)
@@ -108,5 +109,5 @@ export default function AnalyticsAudit({ stations = [] }: { stations?: Station[]
   </section>
 }
 function AuditRows({ row, expanded, actor, onToggle, onCopy }: { row: Audit; expanded: boolean; actor: string; onToggle: () => void; onCopy: () => void }) {
-  return <><tr><td><button type="button" className="analytics-report-link" aria-label={`查看事件 ${row.id}`} aria-expanded={expanded} onClick={onToggle}>{row.id}</button></td><td>{new Date(row.occurred_at).toLocaleString("zh-CN")}</td><td>{row.action}</td><td>{actor}</td><td>未提供</td><td>{row.detail}</td><td>未提供</td><td>未提供</td><td>未提供</td></tr>{expanded && <tr><td colSpan={9}><div className="analytics-audit-detail"><section><h3>操作状态快照</h3><div className="analytics-audit-snapshots"><p>操作前状态 Pre-state<br />未提供</p><p>操作后状态 Post-state<br />未提供</p></div><h4>设备回执反馈 Receipt</h4><p>设备回执接口未接通</p></section><section><header><h3>完整 JSON 数据协议</h3><Button onClick={onCopy}>COPY JSON</Button></header><pre>{JSON.stringify(row, null, 2)}</pre></section></div></td></tr>}</>
+  return <><tr><td><button type="button" className="analytics-report-link" aria-label={`查看事件 ${row.id}`} aria-expanded={expanded} onClick={onToggle}>{row.id}</button></td><td>{__locale(new Date(row.occurred_at), 'toLocaleString', "zh-CN")}</td><td>{row.action}</td><td>{actor}</td><td>未提供</td><td>{row.detail}</td><td>未提供</td><td>未提供</td><td>未提供</td></tr>{expanded && <tr><td colSpan={9}><div className="analytics-audit-detail"><section><h3>操作状态快照</h3><div className="analytics-audit-snapshots"><p>操作前状态 Pre-state<br />未提供</p><p>操作后状态 Post-state<br />未提供</p></div><h4>设备回执反馈 Receipt</h4><p>设备回执接口未接通</p></section><section><header><h3>完整 JSON 数据协议</h3><Button onClick={onCopy}>COPY JSON</Button></header><pre>{JSON.stringify(row, null, 2)}</pre></section></div></td></tr>}</>
 }

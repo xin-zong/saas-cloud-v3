@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { useState } from "react"
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import type { Station } from "@/App"
@@ -13,7 +14,7 @@ export default function OperationsMarketResources({stations,onBack}:{stations:St
   // records and qualifications remain in ApiMarketPage and are not invitations.
   const rows=DEMO_MODE?stations.map(s=>marketStation(s,date,now)):[]
   const services=marketServices(rows),timeline=marketTimeline(rows,services,date,now)
-  const kw=(v:number|null)=>v===null?"--":`${v.toLocaleString()} kW`
+  const kw=(v:number|null)=>v===null?"--":`${__locale(v, 'toLocaleString')} kW`
   return <div className="market-page"><div className="market-toolbar"><button className="operations-button" onClick={onBack}>返回市场响应</button><label>服务日 <input aria-label="资源服务日" type="date" value={date} onChange={e=>setDate(e.target.value)} /></label></div>
     <p className="market-boundary">{DEMO_MODE?"演示资源快照，仅供本地查看。":"市场价格、实时可用能力及交付采样接口尚未接通。已有服务资格与内部草稿请返回市场响应后打开市场服务。"}</p>
     <section className="ops-current-kpis">{[["今日服务",rows.length?`${services.length} 项`:"--"],["已承诺能力",kw(sumKnown(services.map(s=>s.capacity)))],["当前可用能力",kw(sumKnown(rows.map(r=>r.capacity?.up??null)))],["预计今日收益","--"]].map(([title,value])=><div key={title}><span>{title}</span><strong>{value}</strong></div>)}</section>

@@ -1,3 +1,6 @@
+import {calendarBounds} from '@/preferences/date'
+import {useDisplayPreferences} from '@/preferences/PreferencesProvider'
+import { localized as __locale } from '@/preferences/date'
 import { useEffect, useMemo, useState } from "react"
 import {
   CartesianGrid,
@@ -100,7 +103,7 @@ const equipment = [
 ]
 const numeric = (value: number | null | undefined) =>
   typeof value === "number" && Number.isFinite(value)
-    ? value.toLocaleString("zh-CN", { maximumFractionDigits: 1 })
+    ? __locale(value, 'toLocaleString', "zh-CN", { maximumFractionDigits: 1 })
     : "--"
 const series = [
   { key: "pv", label: "光伏功率", color: "#c79632" },
@@ -153,6 +156,7 @@ export default function StationOverviewPage({
   const device = matches.find((item) => item.id === deviceId) ?? matches[0]
   const point = (id: string) => device?.points.find((item) => item.metric === id || item.id === id)
   const soc = pointValue(point("soc"))
+  const {timezone,language}=useDisplayPreferences()
   useEffect(() => {
     if (DEMO_MODE) return
     setSamples([])
@@ -163,16 +167,7 @@ export default function StationOverviewPage({
       return
     }
     const controller = new AbortController()
-    const start = new Date(`${date}T00:00:00`),
-      end = new Date(`${date}T23:59:59`)
-    if (range === "M") {
-      start.setDate(1)
-      end.setMonth(end.getMonth() + 1, 0)
-    }
-    if (range === "Y") {
-      start.setMonth(0, 1)
-      end.setMonth(11, 31)
-    }
+    const {start,end}=calendarBounds(date,range)
     queryStationTelemetry(station, start, end, 15, controller.signal)
       .then((rows) => {
         if (!controller.signal.aborted) setSamples(rows)
@@ -182,7 +177,7 @@ export default function StationOverviewPage({
           setError(cause instanceof Error ? cause.message : "读取采样失败")
       })
     return () => controller.abort()
-  }, [station.id, date, range, canRead])
+  }, [station.id, date, range, canRead, timezone])
   const model = useMemo(
     () =>
       buildCurveData(
@@ -192,7 +187,7 @@ export default function StationOverviewPage({
         date,
         range,
       ),
-    [station, date, range, samples, canRead],
+    [station, date, range, samples, canRead, timezone, language],
   )
   const metrics: Record<string, number | undefined | null> = {
     电网: pointValue(

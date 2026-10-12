@@ -1,4 +1,5 @@
 import type { Station } from "@/App";
+import { dateTimeInput } from '@/preferences/date'
 
 export const SIGNALS = [
   { id: "soc", group: "电池系统", name: "SOC", unit: "%", color: "#198469" },
@@ -70,6 +71,5 @@ export function demoTelemetryRange(station: Station, start: number, end: number)
 }
 
 export function localDateTime(timestamp: number) {
-  const date = new Date(timestamp);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}T${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
+  return dateTimeInput(timestamp)
 }

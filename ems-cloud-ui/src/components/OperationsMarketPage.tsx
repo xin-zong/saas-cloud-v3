@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { DEMO_MODE } from "@/api/client"
 import ApiMarketPage from "./ApiMarketPage"
@@ -100,7 +101,7 @@ function initialStart(now: Date) {
   return operationsDate(date)
 }
 const power = (value: number | null | undefined) =>
-  value == null ? "--" : `${Math.round(value).toLocaleString("zh-CN")} kW`
+  value == null ? "--" : `${__locale(Math.round(value), 'toLocaleString', "zh-CN")} kW`
 const statusName = (value: string) =>
   value === "等待开始" ? "待回复" : value === "正在交付" ? "执行中" : value
 
@@ -565,7 +566,7 @@ function ResponseWorkspace({ stations, onOpenStation, registerLeaveGuard }: {
           </section>
         )}
 
-        {decision?.state === "rejected" ? <section className="market-surface"><h2>已保存拒绝意向</h2><p>本地保存时间 {new Date(decision.savedAt).toLocaleString()}</p><p className="market-boundary">未发送来源平台，邀约状态尚未改变。</p></section> : <>
+        {decision?.state === "rejected" ? <section className="market-surface"><h2>已保存拒绝意向</h2><p>本地保存时间 {__locale(new Date(decision.savedAt), 'toLocaleString')}</p><p className="market-boundary">未发送来源平台，邀约状态尚未改变。</p></section> : <>
         <section
           className="market-surface market-participants"
           aria-label={active ? "参与站点" : "参与站点与功率"}

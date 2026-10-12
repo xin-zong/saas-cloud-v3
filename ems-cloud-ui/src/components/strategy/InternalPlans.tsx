@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { useEffect, useState } from "react";
 import { Save, Send, Plus } from "lucide-react";
 import type { Station } from "@/App";
@@ -30,7 +31,7 @@ export default function InternalPlans({ station }: { station: Station }) {
   const canRead = hasStationPermission(user, station.id, "strategy.read");
   const canManage = hasStationPermission(user, station.id, "strategy.manage");
   const [date, setDate] = useState(() =>
-    new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Shanghai" }),
+    __locale(new Date(), 'toLocaleDateString', "en-CA", { timeZone: "Asia/Shanghai" }),
   );
   const [kind, setKind] = useState<"dayAhead" | "intraday">("dayAhead");
   const [plans, setPlans] = useState<ApiRow[]>([]);

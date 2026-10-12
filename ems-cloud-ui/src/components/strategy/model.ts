@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 export const days = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 export const bases = [
   "峰谷套利",
@@ -521,7 +522,7 @@ export function summary(slot: Slot): string {
 
 /** Date and weekday must share the station's Shanghai calendar, not the browser zone. */
 export function shanghaiCalendar(now: Date) {
-  const date = now.toLocaleDateString("en-CA", { timeZone: "Asia/Shanghai" });
+  const date = __locale(now, 'toLocaleDateString', "en-CA", { timeZone: "Asia/Shanghai" });
   return { date, weekday: (new Date(`${date}T00:00:00Z`).getUTCDay() + 6) % 7 };
 }
 export function effectiveTariff<T extends Record<string, unknown>>(

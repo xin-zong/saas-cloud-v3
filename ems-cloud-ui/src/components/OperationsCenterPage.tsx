@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { useAuth } from "@/auth/AuthContext"
 import { hasStationPermission } from "@/auth/apiPermissions"
 import { DEMO_MODE } from "@/api/client"
@@ -58,9 +59,9 @@ function weekStart(now: Date) {
 }
 
 const amount = (value: number | null) =>
-  value === null ? "--" : `¥ ${Math.round(value).toLocaleString("zh-CN")}`
+  value === null ? "--" : `¥ ${__locale(Math.round(value), 'toLocaleString', "zh-CN")}`
 const energy = (value: number | null) =>
-  value === null ? "--" : value.toLocaleString("zh-CN", { maximumFractionDigits: 1 })
+  value === null ? "--" : __locale(value, 'toLocaleString', "zh-CN", { maximumFractionDigits: 1 })
 
 function OperationsOverview({
   stations,
@@ -214,7 +215,7 @@ function OperationsOverview({
               <BarChart data={daily} margin={{ top: 6, right: 8, bottom: 0, left: 0 }}>
                 <CartesianGrid vertical={false} stroke="var(--ui-border)" />
                 <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "var(--ui-muted)", fontSize: 12 }} />
-                <YAxis width={52} tickLine={false} axisLine={false} tick={{ fill: "var(--ui-muted)", fontSize: 12 }} tickFormatter={(value) => Number(value).toLocaleString("zh-CN")} />
+                <YAxis width={52} tickLine={false} axisLine={false} tick={{ fill: "var(--ui-muted)", fontSize: 12 }} tickFormatter={(value) => __locale(Number(value), 'toLocaleString', "zh-CN")} />
                 <Tooltip
                   formatter={(value) => [amount(Number(value)), "站点收益"]}
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.date ?? ""}

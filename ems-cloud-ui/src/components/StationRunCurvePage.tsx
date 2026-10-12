@@ -1,3 +1,6 @@
+import {dateKey, calendarBounds, formatDate, nextCalendarBucket} from '@/preferences/date'
+import {useDisplayPreferences} from '@/preferences/PreferencesProvider'
+import { localized as __locale } from '@/preferences/date'
 import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { intervalEnergy, type AnalysisMetric } from "./stationAnalysisData"
 import StationAnalysisPage from "./StationAnalysisPage"
@@ -85,39 +88,8 @@ const POWER_SERIES = [
   { key: "load", name: "负荷功率", color: "#5b7787" },
 ] as const
 
-function localDateKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
-}
-
-function parseDateInput(value: string) {
-  const [year, month, day] = value.split("-").map(Number)
-
-  return new Date(year, month - 1, day)
-}
-
-function rangeBounds(dateValue: string, range: CurveRange) {
-  const start = parseDateInput(dateValue)
-
-  if (range === "W") {
-    const mondayOffset = (start.getDay() + 6) % 7
-
-    start.setDate(start.getDate() - mondayOffset)
-  } else if (range === "M") {
-    start.setDate(1)
-  } else if (range === "Y" || range === "A") {
-    start.setMonth(0, 1)
-  }
-
-  const end = new Date(start)
-
-  if (range === "W") end.setDate(end.getDate() + 6)
-
-  if (range === "M") end.setMonth(end.getMonth() + 1, 0)
-  if (range === "Y" || range === "A") end.setMonth(11, 31)
-  end.setHours(23, 59, 59, 999)
-
-  return { start, end }
-}
+const localDateKey = dateKey
+const rangeBounds = (value: string, range: CurveRange) => calendarBounds(value, range)
 
 function formatRange(
   bounds: ReturnType<typeof rangeBounds>,
@@ -133,11 +105,7 @@ function formatRange(
 }
 
 function formatTime(timestamp: number, range: CurveRange) {
-  const date = new Date(timestamp)
-
-  if (range !== "D") return `${date.getMonth() + 1}/${date.getDate()}`
-
-  return `${String(date.getHours()).padStart(2, "0")}:00`
+  return formatDate(timestamp, range === 'D' ? {hour:'2-digit', minute:'2-digit',hour12:false} : {month:'2-digit',day:'2-digit'})
 }
 
 function averageValue(
@@ -174,13 +142,7 @@ function buildBuckets(
   let cursor = bounds.start.getTime()
 
   while (cursor < endExclusive) {
-    const next = new Date(cursor)
-
-    if (range === "D") next.setHours(next.getHours() + 1)
-    else if (range === "Y" || range === "A")
-      next.setMonth(next.getMonth() + 1, 1)
-    else next.setDate(next.getDate() + 1)
-    const end = Math.min(next.getTime(), endExclusive)
+    const end = Math.min(nextCalendarBucket(cursor, range), endExclusive)
 
     buckets.push({
       start: cursor,
@@ -209,12 +171,8 @@ export function buildCurveData(
       .map((item) => Date.parse(item.timestamp))
       .filter(Number.isFinite)
     if (times.length) {
-      bounds.start = new Date(Math.min(...times))
-      bounds.start.setDate(1)
-      bounds.start.setHours(0, 0, 0, 0)
-      bounds.end = new Date(Math.max(...times))
-      bounds.end.setMonth(bounds.end.getMonth() + 1, 0)
-      bounds.end.setHours(23, 59, 59, 999)
+      bounds.start = calendarBounds(dateKey(Math.min(...times)), 'M').start
+      bounds.end = calendarBounds(dateKey(Math.max(...times)), 'M').end
     }
   }
   const connectedRows = station.telemetryHistory
@@ -312,7 +270,7 @@ function ChartTooltip({
         <span key={item.name} style={{ color: item.color }}>
           {item.name}{" "}
           {typeof item.value === "number"
-            ? item.value.toLocaleString("zh-CN")
+            ? __locale(item.value, 'toLocaleString', "zh-CN")
             : "--"}
         </span>
       ))}
@@ -375,9 +333,10 @@ function DemoStationRunCurvePage({ station }: { station: Station }) {
 
   const [notice, setNotice] = useState("")
 
+  const {timezone,language}=useDisplayPreferences()
   const bounds = useMemo(
     () => rangeBounds(dateValue, range),
-    [dateValue, range],
+    [dateValue, range, timezone],
   )
 
   useEffect(() => {
@@ -404,7 +363,7 @@ function DemoStationRunCurvePage({ station }: { station: Station }) {
         if (!controller.signal.aborted) setLoading(false)
       })
     return () => controller.abort()
-  }, [station.id, dateValue, range, canRead])
+  }, [station.id, dateValue, range, canRead, timezone])
   const curveStation = useMemo(
     () =>
       DEMO_MODE
@@ -414,7 +373,7 @@ function DemoStationRunCurvePage({ station }: { station: Station }) {
   )
   const curveModel = useMemo(
     () => buildCurveData(curveStation, dateValue, range),
-    [curveStation, dateValue, range],
+    [curveStation, dateValue, range, timezone, language],
   )
   const data = curveModel.points
 
@@ -479,7 +438,7 @@ function DemoStationRunCurvePage({ station }: { station: Station }) {
         </label>
         <span className="run-curves-source">
           {curveModel.source === "connected"
-            ? `已接入采样数据 · ${curveModel.sampleCount.toLocaleString("zh-CN")} 个采样点`
+            ? `已接入采样数据 · ${__locale(curveModel.sampleCount, 'toLocaleString', "zh-CN")} 个采样点`
             : "演示采样数据"}{" "}
           ·{" "}
           {loading

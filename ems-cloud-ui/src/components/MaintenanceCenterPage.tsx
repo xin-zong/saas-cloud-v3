@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { hasStationPermission } from "@/auth/apiPermissions"
 import { DEMO_MODE, send, api, type ApiRow } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
@@ -241,7 +242,7 @@ function buildHealthDeviceRecords(stations: Station[]) {
     const parsed = new Date(value)
 
     return Number.isFinite(parsed.getTime())
-      ? parsed.toLocaleString("zh-CN", {
+      ? __locale(parsed, 'toLocaleString', "zh-CN", {
           month: "2-digit",
 
           day: "2-digit",
@@ -347,7 +348,7 @@ function buildHealthDeviceRecords(stations: Station[]) {
         status: currentStatus,
 
         runtime:
-          !DEMO_MODE || runtimeHours === null ? "—" : `${runtimeHours.toLocaleString()} h`,
+          !DEMO_MODE || runtimeHours === null ? "—" : `${__locale(runtimeHours, 'toLocaleString')} h`,
 
         faultCount: DEMO_MODE ? activeAlarms.length : null,
 
@@ -386,12 +387,12 @@ function buildHealthDeviceRecords(stations: Station[]) {
 const number = (value: number | null) =>
   value === null
     ? "--"
-    : value.toLocaleString("zh-CN", { maximumFractionDigits: 1 })
+    : __locale(value, 'toLocaleString', "zh-CN", { maximumFractionDigits: 1 })
 
 const clock = (value: number | null) =>
   value === null
     ? "--"
-    : new Date(value).toLocaleTimeString("zh-CN", {
+    : __locale(new Date(value), 'toLocaleTimeString', "zh-CN", {
         hour: "2-digit",
 
         minute: "2-digit",
@@ -402,12 +403,12 @@ const clock = (value: number | null) =>
 const stamp = (value?: string) =>
   maintenanceTime(value) === null
     ? "--"
-    : new Date(value!).toLocaleString("zh-CN", { hour12: false })
+    : __locale(new Date(value!), 'toLocaleString', "zh-CN", { hour12: false })
 
 const dateStamp = (value?: string) =>
   maintenanceTime(value) === null
     ? "--"
-    : new Date(value!).toLocaleDateString("zh-CN", {
+    : __locale(new Date(value!), 'toLocaleDateString', "zh-CN", {
         month: "2-digit",
 
         day: "2-digit",
@@ -1435,7 +1436,7 @@ export default function MaintenanceCenterPage({
   }
 
   function saveCurrentView() {
-    const savedAt = new Date().toLocaleTimeString("zh-CN", {
+    const savedAt = __locale(new Date(), 'toLocaleTimeString', "zh-CN", {
       hour: "2-digit",
 
       minute: "2-digit",
@@ -2514,7 +2515,7 @@ export default function MaintenanceCenterPage({
                       title={
                         row.lastSeen === null
                           ? "未接入"
-                          : new Date(row.lastSeen).toLocaleString()
+                          : __locale(new Date(row.lastSeen), 'toLocaleString')
                       }
                     >
                       {clock(row.lastSeen)}

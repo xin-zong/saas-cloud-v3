@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
 import { AuthProvider } from './auth/AuthContext'
+import PreferencesProvider from './preferences/PreferencesProvider'
 
 // THREE.Clock was deprecated in r176 in favour of THREE.Timer.
 // @react-three/fiber still uses it internally; suppress until r3f ships the fix.
@@ -15,7 +16,7 @@ console.warn = (...args: unknown[]) => {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <AuthProvider>
-      <App />
+      <PreferencesProvider><App /></PreferencesProvider>
     </AuthProvider>
   </React.StrictMode>,
 )

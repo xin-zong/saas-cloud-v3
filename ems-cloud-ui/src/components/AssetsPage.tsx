@@ -312,7 +312,7 @@ export default function AssetsPage({
                       </td>
                       <td>
                         <div className="station-manager">
-                          <span>{s.manager?.slice(0, 1) || "—"}</span>
+                          <span data-i18n-initial={s.manager || undefined}>{s.manager?.slice(0, 1) || "—"}</span>
                           <div>
                             {s.manager || "未设置"}
                             {tab === "收藏站点" && (

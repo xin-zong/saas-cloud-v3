@@ -1,3 +1,4 @@
+import { dateKey, parseDateTimeInput } from '@/preferences/date'
 export type StationAlarm = {
   id: string;
   occurredAt: string;
@@ -14,13 +15,14 @@ export type StationAlarm = {
 };
 
 export function alarmDate(value: Date) {
-  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+  return dateKey(value);
 }
 
 export function alarmRange(days: number, now = new Date()) {
-  const start = new Date(now);
-  start.setDate(start.getDate() - days + 1);
-  return { start: alarmDate(start), end: alarmDate(now) };
+  const end = alarmDate(now);
+  const start = new Date(end + 'T00:00:00Z');
+  start.setUTCDate(start.getUTCDate() - days + 1);
+  return { start: start.toISOString().slice(0, 10), end };
 }
 
 // Relative dates keep the explicitly labelled demo useful in the live preview.
@@ -36,7 +38,7 @@ export function demoStationAlarms(stationId: string, now = new Date()): StationA
   return seeds.map((seed) => {
     const date = new Date(now);
     date.setDate(date.getDate() - seed.days);
-    const occurredAt = `${alarmDate(date)}T${seed.time}`;
+    const occurredAt = parseDateTimeInput(`${alarmDate(date)}T${seed.time}`).toISOString();
     const stamp = new Date(occurredAt).getTime();
     const eventAt = (seconds: number) => new Date(stamp + seconds * 1000).toISOString();
     const profile = [0.18, 0.20, 0.24, 0.32, 0.45, 0.59, 0.76, 0.91, 1, 0.98, 0.89, 0.84, 0.8];

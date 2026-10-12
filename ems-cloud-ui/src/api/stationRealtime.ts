@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { api, ApiError, getToken, getSessionVersion, setToken, refreshAfterForbidden } from './client'
 import { adaptObservation, mergeDeviceObservations, type Observation } from './ems'
 import { mergePresence, type Presence } from './presence'
@@ -67,6 +68,6 @@ export function mergeStationSnapshot(station:Station,snapshot:StationSnapshot):S
   const soc=socs.length?socs.reduce((total,row)=>total+Number(row.value),0)/socs.length:NaN
   const sum=(sourceId:number)=>{const selected=fresh.filter(row=>row.namespace==='cabinet'&&Number(row.sourceId)===sourceId);return selected.length?selected.reduce((total,row)=>total+Number(row.value),0):NaN}
   const activePower=sum(20197),pvOutput=sum(20107)/1000
-  const next={...station,deviceInventory,soc,activePower,pvOutput,loadRate:Number.isFinite(activePower)&&station.ratedPower>0?Math.abs(activePower)/station.ratedPower*100:NaN,updateTime:new Date(snapshot.serverTime).toLocaleTimeString('zh-CN'),updateSub:socs.length>1?'已采集设备；SOC 简单平均':'已采集设备实时数据'}
+  const next={...station,deviceInventory,soc,activePower,pvOutput,loadRate:Number.isFinite(activePower)&&station.ratedPower>0?Math.abs(activePower)/station.ratedPower*100:NaN,updateTime:__locale(new Date(snapshot.serverTime), 'toLocaleTimeString', 'zh-CN'),updateSub:socs.length>1?'已采集设备；SOC 简单平均':'已采集设备实时数据'}
   return snapshot.presence?mergePresence([next],[snapshot.presence])[0]:next
 }

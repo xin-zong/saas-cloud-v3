@@ -1,3 +1,5 @@
+import { localized as __locale } from '@/preferences/date'
+import { dateKey } from '@/preferences/date'
 import type { Station } from "@/App"
 import { normalizeTelemetry } from "./stationTelemetry"
 import type { MarketResource, MarketKind } from "./stationMarket"
@@ -58,7 +60,7 @@ export const PERIOD_NAMES = {
 }
 
 export function operationsDate(date = new Date()) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+  return dateKey(date)
 }
 export function minuteLabel(minute: number) {
   return `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`
@@ -338,7 +340,7 @@ export function buildOperationsStation(
         : Math.min(100, (complete / expected) * 100),
     updatedAt:
       current && !demo
-        ? new Date(current.time).toLocaleTimeString("zh-CN", { hour12: false })
+        ? __locale(new Date(current.time), 'toLocaleTimeString', "zh-CN", { hour12: false })
         : null,
     plan: stationPlan(station, date),
   }

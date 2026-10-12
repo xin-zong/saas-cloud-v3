@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { useEffect, useRef, useState } from "react"
 import type { Station } from "@/App"
 import { useAuth } from "@/auth/AuthContext"
@@ -21,7 +22,7 @@ const REPORTS: Array<{ label: ReportType; kind: ReportKind }> = [
   { label: "设备健康报告", kind: "health" },
 ]
 type Props = { stations: Station[]; allowedTabs: readonly Tab[]; allowedReportTypes: readonly ReportType[]; role: UserRole }
-const dateText = (date: Date) => date.toLocaleDateString("en-CA", { timeZone: "Asia/Shanghai" })
+const dateText = (date: Date) => __locale(date, 'toLocaleDateString', "en-CA", { timeZone: "Asia/Shanghai" })
 export default function ApiAnalyticsPage(props: Props) {
   const { user } = useAuth()
   return <ApiAnalyticsWorkspace {...props} accountKey={`${user?.id}|${user?.account}`} />

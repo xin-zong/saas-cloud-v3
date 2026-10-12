@@ -1,3 +1,5 @@
+import {parseDateTimeInput} from '@/preferences/date'
+import { localized as __locale } from '@/preferences/date'
 import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { DEMO_MODE } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
@@ -70,11 +72,11 @@ const historyQueryKey = (
 ) => JSON.stringify([stationId, start, end, minutes, [...selected].sort(), aggregation])
 
 const clockTime = (timestamp: number) =>
-  new Date(timestamp).toLocaleTimeString("zh-CN", { hour12: false })
+  __locale(new Date(timestamp), 'toLocaleTimeString', "zh-CN", { hour12: false })
 
 const valueText = (value: number | null | undefined) =>
   typeof value === "number"
-    ? value.toLocaleString("zh-CN", { maximumFractionDigits: 2 })
+    ? __locale(value, 'toLocaleString', "zh-CN", { maximumFractionDigits: 2 })
     : "--"
 
 function CursorCapture({
@@ -222,7 +224,7 @@ export default function StationAnalysisPage({
     status: "loading" | "success" | "error"
   } | null>(() => DEMO_MODE ? {
     key: historyQueryKey(
-      station.id, Date.parse(range.start), Date.parse(range.end), minutes, selected,
+      station.id, parseDateTimeInput(range.start).getTime(), parseDateTimeInput(range.end).getTime(), minutes, selected,
     ),
     status: "success",
   } : null)
@@ -354,9 +356,9 @@ export default function StationAnalysisPage({
     }
   }, [station, now, running, view, sampleSource, windowMinutes])
 
-  const historyStart = Date.parse(historyRange.start)
+  const historyStart = parseDateTimeInput(historyRange.start).getTime()
 
-  const historyEnd = Date.parse(historyRange.end)
+  const historyEnd = parseDateTimeInput(historyRange.end).getTime()
 
   const rows = useMemo(() => {
     if (view === "history")
@@ -447,14 +449,14 @@ export default function StationAnalysisPage({
   const isDemo = view === "live" ? sampleSource === "demo" : historyIsDemo
 
   const validRange = Boolean(
-    range.start && range.end && Date.parse(range.end) > Date.parse(range.start),
+    range.start && range.end && parseDateTimeInput(range.end).getTime() > parseDateTimeInput(range.start).getTime(),
   )
 
   const tickTime = (time: number) =>
     relative
       ? `${Math.round((time - (rows[0]?.timestamp ?? time)) / 1000)}s`
       : view === "history" && historyEnd - historyStart >= 86400000
-        ? `${new Date(time).toLocaleDateString("zh-CN", { month: "2-digit", day: "2-digit" })} ${clockTime(time)}`
+        ? `${__locale(new Date(time), 'toLocaleDateString', "zh-CN", { month: "2-digit", day: "2-digit" })} ${clockTime(time)}`
         : clockTime(time)
 
   const cursorRow = (name: "A" | "B") =>
@@ -500,7 +502,7 @@ export default function StationAnalysisPage({
   }, [displayedRows, statsSignal])
 
   const currentHistoryKey = historyQueryKey(
-    station.id, Date.parse(range.start), Date.parse(range.end), minutes, selected, aggregation,
+    station.id, parseDateTimeInput(range.start).getTime(), parseDateTimeInput(range.end).getTime(), minutes, selected, aggregation,
   )
   const matchingHistoryQuery = canRead && historyQuery?.key === currentHistoryKey
   const expectedSamples =
@@ -536,7 +538,7 @@ export default function StationAnalysisPage({
   function markDemoHistory(nextRange: typeof range) {
     setHistoryQuery({
       key: historyQueryKey(
-        station.id, Date.parse(nextRange.start), Date.parse(nextRange.end), minutes, selected,
+        station.id, parseDateTimeInput(nextRange.start).getTime(), parseDateTimeInput(nextRange.end).getTime(), minutes, selected,
       ),
       status: "success",
     })
@@ -576,7 +578,7 @@ export default function StationAnalysisPage({
       setRange(initial)
       setHistoryRange(initial)
       if (!DEMO_MODE) {
-        setRequestRange({ start: new Date(initial.start), end: new Date(initial.end) })
+        setRequestRange({ start: parseDateTimeInput(initial.start), end: parseDateTimeInput(initial.end) })
       } else markDemoHistory(initial)
       setHistorySource(samples)
       setHistoryIsDemo(sampleSource === "demo")
@@ -595,8 +597,8 @@ export default function StationAnalysisPage({
     setCursors({ A: null, B: null })
     if (!DEMO_MODE) {
       setRequestRange({
-        start: new Date(range.start),
-        end: new Date(range.end),
+        start: parseDateTimeInput(range.start),
+        end: parseDateTimeInput(range.end),
       })
       return
     }
@@ -606,8 +608,8 @@ export default function StationAnalysisPage({
       station.telemetryHistory === undefined
         ? demoTelemetryRange(
             station,
-            Date.parse(range.start),
-            Date.parse(range.end),
+            parseDateTimeInput(range.start).getTime(),
+            parseDateTimeInput(range.end).getTime(),
           )
         : normalizeTelemetry(station.telemetryHistory),
     )
@@ -872,11 +874,11 @@ export default function StationAnalysisPage({
             const next = { start: localDateTime(+start), end: localDateTime(+end) }
             setRange(next)
             setHistoryRange(next)
-            setRequestRange({ start: new Date(next.start), end: new Date(next.end) })
+            setRequestRange({ start: parseDateTimeInput(next.start), end: parseDateTimeInput(next.end) })
             setZoomRange(null)
             if (DEMO_MODE) {
               setHistorySource(station.telemetryHistory === undefined
-                ? demoTelemetryRange(station, Date.parse(next.start), Date.parse(next.end))
+                ? demoTelemetryRange(station, parseDateTimeInput(next.start).getTime(), parseDateTimeInput(next.end).getTime())
                 : normalizeTelemetry(station.telemetryHistory))
               setHistoryIsDemo(station.telemetryHistory === undefined)
               markDemoHistory(next)
@@ -1237,7 +1239,7 @@ export default function StationAnalysisPage({
                 ? `${Math.abs(rowB.timestamp - rowA.timestamp) / 1000} s`
                 : "--"}
             </span>
-            <span>{plotRows.length.toLocaleString()} {analyticsFeatures && !DEMO_MODE ? "时间点（含缺口）" : "samples"}</span>
+            <span>{__locale(plotRows.length, 'toLocaleString')} {analyticsFeatures && !DEMO_MODE ? "时间点（含缺口）" : "samples"}</span>
             {stats && (
               <span>
                 {statsSignal.name} · min {valueText(stats.min)} · max{" "}
@@ -1340,7 +1342,7 @@ export default function StationAnalysisPage({
                         : "--"}
                     </td>
                     <td>{DEMO_MODE ? last ? clockTime(last.timestamp) : "--" : detail?.sourceTime != null ? clockTime(detail.sourceTime) : "--"}</td>
-                    <td>{validRows.length.toLocaleString()}</td>
+                    <td>{__locale(validRows.length, 'toLocaleString')}</td>
                     <td>
                       {!DEMO_MODE ? view === "history" ? `${minutes} min` : detail?.receivedAt != null ? clockTime(detail.receivedAt) : "--" : sampleInterval
                         ? `${(1 / sampleInterval).toFixed(2)} Hz`

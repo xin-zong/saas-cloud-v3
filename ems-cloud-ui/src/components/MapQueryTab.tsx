@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from "react"
-import L from "leaflet"
+import { localized as __locale } from '@/preferences/date'
+import { useEffect, useState } from "react"
+import MapView from "./MapView"
+import { MAP_REGIONS, inMapRegion } from "@/maps/regions"
+import { useDisplayPreferences } from "@/preferences/PreferencesProvider"
+import { useInterfaceTranslation } from "@/i18n/useInterfaceTranslation"
 import type { Station } from "@/App"
 import { DEMO_MODE } from "@/api/client"
 import { Button } from "./ui/Workspace"
 import { Asset } from "./station-provision/Common"
-const AMAP_KEY = import.meta.env.VITE_AMAP_KEY as string | undefined
 const color = {
   online: "#257f66",
   fault: "#e4474f",
@@ -19,7 +22,7 @@ const label = {
 }
 const show = (n: number, unit = "") =>
   Number.isFinite(n)
-    ? n.toLocaleString("zh-CN", { maximumFractionDigits: 2 }) + unit
+    ? __locale(n, 'toLocaleString', "zh-CN", { maximumFractionDigits: 2 }) + unit
     : "—"
 function total(
   stations: Station[],
@@ -36,22 +39,16 @@ export default function MapQueryTab({
   stations: Station[]
   onOpenStation: (id: string) => void
 }) {
-  const [region, setRegion] = useState("")
+  const [region, setRegion] = useState("global")
   const [search, setSearch] = useState("")
   const [selected, setSelected] = useState<string | null>(null)
   const [period, setPeriod] = useState("今日")
-  const [mapError, setMapError] = useState(!AMAP_KEY)
-  const container = useRef<HTMLDivElement>(null)
-  const map = useRef<L.Map | null>(null)
-  const markers = useRef<L.LayerGroup | null>(null)
-  const visible = stations.filter(
-    (s) =>
-      (!region || s.region === region) &&
-      (!search ||
-        [s.name, s.code, s.project].some((v) =>
-          v.toLowerCase().includes(search.toLowerCase()),
-        )),
-  )
+  const { language } = useDisplayPreferences()
+  const translate = useInterfaceTranslation(stations.flatMap(s => [s.name, s.project, s.region]), language)
+  const query = search.trim().toLocaleLowerCase()
+  const visible = stations.filter(s => inMapRegion(s, region) && (!query ||
+    [s.name, s.code, s.project, s.region, translate(s.name), translate(s.project), translate(s.region)]
+      .some(value => value.toLocaleLowerCase().includes(query))))
   const station = visible.find((s) => s.id === selected)
   const counts = (Object.keys(color) as Station["status"][]).map((status) => ({
     status,
@@ -69,76 +66,14 @@ export default function MapQueryTab({
   const alerts = visible.flatMap((s) =>
     s.alerts.map((a) => ({ ...a, station: s })),
   )
+  // Do not retain a hidden selection after filters or authorized sites change.
   useEffect(() => {
-    if (!container.current || !AMAP_KEY) return
-    const instance = L.map(container.current, {
-      center: [31.5, 120.5],
-      zoom: 7,
-      zoomControl: false,
-      attributionControl: false,
-    })
-    map.current = instance
-    const tiles = L.tileLayer(
-      "https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}&key=" +
-        encodeURIComponent(AMAP_KEY),
-      { subdomains: "1234", maxZoom: 18 },
-    )
-    tiles.on("tileerror", () => setMapError(true))
-    tiles.on("load", () => setMapError(false))
-    tiles.addTo(instance)
-    markers.current = L.layerGroup().addTo(instance)
-    const observer = new ResizeObserver(() => instance.invalidateSize())
-    observer.observe(container.current)
-    return () => {
-      observer.disconnect()
-      instance.remove()
-      map.current = null
-      markers.current = null
-    }
-  }, [])
-  useEffect(() => {
-    const layer = markers.current,
-      instance = map.current
-    if (!layer || !instance) return
-    layer.clearLayers()
-    const points: L.LatLngExpression[] = []
-    for (const s of visible) {
-      const lat = Number(s.lat),
-        lng = Number(s.lng)
-      if (
-        !s.lat ||
-        !s.lng ||
-        !Number.isFinite(lat) ||
-        !Number.isFinite(lng) ||
-        Math.abs(lat) > 90 ||
-        Math.abs(lng) > 180
-      )
-        continue
-      points.push([lat, lng])
-      const marker = L.circleMarker([lat, lng], {
-        radius: s.id === selected ? 10 : 6,
-        color: "#fff",
-        weight: 2,
-        fillColor: color[s.status],
-        fillOpacity: 0.95,
-      }).addTo(layer)
-      marker.bindTooltip(s.name, { direction: "top" })
-      marker.on("click", () => setSelected(s.id))
-    }
-    if (points.length && search)
-      instance.fitBounds(L.latLngBounds(points), {
-        padding: [280, 150],
-        maxZoom: 13,
-      })
-  }, [stations, region, search, selected])
+    if (selected && !visible.some(s => s.id === selected)) setSelected(null)
+  }, [selected, visible])
   return (
     <div className="station-map" data-design-node="1122:8285">
-      <img
-        className="station-map-background"
-        src="/figma/station-entry/map-imgGeographicMapBackground.png"
-        alt="地理示意底图"
-      />
-      <div className="station-map-live" ref={container} />
+      <MapView stations={visible} selectedStation={station ?? null}
+        onSelectStation={s => setSelected(s.id)} region={region} />
       <div className="station-map-filters">
         <select
           aria-label="地图区域"
@@ -148,9 +83,9 @@ export default function MapQueryTab({
             setSelected(null)
           }}
         >
-          <option value="">全部集群</option>
-          {[...new Set(stations.map((s) => s.region))].map((r) => (
-            <option key={r}>{r}</option>
+          {MAP_REGIONS.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+          {[...new Set(stations.map(s => s.region))].filter(Boolean).map(r => (
+            <option key={r} value={r}>{r}</option>
           ))}
         </select>
         <input
@@ -287,7 +222,6 @@ export default function MapQueryTab({
             ))}
           </select>
         </label>
-        {mapError && <small>地理示意底图 · 实时地图服务未连接</small>}
       </div>
       {station && (
         <article className="station-map-popup">
@@ -372,16 +306,6 @@ export default function MapQueryTab({
           </div>
         </section>
       </div>
-      {AMAP_KEY && (
-        <div className="station-map-zoom">
-          <button aria-label="放大地图" onClick={() => map.current?.zoomIn()}>
-            ＋
-          </button>
-          <button aria-label="缩小地图" onClick={() => map.current?.zoomOut()}>
-            −
-          </button>
-        </div>
-      )}
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { useEffect, useState, type ReactNode } from "react"
 import { useAuth } from "@/auth/AuthContext"
 import { DEMO_MODE } from "@/api/client"
@@ -25,4 +26,4 @@ export function useMaintenanceDraft(stationId:string, kind:string, enabled:boole
 export function Surface({title,children,actions}:{title:string,children:ReactNode,actions?:ReactNode}){return <section className="maintenance-surface"><header><h2>{title}</h2>{actions}</header>{children}</section>}
 export function EmptyChart({label,axes}:{label:string,axes?:string}){return <div className="maintenance-empty-chart" role="img" aria-label={`${label}：暂无已接入数据`}><span>{label}数据尚未接通</span><small>{axes}</small></div>}
 export function DataTable({headers,rows,empty="暂无已接入记录"}:{headers:string[],rows:ReactNode[][],empty?:string}){return <><div className="operations-table-scroll"><table className="maintenance-tools-table"><thead><tr>{headers.map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{rows.map((row,i)=><tr key={i}>{row.map((cell,j)=><td key={j}>{cell}</td>)}</tr>)}</tbody></table></div>{!rows.length&&<div className="operations-empty">{empty}</div>}</>}
-export function DraftRecords({records}:{records:Draft[]}){return <Surface title="本地草稿记录"><DataTable headers={["内容","保存时间","状态"]} rows={records.map(r=>[Object.entries(r).filter(([k])=>!["id","savedAt"].includes(k)).map(([k,v])=><span key={k}>{v} </span>),new Date(r.savedAt).toLocaleString(),"本地草稿 · 未提交"])} empty="暂无本地草稿"/></Surface>}
+export function DraftRecords({records}:{records:Draft[]}){return <Surface title="本地草稿记录"><DataTable headers={["内容","保存时间","状态"]} rows={records.map(r=>[Object.entries(r).filter(([k])=>!["id","savedAt"].includes(k)).map(([k,v])=><span key={k}>{v} </span>),__locale(new Date(r.savedAt), 'toLocaleString'),"本地草稿 · 未提交"])} empty="暂无本地草稿"/></Surface>}

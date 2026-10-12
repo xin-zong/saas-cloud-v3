@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import {useEffect, useState} from 'react'
 import {useAuth} from '@/auth/AuthContext'
 import {hasStationPermission} from '@/auth/apiPermissions'
@@ -166,7 +167,7 @@ export function TaskWorkbench({stations,tasks,registerLeaveGuard,onClose,onOpen}
     <table><thead><tr>{(exception ? ['异常任务','状态','来源','持续时间','操作'] : ['任务 / 业务域','阶段','负责人','截止时间','操作']).map(label=><th key={label}>{label}</th>)}</tr></thead>
       <tbody>{list.map(task=><tr key={`${task.domain}:${task.id}`}>
         <td>{task.id} · {task.title}</td><td>{exception ? (!task.owner ? '无人负责' : '已超时') : task.status}</td>
-        <td>{exception ? task.domain : task.owner || '未分派'}</td><td>{exception ? '未提供' : knownDeadline(task) ? new Date(task.due!).toLocaleString() : '未提供'}</td>
+        <td>{exception ? task.domain : task.owner || '未分派'}</td><td>{exception ? '未提供' : knownDeadline(task) ? __locale(new Date(task.due!), 'toLocaleString') : '未提供'}</td>
         <td><button className="work-orders-link" onClick={()=>navigate(()=>onOpen(task.id,task.domain))}>查看详情</button></td>
       </tr>)}</tbody>
     </table>{!list.length && <p className="operations-empty">暂无符合条件的{exception?'异常':'任务'}；其他业务域尚未接通。</p>}

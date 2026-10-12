@@ -1,3 +1,4 @@
+import { localized as __locale, formatDate, calendarBounds } from '@/preferences/date'
 import { hasStationPermission } from "@/auth/apiPermissions"
 
 import { DEMO_MODE, send } from "@/api/client"
@@ -61,12 +62,12 @@ const levelLabel = { critical: "严重", warning: "重要", info: "一般" }
 
 const statusLabel = { active: "活动", recovered: "已恢复" }
 
-const timeFormat = new Intl.DateTimeFormat("zh-CN", {
+const timeFormat = { format: (value: Date) => formatDate(value, {
   hour: "2-digit",
   minute: "2-digit",
   second: "2-digit",
   hour12: false,
-})
+}) }
 
 function dateTime(value: string) {
   const date = new Date(value)
@@ -225,9 +226,9 @@ function Timeline({
 }) {
   const start = rollingEnd
     ? rollingEnd - 86400000
-    : new Date(`${range.start}T00:00:00`).getTime()
+    : calendarBounds(range.start, 'D').start.getTime()
 
-  const end = rollingEnd ?? new Date(`${range.end}T23:59:59.999`).getTime()
+  const end = rollingEnd ?? calendarBounds(range.end, 'D').end.getTime()
 
   const ordered = [...alarms].sort(
     (a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt),
@@ -281,7 +282,7 @@ function Timeline({
                 <span>
                   {rollingEnd || range.start === range.end
                     ? timeFormat.format(date).slice(0, 5)
-                    : `${date.toLocaleDateString("zh-CN", { weekday: "short" })} ${alarmDate(date).slice(5).replace("-", "/")}`}
+                    : `${__locale(date, 'toLocaleDateString', "zh-CN", { weekday: "short" })} ${alarmDate(date).slice(5).replace("-", "/")}`}
                 </span>
               </div>
             )
@@ -434,12 +435,12 @@ export default function StationAlarmsPage({
         const start =
           days === 1
             ? refreshedAt.getTime() - 86400000
-            : new Date(`${range.start}T00:00:00`).getTime()
+            : calendarBounds(range.start, 'D').start.getTime()
 
         const end =
           days === 1
             ? refreshedAt.getTime()
-            : new Date(`${range.end}T23:59:59.999`).getTime()
+            : calendarBounds(range.end, 'D').end.getTime()
 
         const search = query.trim().toLowerCase()
 

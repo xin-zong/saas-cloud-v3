@@ -17,7 +17,15 @@ export default defineConfig(({ mode }) => {
       minify: !emitSourcemaps,
     },
     plugins: [
-      react(),
+      react({jsxImportSource:'@/i18n'}),
+      {
+        name:'app-local-jsx-runtime',
+        configResolved(config) {
+          // React's plugin force-includes its JSX source. This runtime is app
+          // code and must share the same live preference store as the app.
+          config.optimizeDeps.include=config.optimizeDeps.include?.filter(id=>!id.startsWith('@/i18n/'))
+        },
+      },
       tailwindcss(),
       figmaSiteConfiguration(siteConfiguration),
       figmaErrorOverlayReplay(),
@@ -28,6 +36,10 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, './src'),
       },
+    },
+    optimizeDeps: {
+      exclude: ['@/i18n/jsx-runtime','@/i18n/jsx-dev-runtime'],
+      include: ['react/jsx-runtime','react/jsx-dev-runtime'],
     },
     server: {
       host: process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0',

@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { DEMO_MODE } from "@/api/client"
 import { useMemo } from "react"
 import { Area, AreaChart, Cell, Pie, PieChart, Tooltip } from "recharts"
@@ -105,7 +106,7 @@ export default function RightPanel({ stations, role }: Props) {
                     {DEMO_MODE ? item.value : "—"}
                   </span>
                   <span style={{ ...mono, fontSize: 9, color: "#76857f" }}>
-                    / {DEMO_MODE ? item.total : item.label === "储能系统" && stations.length ? (stations.reduce((sum, station) => sum + station.storageCapacity, 0) / 1000).toLocaleString() : "—"} {item.unit}
+                    / {DEMO_MODE ? item.total : item.label === "储能系统" && stations.length ? __locale((stations.reduce((sum, station) => sum + station.storageCapacity, 0) / 1000), 'toLocaleString') : "—"} {item.unit}
                   </span>
                 </div>
               </div>

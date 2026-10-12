@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { useEffect, useRef, useState } from "react"
 import {
   Activity,
@@ -37,7 +38,7 @@ interface Props {
 }
 
 function formatTime(value: Date) {
-  return value.toLocaleTimeString("zh-CN", {
+  return __locale(value, 'toLocaleTimeString', "zh-CN", {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",

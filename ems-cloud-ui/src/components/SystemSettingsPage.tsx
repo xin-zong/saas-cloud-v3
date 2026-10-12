@@ -7,6 +7,7 @@ import { ROLE_CONFIG, type AuthUser } from "@/auth/roles"
 import { Button, Select, Switch } from "./ui/Workspace"
 import "./system-settings.css"
 import SettingsDialog from "./SettingsDialog"
+import { applyPreferences } from '@/preferences/store'
 import { useEditorLeaveGuard, type RegisterLeaveGuard } from "./useEditorLeaveGuard"
 
 type SettingsState = {
@@ -291,11 +292,13 @@ function TextField({
 function SettingsCard({
   title,
   status,
+  initialOf,
   children,
   className = "",
 }: {
   title: string
   status?: string
+  initialOf?: string
   children: ReactNode
   className?: string
 }) {
@@ -303,7 +306,7 @@ function SettingsCard({
     <section className={`settings-card ${className}`}>
       <header className="settings-card-header">
         <h2>{title}</h2>
-        {status && <span className="settings-status-pill">{status}</span>}
+        {status && <span className="settings-status-pill" data-i18n-initial={initialOf}>{status}</span>}
       </header>
       {children}
     </section>
@@ -335,9 +338,10 @@ function PersonalPreferences({
     value: SettingsState[K],
   ) => void
 }) {
+  const initialName = useRef(settings.displayName).current
   return (
     <>
-      <SettingsCard title="账户资料" status={settings.displayName.slice(0, 1) || "—"}>
+      <SettingsCard title="账户资料" status={settings.displayName.slice(0, 1) || "—"} initialOf={initialName}>
         <div className="settings-account-grid">
           <TextField
             label="显示名称"
@@ -463,7 +467,7 @@ function DisplaySettings({
 }) {
   return (
     <>
-      <SettingsCard title="地区与计量" status="简体中文">
+      <SettingsCard title="地区与计量" status={settings.language}>
         <div className="settings-account-grid">
           <FieldSelect
             label="界面语言"
@@ -478,6 +482,11 @@ function DisplaySettings({
               "Asia / Shanghai (UTC+08:00)",
               "UTC (UTC+00:00)",
               "Asia / Tokyo (UTC+09:00)",
+              "Europe / Berlin (UTC+01:00)",
+              "Europe / London (UTC+00:00)",
+              "America / New_York (UTC-05:00)",
+              "America / Los_Angeles (UTC-08:00)",
+              "Australia / Sydney (UTC+10:00)",
             ]}
             onChange={(value) => set("timezone", value)}
           />
@@ -489,7 +498,7 @@ function DisplaySettings({
           />
         </div>
         <p className="settings-card-note">
-          此处保存显示偏好；时间轴、报表、导出的全局应用尚未接入。
+          保存后全局生效；时间按所选时区展示，夏令时自动调整。原始采集时间保持不变。
         </p>
       </SettingsCard>
       <SettingsCard title="界面显示">
@@ -768,7 +777,7 @@ export default function SystemSettingsPage({
       if (controller.signal.aborted) return
       const next = {...initial.settings}
       for (const key of preferenceKeys) if (values[key] != null) Object.assign(next, {[key]: typeof next[key] === "boolean" ? values[key] === "true" : values[key]})
-      setSettings(next); setBaseline(next); setServerReady(true); setError("")
+      setSettings(next); setBaseline(next); applyPreferences(next); setServerReady(true); setError("")
     }).catch(error => {if (!controller.signal.aborted) setError(error.message)})
     return () => controller.abort()
   }, [loadVersion])
@@ -787,10 +796,11 @@ export default function SystemSettingsPage({
           if (!alive.current) return
           confirmed = {...confirmed, [key]: snapshot[key]}
           setBaseline(confirmed)
+          applyPreferences(confirmed)
         }
       }
       if (!alive.current) return
-      setBaseline(snapshot); setStored(true); setError("")
+      setBaseline(snapshot); applyPreferences(snapshot); setStored(true); setError("")
     } catch (error) {
       if (alive.current) setError(DEMO_MODE ? "保存失败：本地存储不可用，请检查浏览器存储权限后重试。" : `部分偏好可能已保存；其余输入已保留，请重试。${error instanceof Error ? error.message : "保存失败"}`)
     } finally {busyRef.current = false; if (alive.current) setBusy(false)}

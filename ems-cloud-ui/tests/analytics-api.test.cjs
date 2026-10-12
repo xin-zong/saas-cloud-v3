@@ -11,6 +11,9 @@ function loadModule(path, cache = new Map()) {
   cache.set(path, exports)
   new Function("exports", "require", code)(exports, (name) => {
     if (name === "@/api/client") return loadModule("api/client", cache)
+    if (name === '@/preferences/date') return loadModule('preferences/date',cache)
+    if (name === './store') return loadModule('preferences/store',cache)
+    if (name === './model') return loadModule('preferences/model',cache)
     throw new Error(`Unexpected import: ${name}`)
   })
   return exports

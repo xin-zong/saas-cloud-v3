@@ -1,5 +1,7 @@
+import { localized as __locale } from '@/preferences/date'
 import { useEffect, useState } from "react"
 import type { AuthUser } from "@/auth/roles"
+import MachineTranslationStatus from '@/i18n/MachineTranslationStatus'
 
 const asset = (name: string) => `/figma/stations/overview/${name}.svg`
 
@@ -35,7 +37,8 @@ export default function StationGlobalHeader({
         Enerlution
       </a>
       <div className="station-global-tools">
-        <time dateTime={now.toISOString()}>{now.toLocaleString("sv-SE")}</time>
+        <MachineTranslationStatus />
+        <time dateTime={now.toISOString()}>{__locale(now, 'toLocaleString', "sv-SE")}</time>
         <div className="station-header-popover">
           <button
             aria-label="通知与连接状态"
@@ -60,6 +63,7 @@ export default function StationGlobalHeader({
         <div className="station-header-popover">
           <button
             className="station-user-avatar"
+            data-i18n-initial={user.name}
             aria-label={`${user.name}，账户菜单`}
             aria-expanded={menu}
             onClick={() => {

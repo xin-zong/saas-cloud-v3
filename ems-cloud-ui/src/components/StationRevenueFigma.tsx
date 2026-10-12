@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { useEffect, useMemo, useState } from "react"
 import {
   Bar,
@@ -28,7 +29,7 @@ const dateKey = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
 const amount = (value: number | null | undefined) =>
   typeof value === "number" && Number.isFinite(value)
-    ? value.toLocaleString("zh-CN", {
+    ? __locale(value, 'toLocaleString', "zh-CN", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       })

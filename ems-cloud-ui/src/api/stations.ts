@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { api, allRows, type ApiRow } from "./client"
 
 import { adaptStation, adaptOrder, text } from "./adapters"
@@ -42,14 +43,11 @@ export async function loadStations(user: AuthUser, signal?: AbortSignal) {
               : api<ApiRow[]>(`/stations/${station.id}/${path}`, { signal })
             : Promise.resolve([])
 
-        const today = new Date().toLocaleDateString("en-CA", {
+        const today = __locale(new Date(), 'toLocaleDateString', "en-CA", {
           timeZone: "Asia/Shanghai",
         })
 
-        const from = new Date(Date.now() - 365 * 86400000).toLocaleDateString(
-          "en-CA",
-          { timeZone: "Asia/Shanghai" },
-        )
+        const from = __locale(new Date(Date.now() - 365 * 86400000), 'toLocaleDateString', "en-CA", { timeZone: "Asia/Shanghai" })
 
         const [
           devices,

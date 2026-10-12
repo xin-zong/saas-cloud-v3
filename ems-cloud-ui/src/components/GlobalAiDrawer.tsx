@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   Bot,
@@ -33,7 +34,7 @@ const QUICK_PROMPTS: Record<"owner" | "operator", string[]> = {
 }
 
 function formatPower(value: number) {
-  return `${Math.round(value).toLocaleString("zh-CN")} kW`
+  return `${__locale(Math.round(value), 'toLocaleString', "zh-CN")} kW`
 }
 
 function parseCurrency(value: string) {
@@ -69,7 +70,7 @@ function buildAssistantAnswer(
     return `${selectedStation.name} 当前有功功率 ${formatPower(
       selectedStation.activePower,
     )}，累计收益快照为 ${
-      revenueValue ? `¥${revenueValue.toLocaleString("zh-CN")}` : "暂无"
+      revenueValue ? `¥${__locale(revenueValue, 'toLocaleString', "zh-CN")}` : "暂无"
     }。收益判断仍需结合所选时段的电价、计量和结算记录，当前回答不会替代正式核算。`
   }
 

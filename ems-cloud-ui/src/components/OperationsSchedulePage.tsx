@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { DEMO_MODE } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
 import { hasStationPermission } from "@/auth/apiPermissions"
@@ -19,7 +20,7 @@ import { dispatchStation } from "@/data/stationDispatch"
 import "./operations-schedule.css"
 
 const number = (value: number | null | undefined) =>
-  value == null || !Number.isFinite(value) ? "--" : Math.round(value).toLocaleString("zh-CN")
+  value == null || !Number.isFinite(value) ? "--" : __locale(Math.round(value), 'toLocaleString', "zh-CN")
 
 export default function OperationsSchedulePage({
   stations,

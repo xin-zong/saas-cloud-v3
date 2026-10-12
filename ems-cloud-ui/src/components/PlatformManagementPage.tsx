@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { useEffect, useMemo, useRef, useState } from "react"
 import type { FormEvent } from "react"
 import {
@@ -1025,7 +1026,7 @@ function formatDateTimeLabel(value: Date) {
 }
 
 function formatNowLabel(now = new Date()) {
-  return now.toLocaleString("zh-CN", {
+  return __locale(now, 'toLocaleString', "zh-CN", {
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",

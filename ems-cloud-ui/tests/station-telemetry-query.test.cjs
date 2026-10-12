@@ -30,7 +30,8 @@ test('EMS mappings take precedence over legacy summary points and preserve ambig
 })
 
 test('live trend date follows today while demo date follows loaded evidence',()=>{
- const clock=load('data/dataClock',{'./operations':{operationsDate:()=>''}});
+ const dates=load('preferences/date',{'./store':{getPreferences:()=>({language:'简体中文',timezone:'Asia/Shanghai'})}});
+ const clock=load('data/dataClock',{'./operations':{operationsDate:()=>''},'@/preferences/date':dates});
  const station={telemetryHistory:[],maintenance:{alarms:[{occurredAt:'2026-09-25T08:00:00+08:00'}]},deviceInventory:[]};
  assert.equal(clock.stationTrendDate(station,false,new Date('2026-10-08T12:00:00')), '2026-10-08');
  assert.equal(clock.stationTrendDate(station,true,new Date('2026-10-08T12:00:00')), '2026-09-25');

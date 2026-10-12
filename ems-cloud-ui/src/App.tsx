@@ -1,3 +1,5 @@
+import { localized as __locale } from '@/preferences/date'
+import { useDisplayPreferences } from '@/preferences/PreferencesProvider'
 import { api, DEMO_MODE, send, type ApiRow } from "@/api/client"
 import { mergePresence, type Presence } from "@/api/presence"
 import { loadStationSnapshot, mergeStationSnapshot, type StationSnapshot } from "@/api/stationRealtime"
@@ -245,7 +247,7 @@ function parseCurrencyValue(value: string) {
 }
 
 function formatCurrencyValue(value: number) {
-  return `¥${Math.round(value).toLocaleString()}`
+  return `¥${__locale(Math.round(value), 'toLocaleString')}`
 }
 
 function getInitialNavFromHash(user: AuthUser) {
@@ -283,6 +285,7 @@ function getInitialWorkOrdersViewFromHash(user: AuthUser) {
 }
 
 export default function App() {
+  useDisplayPreferences()
   const { user } = useAuth()
 
   if (!user) return <LoginPage />

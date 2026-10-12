@@ -1,3 +1,4 @@
+import { localized as __locale, calendarBounds } from '@/preferences/date'
 import { api, getToken, setToken, getSessionVersion, refreshAfterForbidden, ApiError } from "@/api/client"
 
 export type MeasurementPoint = { id: string; name: string; unit: string; device_id: string; device_name?: string; source?: "ems" | "legacy"; sourceId?: string; namespace?: string; valueType?: string; aggregation?: string[] }
@@ -10,8 +11,8 @@ export const REPORT_CAPABILITIES: Record<ReportKind, readonly string[]> = {
 }
 export const reportCapabilityAllowed = (kind: ReportKind, check: (permission: string) => boolean) => REPORT_CAPABILITIES[kind].every(check)
 export const reportBusinessDate = (value: string, includeTime = false) => includeTime
-  ? new Date(value).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })
-  : new Date(value).toLocaleDateString("zh-CN", { timeZone: "Asia/Shanghai" })
+  ? __locale(new Date(value), 'toLocaleString', "zh-CN", { timeZone: "Asia/Shanghai" })
+  : __locale(new Date(value), 'toLocaleDateString', "zh-CN", { timeZone: "Asia/Shanghai" })
 
 export async function loadPoints(stationId: string, signal?: AbortSignal): Promise<MeasurementPoint[]> {
   const rows = await api<Array<Record<string, unknown>>>(`/stations/${encodeURIComponent(stationId)}/points`, { signal })
@@ -80,7 +81,7 @@ export const jobStatusText = (status: AnalysisJob["status"]) => ({ pending: "等
 export function reportDateRange(from: string, to: string): { from: string; to: string } {
   const valid = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value
   if (!valid(from) || !valid(to) || to < from) throw new Error("请选择有效报告日期范围。")
-  const start = Date.parse(`${from}T00:00:00+08:00`), end = Date.parse(`${to}T00:00:00+08:00`) + 86400000
+  const start = calendarBounds(from, 'D').start.getTime(), end = calendarBounds(to, 'D').end.getTime() + 1
   return { from: new Date(start).toISOString(), to: new Date(end).toISOString() }
 }
 

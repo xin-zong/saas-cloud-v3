@@ -1,4 +1,5 @@
 import type { Station } from "@/App"
+import { dateKey } from '@/preferences/date'
 import { operationsDate } from "./operations"
 
 const toTime = (value?: string | null) => {
@@ -75,7 +76,7 @@ export function stationDataNow(station: Station) {
 /** Live trends start today; old alarms and work orders do not select the telemetry day. */
 export function stationTrendDate(station: Station, demoMode: boolean, now = new Date()) {
   const date = demoMode ? stationDataNow(station) : now
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+  return dateKey(date)
 }
 
 export function stationsDataNow(stations: Station[]) {
@@ -86,9 +87,10 @@ export function stationsDataNow(stations: Station[]) {
 }
 
 export function dateRangeEndingAt(end: Date, days: number) {
-  const start = new Date(end)
-  start.setDate(start.getDate() - Math.max(0, days - 1))
-  return { start: operationsDate(start), end: operationsDate(end) }
+  const endDay = dateKey(end)
+  const start = new Date(endDay + 'T00:00:00Z')
+  start.setUTCDate(start.getUTCDate() - Math.max(0, days - 1))
+  return { start: start.toISOString().slice(0, 10), end: endDay }
 }
 
 export function stationDataDate(station: Station) {

@@ -1,4 +1,6 @@
+import { localized as __locale } from '@/preferences/date'
 import { DEMO_MODE } from "@/api/client"
+import MachineTranslationStatus from '@/i18n/MachineTranslationStatus'
 import { useState, useEffect } from "react"
 import { LogOut, Maximize, Minimize } from "lucide-react"
 import { Button } from "./ui/Workspace"
@@ -27,9 +29,10 @@ export default function Header({
     <header className="workspace-topbar global-platform-header">
       <div className="global-platform-brand"><img src="/figma/overview/map/imgBrandMark.svg" alt="" /><strong>Enerlution</strong><span className="workspace-topbar-context">{DEMO_MODE ? "演示环境" : "测试环境"} · {DEMO_MODE ? "华东集群" : "授权站点数据"}</span></div>
       <div className="workspace-topbar-actions">
+        <MachineTranslationStatus />
         <span className="global-role-label">{ROLE_CONFIG[user.role].shortLabel} · 基础版 V1</span>
         <span className="workspace-clock">
-          系统时间 {time.toLocaleTimeString("zh-CN", { hour12: false })}
+          系统时间 {__locale(time, 'toLocaleTimeString', "zh-CN", { hour12: false })}
         </span>
         {showImmersive && <Button
           iconOnly
@@ -41,7 +44,7 @@ export default function Header({
           {immersive ? <Minimize size={16} aria-hidden="true" /> : <Maximize size={16} aria-hidden="true" />}
         </Button>}
         <span className="workspace-user">
-          <span className="global-user-avatar">{user.name.slice(0, 1)}</span>
+          <span className="global-user-avatar" data-i18n-initial={user.name}>{user.name.slice(0, 1)}</span>
           <span>
             {user.name}
             <small>{ROLE_CONFIG[user.role].shortLabel}</small>

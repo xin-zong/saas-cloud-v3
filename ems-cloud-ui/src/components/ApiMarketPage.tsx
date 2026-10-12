@@ -1,3 +1,4 @@
+import { parseDateTimeInput, formatDate } from '@/preferences/date'
 import { hasStationPermission } from "@/auth/apiPermissions"
 import { useCallback, useEffect, useState, type FormEvent } from "react"
 
@@ -108,8 +109,8 @@ export default function ApiMarketPage({ stations, registerLeaveGuard }: { statio
     setError("")
     const q = qualifications.find((item) => String(item.id) === qualification)
 
-    const from = new Date(start),
-      to = new Date(end),
+    const from = parseDateTimeInput(start),
+      to = parseDateTimeInput(end),
       kw = Number(capacity)
 
     if (
@@ -304,7 +305,7 @@ export default function ApiMarketPage({ stations, registerLeaveGuard }: { statio
                 <td>{String(s.event_code)}</td>
                 <td>{String(s.name)}</td>
                 <td>
-                  {String(s.starts_at)} / {String(s.ends_at)}
+                  {formatDate(String(s.starts_at), {dateStyle: 'short', timeStyle: 'short'})} / {formatDate(String(s.ends_at), {dateStyle: 'short', timeStyle: 'short'})}
                 </td>
                 <td>{String(s.capacity_kw)}</td>
                 <td><span className="api-market-status">{statuses[String(s.status)] ?? String(s.status)}</span></td>

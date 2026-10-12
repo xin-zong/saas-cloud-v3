@@ -1,3 +1,4 @@
+import { localized as __locale, dateKey, dateTimeInput, parseDateTimeInput } from '@/preferences/date'
 import { hasStationPermission } from "@/auth/apiPermissions"
 import { DEMO_MODE, send, api, allRows, type ApiRow } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
@@ -222,21 +223,20 @@ const EMPTY_ORDER_DRAFT: WorkOrderDraft = {
   dueAt: "",
   description: "",
 }
-const dateOnly = (value: Date) =>
-  `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`
+const dateOnly = (value: Date) => dateKey(value)
 const defaultDateRange = (now = new Date()) => {
-  const end = new Date(now)
-  const start = new Date(end)
-  start.setDate(start.getDate() - 6)
-  return { start: dateOnly(start), end: dateOnly(end) }
+  const end = dateOnly(now)
+  const start = new Date(end + 'T00:00:00Z')
+  start.setUTCDate(start.getUTCDate() - 6)
+  return { start: start.toISOString().slice(0, 10), end }
 }
 const dateTimeLocal = (value: Date) =>
-  `${dateOnly(value)}T${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`
+  dateTimeInput(value).slice(0, 16)
 const dateTime = (value?: string) =>
-  value ? new Date(value).toLocaleString("zh-CN", { hour12: false }) : "--"
+  value ? __locale(new Date(value), 'toLocaleString', "zh-CN", { hour12: false }) : "--"
 const timeLabel = (value?: string) =>
   value
-    ? new Date(value).toLocaleTimeString("zh-CN", {
+    ? __locale(new Date(value), 'toLocaleTimeString', "zh-CN", {
         hour: "2-digit",
         minute: "2-digit",
         hour12: false,
@@ -246,16 +246,16 @@ const compactDateLabel = (value?: string) => {
   const time = maintenanceTime(value)
   if (time === null) return "--"
   const date = new Date(time)
-  return `${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${timeLabel(value)}`
+  return `${dateKey(date).slice(5)} ${timeLabel(value)}`
 }
 const deadlineDateLabel = (value?: string, now = new Date()) => {
   const time = maintenanceTime(value)
   if (time === null) return "--"
   const date = new Date(time)
-  const tomorrow = new Date(now)
-  tomorrow.setDate(tomorrow.getDate() + 1)
+  const tomorrow = new Date(dateOnly(now) + 'T00:00:00Z')
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1)
   if (dateOnly(date) === dateOnly(now)) return `今日 ${timeLabel(value)}`
-  if (dateOnly(date) === dateOnly(tomorrow)) return `明日 ${timeLabel(value)}`
+  if (dateOnly(date) === tomorrow.toISOString().slice(0, 10)) return `明日 ${timeLabel(value)}`
   return compactDateLabel(value)
 }
 const minutesAgo = (value?: string, now = Date.now()) => {
@@ -1064,7 +1064,7 @@ export default function WorkOrdersApprovalPage({
   async function submitInspection(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (serverBusy || !hasStationPermission(user, inspectionDraft.stationId, "inspection.manage")) return
-    const due = new Date(inspectionDraft.dueAt)
+    const due = parseDateTimeInput(inspectionDraft.dueAt)
     if (!rows.some(row => row.station.id === inspectionDraft.stationId) || !inspectionDraft.title.trim() || !Number.isFinite(due.getTime()) || due.getTime() <= Date.now()) {setInspectionCreateError("请选择站点、填写标题并设置未来的巡检时间");return}
     setServerBusy(true)
     try {
@@ -1101,10 +1101,10 @@ export default function WorkOrdersApprovalPage({
       setServerBusy(true)
       try {
         if(orderDraft.title.trim().length<4)throw new Error('工单标题至少需要 4 个字符')
-        if(!Number.isFinite(new Date(orderDraft.dueAt).getTime())||new Date(orderDraft.dueAt).getTime()<=Date.now())throw new Error('处理时限必须晚于当前时间')
+        if(!Number.isFinite(parseDateTimeInput(orderDraft.dueAt).getTime())||parseDateTimeInput(orderDraft.dueAt).getTime()<=Date.now())throw new Error('处理时限必须晚于当前时间')
         if (!orderDraft.description.trim()) throw new Error('请填写工单描述')
         if (orderDraft.owner && !/^\d+$/.test(orderDraft.owner)) throw new Error('负责人请输入已授权的用户编号')
-        const result = await send<{id: number}>('/work-orders', 'POST', {stationId: Number(orderDraft.stationId), title: orderDraft.title.trim(), description: orderDraft.description.trim(), assignedTo: orderDraft.owner ? Number(orderDraft.owner) : null, dueAt: new Date(orderDraft.dueAt).toISOString()})
+        const result = await send<{id: number}>('/work-orders', 'POST', {stationId: Number(orderDraft.stationId), title: orderDraft.title.trim(), description: orderDraft.description.trim(), assignedTo: orderDraft.owner ? Number(orderDraft.owner) : null, dueAt: parseDateTimeInput(orderDraft.dueAt).toISOString()})
         let extra=''
         try{localStorage.setItem(workflowKey(user?.id||'',orderDraft.stationId,'order-fields',String(result.id)),JSON.stringify({source:orderDraft.source,device:orderDraft.device,priority:orderDraft.priority}));extra='来源、设备和等级已另存本地草稿，未提交服务器'}catch{extra='来源、设备和等级未保存：本地存储不可用'}
         setCreateDirty(false);setCreateOpen(false); setNotice(`工单 ${result.id} 已由服务器创建`); setFieldNotice(extra); onServerChange?.()
@@ -1118,7 +1118,7 @@ export default function WorkOrdersApprovalPage({
     const title = orderDraft.title.trim()
     const owner = orderDraft.owner.trim()
     const device = orderDraft.device.trim()
-    const dueTime = new Date(orderDraft.dueAt).getTime()
+    const dueTime = parseDateTimeInput(orderDraft.dueAt).getTime()
     if (!targetRow) {
       setCreateError("请选择有效站点")
       return

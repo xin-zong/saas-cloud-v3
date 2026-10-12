@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { useState } from "react"
 import type { Station } from "@/App"
 import { DEMO_MODE } from "@/api/client"
@@ -8,7 +9,7 @@ import { stationsDataNow } from "@/data/dataClock"
 import { dispatchStation } from "@/data/stationDispatch"
 
 const completeTotal = (values: (number | null)[]) => values.length && values.every(finite) ? sumKnown(values) : null
-const money = (value: number | null) => value === null ? "--" : `¥ ${Math.round(value).toLocaleString("zh-CN")}`
+const money = (value: number | null) => value === null ? "--" : `¥ ${__locale(Math.round(value), 'toLocaleString', "zh-CN")}`
 const energy = (value: number | null) => value === null ? "--" : `${value.toFixed(1)} MWh`
 
 export default function OperationsOverviewPage({ stations, onOpenStation, onSchedule, onMarket, onSettlement, onHistory }: {

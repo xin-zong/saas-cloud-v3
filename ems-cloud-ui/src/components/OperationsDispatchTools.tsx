@@ -1,3 +1,4 @@
+import { localized as __locale } from '@/preferences/date'
 import { useEffect, useState } from "react"
 import type { Station } from "@/App"
 import { useAuth } from "@/auth/AuthContext"
@@ -78,7 +79,7 @@ export default function OperationsDispatchTools({station, onBack, onStrategy, on
         {canManage&&<button className="operations-button market-primary" type="submit">检查并确认</button>}
       </form>
     </section></div>
-    <section className="dispatch-surface"><h2>本地建议与交接记录</h2><table><thead><tr><th>设备 / 建议模式</th><th>动作</th><th>功率 / 版本 / SoC</th><th>说明</th><th>保存时间</th><th>状态</th></tr></thead><tbody>{notes.map((n,i)=><tr key={`${n.savedAt}:${i}`}><td>{n.deviceName||"未记录设备"}<br/>{n.deviceCode||"—"} · {n.mode==="manual"?"手动":n.mode==="automatic"?"智能自动":"未记录模式"}</td><td>{n.action}</td><td>{n.power?`${n.power} kW`:n.version||"—"}{n.socMin!==undefined&&<small> · SoC {n.socMin}%–{n.socMax}%</small>}</td><td>{n.note}</td><td>{new Date(n.savedAt).toLocaleString()}</td><td>本地草稿 · 未提交</td></tr>)}</tbody></table>{!notes.length&&<div className="operations-empty">暂无本地记录；设备下发历史未接通</div>}</section>
+    <section className="dispatch-surface"><h2>本地建议与交接记录</h2><table><thead><tr><th>设备 / 建议模式</th><th>动作</th><th>功率 / 版本 / SoC</th><th>说明</th><th>保存时间</th><th>状态</th></tr></thead><tbody>{notes.map((n,i)=><tr key={`${n.savedAt}:${i}`}><td>{n.deviceName||"未记录设备"}<br/>{n.deviceCode||"—"} · {n.mode==="manual"?"手动":n.mode==="automatic"?"智能自动":"未记录模式"}</td><td>{n.action}</td><td>{n.power?`${n.power} kW`:n.version||"—"}{n.socMin!==undefined&&<small> · SoC {n.socMin}%–{n.socMax}%</small>}</td><td>{n.note}</td><td>{__locale(new Date(n.savedAt), 'toLocaleString')}</td><td>本地草稿 · 未提交</td></tr>)}</tbody></table>{!notes.length&&<div className="operations-empty">暂无本地记录；设备下发历史未接通</div>}</section>
     {confirm&&canManage&&<Modal title="确认保存调度建议？" onClose={()=>setConfirm(false)} actions={<><button className="operations-button" onClick={()=>setConfirm(false)}>取消</button><button className="operations-button market-primary" onClick={save}>保存本地建议</button></>}><p>{station.name} · {device?.name||"站点交接"} {device?.code} · {mode==="manual"?"手动控制建议":"智能自动建议"}</p><p>{action} {isPower?`${power} kW · SoC ${socMin}%–${socMax}%`:version}</p><p>仅保存在当前账号的本机浏览器，未下发设备或提交审批。</p></Modal>}
     {leaving&&<Modal title="放弃未保存修改？" onClose={()=>{setLeaving(false);settleLeave(false)}} actions={<><button className="operations-button" onClick={()=>{setLeaving(false);settleLeave(false)}}>继续编辑</button><button className="operations-button market-primary" onClick={()=>{setLeaving(false);setDirty(false);settleLeave(true)}}>放弃修改</button></>}><p>调度建议尚未保存。</p></Modal>}
   </div>
