@@ -1,4 +1,5 @@
-import { cloneElement, isValidElement, useEffect, useRef, type ReactNode } from "react"
+import { labeledControl } from "@/i18n/labeledControl"
+import { useEffect, useRef, type ReactNode } from "react"
 import { Button } from "../ui/Workspace"
 export function Asset({ name }: { name: string }) {
   return (
@@ -91,9 +92,7 @@ export function Field({
   return (
     <label className={`station-field ${wide ? "station-field-wide" : ""}`}>
       <span>{label}</span>
-      {isValidElement<{ 'aria-label'?: string }>(children) && typeof children.type === 'string' && ['input', 'select', 'textarea'].includes(children.type)
-        ? cloneElement(children, { 'aria-label': children.props['aria-label'] || label })
-        : children}
+      {labeledControl(children,label)}
     </label>
   )
 }

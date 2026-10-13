@@ -1,3 +1,5 @@
+> 当前租户权限重构使用 V19—V25。旧 V6—V9 组织权限说明仅作历史参考。新版本本地验收、SMTP 配置、正式新库及回退见 [权限重构切换说明](../docs/tenant-permission-cutover.md)。
+
 # EMS Cloud API
 
 基于 RuoYi-Vue-Plus 5.6.2 的依赖与基础代码约定进行选择性裁剪适配，使用 Java 21 / Spring Boot / Sa-Token / JDBC。不是完整若依后台的换名副本。保留现有 React 原型；上游来源与许可证见 `docs/upstream.md`、`LICENSE.ruoyi`。

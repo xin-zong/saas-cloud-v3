@@ -1,0 +1,5 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),ts=require('typescript');
+function load(name){const file=path.join(__dirname,'../src/tenant',name),exports={};const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText;new Function('exports','require',code)(exports,p=>p==='@/components/ui/Workspace'?{}:p.startsWith('./')?load(p.slice(2)+'.ts'):require(p));return exports}
+const {menuLabel}=load('PermissionSelector.tsx');
+test('custom menu names override the registered route label',()=>{assert.equal(menuLabel({id:1,client:'web',parent_id:null,name_key:'自定义资产入口',route_path:'assets'}),'自定义资产入口')});
+test('registered menu keys retain translated route and operation labels',()=>{assert.equal(menuLabel({id:2,client:'web',parent_id:null,name_key:'nav.assets',route_path:'assets'}),'资产与站点');assert.equal(menuLabel({id:3,client:'web',parent_id:2,name_key:'action.asset.edit',permission_code:'asset.edit',permission_name:'编辑站点'}),'编辑站点')});

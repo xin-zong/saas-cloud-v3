@@ -10,7 +10,27 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class DatabaseGuard implements BeanPostProcessor {
-  private static final String DATABASE = "ems_cloud_v2_proto";
+  private final String database;
+
+  public DatabaseGuard() {
+    this("ems_cloud_v2_proto");
+  }
+
+  @org.springframework.beans.factory.annotation.Autowired
+  public DatabaseGuard(org.springframework.core.env.Environment environment) {
+    this(environment.getProperty("ems.database-name", "ems_cloud_v2_proto"));
+  }
+
+  public DatabaseGuard(String database) {
+    if (!Set.of(
+            "ems_cloud_v2_proto",
+            "ems_cloud_saas_refactor_test",
+            "ems_cloud_saas_final_test",
+            "ems_cloud_saas_v3")
+        .contains(database)) throw invalid();
+    this.database = database;
+  }
+
   // Routing, startup options, service files, credentials and socket factories are deliberately
   // absent.
   private static final Set<String> SAFE_OPTIONS =
@@ -35,7 +55,7 @@ public class DatabaseGuard implements BeanPostProcessor {
         || source.getDataSource() != null
         || source.getDataSourceClassName() != null
         || source.getDataSourceJNDI() != null
-        || (source.getCatalog() != null && !DATABASE.equals(source.getCatalog()))
+        || (source.getCatalog() != null && !database.equals(source.getCatalog()))
         || (source.getDriverClassName() != null
             && !"org.postgresql.Driver".equals(source.getDriverClassName()))) throw invalid();
     for (Object key : source.getDataSourceProperties().keySet()) {
@@ -44,7 +64,7 @@ public class DatabaseGuard implements BeanPostProcessor {
     return bean;
   }
 
-  private static void validateUrl(String url) {
+  private void validateUrl(String url) {
     try {
       if (url == null || !url.startsWith("jdbc:postgresql://")) throw invalid();
       URI uri = URI.create(url.substring("jdbc:".length()));
@@ -54,7 +74,7 @@ public class DatabaseGuard implements BeanPostProcessor {
           || uri.getPort() < 1
           || uri.getPort() > 65535
           || uri.getFragment() != null
-          || !("/" + DATABASE).equals(uri.getRawPath())) throw invalid();
+          || !("/" + database).equals(uri.getRawPath())) throw invalid();
       if (uri.getRawQuery() != null) {
         Set<String> seen = new HashSet<>();
         for (String option : uri.getRawQuery().split("&", -1)) {
@@ -72,7 +92,7 @@ public class DatabaseGuard implements BeanPostProcessor {
   private static IllegalStateException invalid() {
     // Do not echo a URL: it might contain credentials or unexpected sensitive parameters.
     return new IllegalStateException(
-        "Datasource must target ems_cloud_v2_proto on PostgreSQL with schema public and no routing"
+        "Datasource must target the explicitly configured approved database on PostgreSQL with schema public and no routing"
             + " overrides");
   }
 }

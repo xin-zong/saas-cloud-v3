@@ -15,29 +15,78 @@ public class TelemetryController {
   private final EmsTelemetryQueries typed;
 
   @GetMapping("/points/{id}/observations")
-  public ApiResponse<?> observations(@PathVariable long id,@RequestParam OffsetDateTime from,
-      @RequestParam OffsetDateTime to,@RequestParam(defaultValue="1000") int limit,@RequestParam(defaultValue="0") int offset) {
-    if(limit<1||limit>1000||offset<0||offset>1000000||!to.isAfter(from)||Duration.between(from,to).compareTo(Duration.ofDays(31))>0)
-      throw new BusinessException(400,"原始采样限31天，每页最多1000条");
-    var point=s.one("SELECT d.station_id FROM measurement_point p JOIN device d ON d.id=p.device_id WHERE p.id=?",id);
-    long user=s.access.userId();
-    var periods=s.db.queryForList("""
+  public ApiResponse<?> observations(
+      @PathVariable long id,
+      @RequestParam OffsetDateTime from,
+      @RequestParam OffsetDateTime to,
+      @RequestParam(defaultValue = "1000") int limit,
+      @RequestParam(defaultValue = "0") int offset) {
+    if (limit < 1
+        || limit > 1000
+        || offset < 0
+        || offset > 1000000
+        || !to.isAfter(from)
+        || Duration.between(from, to).compareTo(Duration.ofDays(31)) > 0)
+      throw new BusinessException(400, "原始采样限31天，每页最多1000条");
+    var point =
+        s.one(
+            "SELECT d.station_id FROM measurement_point p JOIN device d ON d.id=p.device_id WHERE p.id=?",
+            id);
+    long user = s.access.userId();
+    var periods =
+        s.db.queryForList(
+            """
       SELECT DISTINCT p.id FROM point_binding pb JOIN device_binding d ON d.id=pb.device_binding_id
-      JOIN ems_binding_period p ON p.id=d.binding_period_id JOIN effective_station_permission a
+      JOIN ems_binding_period p ON p.id=d.binding_period_id JOIN %s a
         ON a.station_id=p.station_id AND a.user_id=? AND a.permission_code='telemetry.read'
       WHERE pb.measurement_point_id=? AND pb.valid_from<? AND (pb.valid_to IS NULL OR pb.valid_to>?)
-      """,Long.class,user,id,to,from);
-    if(periods.isEmpty()){s.access.requireStationPermission(s.number(point,"station_id"),"telemetry.read");return ApiResponse.ok(Map.of("items",List.of(),"hasMore",false));}
-    long end=Math.min(to.toInstant().toEpochMilli(),Instant.now().toEpochMilli());
-    if(end<=from.toInstant().toEpochMilli())return ApiResponse.ok(Map.of("items",List.of(),"hasMore",false));
-    var rows=typed.query("SELECT * FROM "+typed.database+"."+typed.observationTable+" WHERE point_id="+id
-      +" AND binding_period_id IN ("+EmsTelemetryQueries.ids(periods)+") AND source_at_ms>="+from.toInstant().toEpochMilli()+" AND source_at_ms<"+end
-      +" ORDER BY source_at_ms,received_at_ms,fact_id LIMIT "+(limit+1)+" OFFSET "+offset);
+      """
+                .formatted(s.access.stationPermissionTable()),
+            Long.class,
+            user,
+            id,
+            to,
+            from);
+    if (periods.isEmpty()) {
+      s.access.requireStationPermission(s.number(point, "station_id"), "telemetry.read");
+      return ApiResponse.ok(Map.of("items", List.of(), "hasMore", false));
+    }
+    long end = Math.min(to.toInstant().toEpochMilli(), Instant.now().toEpochMilli());
+    if (end <= from.toInstant().toEpochMilli())
+      return ApiResponse.ok(Map.of("items", List.of(), "hasMore", false));
+    var rows =
+        typed.query(
+            "SELECT * FROM "
+                + typed.database
+                + "."
+                + typed.observationTable
+                + " WHERE point_id="
+                + id
+                + " AND binding_period_id IN ("
+                + EmsTelemetryQueries.ids(periods)
+                + ") AND source_at_ms>="
+                + from.toInstant().toEpochMilli()
+                + " AND source_at_ms<"
+                + end
+                + " ORDER BY source_at_ms,received_at_ms,fact_id LIMIT "
+                + (limit + 1)
+                + " OFFSET "
+                + offset);
     // The original owners remain the authorization boundary even if an asset has moved.
-    var stillAllowed=s.db.queryForList("SELECT p.id FROM ems_binding_period p JOIN effective_station_permission a ON a.station_id=p.station_id WHERE a.user_id=? AND a.permission_code='telemetry.read' AND p.id IN ("+EmsTelemetryQueries.ids(periods)+")",Long.class,s.access.userId());
-    if(!stillAllowed.containsAll(periods))throw new BusinessException(403,"历史站点权限已变化");
-    var values=new ArrayList<Map<String,Object>>();for(int i=0;i<Math.min(limit,rows.size());i++)values.add(EmsTelemetryQueries.observation(rows.get(i)));
-    return ApiResponse.ok(Map.of("items",values,"hasMore",rows.size()>limit));
+    var stillAllowed =
+        s.db.queryForList(
+            "SELECT p.id FROM ems_binding_period p JOIN "
+                + s.access.stationPermissionTable()
+                + " a ON a.station_id=p.station_id WHERE a.user_id=? AND a.permission_code='telemetry.read' AND p.id IN ("
+                + EmsTelemetryQueries.ids(periods)
+                + ")",
+            Long.class,
+            s.access.userId());
+    if (!stillAllowed.containsAll(periods)) throw new BusinessException(403, "历史站点权限已变化");
+    var values = new ArrayList<Map<String, Object>>();
+    for (int i = 0; i < Math.min(limit, rows.size()); i++)
+      values.add(EmsTelemetryQueries.observation(rows.get(i)));
+    return ApiResponse.ok(Map.of("items", values, "hasMore", rows.size() > limit));
   }
 
   public TelemetryController(
@@ -50,7 +99,7 @@ public class TelemetryController {
       EmsTelemetryQueries typed) {
     this.s = s;
     this.database = database;
-    this.typed=typed;
+    this.typed = typed;
     if (!database.equals("ems_cloud_v2_proto_telemetry"))
       throw new IllegalArgumentException("Only new telemetry database is permitted");
   }
@@ -73,33 +122,69 @@ public class TelemetryController {
         || Duration.between(from, to).compareTo(Duration.ofDays(31)) > 0)
       throw new BusinessException(400, "查询应为 31 天内有效时段，粒度为 1/5/15/30/60 分钟");
     long until = Math.min(to.toInstant().toEpochMilli(), Instant.now().toEpochMilli());
-    if(source.equals("ems")) {
-      if(!EmsTelemetryQueries.OPERATIONS.contains(aggregation))throw new BusinessException(400,"不支持的聚合方式");
-      // A moved point is insufficient authority: filter saved fact periods by their original station.
-      var periods=s.db.queryForList("""
+    if (source.equals("ems")) {
+      if (!EmsTelemetryQueries.OPERATIONS.contains(aggregation))
+        throw new BusinessException(400, "不支持的聚合方式");
+      // A moved point is insufficient authority: filter saved fact periods by their original
+      // station.
+      var periods =
+          s.db.queryForList(
+              """
         SELECT DISTINCT p.id FROM point_binding pb JOIN device_binding d ON d.id=pb.device_binding_id
         JOIN ems_binding_period p ON p.id=d.binding_period_id
-        JOIN effective_station_permission a ON a.station_id=p.station_id
+        JOIN %s a ON a.station_id=p.station_id
           AND a.user_id=? AND a.permission_code='telemetry.read'
         WHERE pb.measurement_point_id=? AND pb.valid_from<? AND (pb.valid_to IS NULL OR pb.valid_to>?)
-        """,Long.class,s.access.userId(),id,to,from);
-      if(periods.isEmpty()) {
-        s.access.requireStationPermission(s.number(point,"station_id"),"telemetry.read");
+        """
+                  .formatted(s.access.stationPermissionTable()),
+              Long.class,
+              s.access.userId(),
+              id,
+              to,
+              from);
+      if (periods.isEmpty()) {
+        s.access.requireStationPermission(s.number(point, "station_id"), "telemetry.read");
         return ApiResponse.ok(List.of());
       }
-      String semanticScope=" FROM point_binding pb JOIN point_definition d ON d.id=pb.definition_id JOIN device_binding b ON b.id=pb.device_binding_id WHERE pb.measurement_point_id=? AND b.binding_period_id IN ("+EmsTelemetryQueries.ids(periods)+")";
-      if(Set.of("avg","min","max").contains(aggregation)&&!Boolean.TRUE.equals(s.db.queryForObject("SELECT bool_and(d.value_type='number' AND d.aggregation IN ('average','min','max'))"+semanticScope,Boolean.class,id)))
-        throw new BusinessException(400,"该点的连续量聚合语义尚未确认，请使用 last");
-      if(aggregation.equals("delta")&&!Boolean.TRUE.equals(s.db.queryForObject("SELECT bool_and(d.value_type='number' AND d.aggregation='delta')"+semanticScope,Boolean.class,id)))
-        throw new BusinessException(400,"累计量的差值语义尚未确认");
-      if(until<=from.toInstant().toEpochMilli())return ApiResponse.ok(List.of());
-      var result=EmsTelemetryQueries.aggregate(typed.history(id,periods,from.toInstant().toEpochMilli(),until),aggregation,minutes);
-      var stillAllowed=s.db.queryForList("SELECT p.id FROM ems_binding_period p JOIN effective_station_permission a ON a.station_id=p.station_id WHERE a.user_id=? AND a.permission_code='telemetry.read' AND p.id IN ("+EmsTelemetryQueries.ids(periods)+")",Long.class,s.access.userId());
-      if(!stillAllowed.containsAll(periods))throw new BusinessException(403,"历史站点权限已变化");
+      String semanticScope =
+          " FROM point_binding pb JOIN point_definition d ON d.id=pb.definition_id JOIN device_binding b ON b.id=pb.device_binding_id WHERE pb.measurement_point_id=? AND b.binding_period_id IN ("
+              + EmsTelemetryQueries.ids(periods)
+              + ")";
+      if (Set.of("avg", "min", "max").contains(aggregation)
+          && !Boolean.TRUE.equals(
+              s.db.queryForObject(
+                  "SELECT bool_and(d.value_type='number' AND d.aggregation IN ('average','min','max'))"
+                      + semanticScope,
+                  Boolean.class,
+                  id))) throw new BusinessException(400, "该点的连续量聚合语义尚未确认，请使用 last");
+      if (aggregation.equals("delta")
+          && !Boolean.TRUE.equals(
+              s.db.queryForObject(
+                  "SELECT bool_and(d.value_type='number' AND d.aggregation='delta')"
+                      + semanticScope,
+                  Boolean.class,
+                  id))) throw new BusinessException(400, "累计量的差值语义尚未确认");
+      if (until <= from.toInstant().toEpochMilli()) return ApiResponse.ok(List.of());
+      var result =
+          EmsTelemetryQueries.aggregate(
+              typed.history(id, periods, from.toInstant().toEpochMilli(), until),
+              aggregation,
+              minutes);
+      var stillAllowed =
+          s.db.queryForList(
+              "SELECT p.id FROM ems_binding_period p JOIN "
+                  + s.access.stationPermissionTable()
+                  + " a ON a.station_id=p.station_id WHERE a.user_id=? AND a.permission_code='telemetry.read' AND p.id IN ("
+                  + EmsTelemetryQueries.ids(periods)
+                  + ")",
+              Long.class,
+              s.access.userId());
+      if (!stillAllowed.containsAll(periods)) throw new BusinessException(403, "历史站点权限已变化");
       return ApiResponse.ok(result);
     }
-    if(!source.equals("legacy")||!aggregation.equals("avg"))throw new BusinessException(400,"旧历史仅支持显式 legacy/avg 来源");
-    s.access.requireStationPermission(s.number(point,"station_id"),"telemetry.read");
+    if (!source.equals("legacy") || !aggregation.equals("avg"))
+      throw new BusinessException(400, "旧历史仅支持显式 legacy/avg 来源");
+    s.access.requireStationPermission(s.number(point, "station_id"), "telemetry.read");
     if (until <= from.toInstant().toEpochMilli()) return ApiResponse.ok(List.of());
     String sql =
         "SELECT toUnixTimestamp64Milli(toDateTime64(toStartOfInterval(sampled_at, INTERVAL "
@@ -113,11 +198,13 @@ public class TelemetryController {
             + ") AND sampled_at<fromUnixTimestamp64Milli("
             + until
             + ") GROUP BY timestamp ORDER BY timestamp LIMIT 44640 FORMAT JSON";
-    var rows=typed.query(sql.substring(0,sql.length()-" FORMAT JSON".length()));
-    for(var row:rows)if(row instanceof com.fasterxml.jackson.databind.node.ObjectNode object) {
-      object.put("source","legacy_measurement_sample");object.put("provenance","legacy_origin_unverified");
-    }
+    var rows = typed.query(sql.substring(0, sql.length() - " FORMAT JSON".length()));
+    for (var row : rows)
+      if (row instanceof com.fasterxml.jackson.databind.node.ObjectNode object) {
+        object.put("source", "legacy_measurement_sample");
+        object.put("provenance", "legacy_origin_unverified");
+      }
+    s.access.requireStationPermission(s.number(point, "station_id"), "telemetry.read");
     return ApiResponse.ok(rows);
   }
-
 }

@@ -76,7 +76,7 @@ public class RevenueController {
         id,
         s.access.userId(),
         n.note());
-    s.audit("settlement.review", "record=" + id);
+    s.auditStation("settlement.review", s.number(r, "station_id"), "record=" + id);
     return ApiResponse.ok(null);
   }
 

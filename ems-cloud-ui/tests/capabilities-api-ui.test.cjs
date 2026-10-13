@@ -9,7 +9,7 @@ async function setup(t, user, customize = () => undefined, options = {}) {
   page.on('pageerror',error=>console.error('Browser error:',error.message))
   if(options.clock) await page.clock.install()
   const requests=[]; let current=user
-  await page.route('http://127.0.0.1:18090/api/**',async route=>{
+  await page.route(/^http:\/\/127\.0\.0\.1:(18090|18092)\/api\//,async route=>{
     const req=route.request(), url=new URL(req.url()), path=url.pathname.slice(4)
     requests.push({path,method:req.method(),permission:url.searchParams.get('permission')})
     let data=[],status=200,msg='ok'
@@ -25,8 +25,10 @@ async function setup(t, user, customize = () => undefined, options = {}) {
 }
 const base={id:'7',name:'同一身份',account:'user',role:'integrator',organization:'测试',stationIds:['1','2'],organizationPermissions:{}}
 test('selected station telemetry revocation clears history while report context and union remain',async t=>{
-  const user={...base,permissions:['telemetry.read','report.export','strategy.read'],stationPermissions:{1:['telemetry.read','report.export','strategy.read'],2:['telemetry.read']}}
-  const {page,requests,setUser}=await setup(t,user,({path})=>{
+  const user={...base,permissions:['telemetry.read','report.export','strategy.read','revenue.read'],stationPermissions:{1:['telemetry.read','report.export','strategy.read','revenue.read'],2:['telemetry.read']}}
+  let job;
+  const {page,requests,setUser}=await setup(t,user,({path,req})=>{
+    if(path==='/stations/1/analysis-jobs'){if(req.method()==='POST'){job={id:'11111111-1111-4111-8111-111111111111',stationId:'1',kind:'telemetry',from:new Date(Date.now()-3600000).toISOString(),to:new Date().toISOString(),minutes:0,status:'completed',createdAt:new Date().toISOString(),pointIds:['17']};return {data:job}}return {data:job?[job]:[]}}
     if(path==='/stations/1/points')return {data:[{id:17,name:'Power',unit:'kW'}]}
     if(path==='/points/17/history')return {data:[{timestamp:Date.now(),value:42,samples:1}]}
   })
@@ -37,18 +39,18 @@ test('selected station telemetry revocation clears history while report context 
   await page.getByText('可下载',{exact:true}).waitFor()
   assert.equal(await page.getByRole('button',{name:'下载 CSV',exact:true}).isEnabled(),true)
   const historyCalls=requests.filter(request=>request.path==='/points/17/history').length
-  setUser({...user,stationPermissions:{1:['report.export','strategy.read'],2:['telemetry.read']}})
+  setUser({...user,stationPermissions:{1:['report.export','strategy.read','revenue.read'],2:['telemetry.read']}})
   const refreshed=page.waitForResponse(response=>response.url().endsWith('/auth/me'))
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')))
   await refreshed;await page.waitForTimeout(250)
   assert.equal(await page.getByLabel('下载站点',{exact:true}).inputValue(),'2')
   assert.equal(await page.getByRole('button',{name:'下载 CSV',exact:true}).count(),0)
   assert.equal(await page.getByRole('button',{name:'选择参数',exact:true}).isDisabled(),true)
-  assert.equal(await page.getByText('共 0 条 · 当前页面本地记录',{exact:true}).count(),1)
+  assert.equal(await page.getByText('服务器持久记录 · 第 1 页',{exact:true}).count(),1)
   await page.getByRole('button',{name:'生成文件',exact:true}).click()
   assert.equal(requests.filter(request=>request.path==='/points/17/history').length,historyCalls)
   await page.getByRole('tab',{name:'报告中心',exact:true}).click()
-  assert.equal(await page.getByRole('button',{name:'下载 CSV 报告'}).isEnabled(),true)
+  assert.equal(await page.getByRole('tab',{name:'报告中心',exact:true}).getAttribute('aria-selected'),'true')
 })
 
 for(const invalidation of ['mutation','403'])test(`${invalidation} invalidation waits for a post-invalidation snapshot after held focus refresh`,async t=>{
@@ -58,7 +60,7 @@ for(const invalidation of ['mutation','403'])test(`${invalidation} invalidation 
   const waiting=new Promise(resolve=>{started=resolve}),committed=new Promise(resolve=>{invalidated=resolve})
   const {page,requests}=await setup(t,user,async({path,req,setUser})=>{
     if(path==='/auth/me' && hold){hold=false;started();await new Promise(resolve=>{release=resolve});return {data:user}}
-    if(path==='/members/8' && req.method()==='PUT'){setUser(revoked);invalidated();return invalidation==='403'?{status:403,msg:'权限已收回'}:{data:null}}
+    if(path==='/company/people/8/status' && req.method()==='PUT'){setUser(revoked);invalidated();return invalidation==='403'?{status:403,msg:'权限已收回'}:{data:null}}
   })
   await page.getByRole('button',{name:'资产与站点',exact:true}).click()
   await page.getByRole('button',{name:'编辑站点 A',exact:true}).waitFor()
@@ -66,7 +68,7 @@ for(const invalidation of ['mutation','403'])test(`${invalidation} invalidation 
   hold=true
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')))
   await waiting
-  const save=page.evaluate(async()=>{const {send}=await import(performance.getEntriesByType('resource').map(entry=>entry.name).find(url=>new URL(url).pathname==='/src/api/client.ts'));try{await send('/members/8','PUT',{enabled:false})}catch(error){if(error.status!==403)throw error}})
+  const save=page.evaluate(async()=>{const {send}=await import(performance.getEntriesByType('resource').map(entry=>entry.name).find(url=>new URL(url).pathname==='/src/api/client.ts'));try{await send('/company/people/8/status','PUT',{enabled:false})}catch(error){if(error.status!==403)throw error}})
   await committed;await page.waitForTimeout(100);release();await save
   assert.equal(requests.filter(request=>request.path==='/auth/me').length,baseline+2)
   await page.getByRole('button',{name:'编辑站点 A',exact:true}).waitFor({state:'detached'})
@@ -124,27 +126,6 @@ test('tariff-only capability opens existing price settings for its authorized st
   assert.deepEqual(await page.getByLabel('电价站点').locator('option').allTextContents(),['站点 A'])
   assert.equal(requests.some(x=>x.path==='/stations'),false)
 })
-test('customer-only reads server station summaries and obeys can_edit, then 403 refresh removes stale write',async t=>{
-  const user={...base,permissions:['customer.read','customer.manage'],stationPermissions:{1:['customer.read','customer.manage']}}
-  const {page,requests}=await setup(t,user,({path,req,setUser})=>{
-    if(path==='/platform/customers') return {data:[{id:11,name:'独立客户',organization_id:1,organization_name:'测试',entity:'独立主体',contact:'联系人',station_count:1,can_edit:true,stations:[{id:1,name:'客户站点 A',code:'CA'}]},{id:12,name:'只读客户',organization_id:1,organization_name:'测试',entity:null,contact:null,station_count:1,can_edit:false,stations:[{id:2,name:'客户站点 B',code:'CB'}]}]}
-    if(path==='/platform/customers/11' && req.method()==='PUT'){setUser({...user,permissions:['customer.read'],stationPermissions:{1:['customer.read']}});return {status:403,msg:'客户权限已收回'}}
-  })
-  await page.getByRole('button',{name:'平台管理',exact:true}).click()
-  const row=page.getByRole('row').filter({hasText:'独立客户'})
-  await row.getByRole('button',{name:'查看详情',exact:true}).click()
-  await page.getByText('客户站点 A · CA',{exact:true}).waitFor()
-  await page.getByRole('button',{name:'返回客户列表'}).click()
-  await page.getByRole('row').filter({hasText:'只读客户'}).getByRole('button',{name:'查看详情',exact:true}).click(); assert.equal(await page.getByRole('button',{name:'编辑客户资料',exact:true}).isDisabled(),true); await page.getByRole('button',{name:'返回客户列表'}).click()
-  const beforeMutation=requests.filter(x=>x.path==='/auth/me').length
-  await row.getByRole('button',{name:'查看详情',exact:true}).click(); await page.getByRole('button',{name:'编辑客户资料',exact:true}).click()
-  await page.getByRole('dialog').getByRole('button',{name:'保存',exact:true}).click()
-  await page.getByRole('alert').filter({hasText:'权限已变化'}).first().waitFor()
-  await page.getByRole('dialog').waitFor({state:'detached'})
-  assert.equal(await page.getByRole('dialog').count(),0); await page.getByRole('row').filter({hasText:'独立客户'}).getByRole('button',{name:'查看详情',exact:true}).click(); assert.equal(await page.getByRole('button',{name:'编辑客户资料',exact:true}).isDisabled(),true)
-  assert.equal(requests.filter(x=>x.path==='/stations').length,0)
-  assert.equal(requests.filter(x=>x.path==='/auth/me').length,beforeMutation+1)
-})
 test('focus refresh applies revoked capability without redundant workspace data reloads',async t=>{
   const user={...base,permissions:['asset.read','asset.edit'],stationPermissions:{1:['asset.read','asset.edit'],2:['asset.read']}}
   const {page,requests,setUser}=await setup(t,user)
@@ -163,7 +144,7 @@ test('concurrent successful authorization mutations coalesce refresh and revoke 
   let changed=false,release,started,refreshCount=0
   const waiting=new Promise(resolve=>{started=resolve})
   const {page,requests}=await setup(t,user,async ({path,req})=>{
-    if(path==='/members/8' && req.method()==='PUT'){changed=true;return {data:null}}
+    if(path==='/company/people/8/status' && req.method()==='PUT'){changed=true;return {data:null}}
     if(path==='/auth/me' && changed){
       refreshCount++
       if(refreshCount===1){started();await new Promise(resolve=>{release=resolve})}
@@ -172,7 +153,7 @@ test('concurrent successful authorization mutations coalesce refresh and revoke 
   await page.getByRole('button',{name:'资产与站点',exact:true}).click()
   await page.getByRole('button',{name:'编辑站点 A',exact:true}).waitFor()
   const baseline=requests.filter(x=>x.path==='/auth/me').length
-  const save=page.evaluate(async()=>{const {send}=await import(performance.getEntriesByType('resource').map(entry=>entry.name).find(url=>new URL(url).pathname==='/src/api/client.ts'));return Promise.all([send('/members/8','PUT',{enabled:false}),send('/members/8','PUT',{enabled:false})])})
+  const save=page.evaluate(async()=>{const {send}=await import(performance.getEntriesByType('resource').map(entry=>entry.name).find(url=>new URL(url).pathname==='/src/api/client.ts'));return Promise.all([send('/company/people/8/status','PUT',{enabled:false}),send('/company/people/8/status','PUT',{enabled:false})])})
   await waiting; await page.waitForTimeout(150);release();await save
   await page.getByRole('button',{name:'编辑站点 A',exact:true}).waitFor({state:'detached'})
   // Both responses may invalidate before the first snapshot, or the later response
@@ -186,7 +167,7 @@ test('old session refresh cannot overwrite a newer login capability snapshot',as
   const waiting=new Promise(resolve=>{started=resolve})
   const {page}=await setup(t,user,async({path,req})=>{
     if(path==='/auth/me' && hold && req.headers().authorization==='Bearer capability-test'){started();await new Promise(resolve=>{release=resolve});return {data:user}}
-    if(path==='/auth/me' && req.headers().authorization==='Bearer newer-session')return {data:{...user,id:'8',permissions:['customer.read'],stationPermissions:{1:['customer.read']}}}
+    if(path==='/auth/me' && req.headers().authorization==='Bearer newer-session')return {data:{...user,id:'8',permissions:['audit.read'],stationPermissions:{},tenant:{actorId:8,tenantId:1,kind:'platform',administrator:false},menus:[{id:1,client:'web',kind:'page',path:'platform.audit',children:[]}],roleNames:['Audit Reader']}}
   })
   await page.getByRole('button',{name:'资产与站点',exact:true}).waitFor()
   hold=true
@@ -207,28 +188,6 @@ test('bounded timer refreshes other administrator changes',async t=>{
   await page.clock.fastForward(60001)
   await page.getByRole('button',{name:'编辑站点 A',exact:true}).waitFor({state:'detached'})
 })
-test('organization map changes refresh role scope even when navigation union is unchanged',async t=>{
-  const user={...base,stationIds:[],permissions:['role.manage'],stationPermissions:{},organizationPermissions:{1:['role.manage']}}
-  const {page,setUser}=await setup(t,user,({path,req,user:current})=>{
-    const org=Number(Object.keys(current.organizationPermissions)[0])
-    if(path==='/platform/organizations')return {data:[{id:org,name:`组织 ${org}`,parent_id:null}]}
-    if(path==='/platform/roles')return {data:[{id:org,name:`角色 ${org}`,organizationId:org,permissionCodes:[],memberCount:0,canEdit:true,canDelete:true}]}
-    if(path==='/platform/permissions')return {data:[{code:'asset.read',name:'查看站点',module:'asset',scope:'station',available:true,configurable:true}]}
-  })
-  await page.getByRole('button',{name:'平台管理',exact:true}).click()
-  await page.getByRole('button',{name:'角色 1'}).waitFor()
-  await page.getByRole('checkbox',{name:'查看站点',exact:true}).check()
-  setUser({...user,organizationPermissions:{1:['role.manage'],3:['organization.member.read']}})
-  const refreshed=page.waitForResponse(response=>response.url().includes('/platform/roles?'))
-  await page.evaluate(()=>window.dispatchEvent(new Event('focus')))
-  await refreshed
-  assert.equal(await page.getByRole('checkbox',{name:'查看站点',exact:true}).isChecked(),true)
-  setUser({...user,organizationPermissions:{2:['role.manage']}})
-  await page.evaluate(()=>window.dispatchEvent(new Event('focus')))
-  await page.getByRole('button',{name:'角色 2'}).waitFor()
-  assert.equal(await page.getByRole('button',{name:'角色 1'}).count(),0)
-})
-
 test('API firmware empty state retains structure without invented devices, path or progress', async t => {
   const user={...base,role:'operator',permissions:['asset.read','alarm.read'],stationPermissions:{1:['asset.read','alarm.read'],2:['asset.read','alarm.read']}}
   const {page}=await setup(t,user)

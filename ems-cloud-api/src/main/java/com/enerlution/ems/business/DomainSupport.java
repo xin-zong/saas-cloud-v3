@@ -28,8 +28,9 @@ public class DomainSupport {
 
   public void audit(String action, String detail) {
     db.update(
-        "INSERT INTO audit_event(actor_id,action,detail) VALUES(?,?,?)",
+        "INSERT INTO audit_event(actor_id,target_tenant_id,action,detail) VALUES(?,?,?,?)",
         access.userId(),
+        access.context().tenantId(),
         action,
         detail);
   }
@@ -40,6 +41,42 @@ public class DomainSupport {
     } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
       throw new IllegalStateException("Cannot serialize audit event", e);
     }
+  }
+
+  public void auditStation(String action, long station, Object detail) {
+    Long tenant =
+        db.queryForObject("SELECT tenant_id FROM station WHERE id=?", Long.class, station);
+    if (tenant == null) throw new BusinessException(404, "站点不存在");
+    auditTenant(action, tenant, detail);
+  }
+
+  public void auditStations(String action, List<Long> stations, Object detail) {
+    Set<Long> tenants = new LinkedHashSet<>();
+    for (long station : stations) {
+      Long tenant =
+          db.queryForObject("SELECT tenant_id FROM station WHERE id=?", Long.class, station);
+      if (tenant == null) throw new BusinessException(404, "站点不存在");
+      tenants.add(tenant);
+    }
+    for (long tenant : tenants) auditTenant(action, tenant, detail);
+  }
+
+  private void auditTenant(String action, long tenant, Object detail) {
+    String text;
+    try {
+      text =
+          detail instanceof String value
+              ? value
+              : new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(detail);
+    } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+      throw new IllegalStateException("Cannot serialize audit event", e);
+    }
+    db.update(
+        "INSERT INTO audit_event(actor_id,target_tenant_id,action,detail) VALUES(?,?,?,?)",
+        access.userId(),
+        tenant,
+        action,
+        text);
   }
 
   public int limit(int value) {

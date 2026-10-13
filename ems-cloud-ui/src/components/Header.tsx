@@ -30,7 +30,7 @@ export default function Header({
       <div className="global-platform-brand"><img src="/figma/overview/map/imgBrandMark.svg" alt="" /><strong>Enerlution</strong><span className="workspace-topbar-context">{DEMO_MODE ? "演示环境" : "测试环境"} · {DEMO_MODE ? "华东集群" : "授权站点数据"}</span></div>
       <div className="workspace-topbar-actions">
         <MachineTranslationStatus />
-        <span className="global-role-label">{ROLE_CONFIG[user.role].shortLabel} · 基础版 V1</span>
+        <span className="global-role-label">{(user.tenant?(user.roleNames?.join('、')||'未分配角色'):ROLE_CONFIG[user.role].shortLabel)} · 基础版 V1</span>
         <span className="workspace-clock">
           系统时间 {__locale(time, 'toLocaleTimeString', "zh-CN", { hour12: false })}
         </span>
@@ -47,7 +47,7 @@ export default function Header({
           <span className="global-user-avatar" data-i18n-initial={user.name}>{user.name.slice(0, 1)}</span>
           <span>
             {user.name}
-            <small>{ROLE_CONFIG[user.role].shortLabel}</small>
+            <small>{(user.tenant?(user.roleNames?.join('、')||'未分配角色'):ROLE_CONFIG[user.role].shortLabel)}</small>
           </span>
         </span>
         <Button

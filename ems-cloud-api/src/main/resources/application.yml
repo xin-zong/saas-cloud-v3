@@ -6,6 +6,12 @@ server:
     include-message: never
     include-stacktrace: never
 spring:
+  mail:
+    properties:
+      mail.smtp.localhost: ${EMS_MAIL_HELO:ems-cloud.local}
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
   application:
     name: ems-cloud-api
   datasource:
@@ -40,6 +46,11 @@ springdoc:
   swagger-ui:
     enabled: ${EMS_API_DOCS_ENABLED:false}
 ems:
+  database-name: ${EMS_DATABASE_NAME:ems_cloud_v2_proto}
+  tenant:
+    datacenter: ${EMS_TENANT_DATACENTER:apac}
+    public-url: ${EMS_TENANT_PUBLIC_URL:}
+    mail-from: ${EMS_TENANT_MAIL_FROM:}
   cors:
     origins: ${EMS_CORS_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
   auth:

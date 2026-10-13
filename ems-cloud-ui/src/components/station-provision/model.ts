@@ -529,7 +529,6 @@ export function validateBasics(d: ProvisionDraft) {
 
   if (!d.code.trim()) errors.push("请填写站点 ID")
 
-  if (!d.organization.trim()) errors.push("请填写所属组织")
 
   if (!d.region.trim()) errors.push("请选择所在地区")
 

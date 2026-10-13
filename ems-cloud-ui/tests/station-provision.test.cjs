@@ -121,3 +121,8 @@ test('communication protocol mismatch and dangling targets cannot pass validatio
  const {createDevice,validateGraph}=moduleResult.exports
  const a=createDevice('PCS',1), b=createDevice('EMS',1);a.ports=[{id:'P01',interface:'COM-1',protocol:'Modbus TCP',role:'服务端 / 从站',ip:'192.168.1.1',port:'502',address:'1',version:'',targets:[`${b.id}/P99`]}];const errors=validateGraph({...emptyProvision(),devices:[a,b]});assert.ok(errors.some(e=>e.includes('接口与协议')));assert.ok(errors.some(e=>e.includes('目标端口失效')))
 })
+
+test("new tenant provisioning does not require the retired organization field",()=>{
+ const draft={...emptyProvision(),name:"企业电站",code:"TENANT-NEW",region:"欧洲",address:"园区",ratedPower:"100",storageCapacity:"200",organization:""}
+ assert.deepEqual(validateBasics(draft),[])
+})

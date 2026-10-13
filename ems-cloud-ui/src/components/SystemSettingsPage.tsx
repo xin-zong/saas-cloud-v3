@@ -8,6 +8,7 @@ import { Button, Select, Switch } from "./ui/Workspace"
 import "./system-settings.css"
 import SettingsDialog from "./SettingsDialog"
 import { applyPreferences } from '@/preferences/store'
+import PersonalCenterPage,{PersonalSecurity} from '@/tenant/PersonalCenterPage'
 import { useEditorLeaveGuard, type RegisterLeaveGuard } from "./useEditorLeaveGuard"
 
 type SettingsState = {
@@ -341,7 +342,7 @@ function PersonalPreferences({
   const initialName = useRef(settings.displayName).current
   return (
     <>
-      <SettingsCard title="账户资料" status={settings.displayName.slice(0, 1) || "—"} initialOf={initialName}>
+      {DEMO_MODE?<SettingsCard title="账户资料" status={settings.displayName.slice(0, 1) || "—"} initialOf={initialName}>
         <div className="settings-account-grid">
           <TextField
             label="显示名称"
@@ -364,7 +365,7 @@ function PersonalPreferences({
         <p className="settings-card-note">
           账户身份和权限由平台管理维护，此处不提供角色名称或角色切换。
         </p>
-      </SettingsCard>
+      </SettingsCard>:<PersonalCenterPage/>}
       <SettingsCard title="常用偏好">
         <div className="settings-preferences">
           <ChoiceRow
@@ -881,7 +882,7 @@ export default function SystemSettingsPage({
               <DisplaySettings settings={settings} set={set} />
             )}
             {activeCategory === "security" && (
-              <SecuritySettings settings={settings} set={set} account={user.account} busy={busy} registerLeaveGuard={registerSecurityLeaveGuard} />
+              DEMO_MODE?<SecuritySettings settings={settings} set={set} account={user.account} busy={busy} registerLeaveGuard={registerSecurityLeaveGuard} />:<PersonalSecurity/>
             )}
           </div>
 

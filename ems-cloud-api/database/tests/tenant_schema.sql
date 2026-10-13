@@ -34,9 +34,11 @@ INSERT INTO role_template(id,name) VALUES(-101,'Test default');
 SELECT pg_temp.reject_sql($q$INSERT INTO member_grant(id,user_id,role_id,template_id,valid_from) VALUES(-102,-101,-101,-101,now())$q$,'two grant roles');
 SELECT pg_temp.reject_sql($q$INSERT INTO member_grant(id,user_id,template_id,valid_from) VALUES(-102,-101,-101,now())$q$,'template not in tenant package');
 INSERT INTO menu(id,name_key,client,kind,applicable_side,sort_order) VALUES(-101,'test.root','web','directory','enterprise',0);
-INSERT INTO menu(id,parent_id,name_key,client,kind,route_path,permission_code,sort_order) VALUES(-102,-101,'test.page','web','page','assets','asset.read',0);
-INSERT INTO menu(id,parent_id,name_key,client,kind,permission_code,sort_order) VALUES(-103,-102,'test.action','web','action','asset.edit',0);
+INSERT INTO menu(id,parent_id,name_key,client,kind,sort_order) VALUES(-102,-101,'test.directory','web','directory',0);
+INSERT INTO menu(id,parent_id,name_key,client,kind,route_path,permission_code,sort_order) VALUES(-103,-102,'test.page','web','page','assets','asset.read',0);
 INSERT INTO menu(id,parent_id,name_key,client,kind,permission_code,sort_order) VALUES(-104,-103,'test.child','web','action','telemetry.read',0);
+SELECT pg_temp.reject_sql($q$INSERT INTO menu(id,parent_id,name_key,client,kind,permission_code,sort_order) VALUES(-105,-104,'test.button.child','web','action','asset.edit',0)$q$,'action must be leaf');
+SELECT pg_temp.reject_sql($q$UPDATE menu SET kind='action',permission_code='asset.read' WHERE id=-102$q$,'parent cannot become action');
 SELECT pg_temp.reject_sql($q$INSERT INTO menu(id,parent_id,name_key,client,kind,permission_code,sort_order) VALUES(-105,-104,'test.deep','web','action','alarm.read',0)$q$,'menu fifth level');
 SELECT pg_temp.reject_sql($q$UPDATE menu SET parent_id=-104,applicable_side=NULL WHERE id=-101$q$,'menu cycle');
 SELECT pg_temp.reject_sql($q$INSERT INTO menu(id,parent_id,name_key,client,kind,permission_code,sort_order) VALUES(-105,-101,'test.client','app','action','alarm.read',0)$q$,'cross client parent');
@@ -44,6 +46,11 @@ SELECT pg_temp.reject_sql($q$INSERT INTO menu(id,name_key,client,kind,route_path
 INSERT INTO menu(id,name_key,client,kind,applicable_side) VALUES(-106,'test.platform','web','directory','platform');
 INSERT INTO permission_package(id,name) VALUES(-101,'Test package');
 INSERT INTO permission_package_menu VALUES(-101,-101);
+SELECT pg_temp.reject_sql($q$DELETE FROM menu WHERE id=-101$q$,'referenced root deletion');
+INSERT INTO role_permission(role_id,permission_code,client) VALUES(-101,'telemetry.read','web');
+SELECT pg_temp.reject_sql($q$DELETE FROM menu WHERE id=-104$q$,'role referenced leaf deletion');
+DELETE FROM role_permission WHERE role_id=-101 AND permission_code='telemetry.read';
+
 SELECT pg_temp.reject_sql($q$INSERT INTO permission_package_menu VALUES(-101,-106)$q$,'platform menu package');
 INSERT INTO permission_package_template VALUES(-101,-101);
 INSERT INTO tenant_package VALUES(-101,-101);

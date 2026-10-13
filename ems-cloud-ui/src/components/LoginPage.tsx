@@ -18,7 +18,7 @@ import {
 import { DEMO_USERS, ROLE_CONFIG } from "@/auth/roles"
 import "./auth.css"
 
-export default function LoginPage() {
+export default function LoginPage({onRegister,onProgress}:{onRegister?:()=>void;onProgress?:()=>void}={}) {
   const {
     pendingUser,
     rememberedAccount,
@@ -216,6 +216,7 @@ export default function LoginPage() {
             </>
           )}
         </div>
+        {!pendingUser&&<div className="tenant-toolbar">{onRegister&&<button onClick={onRegister}>企业入驻申请</button>}{onProgress&&<button onClick={onProgress}>查询申请进度</button>}</div>}
         <p className="auth-footnote">
           登录即代表你同意按照当前项目授权范围使用平台。关键操作将记录到安全审计。
         </p>

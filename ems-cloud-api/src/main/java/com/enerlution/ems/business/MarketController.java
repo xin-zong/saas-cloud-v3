@@ -85,7 +85,7 @@ public class MarketController {
         id,
         n.stationId(),
         n.capacityKw());
-    s.audit("market.draft", "service=" + id);
+    s.auditStation("market.draft", n.stationId(), "service=" + id);
     return ApiResponse.ok(Map.of("id", id, "status", "draft", "externalSubmission", false));
   }
 
@@ -101,7 +101,7 @@ public class MarketController {
     stations.forEach(station -> s.access.requireStationPermission(station, "market.manage"));
     if (!service.get("status").equals("draft")) throw new BusinessException(409, "仅可取消内部草稿");
     s.db.update("UPDATE market_service SET status='withdrawn' WHERE id=?", id);
-    s.audit("market.cancel", "service=" + id);
+    s.auditStations("market.cancel", stations, "service=" + id);
     return ApiResponse.ok(null);
   }
 }

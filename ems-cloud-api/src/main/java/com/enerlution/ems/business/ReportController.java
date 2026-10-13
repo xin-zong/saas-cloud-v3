@@ -73,7 +73,16 @@ public class ReportController {
             .append("\r\n");
       }
     }
-    s.audit("report.export", "station=" + id + ",kind=" + kind + ",from=" + from + ",to=" + to);
+    s.access.requireStationPermission(id, "report.export");
+    s.access.requireStationPermission(
+        id,
+        switch (kind) {
+          case "revenue" -> "revenue.read";
+          case "health" -> "asset.read";
+          default -> "strategy.read";
+        });
+    s.auditStation(
+        "report.export", id, "station=" + id + ",kind=" + kind + ",from=" + from + ",to=" + to);
     return ResponseEntity.ok()
         .header(
             HttpHeaders.CONTENT_DISPOSITION,

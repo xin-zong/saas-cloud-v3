@@ -10,6 +10,37 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 class DatabaseGuardTest {
+  @Test
+  void cleanAcceptanceDatabaseRequiresExplicitMatchingConfiguration() {
+    var clean = source("jdbc:postgresql://localhost:15434/ems_cloud_saas_final_test");
+    assertDoesNotThrow(
+        () ->
+            new DatabaseGuard("ems_cloud_saas_final_test")
+                .postProcessAfterInitialization(clean, "dataSource"));
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            new DatabaseGuard("ems_cloud_saas_refactor_test")
+                .postProcessAfterInitialization(clean, "dataSource"));
+  }
+
+  @Test
+  void isolatedSaasDatabaseRequiresExplicitMatchingConfiguration() {
+    var test = source("jdbc:postgresql://localhost:15434/ems_cloud_saas_refactor_test");
+    assertThrows(IllegalStateException.class, () -> check(test));
+    assertDoesNotThrow(
+        () ->
+            new DatabaseGuard("ems_cloud_saas_refactor_test")
+                .postProcessAfterInitialization(test, "dataSource"));
+    assertThrows(IllegalStateException.class, () -> new DatabaseGuard("chuneng_cloud_v2_test"));
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            new DatabaseGuard("ems_cloud_saas_refactor_test")
+                .postProcessAfterInitialization(
+                    source("jdbc:postgresql://localhost:15434/ems_cloud_v2_proto"), "dataSource"));
+  }
+
   private HikariDataSource source(String url) {
     HikariDataSource source = new HikariDataSource();
     source.setJdbcUrl(url);

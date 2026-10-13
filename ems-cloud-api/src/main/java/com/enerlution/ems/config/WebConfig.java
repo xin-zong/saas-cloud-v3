@@ -1,15 +1,15 @@
 package com.enerlution.ems.config;
 
-import com.enerlution.ems.auth.AccessControl;
 import cn.dev33.satoken.filter.SaTokenContextFilterForJakartaServlet;
+import com.enerlution.ems.auth.AccessControl;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.*;
@@ -46,15 +46,18 @@ public class WebConfig implements WebMvcConfigurer {
               }
             })
         .addPathPatterns("/api/**")
-        .excludePathPatterns("/api/auth/login", "/api/auth/mfa", "/api/health");
+        .excludePathPatterns("/api/auth/login", "/api/auth/mfa", "/api/health", "/api/public/**");
   }
 
-  /** Async completion is dispatched on another thread; initialize context before rechecking auth. */
+  /**
+   * Async completion is dispatched on another thread; initialize context before rechecking auth.
+   */
   @Bean
   FilterRegistrationBean<SaTokenContextFilterForJakartaServlet> tokenContextRegistration(
       SaTokenContextFilterForJakartaServlet filter) {
     var registration = new FilterRegistrationBean<>(filter);
-    registration.setDispatcherTypes(DispatcherType.REQUEST, DispatcherType.ASYNC, DispatcherType.ERROR);
+    registration.setDispatcherTypes(
+        DispatcherType.REQUEST, DispatcherType.ASYNC, DispatcherType.ERROR);
     registration.setAsyncSupported(true);
     registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 100);
     return registration;

@@ -246,7 +246,7 @@ test("role-scoped centers: responsive layouts, tabs and role-specific actions", 
         await page.getByRole("navigation", { name: "平台管理二级导航" }).count(),
         0,
       )
-      assert.ok(await page.getByRole("tab", { name: "成员管理", exact: true }).isVisible())
+      assert.ok(await page.getByRole("heading", {name:"暂无管理权限",exact:true}).isVisible())
       assert.equal(await page.locator(".global-ai-trigger").count(), 0)
       assert.deepEqual(errors, [])
     } finally {

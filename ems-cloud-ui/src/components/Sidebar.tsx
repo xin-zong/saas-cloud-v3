@@ -108,7 +108,7 @@ export default function Sidebar({
       <div
         className="workspace-account"
         data-role-account={user.role}
-        title={`${user.name} · ${ROLE_CONFIG[user.role].label}`}
+        title={`${user.name} · ${(user.tenant?(user.roleNames?.join('、')||'未分配角色'):ROLE_CONFIG[user.role].label)}`}
       >
         <span className="workspace-account-avatar">
           <UserRound size={16} />
@@ -116,7 +116,7 @@ export default function Sidebar({
         {!collapsed && (
           <span className="workspace-account-copy">
             <strong>{user.name}</strong>
-            <small>{ROLE_CONFIG[user.role].shortLabel}</small>
+            <small>{(user.tenant?(user.roleNames?.join('、')||'未分配角色'):ROLE_CONFIG[user.role].shortLabel)}</small>
           </span>
         )}
         <button

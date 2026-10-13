@@ -482,10 +482,10 @@
     "scope": "station",
     "page": "平台管理",
     "origin": "prototype",
-    "available": true,
+    "available": false,
     "bindings": [
       {
-        "status": "current",
+        "status": "planned",
         "controller": "PlatformController",
         "method": "Get",
         "path": "/platform/customers",
@@ -502,38 +502,38 @@
     "scope": "station",
     "page": "平台管理",
     "origin": "prototype",
-    "available": true,
+    "available": false,
     "bindings": [
       {
-        "status": "current",
+        "status": "planned",
         "controller": "PlatformController",
         "method": "Put",
         "path": "/platform/customers/{id}",
         "enforcesCode": true
       },
       {
-        "status": "current",
+        "status": "planned",
         "controller": "PlatformController",
         "method": "Get",
         "path": "/platform/customers/create-options",
         "enforcesCode": true
       },
       {
-        "status": "current",
+        "status": "planned",
         "controller": "PlatformController",
         "method": "Post",
         "path": "/platform/customers",
         "enforcesCode": true
       },
       {
-        "status": "current",
+        "status": "planned",
         "controller": "PlatformController",
         "method": "Get",
         "path": "/platform/customers/options",
         "enforcesCode": true
       },
       {
-        "status": "current",
+        "status": "planned",
         "controller": "AssetController",
         "method": "Put",
         "path": "/stations/{id}",
@@ -550,10 +550,10 @@
     "scope": "organization",
     "page": "平台管理",
     "origin": "prototype",
-    "available": true,
+    "available": false,
     "bindings": [
       {
-        "status": "current",
+        "status": "planned",
         "controller": "PlatformController",
         "method": "Get",
         "path": "/platform/organizations",
@@ -569,10 +569,10 @@
     "scope": "organization",
     "page": "平台管理",
     "origin": "prototype",
-    "available": true,
+    "available": false,
     "bindings": [
       {
-        "status": "current",
+        "status": "planned",
         "controller": "PlatformController",
         "method": "Put",
         "path": "/platform/organizations/{id}",
@@ -588,10 +588,10 @@
     "scope": "organization",
     "page": "平台管理",
     "origin": "prototype",
-    "available": true,
+    "available": false,
     "bindings": [
       {
-        "status": "current",
+        "status": "planned",
         "controller": "MemberController",
         "method": "Put",
         "path": "/members/{id}",
@@ -607,10 +607,10 @@
     "scope": "organization",
     "page": "平台管理",
     "origin": "prototype",
-    "available": true,
+    "available": false,
     "bindings": [
       {
-        "status": "current",
+        "status": "planned",
         "controller": "RoleController",
         "method": "Put",
         "path": "/platform/roles/{id}/permissions"
@@ -625,10 +625,10 @@
     "scope": "organization",
     "page": "平台管理",
     "origin": "prototype",
-    "available": true,
+    "available": false,
     "bindings": [
       {
-        "status": "current",
+        "status": "planned",
         "controller": "MemberGrantController",
         "method": "Post",
         "path": "/members/{memberId}/grants"
@@ -801,7 +801,15 @@
     "page": "资产与站点",
     "origin": "ems-integration",
     "available": true,
-    "bindings": [{"status":"current","controller":"EmsController","method":"Get","path":"/stations/{id}/ems","enforcesCode":true}]
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "EmsController",
+        "method": "Get",
+        "path": "/stations/{id}/ems",
+        "enforcesCode": true
+      }
+    ]
   },
   {
     "code": "ems.manage",
@@ -811,7 +819,15 @@
     "page": "资产与站点",
     "origin": "ems-integration",
     "available": true,
-    "bindings": [{"status":"current","controller":"EmsController","method":"Post","path":"/stations/{id}/ems-bindings","enforcesCode":true}]
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "EmsController",
+        "method": "Post",
+        "path": "/stations/{id}/ems-bindings",
+        "enforcesCode": true
+      }
+    ]
   },
   {
     "code": "ems.query",
@@ -821,6 +837,14 @@
     "page": "资产与站点",
     "origin": "ems-integration",
     "available": true,
-    "bindings": [{"status":"current","controller":"EmsController","method":"Get","path":"/ems/{id}/queries/{requestId}","enforcesCode":true}]
+    "bindings": [
+      {
+        "status": "current",
+        "controller": "EmsController",
+        "method": "Get",
+        "path": "/ems/{id}/queries/{requestId}",
+        "enforcesCode": true
+      }
+    ]
   }
 ]

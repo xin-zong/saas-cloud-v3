@@ -51,7 +51,7 @@ public class MaintenanceController {
           "UPDATE alarm SET acknowledged_by=?,acknowledged_at=now() WHERE id=?",
           s.access.userId(),
           id);
-      s.audit("alarm.acknowledge", "alarm=" + id);
+      s.auditStation("alarm.acknowledge", s.number(a, "station_id"), "alarm=" + id);
     }
     return ApiResponse.ok(Map.of("id", id));
   }
@@ -63,14 +63,15 @@ public class MaintenanceController {
   public ApiResponse<?> alarmNote(@PathVariable long id, @Valid @RequestBody Note note) {
     var a =
         s.one(
-            "SELECT COALESCE(o.station_id,d.station_id) AS station_id FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN ems_alarm_business_origin o ON o.alarm_id=a.id WHERE a.id=?", id);
+            "SELECT COALESCE(o.station_id,d.station_id) AS station_id FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN ems_alarm_business_origin o ON o.alarm_id=a.id WHERE a.id=?",
+            id);
     s.access.requireStationPermission(s.number(a, "station_id"), "alarm.handle");
     s.db.update(
         "INSERT INTO alarm_note(alarm_id,author_id,body) VALUES(?,?,?)",
         id,
         s.access.userId(),
         note.note());
-    s.audit("alarm.note", "alarm=" + id);
+    s.auditStation("alarm.note", s.number(a, "station_id"), "alarm=" + id);
     return ApiResponse.ok(null);
   }
 
@@ -78,7 +79,8 @@ public class MaintenanceController {
   public ApiResponse<?> alarmNotes(@PathVariable long id) {
     var a =
         s.one(
-            "SELECT COALESCE(o.station_id,d.station_id) AS station_id FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN ems_alarm_business_origin o ON o.alarm_id=a.id WHERE a.id=?", id);
+            "SELECT COALESCE(o.station_id,d.station_id) AS station_id FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN ems_alarm_business_origin o ON o.alarm_id=a.id WHERE a.id=?",
+            id);
     s.access.requireStationPermission(s.number(a, "station_id"), "alarm.read");
     return ApiResponse.ok(
         s.db.queryForList(
@@ -96,7 +98,9 @@ public class MaintenanceController {
     if (stationId != null) s.access.requireStationPermission(stationId, "workorder.read");
     return ApiResponse.ok(
         s.db.queryForList(
-            "SELECT w.* FROM work_order w JOIN effective_station_permission us ON"
+            "SELECT w.* FROM work_order w JOIN "
+                + s.access.stationPermissionTable()
+                + " us ON"
                 + " us.station_id=w.station_id WHERE us.user_id=? AND"
                 + " us.permission_code='workorder.read' AND (?::bigint IS NULL OR w.station_id=?)"
                 + " AND (NOT ? OR w.assigned_to=?) ORDER BY w.created_at DESC,w.id DESC LIMIT ?"
@@ -162,7 +166,10 @@ public class MaintenanceController {
         s.access.userId(),
         action,
         note);
-    s.audit("workorder." + action, "workOrder=" + id);
+    s.auditStation(
+        "workorder." + action,
+        s.db.queryForObject("SELECT station_id FROM work_order WHERE id=?", Long.class, id),
+        "workOrder=" + id);
   }
 
   public record Transition(
@@ -266,7 +273,7 @@ public class MaintenanceController {
             n.title(),
             n.dueAt(),
             n.assignedTo());
-    s.audit("inspection.create", "inspection=" + id);
+    s.auditStation("inspection.create", n.stationId(), "inspection=" + id);
     return ApiResponse.ok(Map.of("id", id));
   }
 
@@ -282,7 +289,7 @@ public class MaintenanceController {
         "UPDATE inspection SET status='completed',completed_at=now(),result=? WHERE id=?",
         n.note(),
         id);
-    s.audit("inspection.complete", "inspection=" + id);
+    s.auditStation("inspection.complete", s.number(i, "station_id"), "inspection=" + id);
     return ApiResponse.ok(null);
   }
 
@@ -305,7 +312,7 @@ public class MaintenanceController {
     if (i.get("assigned_to") != null && s.number(i, "assigned_to") != s.access.userId())
       throw new BusinessException(403, "仅负责人可取消巡检");
     s.db.update("UPDATE inspection SET status='cancelled',result=? WHERE id=?", n.note(), id);
-    s.audit("inspection.cancel", "inspection=" + id);
+    s.auditStation("inspection.cancel", s.number(i, "station_id"), "inspection=" + id);
     return ApiResponse.ok(null);
   }
 }

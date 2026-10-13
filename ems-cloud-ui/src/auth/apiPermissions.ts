@@ -1,4 +1,5 @@
 import { ROLE_CONFIG, type AuthUser, type RoleConfig } from "./roles"
+import {menuRoutes} from '@/tenant/permissionTree'
 
 /** API actions always use the resource map, never the navigation union. */
 export function hasStationPermission(user: AuthUser | null | undefined, stationId: string | number | undefined, permission: string): boolean {
@@ -68,11 +69,13 @@ export function apiRoleConfig(user: AuthUser): RoleConfig {
     if (config.reportTypes.length) config.analysisTabs.push("报告中心")
   }
   if (config.analysisTabs.length) config.nav.push("分析与报告")
-  if (has("customer.read")) config.platformTabs.push("客户管理")
-  if (has("organization.member.read", "organization.manage", "member.manage.profile", "role.manage", "member.grant.manage")) config.platformTabs.push("组织权限")
-  if (has("audit.read")) config.platformTabs.push("安全审计")
-  if (config.platformTabs.length || has('ems.read', 'ems.manage', 'ems.query')) config.nav.push("平台管理")
   config.nav.push("设置")
-  if (config.nav.includes(ROLE_CONFIG[user.role].defaultNav)) config.defaultNav = ROLE_CONFIG[user.role].defaultNav
+  if(user.tenant){
+    const routes=menuRoutes(user.menus??[])
+    const labels:Record<string,import('./roles').NavLabel>={overview:'总览',assets:'资产与站点',operations:'运营中心',maintenance:'运维中心',workorders:'工单与审批',analytics:'分析与报告'}
+    config.nav=Object.entries(labels).filter(([key])=>routes.includes(key)).map(([,label])=>label)
+    if(routes.some(r=>r.startsWith('company.')||r.startsWith('platform.')))config.nav.push('平台管理')
+    config.nav.push('设置');config.defaultNav=config.nav[0];config.label=user.roleNames?.join('、')||'未分配角色';config.shortLabel=config.label
+  }
   return config
 }

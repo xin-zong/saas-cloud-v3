@@ -17,6 +17,25 @@ class JointAuthorizationTest {
     JdbcTemplate db = mock(JdbcTemplate.class);
     SessionTokens session = mock(SessionTokens.class);
     when(session.userId()).thenReturn(7L);
+    when(db.queryForObject(
+            eq("SELECT tenant_id FROM station WHERE id=?"), eq(Long.class), anyLong()))
+        .thenReturn(2L);
+    when(session.client()).thenReturn("web");
+    when(db.queryForObject(
+            startsWith("select exists(select 1 from saas_active_user"), eq(Boolean.class), eq(7L)))
+        .thenReturn(true);
+    when(db.queryForList(startsWith("select tenant_id,kind,administrator"), eq(7L)))
+        .thenReturn(List.of(Map.of("tenant_id", 2L, "kind", "enterprise", "administrator", false)));
+    when(db.queryForObject(
+            startsWith("select exists(select 1 from saas_effective_station_permission"),
+            eq(Boolean.class),
+            anyLong(),
+            anyLong(),
+            anyString(),
+            eq("web")))
+        .thenAnswer(
+            call ->
+                (Long) call.getArgument(3) != 102L || !"asset.edit".equals(call.getArgument(4)));
     when(db.queryForObject(anyString(), eq(Boolean.class), any(Object[].class)))
         .thenAnswer(
             call -> {
@@ -49,6 +68,11 @@ class JointAuthorizationTest {
     JdbcTemplate db = mock(JdbcTemplate.class);
     AccessControl access = mock(AccessControl.class);
     when(access.userId()).thenReturn(7L);
+    when(db.queryForObject(
+            eq("SELECT tenant_id FROM station WHERE id=?"), eq(Long.class), anyLong()))
+        .thenReturn(2L);
+    when(access.context())
+        .thenReturn(new com.enerlution.ems.tenant.TenantContext(7, 2, "enterprise", false));
     when(access.hasStationPermission(8, 101, "inspection.manage")).thenReturn(true);
     when(db.queryForObject(
             startsWith("INSERT INTO inspection"), eq(Long.class), any(Object[].class)))
@@ -77,6 +101,9 @@ class JointAuthorizationTest {
     JdbcTemplate db = mock(JdbcTemplate.class);
     AccessControl access = mock(AccessControl.class);
     when(access.userId()).thenReturn(7L);
+    when(db.queryForObject(
+            eq("SELECT tenant_id FROM station WHERE id=?"), eq(Long.class), anyLong()))
+        .thenReturn(2L);
     when(db.queryForList(startsWith("SELECT * FROM approval"), eq(99L)))
         .thenReturn(
             List.of(Map.of("id", 99L, "status", "approved", "submitter_id", 8L, "plan_id", 55L)));

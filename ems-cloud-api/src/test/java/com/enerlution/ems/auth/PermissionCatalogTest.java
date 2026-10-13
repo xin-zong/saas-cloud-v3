@@ -133,7 +133,7 @@ class PermissionCatalogTest {
   }
 
   @Test
-  void customerAccessRemainsStationScopedWithTheExistingAggregateConditions() throws Exception {
+  void historicalCustomerCodesAreNotAvailableInTheTenantSystem() throws Exception {
     JsonNode entries = mapper.readTree(Files.readString(catalog));
     JsonNode read = find(entries, "customer.read");
     JsonNode manage = find(entries, "customer.manage");
@@ -146,8 +146,8 @@ class PermissionCatalogTest {
         "owner_organization_and_all_customer_stations_in_same_grant_station_and_organization_scope",
         manage.path("scopeRule").asText());
     assertEquals("asset.edit + member.manage", manage.path("legacyBinding").asText());
-    assertTrue(read.path("available").asBoolean());
-    assertTrue(manage.path("available").asBoolean());
+    assertFalse(read.path("available").asBoolean());
+    assertFalse(manage.path("available").asBoolean());
   }
 
   @Test

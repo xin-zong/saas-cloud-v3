@@ -10,7 +10,7 @@ test('every test file belongs to exactly one preview mode', () => {
   assert.deepEqual([...split.api, ...split.demo].sort(), files.sort())
   assert.equal(new Set([...split.api, ...split.demo]).size, files.length)
   assert(split.api.includes('analytics-ui.test.cjs'))
-  assert(split.api.includes('platform-api-ui.test.cjs'))
+  assert(split.api.includes('tenant-management-ui.test.cjs'))
   assert(split.api.includes('station-entry-ui.spec.cjs'))
   assert.throws(() => groups(files.filter(file => file !== 'workspace-ui.test.cjs')), /Missing demo test/)
 })

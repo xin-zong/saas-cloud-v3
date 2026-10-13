@@ -17,7 +17,13 @@ public class AuthController {
   }
 
   public record LoginRequest(
-      @NotBlank @Size(max = 120) String account, @NotBlank @Size(max = 72) String password) {}
+      @NotBlank @Size(max = 254) String account,
+      @NotBlank @Size(max = 128) String password,
+      @jakarta.validation.constraints.Pattern(regexp = "web|app") String client) {
+    public LoginRequest(String account, String password) {
+      this(account, password, "web");
+    }
+  }
 
   public record MfaRequest(
       @NotBlank @Size(max = 100) String challengeId, @NotBlank @Size(max = 10) String code) {}
@@ -25,7 +31,11 @@ public class AuthController {
   @PostMapping("/login")
   public ApiResponse<AuthService.LoginResult> login(
       @Valid @RequestBody LoginRequest request, HttpServletRequest http) {
-    return ApiResponse.ok(auth.login(request.account(), request.password(), http.getRemoteAddr()));
+    return ApiResponse.ok(
+        request.client() == null || request.client().equals("web")
+            ? auth.login(request.account(), request.password(), http.getRemoteAddr())
+            : auth.login(
+                request.account(), request.password(), http.getRemoteAddr(), request.client()));
   }
 
   @PostMapping("/mfa")

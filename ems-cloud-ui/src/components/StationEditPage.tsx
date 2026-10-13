@@ -74,69 +74,7 @@ function StationEditor({
 }: Props) {
   const { user } = useAuth()
 
-  type CustomerOptions = {
-    can_assign: boolean
-    customers: { id: number; name: string }[]
-    current_customer: { id: number; name: string } | null
-    current_customer_restricted: boolean
-  }
-
-  const [customerOptions, setCustomerOptions] =
-    useState<CustomerOptions | null>(null)
-
-  const [customerError, setCustomerError] = useState("")
-
-  const [customerSearch, setCustomerSearch] = useState("")
-
-  const [customerLoading, setCustomerLoading] = useState(false)
-
-  const savedCustomer = useRef(station?.customerId)
-
   const pendingSave = useRef(false)
-
-  const customerRequest = useRef(0)
-
-  async function reloadCustomers(signal?: AbortSignal) {
-    const request = ++customerRequest.current
-    setCustomerLoading(true)
-    setCustomerError("")
-    try {
-      const options = await api<CustomerOptions>(
-        `/platform/customers/options?stationId=${encodeURIComponent(station!.id)}`,
-        { signal },
-      )
-      if (signal?.aborted || request !== customerRequest.current) {
-        throw new Error("客户关联选项已失效，请重试")
-      }
-      setCustomerOptions(options)
-      return options
-    } catch (e) {
-      if (!signal?.aborted && request === customerRequest.current) {
-        setCustomerOptions(null)
-        setCustomerError(e instanceof Error ? e.message : "客户加载失败")
-      }
-      throw e
-    } finally {
-      if (!signal?.aborted && request === customerRequest.current) setCustomerLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (DEMO_MODE || !station) return
-    const controller = new AbortController()
-    setCustomerOptions(null)
-    void reloadCustomers(controller.signal).catch(() => {})
-    return () => {
-      customerRequest.current++
-      controller.abort()
-    }
-  }, [
-    station?.id,
-    user?.id,
-    JSON.stringify(user?.stationPermissions),
-    JSON.stringify(user?.organizationPermissions),
-    JSON.stringify(user?.permissions),
-  ])
 
   const [draft, setDraft] = useState<Draft>(
     () => initialDraft ?? { ...station },
@@ -248,31 +186,10 @@ function StationEditor({
     setError("")
 
     try {
-      const customerChanged = !Object.is(
-        draft.customerId,
-        savedCustomer.current,
-      )
-
-      if (!DEMO_MODE && customerChanged) {
-        if (customerError || !customerOptions?.can_assign)
-          throw new Error("客户选项不可用或关联权限已失效，未保存修改")
-        const latest = await reloadCustomers()
-        if (
-          !latest.can_assign ||
-          (draft.customerId != null &&
-            !latest.customers.some((c) => String(c.id) === draft.customerId))
-        )
-          throw new Error("客户关联权限已失效，请重新选择")
-      }
-
       const patch: Partial<Station> = DEMO_MODE
         ? draft
         : {
             name: draft.name.trim(),
-
-            ...(customerChanged
-              ? { customerId: draft.customerId ?? null }
-              : {}),
 
             ...(Number.isFinite(draft.ratedPower)
               ? { ratedPower: draft.ratedPower }
@@ -293,7 +210,6 @@ function StationEditor({
 
       await onSubmit(patch)
 
-      savedCustomer.current = draft.customerId
 
       setSnapshot(JSON.stringify(draft))
 
@@ -405,7 +321,7 @@ function StationEditor({
         </header>
         {apiUnsupported && (
           <p className="station-subtle station-api-note">
-            可保存名称、额定功率、储能容量、区域、地址及坐标；所属客户按关联权限编辑，其余字段当前仅供查看。
+            可保存名称、额定功率、储能容量、区域、地址及坐标；站点所属企业不可变更，其余字段当前仅供查看。
           </p>
         )}
         {section(
@@ -413,72 +329,7 @@ function StationEditor({
 
           <>
             {input("name", "站点名称 *")}
-            {!DEMO_MODE && (
-              <Field label="所属客户">
-                <div className="station-customer-selector">
-                  {customerOptions?.can_assign && !readOnly ? (
-                    <>
-                      <input
-                        aria-label="搜索所属客户"
-                        placeholder="搜索客户名称"
-                        value={customerSearch}
-                        disabled={saving}
-                        onChange={(e) => setCustomerSearch(e.target.value)}
-                      />
-                      <select
-                        aria-label="所属客户"
-                        value={draft.customerId ?? ""}
-                        disabled={saving || customerLoading}
-                        onChange={(e) =>
-                          field("customerId", e.target.value || null)
-                        }
-                      >
-                        <option value="">未关联客户</option>
-                        {customerOptions.customers
-                          .filter(
-                            (c) =>
-                              String(c.id) === draft.customerId ||
-                              c.name.includes(customerSearch),
-                          )
-                          .map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.name}
-                            </option>
-                          ))}
-                      </select>
-                    </>
-                  ) : (
-                    <input
-                      aria-label="所属客户"
-                      readOnly
-                      value={
-                        customerLoading
-                          ? "正在加载客户…"
-                          : customerOptions?.current_customer_restricted
-                            ? "当前客户关联受限"
-                            : (customerOptions?.current_customer?.name ??
-                              (customerError
-                                ? "客户关联暂不可用"
-                                : "未关联客户"))
-                      }
-                    />
-                  )}{" "}
-                  {customerError && (
-                    <>
-                      <p role="alert" className="station-danger">
-                        {customerError}；保留原关联
-                      </p>
-                      <button
-                        className="station-text-button"
-                        onClick={() => void reloadCustomers().catch(() => {})}
-                      >
-                        重试加载客户
-                      </button>
-                    </>
-                  )}
-                </div>
-              </Field>
-            )}
+            {!DEMO_MODE && <Field label="所属企业"><input readOnly value={user?.organization??''}/></Field>}
             <Field label="站点 ID">
               <div className="station-locked-input">
                 <input readOnly value={station?.code ?? "—"} />

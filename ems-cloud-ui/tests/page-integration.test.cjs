@@ -11,6 +11,7 @@ function load(path, cache = new Map()) {
   cache.set(path, exports)
   new Function("exports", "require", code)(exports, (name) => {
     if (name === "./roles") return load("auth/roles", cache)
+    if(name === "@/tenant/permissionTree") return load("tenant/permissionTree",cache)
     throw new Error(`Unexpected import: ${name}`)
   })
   return exports

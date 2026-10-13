@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import { api, send, DEMO_MODE, getToken, setToken, getSessionVersion, registerCapabilityRefresh, CAPABILITIES_CHANGED } from "@/api/client"
+import { api, send, DEMO_MODE, getToken, setToken, getSessionVersion, registerCapabilityRefresh, CAPABILITIES_CHANGED, BASE_URL } from "@/api/client"
 import { DEMO_USERS, type AuthUser } from "./roles"
 
 const SESSION_KEY = "enerlution-auth-session-v1"
@@ -146,7 +146,9 @@ function ApiAuthProvider({ children }: { children: ReactNode }) {
   const sessionGeneration = useRef(0)
   const refreshInFlight = useRef<{token: string; version: number; promise: Promise<void>} | null>(null)
   function normalize(next: AuthUser): AuthUser {
-    return {...next, id: String(next.id), stationIds: next.stationIds.map(String), stationPermissions: next.stationPermissions ?? {}, organizationPermissions: next.organizationPermissions ?? {}}
+    // Legacy presentation components retain a neutral adapter value; navigation and
+    // authorization are exclusively driven by the server tenant/menu capabilities.
+    return {...next, role: next.role??'operator', organization: next.tenantName??next.organization??'', id: String(next.id), stationIds: next.stationIds.map(String), stationPermissions: next.stationPermissions ?? {}, organizationPermissions: {}}
   }
   useEffect(() => {
     let active = true
@@ -178,7 +180,7 @@ function ApiAuthProvider({ children }: { children: ReactNode }) {
             if (!isCurrentSession()) return
             if (requestedEpoch !== invalidationEpoch) continue
             setPermissionNotice(error instanceof Error ? error.message : '当前权限刷新失败，请重试。')
-            setUser(current => current ? {...current, permissions: [], stationPermissions: {}, organizationPermissions: {}, stationIds: []} : null)
+            setUser(current => current ? {...current, menus: [], permissions: [], stationPermissions: {}, organizationPermissions: {}, stationIds: []} : null)
           }
           // Stop sharing the completed snapshot before promise cleanup runs.
           refreshInFlight.current = null
@@ -189,7 +191,7 @@ function ApiAuthProvider({ children }: { children: ReactNode }) {
       refreshInFlight.current = {token, version, promise}
       return promise
     }
-    const changed = () => setPermissionNotice('权限已变化，已刷新当前权限。')
+    const changed = (event:Event) => {if(!(event instanceof CustomEvent&&event.detail?.silent))setPermissionNotice('权限已变化，已刷新当前权限。');void refresh(true)}
     const onFocus = () => { void refresh() }
     window.addEventListener('enerlution:unauthorized', clear)
     window.addEventListener(CAPABILITIES_CHANGED, changed)
@@ -207,6 +209,19 @@ function ApiAuthProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('focus', onFocus)
     }
   }, [])
+  useEffect(()=>{
+    const token=getToken();if(!user||!token)return
+    const controller=new AbortController();let retry:ReturnType<typeof setTimeout>|undefined
+    const connect=async()=>{try{
+      const response=await fetch(`${BASE_URL}/me/capabilities/events`,{headers:{Authorization:`Bearer ${token}`},signal:controller.signal})
+      if(response.status===401){if(getToken()===token){setToken(null);window.dispatchEvent(new Event('enerlution:unauthorized'))}return}
+      if(!response.ok||!response.body)throw new Error('Notification disconnected')
+      const reader=response.body.getReader(),decoder=new TextDecoder();let buffer=''
+      while(!controller.signal.aborted){const {done,value}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const events=buffer.split(/\r?\n\r?\n/);buffer=events.pop()??'';for(const event of events)if(/event:\s*(ready|capabilities-changed)/.test(event)&&getToken()===token)window.dispatchEvent(new CustomEvent(CAPABILITIES_CHANGED,{detail:{silent:/event:\s*ready/.test(event)}}))}
+    }catch{ /* Focus/timer checks compensate while reconnecting. */ }
+    if(!controller.signal.aborted)retry=setTimeout(connect,5000)}
+    void connect();return()=>{controller.abort();if(retry)clearTimeout(retry)}
+  },[user?.id])
   async function login(account: string, password: string, remember: boolean): Promise<LoginResult> {
     try {
       const result = await send<{requiresMfa: boolean; challengeId?: string; token?: string; user?: AuthUser}>('/auth/login', 'POST', {account: account.trim(), password})

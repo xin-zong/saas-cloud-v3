@@ -42,6 +42,7 @@ import AnalyticsAiPage from "@/components/AnalyticsAiPage"
 import GlobalAiDrawer from "@/components/GlobalAiDrawer"
 
 import PlatformManagementPage from "@/components/PlatformManagementPage"
+import PublicEntry from '@/tenant/PublicEntry'
 
 import SystemSettingsPage from "@/components/SystemSettingsPage"
 import SettingsDialog from "@/components/SettingsDialog"
@@ -287,8 +288,10 @@ function getInitialWorkOrdersViewFromHash(user: AuthUser) {
 export default function App() {
   useDisplayPreferences()
   const { user } = useAuth()
+  const [publicEntry,setPublicEntry]=useState(()=>/^#(?:activate=|register$|application-progress$)/.test(location.hash))
+  useEffect(()=>{const changed=()=>setPublicEntry(/^#(?:activate=|register$|application-progress$)/.test(location.hash));window.addEventListener('hashchange',changed);return()=>window.removeEventListener('hashchange',changed)},[])
 
-  if (!user) return <LoginPage />
+  if (!user||publicEntry) return DEMO_MODE?<LoginPage />:<PublicEntry />
 
   return <AuthenticatedApp key={user.id} user={user} />
 }

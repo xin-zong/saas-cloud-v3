@@ -24,7 +24,9 @@ public class AssetController {
       @RequestParam(defaultValue = "100") int limit, @RequestParam(defaultValue = "0") int offset) {
     return ApiResponse.ok(
         s.db.queryForList(
-            "SELECT s.* FROM station s JOIN effective_station_permission us ON us.station_id=s.id"
+            "SELECT s.* FROM station s JOIN "
+                + s.access.stationPermissionTable()
+                + " us ON us.station_id=s.id"
                 + " WHERE us.user_id=? AND us.permission_code='asset.read' ORDER BY s.id LIMIT ?"
                 + " OFFSET ?",
             s.access.userId(),
@@ -49,7 +51,9 @@ public class AssetController {
     s.access.requirePermission(permission);
     return ApiResponse.ok(
         s.db.queryForList(
-            "SELECT st.id,st.name FROM station st JOIN effective_station_permission p ON"
+            "SELECT st.id,st.name FROM station st JOIN "
+                + s.access.stationPermissionTable()
+                + " p ON"
                 + " p.station_id=st.id WHERE p.user_id=? AND p.permission_code=? ORDER BY st.id",
             s.access.userId(),
             permission));
@@ -103,7 +107,7 @@ public class AssetController {
             id);
     if (BusinessRules.peakCapacity(commitments).compareTo(e.ratedPowerKw()) > 0)
       throw new BusinessException(409, "额定功率低于已有市场承诺");
-    if (e.customerId() != null) new CustomerWorkflows(s).assign(id, e.customerId());
+    if (e.customerId() != null) throw new BusinessException(410, "旧客户归属已退休，站点归属由企业租户确定");
     s.db.update(
         "UPDATE station SET"
             + " name=?,rated_power_kw=?,capacity_kwh=?,region=?,address=?,longitude=?,latitude=?"
@@ -116,7 +120,7 @@ public class AssetController {
         e.longitude(),
         e.latitude(),
         id);
-    s.audit("station.edit", "station=" + id);
+    s.auditStation("station.edit", id, "station=" + id);
     return ApiResponse.ok(s.one("SELECT * FROM station WHERE id=?", id));
   }
 
@@ -138,23 +142,42 @@ public class AssetController {
   @GetMapping("/stations/{id}/points")
   public ApiResponse<?> points(@PathVariable long id) {
     s.access.requireStationPermission(id, "telemetry.read");
-    var points=s.db.queryForList(
+    var points =
+        s.db.queryForList(
             "SELECT p.*,k.name,k.unit,d.name AS device_name FROM measurement_point p JOIN device d ON d.id=p.device_id"
                 + " JOIN measurement_kind k ON k.code=p.kind_code WHERE d.station_id=? ORDER BY"
                 + " p.id",
             id);
-    var definitions=s.db.queryForList("""
+    var definitions =
+        s.db.queryForList(
+            """
       SELECT pb.measurement_point_id,pd.source_id,pd.namespace,pd.value_type,pd.aggregation,d.role AS subsystem
       FROM point_binding pb JOIN device_binding d ON d.id=pb.device_binding_id
       JOIN ems_binding_period p ON p.id=d.binding_period_id JOIN point_definition pd ON pd.id=pb.definition_id
       WHERE p.station_id=? AND p.valid_to IS NULL AND d.valid_to IS NULL AND pb.valid_to IS NULL
         AND greatest(p.valid_from,d.valid_from,pb.valid_from)<=clock_timestamp()
-      """,id);
-    for(var point:points) {
-      var matches=definitions.stream().filter(d->Objects.equals(d.get("measurement_point_id"),point.get("id"))).toList();
-      point.put("source",matches.isEmpty()?"legacy":"ems");
-      if(matches.size()==1){var d=matches.getFirst();point.put("sourceId",d.get("source_id"));point.put("namespace",d.get("namespace"));point.put("subsystem",d.get("subsystem"));point.put("valueType",d.get("value_type"));point.put("aggregation",d.get("aggregation"));point.put("supportedAggregations",StationTelemetryService.aggregations(d.get("value_type"),d.get("aggregation")));}
-      else {point.put("supportedAggregations",matches.isEmpty()?List.of("avg"):List.of());point.put("mappingStatus",matches.isEmpty()?"unmapped":"ambiguous");}
+      """,
+            id);
+    for (var point : points) {
+      var matches =
+          definitions.stream()
+              .filter(d -> Objects.equals(d.get("measurement_point_id"), point.get("id")))
+              .toList();
+      point.put("source", matches.isEmpty() ? "legacy" : "ems");
+      if (matches.size() == 1) {
+        var d = matches.getFirst();
+        point.put("sourceId", d.get("source_id"));
+        point.put("namespace", d.get("namespace"));
+        point.put("subsystem", d.get("subsystem"));
+        point.put("valueType", d.get("value_type"));
+        point.put("aggregation", d.get("aggregation"));
+        point.put(
+            "supportedAggregations",
+            StationTelemetryService.aggregations(d.get("value_type"), d.get("aggregation")));
+      } else {
+        point.put("supportedAggregations", matches.isEmpty() ? List.of("avg") : List.of());
+        point.put("mappingStatus", matches.isEmpty() ? "unmapped" : "ambiguous");
+      }
     }
     return ApiResponse.ok(points);
   }

@@ -1,5 +1,5 @@
 export const DEMO_MODE = import.meta.env.VITE_DATA_MODE === 'demo'
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:18090/api').replace(/\/$/, '')
+export const BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:18090/api').replace(/\/$/, '')
 const TOKEN_KEY = 'enerlution-api-token'
 export const getToken = () => sessionStorage.getItem(TOKEN_KEY) || null
 let sessionVersion = 0
@@ -40,7 +40,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     throw new ApiError(`权限已变化，已刷新当前权限。${body.msg || '无权执行此操作。'}`, 403)
   }
   if (!response.ok || (body.code !== 0 && body.code !== 200)) throw new ApiError(body.msg || `请求失败 (${response.status})`, body.code || response.status)
-  if (options.method && options.method !== 'GET' && /^(\/members(?:\/|$)|\/platform\/(roles|organizations)(?:\/|$))/.test(path)) {
+  if (options.method && options.method !== 'GET' && /^(\/company(?:\/|$)|\/me\/profile$|\/platform(?:\/|$))/.test(path)) {
     await refreshCapabilities?.(true)
     if (getToken() !== token || getSessionVersion() !== version) throw new ApiError('会话已变化，请重新操作。', 401)
   }

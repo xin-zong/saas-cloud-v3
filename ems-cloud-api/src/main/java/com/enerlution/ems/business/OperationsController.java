@@ -73,7 +73,7 @@ public class OperationsController {
           p.endMinute(),
           p.mode(),
           p.powerKw());
-    s.audit("plan.create", "plan=" + id);
+    s.auditStation("plan.create", n.stationId(), "plan=" + id);
     return ApiResponse.ok(Map.of("id", id, "version", version));
   }
 
@@ -91,7 +91,7 @@ public class OperationsController {
             "计划审批 #" + id,
             s.access.userId(),
             id);
-    s.audit("plan.submit", "plan=" + id);
+    s.auditStation("plan.submit", s.number(plan, "station_id"), "plan=" + id);
     return ApiResponse.ok(Map.of("approvalId", approval));
   }
 
@@ -108,7 +108,9 @@ public class OperationsController {
                 + " st.id=coalesce(p.station_id,w.station_id) JOIN app_user submitter ON"
                 + " submitter.id=a.submitter_id LEFT JOIN app_user reviewer ON"
                 + " reviewer.id=a.reviewer_id WHERE EXISTS(SELECT 1 FROM"
-                + " effective_station_permission pscope WHERE pscope.user_id=? AND"
+                + " "
+                + s.access.stationPermissionTable()
+                + " pscope WHERE pscope.user_id=? AND"
                 + " pscope.station_id=st.id AND (pscope.permission_code='approval.read' OR"
                 + " a.submitter_id=?))"
                 + " ORDER BY a.id DESC LIMIT ? OFFSET ?",
@@ -144,7 +146,7 @@ public class OperationsController {
         s.access.userId(),
         n.note(),
         id);
-    s.audit("approval." + n.decision(), "approval=" + id);
+    s.auditStation("approval." + n.decision(), s.number(target, "station_id"), "approval=" + id);
     return ApiResponse.ok(null);
   }
 
@@ -213,7 +215,7 @@ public class OperationsController {
         id,
         n.validFrom(),
         n.validUntil());
-    s.audit("tariff.create", "tariff=" + id);
+    s.auditStation("tariff.create", n.stationId(), "tariff=" + id);
     return ApiResponse.ok(Map.of("id", id));
   }
 }

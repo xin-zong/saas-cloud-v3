@@ -25,7 +25,7 @@ class MfaLifecycleTest {
   void setup() {
     when(clock.instant()).thenReturn(Instant.ofEpochSecond(59));
     auth = new AuthService(jdbc, tokens, encoder, totp, clock);
-    when(jdbc.query(startsWith("select id,account"), any(RowMapper.class), any(Object[].class)))
+    when(jdbc.query(startsWith("select u.id,u.account"), any(RowMapper.class), any(Object[].class)))
         .thenReturn(
             List.of(
                 new AuthService.Account(1, "alice", "Alice", encoder.encode("password"), true)));
@@ -67,8 +67,12 @@ class MfaLifecycleTest {
   @Test
   void acceptedCodeCreatesOneSessionAndChallengeCannotBeReused() {
     when(jdbc.update(startsWith("update user_totp"), any(Object[].class))).thenReturn(1);
-    when(jdbc.query(startsWith("select u.account"), any(RowMapper.class), any(Object[].class)))
-        .thenReturn(Collections.singletonList(new String[] {"alice", "Alice", "Org"}));
+    when(tokens.userId()).thenReturn(1L);
+    when(jdbc.queryForList(startsWith("select tenant_id,kind,administrator"), any(Object[].class)))
+        .thenReturn(List.of(Map.of("tenant_id", 1L, "kind", "enterprise", "administrator", false)));
+    when(jdbc.queryForMap(startsWith("SELECT u.account,u.display_name"), any(Object[].class)))
+        .thenReturn(
+            Map.of("account", "alice", "display_name", "Alice", "tenant_name", "Enterprise"));
     when(tokens.login(1)).thenReturn("opaque-session");
     String challenge = auth.login("alice", "password", "peer").challengeId();
     assertEquals("opaque-session", auth.mfa(challenge, "287082").token());

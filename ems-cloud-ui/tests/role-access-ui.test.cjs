@@ -363,10 +363,7 @@ test("integrator role: MFA, station delivery, technical work orders, firmware an
     assert.equal(await page.getByRole("navigation", { name: "平台管理二级导航" }).count(), 0)
     assert.equal(await page.getByRole("button", { name: "客户管理", exact: true }).count(), 0)
     assert.equal(await page.getByRole("button", { name: "安全审计", exact: true }).count(), 0)
-    assert.ok(await page.getByRole("tab", { name: "成员管理", exact: true }).count() > 0)
-    await page.getByRole("button", { name: "新增成员", exact: true }).click()
-    await page.getByRole("dialog").waitFor()
-    await page.getByRole("dialog").getByRole("button", { name: "取消", exact: true }).click()
+    assert.ok(await page.getByRole("heading",{name:"暂无管理权限",exact:true}).isVisible())
 
     await assertResponsiveShell(page, "integrator-delivery")
     await logout(page)

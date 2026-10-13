@@ -97,6 +97,10 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
 }
 
 export type AuthUser = {
+  tenant?: import('@/tenant/types').TenantContext
+  menus?: import('@/tenant/types').MenuNode[]
+  roleNames?: string[]
+  tenantName?: string
   id: string
   name: string
   account: string
