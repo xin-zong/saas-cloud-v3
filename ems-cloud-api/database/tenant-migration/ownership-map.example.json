@@ -1,0 +1,15 @@
+{
+  "platformAdministrator": "superadmin@prototype.local",
+  "enterpriseAdministrator": "owner@prototype.local",
+  "users": {
+    "superadmin@prototype.local": "platform",
+    "owner@prototype.local": "demo",
+    "operator@prototype.local": "demo",
+    "integrator@prototype.local": "demo"
+  },
+  "stations": {
+    "PROTO-001": "demo",
+    "PROTO-002": "demo",
+    "SIM-SH-001": "demo"
+  }
+}
