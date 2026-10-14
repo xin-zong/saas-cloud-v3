@@ -12,7 +12,7 @@ async function setup(t, noWebGL = false, emptyApi = false) {
     page.on('pageerror', e => console.error('API 3D browser error:', e.message))
     page.on('console', m => { if (m.type() === 'error') console.error('API 3D console:', m.text()) })
   }
-  page.setDefaultTimeout(15000)
+  page.setDefaultTimeout(15000); page.setDefaultNavigationTimeout(60000)
   await page.addInitScript(({ noWebGL }) => {
     localStorage.setItem('enerlution-auth-session-v1', JSON.stringify({ userId: 'user-owner-demo' }))
     if (noWebGL) {

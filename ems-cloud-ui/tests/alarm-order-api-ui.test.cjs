@@ -22,7 +22,7 @@ test('API alarm creates linked work order for current user', async () => {
   })
   try {
     await page.goto(process.env.PREVIEW_URL || 'http://127.0.0.1:8443')
-    await page.getByRole('button', { name: '资产与站点', exact: true }).click()
+    await page.getByRole('button', { name: '电站管理', exact: true }).click()
     await page.getByText('告警站点', { exact: true }).first().click()
     await page.getByRole('button', { name: '告警信息', exact: true }).click()
     await page.getByRole('button', { name: /^查看 / }).first().click()

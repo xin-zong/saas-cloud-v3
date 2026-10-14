@@ -1,4 +1,16 @@
 import type { MenuRow, MenuNode, PermissionSelection, Client } from "./types"
+export function menuAppliesTo(rows:MenuRow[],row:MenuRow,side:'enterprise'|'platform'):boolean{
+  const visited=new Set<number>()
+  let current:MenuRow|undefined=row
+  while(current&&!visited.has(current.id)){
+    visited.add(current.id)
+    const applicable=current.applicable_side??current.side
+    if(applicable)return applicable==='both'||applicable===side
+    if(current.parent_id==null)return true
+    current=rows.find(r=>r.id===current!.parent_id&&r.client===row.client)
+  }
+  return false
+}
 
 export function menuRoutes(nodes: MenuNode[]): string[] {
   return nodes.flatMap((n) => [

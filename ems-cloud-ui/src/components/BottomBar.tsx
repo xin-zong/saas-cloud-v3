@@ -10,6 +10,7 @@ interface Props {
   onSelectStation: (s: Station) => void
   onViewAll: () => void
   role: UserRole
+  visibleCards?:string[]
 }
 
 export default function BottomBar({
@@ -17,6 +18,7 @@ export default function BottomBar({
   onSelectStation,
   onViewAll,
   role,
+  visibleCards,
 }: Props) {
   const [hoveredAlert, setHoveredAlert] = useState<number | null>(null)
   const globalAlerts = useMemo(() => buildGlobalAlerts(stations), [stations])
@@ -46,6 +48,7 @@ export default function BottomBar({
     >
       <div
         className="flex flex-col justify-center px-6"
+        data-overview-card="异常与告警实时监控" hidden={!!visibleCards&&!visibleCards.includes('异常与告警实时监控')}
         style={{ flex: 1, borderRight: "1px solid #e6eee9", minWidth: 0 }}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -141,7 +144,7 @@ export default function BottomBar({
         </div>
       </div>
 
-      <div className="flex flex-shrink-0 items-center gap-8 px-8">
+      <div className="flex flex-shrink-0 items-center gap-8 px-8" data-overview-card="子系统可用性与出力" hidden={!!visibleCards&&!visibleCards.includes('子系统可用性与出力')}>
         <span style={{ fontSize: 12, fontWeight: 600, color: "#1d2f2a", whiteSpace: "nowrap" }}>
           {subsystemHeading}
         </span>

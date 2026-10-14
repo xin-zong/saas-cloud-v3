@@ -55,6 +55,7 @@ const mono = { fontFamily: "'JetBrains Mono',monospace" } as const
 interface Props {
   stations: Station[]
   role: UserRole
+  visibleCards?:string[]
   onViewStations?: () => void
 }
 
@@ -66,7 +67,7 @@ function EnvironmentalIcon({ kind }: { kind: string }) {
   return <img src={`/figma/overview/map/${kind === "coal" ? "imgFlame" : kind === "tree" ? "imgTrees" : "imgLeaf"}.svg`} alt="" />
 }
 
-export default function LeftPanel({ stations, role, onViewStations }: Props) {
+export default function LeftPanel({ stations, role, onViewStations,visibleCards }: Props) {
   const [tab, setTab] = useState<"today" | "month">("today")
   const statusItems = useMemo(() => buildStatusItems(stations).map(item => ({ ...item, color: ({ online: "#2f875a", fault: "#ef4444", offline: "#94a3b8", building: "#4c6ef5" })[item.status] })), [stations])
   const deviceSummary = useMemo(() => buildDeviceSummary(stations), [stations])
@@ -101,7 +102,7 @@ export default function LeftPanel({ stations, role, onViewStations }: Props) {
 
   return (
     <div className="flex flex-col gap-2.5">
-<div style={card} className="overview-status-card">
+<div style={card} className="overview-status-card" data-overview-card="站点运营概况" hidden={!!visibleCards&&!visibleCards.includes('站点运营概况')}>
 <div className="overview-status-heading"><span style={title}>站点运营概况</span>{onViewStations ? <button aria-label="查看站点列表" onClick={onViewStations}><img src="/figma/overview/map/imgChevronRight.svg" alt="" /></button> : <span style={label}>{roleScope}</span>}</div>
 <div className="overview-status-total"><span style={label}>站点总数</span><strong data-metric="station-total">{stations.length}</strong></div>
 <div className="overview-status-bar">{statusItems.map(item => <span key={item.status} style={{ flex: DEMO_MODE ? item.count : 1, background: DEMO_MODE ? item.color : "#e6eee9" }} />)}</div>
@@ -110,7 +111,7 @@ export default function LeftPanel({ stations, role, onViewStations }: Props) {
 <div className="overview-status-bar"><span style={{ width: DEMO_MODE ? deviceSummary.onlinePct + "%" : "0%", background: "#2f875a" }} /></div>
 </div>
       {role !== "integrator" ? (
-        <div style={card} className="overview-storage-card">
+        <div style={card} className="overview-storage-card" data-overview-card="储能充放趋势" hidden={!!visibleCards&&!visibleCards.includes('储能充放趋势')}>
           <div className="mb-3 flex items-center justify-between">
             <span style={title}>储能充放趋势</span>
             <div className="flex gap-3">
@@ -212,7 +213,7 @@ export default function LeftPanel({ stations, role, onViewStations }: Props) {
 
         </div>
       ) : (
-        <div style={card} data-role-panel="delivery-progress">
+        <div style={card} data-role-panel="delivery-progress" data-overview-card="建站与接入进度" hidden={!!visibleCards&&!visibleCards.includes('建站与接入进度')}>
           <div style={{ ...title, marginBottom: 12 }}>建站与接入进度</div>
           {[
             {
@@ -264,7 +265,7 @@ export default function LeftPanel({ stations, role, onViewStations }: Props) {
       )}
 
       {role === "owner" ? (
-        <div style={card} data-role-panel="environmental-benefits">
+        <div style={card} data-role-panel="environmental-benefits" data-overview-card="社会与环境效益" hidden={!!visibleCards&&!visibleCards.includes('社会与环境效益')}>
           <div style={{ ...title, marginBottom: 12 }}>社会与环境效益</div>
           <div className="grid grid-cols-3 gap-2">
             {environmental.map((item) => (
@@ -302,7 +303,7 @@ export default function LeftPanel({ stations, role, onViewStations }: Props) {
           </div>
         </div>
       ) : role === "operator" ? (
-        <div style={card} data-role-panel="maintenance-duty">
+        <div style={card} data-role-panel="maintenance-duty" data-overview-card="当班处置态势" hidden={!!visibleCards&&!visibleCards.includes('当班处置态势')}>
           <div style={{ ...title, marginBottom: 12 }}>当班处置态势</div>
           <div className="grid grid-cols-3 gap-2">
             {[
@@ -328,7 +329,7 @@ export default function LeftPanel({ stations, role, onViewStations }: Props) {
           </div>
         </div>
       ) : (
-        <div style={card} data-role-panel="device-access">
+        <div style={card} data-role-panel="device-access" data-overview-card="设备接入概况" hidden={!!visibleCards&&!visibleCards.includes('设备接入概况')}>
           <div style={{ ...title, marginBottom: 12 }}>设备接入概况</div>
           <div className="grid grid-cols-3 gap-2">
             {[

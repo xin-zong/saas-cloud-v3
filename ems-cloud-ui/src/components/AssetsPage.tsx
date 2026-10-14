@@ -20,6 +20,7 @@ interface Props {
   canEditStation?: (id: string) => boolean
   showRevenue?: boolean
   registerLeaveGuard?: RegisterLeaveGuard
+  onEditorStateChange?:(open:boolean)=>void
 }
 const number = (value: number, suffix = "") =>
   Number.isFinite(value) ? String(value) + suffix : "—"
@@ -31,11 +32,13 @@ export default function AssetsPage({
   canEditStation = () => canEdit,
   showRevenue = true,
   registerLeaveGuard,
+  onEditorStateChange,
 }: Props) {
   const { user } = useAuth()
   const [tab, setTab] = useState("列表查询")
   const [search, setSearch] = useState("")
   const [region, setRegion] = useState("")
+  const [advanced,setAdvanced]=useState(false),[rule,setRule]=useState(''),[status,setStatus]=useState(''),[minimumSoc,setMinimumSoc]=useState(''),[maximumSoc,setMaximumSoc]=useState('')
   const [page, setPage] = useState(1)
   const [size, setSize] = useState(18)
   const [stars, setStars] = useState<Record<string, boolean>>(() => {
@@ -58,6 +61,7 @@ export default function AssetsPage({
   const [menu, setMenu] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<Station | null>(null)
   const [deleteName, setDeleteName] = useState("")
+  useEffect(()=>{onEditorStateChange?.(!!editing||!!provision);return()=>onEditorStateChange?.(false)},[editing,provision,onEditorStateChange])
   useEffect(() => {
     if (!notice) return
     const t = setTimeout(() => setNotice(""), 3000)
@@ -65,7 +69,7 @@ export default function AssetsPage({
   }, [notice])
   useEffect(() => {
     setPage(1)
-  }, [search, region, tab, size])
+  }, [search, region, tab, size,rule,status,minimumSoc,maximumSoc])
   useEffect(() => {
     if (editing && (!stations.some(s => s.id === editing.id) || (!viewOnly && !canEditStation(editing.id)))) setEditing(null)
     if (provision && provision !== 'new' && !stations.some(s => s.id === provision.id)) setProvision(null)
@@ -130,6 +134,8 @@ export default function AssetsPage({
     (s) =>
       (tab !== "收藏站点" || stars[s.id]) &&
       (!region || s.region === region) &&
+      (!rule||(rule==='fault'&&s.alerts.length>0)||(rule==='low_soc'&&Number.isFinite(s.soc)&&s.soc<30)||(rule==='building'&&s.status==='building'))&&
+      (!status||s.status===status)&&(!minimumSoc||(Number.isFinite(s.soc)&&s.soc>=Number(minimumSoc)))&&(!maximumSoc||(Number.isFinite(s.soc)&&s.soc<=Number(maximumSoc)))&&
       (!query ||
         [s.name, s.code, s.region, s.project].some((v) =>
           v.toLowerCase().includes(query),
@@ -192,7 +198,9 @@ export default function AssetsPage({
                 ),
               )}
             </select>
+            <Button aria-expanded={advanced} onClick={()=>setAdvanced(!advanced)}>高级筛选</Button>
           </div>
+          {advanced&&<section className="station-advanced-filter"><label>高级筛选规则<select aria-label="高级筛选规则" value={rule} onChange={e=>setRule(e.target.value)}><option value="">全部电站</option><option value="fault">告警中的电站</option><option value="low_soc">低电量电站（SOC &lt;30%）</option><option value="building">建设中的电站</option></select></label><label>运行状态<select value={status} onChange={e=>setStatus(e.target.value)}><option value="">全部状态</option>{[['online','在线'],['fault','故障'],['offline','离线'],['building','建设中'],['unknown','未知']].map(([key,name])=><option key={key} value={key}>{name}</option>)}</select></label><label>SOC 下限（%）<input type="number" min="0" max="100" value={minimumSoc} onChange={e=>setMinimumSoc(e.target.value)}/></label><label>SOC 上限（%）<input type="number" min="0" max="100" value={maximumSoc} onChange={e=>setMaximumSoc(e.target.value)}/></label><Button onClick={()=>{setRule('');setStatus('');setMinimumSoc('');setMaximumSoc('')}}>重置</Button><Button onClick={()=>changeTab('智能规则')}>更多组合规则</Button></section>}
           <div
             className={
               "station-list-panel " + (!filtered.length ? "empty" : "")

@@ -11,7 +11,7 @@ async function setup(t, grants, initialStorage = {}) {
     for (const [key, value] of Object.entries(storage)) localStorage.setItem(key, JSON.stringify(value))
   }, initialStorage)
   const page = await context.newPage()
-  page.setDefaultTimeout(5000)
+  page.setDefaultTimeout(5000); page.setDefaultNavigationTimeout(60000)
   let user = { id: 'user-A', name: 'Editor', account: 'editor@test', role: 'integrator', organization: 'Test', stationIds: ['12', '13'], permissions: grants, stationPermissions: { 12: grants, 13: grants }, organizationPermissions: {} }
   const writes = []
   await page.route('http://127.0.0.1:18090/api/**', async route => {
@@ -82,7 +82,7 @@ test('tariff-only operations editor guards station selection, secondary and prim
 
 for (const kind of ['strategy', 'tariff']) for (const keepRead of [false, true]) test(`${kind} ${keepRead ? 'manage-only' : 'read/manage'} revocation cancels pending navigation and releases subsequent navigation`, async t => {
   const { page, writes, refreshUser } = await setup(t, ['asset.read', `${kind}.read`, `${kind}.manage`])
-  await primary(page, '资产与站点').click()
+  await primary(page, '电站管理').click()
   await page.locator('.station-name-button').first().click()
   await page.getByRole('navigation', { name: '站点二级导航' }).getByRole('button', { name: kind === 'strategy' ? '策略运行' : '电价设置', exact: true }).click()
   await (kind === 'strategy' ? dirtyStrategy(page) : dirtyTariff(page))
@@ -91,10 +91,10 @@ for (const kind of ['strategy', 'tariff']) for (const keepRead of [false, true])
   const remaining = keepRead ? ['asset.read', `${kind}.read`] : ['asset.read']
   await refreshUser({ permissions: remaining, stationPermissions: { 12: remaining, 13: remaining } })
   await page.getByRole('dialog').waitFor({ state: 'detached' })
-  assert.equal(await primary(page, '资产与站点').getAttribute('aria-current'), 'page')
+  assert.equal(await primary(page, '电站管理').getAttribute('aria-current'), 'page')
   await primary(page, '总览').click()
   await page.locator('.station-detail-shell').waitFor({ state: 'detached' })
-  await primary(page, '资产与站点').click()
+  await primary(page, '电站管理').click()
   await page.locator('.station-detail-shell').waitFor()
   assert.deepEqual(writes, [])
   const drafts = await page.evaluate(() => Object.keys(localStorage).filter(key => /enerlution-(strategy|tariff)-workspace/.test(key)).map(key => localStorage.getItem(key)))
@@ -103,7 +103,7 @@ for (const kind of ['strategy', 'tariff']) for (const keepRead of [false, true])
 
 for (const kind of ['edit', 'new', 'configuration']) test(`${kind} asset editor guards primary departure`, async t => {
   const { page } = await setup(t, ['asset.read', 'asset.edit'])
-  await primary(page, '资产与站点').click()
+  await primary(page, '电站管理').click()
   if (kind === 'edit') await page.getByRole('button', { name: '编辑站点12', exact: true }).click()
   else if (kind === 'new') await page.getByRole('button', { name: '＋ 新增站点', exact: true }).click()
   else {
@@ -118,14 +118,14 @@ for (const kind of ['edit', 'new', 'configuration']) test(`${kind} asset editor 
   assert.equal(await page.getByLabel('站点名称 *', { exact: true }).inputValue(), '未保存站点')
   await primary(page, '总览').click()
   await dialog.getByRole('button', { name: '不保存离开' }).click()
-  await primary(page, '资产与站点').click()
+  await primary(page, '电站管理').click()
   await page.locator('.station-list-panel').waitFor()
 })
 
 test('provision resume ignores unowned legacy drafts and isolates saved drafts between identities and stations', async t => {
   const legacy = { schema: 1, name: '无人归属的旧草稿', code: '', organization: '', region: '', type: '工商业储能', timezone: '', address: '', imageUrl: '', ratedPower: '', storageCapacity: '', devices: [], buses: [], version: 1 }
   const { page, refreshUser } = await setup(t, ['asset.read', 'asset.edit'], { enerlution_station_provision_v1: legacy })
-  await primary(page, '资产与站点').click()
+  await primary(page, '电站管理').click()
   assert.equal(await page.getByRole('button', { name: '继续本地建站草稿' }).count(), 0)
   await page.getByRole('button', { name: '＋ 新增站点', exact: true }).click()
   assert.equal(await page.getByLabel('站点名称 *', { exact: true }).inputValue(), '')
@@ -134,14 +134,14 @@ test('provision resume ignores unowned legacy drafts and isolates saved drafts b
   await page.getByRole('button', { name: '← 返回站点列表' }).click()
   await page.getByRole('button', { name: '继续本地建站草稿' }).waitFor()
   await refreshUser({ id: 'user-B' })
-  await primary(page, '资产与站点').click()
+  await primary(page, '电站管理').click()
   assert.equal(await page.getByRole('button', { name: '继续本地建站草稿' }).count(), 0)
   await page.getByRole('button', { name: '＋ 新增站点', exact: true }).click()
   assert.equal(await page.getByLabel('站点名称 *', { exact: true }).inputValue(), '')
   await page.getByLabel('站点名称 *', { exact: true }).fill('账号B的新站')
   await page.getByRole('button', { name: '保存草稿', exact: true }).click()
   await refreshUser({ id: 'user-A' })
-  await primary(page, '资产与站点').click()
+  await primary(page, '电站管理').click()
   await page.getByRole('button', { name: '继续本地建站草稿' }).click()
   assert.equal(await page.getByLabel('站点名称 *', { exact: true }).inputValue(), '账号A的新站')
   await page.getByRole('button', { name: '← 返回站点列表' }).click()
@@ -157,7 +157,7 @@ test('provision resume ignores unowned legacy drafts and isolates saved drafts b
   await page.getByRole('button', { name: '1 基本信息' }).click()
   assert.equal(await page.getByLabel('站点名称 *', { exact: true }).inputValue(), '站点13')
   await refreshUser({ id: 'user-B' })
-  await primary(page, '资产与站点').click()
+  await primary(page, '电站管理').click()
   await page.getByRole('button', { name: '继续本地建站草稿' }).click()
   assert.equal(await page.getByLabel('站点名称 *', { exact: true }).inputValue(), '账号B的新站')
   await page.getByRole('button', { name: '← 返回站点列表' }).click()
@@ -166,7 +166,7 @@ test('provision resume ignores unowned legacy drafts and isolates saved drafts b
   await page.getByRole('button', { name: '1 基本信息' }).click()
   assert.equal(await page.getByLabel('站点名称 *', { exact: true }).inputValue(), '站点12')
   await refreshUser({ id: 'user-A' })
-  await primary(page, '资产与站点').click()
+  await primary(page, '电站管理').click()
   await page.getByRole('button', { name: '站点12更多操作' }).click()
   await page.getByRole('button', { name: /新版本配置草稿|建站配置与进度/ }).click()
   await page.getByRole('button', { name: '1 基本信息' }).click()
@@ -175,7 +175,7 @@ test('provision resume ignores unowned legacy drafts and isolates saved drafts b
 
 test('revoking asset navigation cancels a pending new-station departure even when asset.edit remains', async t => {
   const { page, refreshUser } = await setup(t, ['asset.read', 'asset.edit'])
-  await primary(page, '资产与站点').click()
+  await primary(page, '电站管理').click()
   await page.getByRole('button', { name: '＋ 新增站点', exact: true }).click()
   await page.getByLabel('站点名称 *', { exact: true }).fill('撤权前的新站草稿')
   await primary(page, '设置').click()

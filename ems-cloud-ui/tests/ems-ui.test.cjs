@@ -26,14 +26,19 @@ test('all business entries retain Figma layouts without injected EMS diagnostic 
   const nav = page.getByRole('navigation', { name: '一级导航' })
   const dir = path.join(require('node:os').tmpdir(),'enerlution-ems-layout-test')
   await fs.mkdir(dir, { recursive: true })
-  for (const [name, selector] of [['总览','.overview-map'],['运营中心','.operations-page'],['运维中心','.maintenance-page'],['工单与审批','.work-orders-page'],['分析与报告','.api-analytics-page'],['平台管理','.tenant-page'],['设置','.settings-workspace']]) {
-    await nav.getByRole('button', { name, exact: true }).click()
+  for (const [name, selector] of [['总览','.overview-map'],['运营总览','.operations-page'],['运维总览','.maintenance-page'],['工单与审批','.work-orders-page'],['分析与报告','.api-analytics-page'],['企业管理','.tenant-page'],['设置','.settings-workspace']]) {
+    if(['运营总览','运维总览'].includes(name)){
+      await nav.getByRole('button',{name:'电站管理',exact:true}).click()
+      await page.locator('.electric-management-tabs').getByRole('button',{name,exact:true}).click()
+    }else if(name==='设置')await page.getByRole('button',{name,exact:true}).click()
+    else await nav.getByRole('button', { name, exact: true }).click()
     await page.locator(selector).first().waitFor()
     assert.equal(await page.locator('.ems-panel').count(), 0, name)
     assert.equal(await page.getByRole('button', { name: '刷新 EMS', exact: true }).count(), 0)
     await page.screenshot({ path: path.join(dir, name + '.png') })
   }
-  await nav.getByRole('button', { name: '资产与站点', exact: true }).click()
+  await nav.getByRole('button', { name: '电站管理', exact: true }).click()
+  await page.locator('.electric-management-tabs').getByRole('button',{name:'电站列表',exact:true}).click()
   await page.locator('.station-name-button').first().click()
   for (const name of ['站点概览','设备详情']) {
     await page.getByRole('button', { name, exact: true }).click()

@@ -20,7 +20,8 @@ import {
 
 import { menuRoutes } from "./permissionTree"
 
-import { routeLabels, type Row } from "./types"
+import { type Row } from "./types"
+import { usePermissionLabels } from './usePermissionLabels'
 
 import { useTenantQuery, QueryState, date } from "./shared"
 
@@ -30,11 +31,13 @@ const permissionRoutes = [
   "platform.templates",
 ]
 
-export default function TenantAdministration() {
+export default function TenantAdministration({section='all'}:{section?:'all'|'company'|'permissions'}) {
   const { user } = useAuth()
+  const { menuLabel } = usePermissionLabels()
+  const routeName = (path: string) => menuLabel({ id: 0, client: 'web', parent_id: null, route_path: path, name_key: `page.${path}` })
 
   const routes = menuRoutes(user?.menus ?? []).filter(
-    (r) => r.startsWith("company.") || r.startsWith("platform."),
+    (r) => (r.startsWith("company.") || r.startsWith("platform.")) && (section==='all'||(section==='permissions'?permissionRoutes.includes(r):!permissionRoutes.includes(r))),
   )
 
   const [page, setPage] = useState(routes[0] ?? "")
@@ -55,7 +58,7 @@ export default function TenantAdministration() {
           ...["platform.approvals", "platform.companies"].filter((r) =>
             routes.includes(r),
           ),
-          ...(routes.some((r) => permissionRoutes.includes(r))
+          ...(section==='permissions'?routes.filter(r=>permissionRoutes.includes(r)):routes.some((r) => permissionRoutes.includes(r))
             ? ["__permissions"]
             : []),
           ...routes.filter(
@@ -79,11 +82,11 @@ export default function TenantAdministration() {
               )
             }
           >
-            {r === "__permissions" ? "权限管理" : (routeLabels[r] ?? r)}
+            {r === "__permissions" ? "权限管理" : <span translate="no">{routeName(r)}</span>}
           </Button>
         ))}
       </nav>
-      {permissionRoutes.includes(page) && (
+      {section!=='permissions'&&permissionRoutes.includes(page) && (
         <nav className="tenant-tabs tenant-sub-tabs" aria-label="权限管理分类">
           {permissionRoutes
             .filter((r) => routes.includes(r))
@@ -93,7 +96,7 @@ export default function TenantAdministration() {
                 aria-selected={page === r}
                 onClick={() => setPage(r)}
               >
-                {routeLabels[r]}
+                <span translate="no">{routeName(r)}</span>
               </Button>
             ))}
         </nav>

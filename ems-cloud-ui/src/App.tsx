@@ -16,6 +16,7 @@ import "@/styles/stations-figma.css"
 import Header from "@/components/Header"
 import OverviewPage from "@/components/OverviewPage"
 import "@/styles/all-modules-shell.css"
+import '@/styles/platform-alignment.css'
 
 import AssetsPage from "@/components/AssetsPage"
 
@@ -43,6 +44,7 @@ import GlobalAiDrawer from "@/components/GlobalAiDrawer"
 
 import PlatformManagementPage from "@/components/PlatformManagementPage"
 import PublicEntry from '@/tenant/PublicEntry'
+import {menuRoutes} from '@/tenant/permissionTree'
 
 import SystemSettingsPage from "@/components/SystemSettingsPage"
 import SettingsDialog from "@/components/SettingsDialog"
@@ -231,6 +233,8 @@ const navItems = [
   { icon: "bar-chart-2", label: "分析与报告" },
 
   { icon: "settings-2", label: "平台管理" },
+  { icon: "settings-2", label: "企业管理" },
+  { icon: "settings-2", label: "套餐权限管理" },
 
   { icon: "settings", label: "设置" },
 ]
@@ -411,6 +415,14 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
   const [activeDetailId, setActiveDetailId] = useState<string | null>(null)
 
   const [detailSubNav, setDetailSubNav] = useState("站点概览")
+  const [assetEditorOpen,setAssetEditorOpen]=useState(false)
+  const [focusedDevice,setFocusedDevice]=useState<string>()
+  const [electricView,setElectricView]=useState<'stations'|'operations'|'maintenance'>('stations')
+  const availableRoutes=menuRoutes(user.menus??[])
+  const hasOperations=DEMO_MODE||!user.tenant?roleConfig.nav.includes('运营中心'):availableRoutes.includes('operations')
+  const hasMaintenance=DEMO_MODE||!user.tenant?roleConfig.nav.includes('运维中心'):availableRoutes.includes('maintenance')
+  const hasAssets=DEMO_MODE||!user.tenant?roleConfig.nav.includes('资产与站点'):availableRoutes.includes('assets')
+  useEffect(()=>{if(electricView==='operations'&&!hasOperations||electricView==='maintenance'&&!hasMaintenance||electricView==='stations'&&!hasAssets)setElectricView(hasAssets?'stations':hasOperations?'operations':'maintenance')},[hasOperations,hasMaintenance,hasAssets,electricView])
   const rememberedSubNav = useRef<Record<string, string>>({})
 
   const operationalStations = stations.filter(station => canAccessStation(user, station.id))
@@ -423,17 +435,19 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
   const visibleNavItems = useMemo(
     () =>
       navItems.filter((item) =>
-        roleConfig.nav.includes(item.label as NavLabel),
+        item.label!=='设置'&&roleConfig.nav.includes(item.label as NavLabel),
       ),
 
     [roleConfig.nav],
   )
 
-  async function handleOpenStation(id: string, subNav?: string) {
+  async function handleOpenStation(id: string, subNav?: string, deviceId?:string) {
     if (!canAccessStation(user, id) || (!DEMO_MODE && !hasStationPermission(user, id, "asset.read"))) return
     if (!(await requestActiveEditorLeave())) return
 
     setActiveNav("资产与站点")
+    setElectricView('stations')
+    setFocusedDevice(deviceId)
 
     const requestedSubNav = subNav ?? rememberedSubNav.current[id] ?? "站点概览"
     const validSubNav = roleConfig.stationSubNavs.includes(requestedSubNav as never) ? requestedSubNav : "站点概览"
@@ -471,11 +485,11 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
 
   function requestActiveEditorLeave() {
     if (activeNav === "总览") return overviewLeaveGuard.current?.() ?? Promise.resolve(true)
-    if (activeNav === "资产与站点") return activeDetailId ? requestStationLeave() : assetsLeaveGuard.current?.() ?? Promise.resolve(true)
+    if (activeNav === "资产与站点") return activeDetailId ? requestStationLeave() : electricView==='operations'?requestOperationsLeave():electricView==='maintenance'?maintenanceLeaveGuard.current?.()??Promise.resolve(true):assetsLeaveGuard.current?.() ?? Promise.resolve(true)
     if (activeNav === "运营中心") return requestOperationsLeave()
     if (activeNav === "运维中心") return maintenanceLeaveGuard.current?.() ?? Promise.resolve(true)
     if (activeNav === "工单与审批") return workOrdersLeaveGuard.current?.() ?? Promise.resolve(true)
-    if (activeNav === "平台管理") return platformLeaveGuard.current?.() ?? Promise.resolve(true)
+    if (["平台管理","企业管理","套餐权限管理"].includes(activeNav)) return platformLeaveGuard.current?.() ?? Promise.resolve(true)
     if (activeNav === "设置") return settingsLeaveGuard.current?.() ?? Promise.resolve(true)
     return Promise.resolve(true)
   }
@@ -865,8 +879,8 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
 
   return (
     <div className="workspace-shell" data-immersive={immersive} data-nav-collapsed={sidebarCollapsed} data-design-area={activeNav === "资产与站点" ? "stations" : activeNav !== "总览" ? "business" : undefined}>
-      {activeNav !== "总览" && <StationGlobalHeader user={user} onLogout={requestLogout} status={DEMO_MODE ? undefined : apiError || (apiLoading ? "正在加载授权站点…" : `已连接业务服务 · ${stations.length} 个授权站点`)} loading={apiLoading} onRefresh={refreshApi} />}
-      {!immersive && activeNav === "总览" && <Header showImmersive={activeNav === "总览"} immersive={immersive} onToggleImmersive={async () => { if (await requestActiveEditorLeave()) { setActiveNav("总览"); setImmersive(true) } }} user={user} onLogout={requestLogout} />}
+      {activeNav !== "总览" && <StationGlobalHeader user={user} onLogout={requestLogout} onSettings={()=>void(async()=>{if(await requestActiveEditorLeave())setActiveNav("设置")})()} status={DEMO_MODE ? undefined : apiError || (apiLoading ? "正在加载授权站点…" : `已连接业务服务 · ${stations.length} 个授权站点`)} loading={apiLoading} onRefresh={refreshApi} />}
+      {!immersive && activeNav === "总览" && <Header showImmersive={activeNav === "总览"} immersive={immersive} onToggleImmersive={async () => { if (await requestActiveEditorLeave()) { setActiveNav("总览"); setImmersive(true) } }} user={user} onLogout={requestLogout} onSettings={()=>void(async()=>{if(await requestActiveEditorLeave())setActiveNav("设置")})()} />}
       {logoutConfirm && <SettingsDialog title="退出登录？" logout onClose={() => setLogoutConfirm(false)}><p>确认退出当前账户？</p><footer><button onClick={() => setLogoutConfirm(false)}>取消</button><button className="settings-confirm-logout" onClick={() => {void confirmLogout()}}>退出登录</button></footer></SettingsDialog>}
       {!immersive && (
         <Sidebar
@@ -889,6 +903,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
       )}
 
       <div className="workspace-content flex flex-col flex-1 min-w-0 overflow-hidden">
+        {!DEMO_MODE&&activeNav==='资产与站点'&&activeDetailId===null&&!assetEditorOpen&&<nav className="ui-tabs electric-management-tabs" aria-label="电站管理分类">{([['stations','电站列表',hasAssets],['operations','运营总览',hasOperations],['maintenance','运维总览',hasMaintenance]] as const).filter(([, ,allowed])=>allowed).map(([key,name])=><button key={key} aria-current={electricView===key?'page':undefined} onClick={()=>void(async()=>{if(electricView!==key&&await requestActiveEditorLeave())setElectricView(key)})()}>{name}</button>)}</nav>}
         {!DEMO_MODE && activeNav === "总览" && (!immersive || apiError || apiLoading) && (
           <div
             role={apiError ? "alert" : "status"}
@@ -923,6 +938,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
               .filter(Boolean)}
             activeId={activeDetailId}
             initialSubNav={detailSubNav}
+            initialDeviceId={focusedDevice}
             onClose={handleCloseDetailTab}
             onSetActive={(id) => {
               void (async () => {
@@ -940,6 +956,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
             requestLeave={requestStationLeave}
             allowedSubNavs={DEMO_MODE ? roleConfig.stationSubNavs : stationRoleConfig(user, activeDetailId).stationSubNavs}
             role={user.role}
+            onOpenOrders={(stationId,orderId)=>{setWorkOrderFocus({stationId,orderId});setActiveNav('工单与审批')}}
           />
         )}
 
@@ -947,7 +964,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
         <div
           style={{
             display:
-              activeNav === "资产与站点" && activeDetailId === null
+              activeNav === "资产与站点" && activeDetailId === null && (DEMO_MODE||electricView==='stations')
                 ? "flex"
                 : "none",
 
@@ -959,6 +976,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
           }}
         >
           <AssetsPage
+            onEditorStateChange={setAssetEditorOpen}
             registerLeaveGuard={registerAssetsLeaveGuard}
             stations={scopedStations}
             onUpdateStation={handleUpdateStation}
@@ -975,7 +993,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
         </div>
 
         {/* Map area */}
-        {activeNav === "运营中心" && (
+        {(activeNav === "运营中心" || (!DEMO_MODE&&activeNav==='资产与站点'&&activeDetailId===null&&electricView==='operations'&&hasOperations)) && (
           <OperationsCenterPage
             registerLeaveGuard={registerOperationsLeaveGuard}
             requestLeave={requestOperationsLeave}
@@ -984,8 +1002,9 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
             allowedTabs={roleConfig.operationsTabs}
           />
         )}
-        {activeNav === "运维中心" && (
+        {(activeNav === "运维中心" || (!DEMO_MODE&&activeNav==='资产与站点'&&activeDetailId===null&&electricView==='maintenance'&&hasMaintenance)) && (
           <MaintenanceCenterPage
+            onOpenDevice={(stationId,deviceId)=>void handleOpenStation(stationId,'设备详情',deviceId)}
             registerLeaveGuard={registerMaintenanceLeaveGuard}
             onServerChange={refreshApi}
             stations={operationalStations}
@@ -1019,8 +1038,10 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
             role={user.role}
           />
         )}
-        {activeNav === "平台管理" && (
+        {["平台管理","企业管理","套餐权限管理"].includes(activeNav) && (
           <PlatformManagementPage
+            key={activeNav}
+            section={activeNav==='套餐权限管理'?'permissions':activeNav==='企业管理'?'company':'all'}
             stations={operationalStations}
             allowedTabs={roleConfig.platformTabs}
             registerLeaveGuard={registerPlatformLeaveGuard}

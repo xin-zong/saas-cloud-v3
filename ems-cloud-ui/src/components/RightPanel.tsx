@@ -45,9 +45,10 @@ const mono = { fontFamily: "'JetBrains Mono',monospace" } as const
 interface Props {
   stations: Station[]
   role: UserRole
+  visibleCards?:string[]
 }
 
-export default function RightPanel({ stations, role }: Props) {
+export default function RightPanel({ stations, role,visibleCards }: Props) {
   const capacityItems = useMemo(() => buildCapacityItems(stations), [stations])
   const energyData = useMemo(() => buildEnergyMix(stations).map((item, index) => ({ ...item, color: ["#4c6ef5", "#2f875a", "#f59e0b"][index] })), [stations])
   const revenueData = useMemo(() => DEMO_MODE ? buildRevenueSeries(stations) : [], [stations])
@@ -78,7 +79,7 @@ export default function RightPanel({ stations, role }: Props) {
 
   return (
     <div className="flex flex-col gap-2.5">
-      <div style={card}>
+      <div style={card} data-overview-card="在线运行容量" hidden={!!visibleCards&&!visibleCards.includes('在线运行容量')}>
         <div className="mb-3 flex items-center justify-between">
           <span style={title}>
             {role === "integrator" ? "已接入容量" : "在线运行容量"}
@@ -106,7 +107,7 @@ export default function RightPanel({ stations, role }: Props) {
                     {DEMO_MODE ? item.value : "—"}
                   </span>
                   <span style={{ ...mono, fontSize: 9, color: "#76857f" }}>
-                    / {DEMO_MODE ? item.total : item.label === "储能系统" && stations.length ? __locale((stations.reduce((sum, station) => sum + station.storageCapacity, 0) / 1000), 'toLocaleString') : "—"} {item.unit}
+                    / {DEMO_MODE ? item.total : item.label === "储能系统" && stations.length && stations.every(station => Number.isFinite(station.storageCapacity)) ? __locale((stations.reduce((sum, station) => sum + station.storageCapacity, 0) / 1000), 'toLocaleString') : "—"} {item.unit}
                   </span>
                 </div>
               </div>
@@ -142,7 +143,7 @@ export default function RightPanel({ stations, role }: Props) {
         </div>
       </div>
 
-      <div style={card}>
+      <div style={card} data-overview-card="能源供应与构成" hidden={!!visibleCards&&!visibleCards.includes('能源供应与构成')}>
         <div className="mb-3 flex items-center justify-between">
           <span style={title}>
             {role === "integrator" ? "站点能源构成" : "能源供应与构成"}
@@ -220,7 +221,7 @@ export default function RightPanel({ stations, role }: Props) {
       </div>
 
       {role === "owner" ? (
-        <div style={card} data-role-panel="revenue-summary">
+        <div style={card} data-role-panel="revenue-summary" data-overview-card="收益概览" hidden={!!visibleCards&&!visibleCards.includes('收益概览')}>
           <div style={{ ...title, marginBottom: 12 }}>收益概览</div>
 
           <div className="mb-3 grid grid-cols-2 gap-2">
@@ -288,7 +289,7 @@ export default function RightPanel({ stations, role }: Props) {
           </div>
         </div>
       ) : role === "operator" ? (
-        <div style={card} data-role-panel="operation-health">
+        <div style={card} data-role-panel="operation-health" data-overview-card="运行健康" hidden={!!visibleCards&&!visibleCards.includes('运行健康')}>
           <div style={{ ...title, marginBottom: 12 }}>运行健康</div>
           <div className="grid grid-cols-3 gap-2">
             {[
@@ -327,7 +328,7 @@ export default function RightPanel({ stations, role }: Props) {
           </p>
         </div>
       ) : (
-        <div style={card} data-role-panel="delivery-readiness">
+        <div style={card} data-role-panel="delivery-readiness" data-overview-card="交付就绪度" hidden={!!visibleCards&&!visibleCards.includes('交付就绪度')}>
           <div style={{ ...title, marginBottom: 12 }}>交付就绪度</div>
           <div className="mb-2 flex items-end justify-between">
             <div>

@@ -105,7 +105,7 @@ export function EntryTabs({
 }) {
   return (
     <nav className="station-entry-tabs" aria-label="站点查询方式">
-      {["列表查询", "地图查询", "收藏站点", "智能规则"].map((tab) => (
+      {["列表查询", "地图查询", "收藏站点"].map((tab) => (
         <button
           type="button"
           key={tab}

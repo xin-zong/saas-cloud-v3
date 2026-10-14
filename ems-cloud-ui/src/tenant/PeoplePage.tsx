@@ -19,6 +19,7 @@ import {
 } from "./shared"
 
 import MemberGrantsPanel from "./MemberGrantsPanel"
+import { usePermissionLabels } from './usePermissionLabels'
 
 import type { Row, PageRows } from "./types"
 
@@ -46,6 +47,7 @@ export default function PeoplePage({ grantOnly = false }: {
   const roleOptions = useTenantQuery<string[]>(
     grantOnly ? null : "/company/people/role-options",
   )
+  const { labelText } = usePermissionLabels([], [...(roleOptions.data ?? []), ...(people.data?.items ?? []).flatMap(row => (row.roles ?? []).map((r: Row) => r.name))])
 
   const platform = user?.tenant?.kind === "platform"
 
@@ -96,10 +98,10 @@ export default function PeoplePage({ grantOnly = false }: {
             }}
           >
             <option value="">全部角色</option>
-            <option value="administrator">Super Admin · 系统身份</option>
+            <option value="administrator">{labelText('Super Admin')} · 系统身份</option>
             {roleOptions.data?.map((name) => (
               <option key={name} value={name}>
-                {name}
+                {labelText(name)}
               </option>
             ))}
           </select>
@@ -152,11 +154,11 @@ export default function PeoplePage({ grantOnly = false }: {
                 </td>
                 <td>
                   {row.administrator ? (
-                    <Badge>Super Admin · 系统身份</Badge>
+                    <Badge>{labelText('Super Admin')} · 系统身份</Badge>
                   ) : (
                     row.roles?.map((r: Row) => (
                       <div key={r.id}>
-                        {r.name}{" "}
+                        <span translate="no">{labelText(r.name)}</span>{" "}
                         <Badge>
                           {r.source === "template" ? "预制" : "自定义"}
                         </Badge>

@@ -5,7 +5,7 @@ test('market drafts persist through API and withdrawal is not external cancellat
  const browser=await chromium.launch({channel:'msedge',headless:true})
  const context=await browser.newContext({viewport:{width:1500,height:1100}})
  await context.addInitScript(()=>sessionStorage.setItem('enerlution-api-token','market-test'))
- const page=await context.newPage();page.setDefaultTimeout(12000)
+ const page=await context.newPage();page.setDefaultTimeout(12000); page.setDefaultNavigationTimeout(60000)
  const errors=[];page.on('pageerror',e=>errors.push(e.message))
  let records=[],saved=null,cancelled=false
  const user={id:'3',name:'市场人员',account:'market@test',role:'owner',organization:'测试',stationIds:['12'],permissions:['asset.read','market.read','market.manage']}

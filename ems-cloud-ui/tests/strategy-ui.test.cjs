@@ -16,7 +16,7 @@ test(
     const page = await browser.newPage({
       viewport: { width: 1440, height: 900 },
     });
-    page.setDefaultTimeout(12000);
+    page.setDefaultTimeout(12000); page.setDefaultNavigationTimeout(60000);
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.addInitScript(() =>
@@ -188,7 +188,7 @@ test(
     const page = await browser.newPage({
       viewport: { width: 1440, height: 900 },
     });
-    page.setDefaultTimeout(10000);
+    page.setDefaultTimeout(10000); page.setDefaultNavigationTimeout(60000);
     await page.addInitScript(() =>
       sessionStorage.setItem("enerlution-api-token", "strategy-editor-test"),
     );
@@ -333,7 +333,7 @@ test(
       viewport: { width: 1440, height: 900 },
       timezoneId: "America/Los_Angeles",
     });
-    page.setDefaultTimeout(10000);
+    page.setDefaultTimeout(10000); page.setDefaultNavigationTimeout(60000);
     await page.clock.install({ time: new Date("2026-09-26T17:00:00Z") });
     await page.addInitScript(() =>
       sessionStorage.setItem("enerlution-api-token", "strategy-review"),

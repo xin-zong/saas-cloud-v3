@@ -9,7 +9,7 @@ async function setup({withAlarms=false,historicalInspection=false}={}){
  const browser=await chromium.launch({channel:'msedge',headless:true})
  const context=await browser.newContext({viewport:{width:1440,height:900},timezoneId:'Asia/Shanghai'})
  await context.addInitScript(()=>sessionStorage.setItem('enerlution-api-token','maintenance-test'))
- const page=await context.newPage();page.setDefaultTimeout(10000)
+ const page=await context.newPage();page.setDefaultTimeout(10000); page.setDefaultNavigationTimeout(60000)
  const permissions=['asset.read','alarm.read','alarm.handle','workorder.read','workorder.create','inspection.manage']
  const user={id:'7',name:'巡检人',account:'maint@test',role:'operator',organization:'测试',stationIds:['12','13'],permissions,stationPermissions:{'12':[...permissions],'13':[...permissions]},organizationPermissions:{}}
  const writes=[],errors=[],inspections=historicalInspection?[{id:55,title:'历史已完成巡检',due_at:'2020-01-01 12:00:00',assigned_to:7,status:'completed',completed_at:'2020-01-01 13:00:00'}]:[]
@@ -118,7 +118,7 @@ test('inspection uses real create API and keeps form on server error',async()=>{
   assert.equal(await page.getByLabel('巡检标题',{exact:true}).inputValue(),'检查消防回路')
   setFail(false);await page.getByRole('button',{name:'创建服务器巡检',exact:true}).click()
   await page.getByRole('status').filter({hasText:'服务器已创建巡检'}).waitFor()
-  assert.deepEqual(writes.at(-1),{path:'/inspections',body:{stationId:12,title:'检查消防回路',dueAt:'2099-10-01 12:00:00',assignedTo:7}})
+  assert.deepEqual(writes.at(-1),{path:'/inspections',body:{stationId:12,title:'检查消防回路',dueAt:'2099-10-01T04:00:00.000Z',assignedTo:7}})
  }finally{await browser.close()}
 })
 

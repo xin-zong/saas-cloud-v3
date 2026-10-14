@@ -52,10 +52,11 @@ export function apiRoleConfig(user: AuthUser): RoleConfig {
     config.operationsTabs.push("收益结算")
   }
   if (config.operationsTabs.length) {
+    config.stationSubNavs.push('运营管理')
     config.operationsTabs.unshift("运营总览")
     config.nav.push("运营中心")
   }
-  if (config.maintenanceTabs.length) config.nav.push("运维中心")
+  if (config.maintenanceTabs.length) {config.nav.push("运维中心");config.stationSubNavs.push('运维管理')}
   if (has("workorder.read", "workorder.create")) config.workOrderViews.push("工单中心")
   if (has("approval.read", "strategy.manage"))
     config.workOrderViews.push("审批中心")
@@ -72,9 +73,11 @@ export function apiRoleConfig(user: AuthUser): RoleConfig {
   config.nav.push("设置")
   if(user.tenant){
     const routes=menuRoutes(user.menus??[])
-    const labels:Record<string,import('./roles').NavLabel>={overview:'总览',assets:'资产与站点',operations:'运营中心',maintenance:'运维中心',workorders:'工单与审批',analytics:'分析与报告'}
+    const labels:Record<string,import('./roles').NavLabel>={overview:'总览',assets:'资产与站点',workorders:'工单与审批',analytics:'分析与报告'}
     config.nav=Object.entries(labels).filter(([key])=>routes.includes(key)).map(([,label])=>label)
-    if(routes.some(r=>r.startsWith('company.')||r.startsWith('platform.')))config.nav.push('平台管理')
+    if(routes.some(r=>['assets','operations','maintenance'].includes(r))&&!config.nav.includes('资产与站点'))config.nav.push('资产与站点')
+    if(routes.some(r=>(r.startsWith('company.')||r.startsWith('platform.'))&&!['platform.menus','platform.packages','platform.templates'].includes(r)))config.nav.push('企业管理')
+    if(routes.some(r=>['platform.menus','platform.packages','platform.templates'].includes(r)))config.nav.push('套餐权限管理')
     config.nav.push('设置');config.defaultNav=config.nav[0];config.label=user.roleNames?.join('、')||'未分配角色';config.shortLabel=config.label
   }
   return config

@@ -34,3 +34,11 @@ test('an unavailable provider drains the queue and stops repeated external calls
  await Promise.all(['站点通信失败','温控巡检提醒','电池离线提醒','设备升级通知'].map(text=>client.request(text)))
  assert.ok(calls<=2);assert.equal(client.getStatus().pending,0);assert.equal(client.getStatus().failed,4);await client.request('新的接口说明');assert.ok(calls<=2)
 })
+test('English custom labels translate to Chinese with a separate cache and preserve identifiers',async()=>{
+ const {MachineTranslator}=moduleUnderTest(),disk=storage(),calls=[]
+ const client=new MachineTranslator({storage:disk,targetLanguage:'zh-CN',fetcher:async url=>{calls.push(new URL(url));return response('ZXQ0QXZ 设备审阅者')}});client.configure('api:7',true)
+ assert.equal(await client.request('RACK-02 Device Reviewer'),'RACK-02 设备审阅者')
+ assert.equal(calls[0].searchParams.get('langpair'),'en-GB|zh-CN')
+ const english=new MachineTranslator({storage:disk});english.configure('api:7',true);assert.equal(english.read('RACK-02 Device Reviewer'),undefined)
+ const restored=new MachineTranslator({storage:disk,targetLanguage:'zh-CN'});restored.configure('api:7',true);assert.equal(restored.read('RACK-02 Device Reviewer'),'RACK-02 设备审阅者')
+})

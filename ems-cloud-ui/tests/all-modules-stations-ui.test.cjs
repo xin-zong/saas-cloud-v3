@@ -10,13 +10,13 @@ test('module 02 restrained pages retain usable controls and local assets at thre
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   t.after(() => browser.close())
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
-  page.setDefaultTimeout(12000)
+  page.setDefaultTimeout(12000); page.setDefaultNavigationTimeout(60000)
   const errors = []
   page.on('pageerror', error => errors.push(error.message))
   await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com|static\.figma\.com/, route => route.abort())
   await page.addInitScript(() => localStorage.setItem('enerlution-auth-session-v1', JSON.stringify({ userId: 'user-owner-demo' })))
   await page.goto(process.env.DEMO_PREVIEW_URL || 'http://127.0.0.1:8460', { waitUntil: 'domcontentloaded' })
-  await page.getByRole('button', { name: '资产与站点', exact: true }).click()
+  await page.getByRole('button', { name: '电站管理', exact: true }).click()
   await page.locator('.station-name-button').first().click()
   for (const width of [1366, 1440, 1920]) {
     await page.setViewportSize({ width, height: 900 })

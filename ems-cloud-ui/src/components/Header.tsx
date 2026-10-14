@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { LogOut, Maximize, Minimize } from "lucide-react"
 import { Button } from "./ui/Workspace"
 import { ROLE_CONFIG, type AuthUser } from "@/auth/roles"
+import { usePermissionLabels } from '@/tenant/usePermissionLabels'
 
 interface Props {
   immersive: boolean
@@ -12,6 +13,7 @@ interface Props {
   user: AuthUser
   onLogout: () => void
   showImmersive?: boolean
+  onSettings?:()=>void
 }
 export default function Header({
   immersive,
@@ -19,7 +21,10 @@ export default function Header({
   user,
   onLogout,
   showImmersive = true,
+  onSettings,
 }: Props) {
+  const { labelText, language } = usePermissionLabels([], user.roleNames ?? [])
+  const roleLabel = user.tenant ? user.roleNames?.map(name => labelText(name)).join(language === 'English' ? ', ' : '、') || '未分配角色' : ROLE_CONFIG[user.role].shortLabel
   const [time, setTime] = useState(new Date())
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000)
@@ -30,7 +35,8 @@ export default function Header({
       <div className="global-platform-brand"><img src="/figma/overview/map/imgBrandMark.svg" alt="" /><strong>Enerlution</strong><span className="workspace-topbar-context">{DEMO_MODE ? "演示环境" : "测试环境"} · {DEMO_MODE ? "华东集群" : "授权站点数据"}</span></div>
       <div className="workspace-topbar-actions">
         <MachineTranslationStatus />
-        <span className="global-role-label">{(user.tenant?(user.roleNames?.join('、')||'未分配角色'):ROLE_CONFIG[user.role].shortLabel)} · 基础版 V1</span>
+        {onSettings&&<Button iconOnly variant="ghost" aria-label="设置" title="设置" onClick={onSettings}><img src="/figma/overview/navigation/imgIcon6.svg" alt="" width="20" height="20"/></Button>}
+        <span className="global-role-label">{roleLabel} · 基础版 V1</span>
         <span className="workspace-clock">
           系统时间 {__locale(time, 'toLocaleTimeString', "zh-CN", { hour12: false })}
         </span>
@@ -47,7 +53,7 @@ export default function Header({
           <span className="global-user-avatar" data-i18n-initial={user.name}>{user.name.slice(0, 1)}</span>
           <span>
             {user.name}
-            <small>{(user.tenant?(user.roleNames?.join('、')||'未分配角色'):ROLE_CONFIG[user.role].shortLabel)}</small>
+            <small>{roleLabel}</small>
           </span>
         </span>
         <Button

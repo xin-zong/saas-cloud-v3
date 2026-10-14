@@ -23,6 +23,7 @@ export function provisionDraftKey(
 }
 
 export const deviceTypes = [
+  "标准柜", "直流母线", "光伏侧电表", "柴油发电机", "充电桩", "可控负载", "不可控负载",
   "电网",
 
   "光伏",
@@ -49,6 +50,15 @@ export const deviceTypes = [
 export type DeviceType = typeof deviceTypes[number]
 
 export type Device = {
+  cabinetId?: string
+  emsId?: string
+  emuId?: string
+  enabled?: boolean
+  cooling?: boolean
+  coolingModel?: string
+  access?: string
+  subnet?: string
+  manufacturer?: string
   code?: string
 
   model?: string
@@ -99,6 +109,7 @@ export type Device = {
 }
 
 export type ProvisionDraft = {
+  runtime?: import('./runtimeModel').RuntimeParameters
   template?: string
 
   connections?: Connection[]
@@ -137,6 +148,10 @@ export type ProvisionDraft = {
 }
 
 export type CommunicationPort = {
+  baud?: string
+  parity?: string
+  bits?: string
+  subnet?: string
   id: string
 
   interface: string
@@ -177,6 +192,7 @@ export const templates = [
 ] as const
 
 export const deviceLabels: Record<DeviceType, string> = {
+  标准柜: "标准柜", 直流母线: "直流母线", 光伏侧电表: "光伏侧电表", 柴油发电机: "柴油发电机", 充电桩: "充电桩", 可控负载: "可控负载", 不可控负载: "不可控负载",
   电网: "公共电网",
 
   光伏: "光伏逆变器",
@@ -202,6 +218,7 @@ export const deviceLabels: Record<DeviceType, string> = {
 
 export function createDevice(type: DeviceType, count: number): Device {
   const prefix: Record<DeviceType, string> = {
+    标准柜: "CAB", 直流母线: "DC-BUS", 光伏侧电表: "PV-M", 柴油发电机: "DG", 充电桩: "EV", 可控负载: "CL", 不可控负载: "LOAD",
     电网: "GRID",
 
     光伏: "INV",

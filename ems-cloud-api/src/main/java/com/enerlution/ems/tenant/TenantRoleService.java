@@ -50,6 +50,20 @@ public class TenantRoleService {
 
   public List<Map<String, Object>> list() {
     long tenant = own();
+    var actor = s.auth.context();
+    // Request-local snapshot only: Web/App and live menu/package boundaries remain separate.
+    var enabled =
+        actor.kind().equals("enterprise")
+            ? s.db.queryForList(
+                "SELECT DISTINCT permission_code code,client FROM saas_tenant_menu WHERE tenant_id=? AND permission_code IS NOT NULL",
+                tenant)
+            : s.db.queryForList(
+                "SELECT DISTINCT permission_code code,client FROM saas_enabled_menu WHERE side IN ('platform','both') AND permission_code IS NOT NULL");
+    Set<RoleTemplateService.Selection> available = new HashSet<>();
+    for (var permission : enabled)
+      available.add(
+          new RoleTemplateService.Selection(
+              (String) permission.get("code"), (String) permission.get("client")));
     var rows =
         s.db.queryForList(
             "SELECT id,name,description,enabled,(SELECT count(DISTINCT user_id) FROM member_grant WHERE role_id=r.id) member_count FROM app_role r WHERE tenant_id=? ORDER BY id",
@@ -65,13 +79,14 @@ public class TenantRoleService {
           configured.stream()
               .filter(
                   p ->
-                      delegation.inPackage(
-                          tenant, (String) p.get("code"), (String) p.get("client")))
+                      available.contains(
+                          new RoleTemplateService.Selection(
+                              (String) p.get("code"), (String) p.get("client"))))
               .toList();
       row.put("permissions", visible);
       row.put("unavailablePermissionCount", configured.size() - visible.size());
     }
-    if (s.auth.context().kind().equals("enterprise"))
+    if (actor.kind().equals("enterprise"))
       for (var template :
           s.db.queryForList(
               "SELECT DISTINCT r.id,r.name,r.enabled FROM role_template r JOIN permission_package_template pt ON pt.template_id=r.id JOIN permission_package p ON p.id=pt.package_id AND p.enabled JOIN tenant_package tp ON tp.package_id=p.id WHERE tp.tenant_id=? ORDER BY r.id",
@@ -88,8 +103,9 @@ public class TenantRoleService {
                 .stream()
                 .filter(
                     p ->
-                        delegation.inPackage(
-                            tenant, (String) p.get("code"), (String) p.get("client")))
+                        available.contains(
+                            new RoleTemplateService.Selection(
+                                (String) p.get("code"), (String) p.get("client"))))
                 .toList());
         rows.add(template);
       }

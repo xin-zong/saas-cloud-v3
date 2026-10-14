@@ -11,6 +11,7 @@ import { Button, Badge } from "@/components/ui/Workspace"
 import { date, Field, TenantDialog, QueryState, useTenantQuery } from "./shared"
 
 import type { Row } from "./types"
+import { usePermissionLabels } from './usePermissionLabels'
 
 export default function MemberGrantsPanel({
   member,
@@ -30,6 +31,7 @@ export default function MemberGrantsPanel({
 
   const [edit, setEdit] = useState<Row | null>(null),
     [remove, setRemove] = useState<Row | null>(null)
+  const { labelText } = usePermissionLabels([], (grants.data ?? []).map(r => r.role_name))
 
   return (
     <TenantDialog
@@ -74,7 +76,7 @@ export default function MemberGrantsPanel({
           {grants.data?.map((g) => (
             <article className="tenant-card" key={g.id}>
               <h2>
-                {g.role_name}{" "}
+                <span translate="no">{labelText(g.role_name)}</span>{" "}
                 <Badge>{g.source === "template" ? "预制" : "自定义"}</Badge>
               </h2>
               <p>
@@ -131,7 +133,7 @@ export default function MemberGrantsPanel({
           }}
         >
           <p>
-            撤销“{remove.role_name}
+            撤销“{labelText(remove.role_name)}
             ”后，该条授权对应的操作和站点范围立即失效。其他授权仍独立生效。
           </p>
         </TenantDialog>
@@ -162,6 +164,7 @@ function GrantEditor({
   onSaved: () => void
 }) {
   const { timezone } = useDisplayPreferences()
+  const { labelText } = usePermissionLabels([], options.roles.map(r => r.name))
 
   const [fromChanged, setFromChanged] = useState(false),
     [untilChanged, setUntilChanged] = useState(false)
@@ -220,7 +223,7 @@ function GrantEditor({
           <option value="">选择角色</option>
           {options.roles.map((r) => (
             <option key={`${r.source}:${r.id}`} value={`${r.source}:${r.id}`}>
-              {r.name} · {r.source === "template" ? "平台预制" : "自定义"}
+              {labelText(r.name)} · {r.source === "template" ? "平台预制" : "自定义"}
             </option>
           ))}
         </select>

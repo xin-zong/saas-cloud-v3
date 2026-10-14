@@ -5,7 +5,7 @@ function load(name){
  const m={exports:{}};cache.set(name,m.exports)
  const source=fs.readFileSync(path.join(__dirname,'../src',name+'.ts'),'utf8').replaceAll('import.meta.env','{}')
  const code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText
- new Function('require','exports','module',code)(key=>key==='@/preferences/store'?{getPreferences:()=>preferences,subscribePreferences:()=>()=>{}}:key.startsWith('./')?load(path.posix.join(path.posix.dirname(name),key)):require(key),m.exports,m)
+ new Function('require','exports','module',code)(key=>key==='@/preferences/store'?{getPreferences:()=>preferences,subscribePreferences:()=>()=>{}}:key.startsWith('.')?load(path.posix.join(path.posix.dirname(name),key)):require(key),m.exports,m)
  return m.exports
 }
 const {jsx,jsxs}=load('i18n/jsx-runtime')

@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 
 import { ROLE_CONFIG, type AuthUser } from "@/auth/roles"
+import { usePermissionLabels } from '@/tenant/usePermissionLabels'
 
 const icons = {
   grid: LayoutGrid,
@@ -75,6 +76,8 @@ export default function Sidebar({
 
   onLogout,
 }: Props) {
+  const { labelText, language } = usePermissionLabels([], user.roleNames ?? [])
+  const roleLabel = user.tenant ? user.roleNames?.map(name => labelText(name)).join(language === 'English' ? ', ' : '、') || '未分配角色' : ROLE_CONFIG[user.role].shortLabel
   return (
     <aside className="app-sidebar workspace-sidebar">
       <div className="workspace-brand">
@@ -85,6 +88,7 @@ export default function Sidebar({
       </div>
       <nav className="workspace-nav" aria-label="一级导航">
         {navItems.map((item) => {
+          const label=item.label==='资产与站点'&&!DEMO_MODE?'电站管理':item.label
           const Icon = icons[(item.icon as keyof typeof icons)] ?? LayoutGrid
 
           return (
@@ -92,14 +96,14 @@ export default function Sidebar({
               key={item.label}
               type="button"
               className="workspace-nav-item"
-              aria-label={item.label}
-              title={item.label}
+              aria-label={label}
+              title={label}
               aria-current={activeNav === item.label ? "page" : undefined}
               onClick={() => onNavChange(item.label)}
             >
               {<img src={`/figma/overview/navigation/${({ grid: "imgIconNavigationOverview", "map-pin": "imgIcon", activity: "imgIcon1", wrench: "imgIcon2", "file-text": "imgIcon3", "bar-chart-2": "imgIcon4", "settings-2": "imgIcon5", settings: "imgIcon6" } as Record<string, string>)[item.icon] || "imgIconNavigationOverview"}.svg`} alt="" />}
               {!collapsed && (
-                <span className="workspace-nav-label">{item.label}</span>
+                <span className="workspace-nav-label">{label}</span>
               )}
             </button>
           )
@@ -108,7 +112,7 @@ export default function Sidebar({
       <div
         className="workspace-account"
         data-role-account={user.role}
-        title={`${user.name} · ${(user.tenant?(user.roleNames?.join('、')||'未分配角色'):ROLE_CONFIG[user.role].label)}`}
+        title={`${user.name} · ${roleLabel}`}
       >
         <span className="workspace-account-avatar">
           <UserRound size={16} />
@@ -116,7 +120,7 @@ export default function Sidebar({
         {!collapsed && (
           <span className="workspace-account-copy">
             <strong>{user.name}</strong>
-            <small>{(user.tenant?(user.roleNames?.join('、')||'未分配角色'):ROLE_CONFIG[user.role].shortLabel)}</small>
+            <small>{roleLabel}</small>
           </span>
         )}
         <button

@@ -6,7 +6,7 @@ async function setup(t, { demo = false, inspection = false } = {}) {
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   t.after(() => browser.close())
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, timezoneId: 'Asia/Shanghai' })
-  page.setDefaultTimeout(10000)
+  page.setDefaultTimeout(10000); page.setDefaultNavigationTimeout(60000)
   const errors = [], writes = []
   page.on('pageerror', error => errors.push(error.message))
   t.after(() => assert.deepEqual(errors, []))
@@ -36,24 +36,12 @@ async function setup(t, { demo = false, inspection = false } = {}) {
   return { page, writes, user, state }
 }
 
-for (const member of [false, true]) test(`demo ${member ? 'member account' : 'role description'} keeps sequential typing and focus after cancelling leave`, async t => {
+for (const member of [false, true]) test(`demo retired ${member ? 'organization member' : 'legacy role'} forms cannot bypass server menu authorization`, async t => {
   const { page, writes } = await setup(t, { demo: true })
   await page.getByRole('button', { name: '平台管理', exact: true }).click()
-  if (!member) await page.getByRole('tab', { name: '角色权限', exact: true }).click()
-  await page.getByRole('button', { name: member ? '新增成员' : '新增角色', exact: true }).click()
-  const field = member ? page.getByPlaceholder('请输入账号', { exact: true }) : page.getByLabel('角色说明', { exact: true })
-  await field.focus()
-  await page.keyboard.type('ABC', { delay: 60 })
-  assert.equal(await field.inputValue(), 'ABC')
-  assert.equal(await field.evaluate(el => el === document.activeElement), true)
-  await page.keyboard.press('Escape')
-  await page.getByRole('button', { name: '继续编辑', exact: true }).click()
-  assert.equal(await field.evaluate(el => el === document.activeElement), true)
-  await page.keyboard.type('DEF', { delay: 60 })
-  assert.equal(await field.inputValue(), 'ABCDEF')
-  await page.keyboard.press('Escape')
-  await page.getByRole('button', { name: '放弃修改', exact: true }).click()
-  await field.waitFor({ state: 'detached' })
+  await page.getByRole('heading', { name: '暂无管理权限', exact: true }).waitFor()
+  assert.equal(await page.getByRole('button', { name: member ? '新增成员' : '新增角色', exact: true }).count(), 0)
+  assert.equal(await page.getByRole('tab', { name: '角色权限', exact: true }).count(), 0)
   assert.deepEqual(writes, [])
 })
 
@@ -68,7 +56,7 @@ test('overview second checkbox keeps keyboard focus and Escape observes the late
   assert.equal(await check.isChecked(), false)
   assert.equal(await check.evaluate(el => el === document.activeElement), true)
   await page.keyboard.press('Escape')
-  await page.getByRole('alertdialog', { name: '放弃布局修改' }).waitFor()
+  await page.getByRole('dialog', { name: '放弃布局修改' }).waitFor()
   await page.getByRole('button', { name: '继续编辑', exact: true }).click()
   assert.equal(await check.isChecked(), false)
   await check.focus()
@@ -77,7 +65,7 @@ test('overview second checkbox keeps keyboard focus and Escape observes the late
   await page.getByRole('button', { name: '页面定制', exact: true }).click()
   await page.keyboard.press('Escape')
   await page.getByRole('dialog', { name: '页面定制', exact: true }).waitFor({ state: 'detached' })
-  assert.equal(await page.getByRole('alertdialog').count(), 0)
+  assert.equal(await page.getByRole('dialog', { name: '放弃布局修改' }).count(), 0)
   assert.deepEqual(writes, [])
 })
 

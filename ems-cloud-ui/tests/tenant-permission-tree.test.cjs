@@ -14,6 +14,13 @@ const output = ts.transpileModule(
 const mod = { exports: {} }
 new Function("module", "exports", output)(mod, mod.exports)
 const { descendantPermissions, selectionState, menuRoutes } = mod.exports
+test('menu side filtering inherits the root side and includes shared business menus',()=>{
+ const rows=[{id:1,parent_id:null,client:'web',applicable_side:'platform'},{id:2,parent_id:1,client:'web',applicable_side:null},{id:3,parent_id:null,client:'web',applicable_side:'both'},{id:4,parent_id:3,client:'web'}]
+ assert.equal(mod.exports.menuAppliesTo(rows,rows[1],'enterprise'),false)
+ assert.equal(mod.exports.menuAppliesTo(rows,rows[1],'platform'),true)
+ assert.equal(mod.exports.menuAppliesTo(rows,rows[3],'enterprise'),true)
+ assert.equal(mod.exports.menuAppliesTo(rows,rows[3],'platform'),true)
+})
 test("parent selection is client-specific and ignores unavailable nodes", () => {
   const rows = [
     { id: 1, parent_id: null, client: "web" },

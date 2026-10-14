@@ -13,11 +13,13 @@ import {
   date,
 } from "./shared"
 
-import PermissionTree, { menuLabel } from "./PermissionSelector"
+import PermissionTree from "./PermissionSelector"
+import { usePermissionLabels } from "./usePermissionLabels"
+import { permissionNames } from "./permissionLabels"
+import {menuAppliesTo} from './permissionTree'
 
 import {
   companyTypes,
-  routeLabels,
   type Row,
   type MenuRow,
   type PermissionSelection,
@@ -33,6 +35,8 @@ export function PermissionPackagesPage() {
       `/platform/permission-packages?${new URLSearchParams({ query, type })}`,
     ),
     options = useTenantQuery<Row>("/platform/permission-options")
+
+  const { labelText } = usePermissionLabels([], [...(rows.data ?? []).map(r => r.name), ...(options.data?.templates ?? []).map((r: Row) => r.name)])
 
   return (
     <>
@@ -104,7 +108,7 @@ export function PermissionPackagesPage() {
             {rows.data?.map((r) => (
               <tr key={r.id}>
                 <td>
-                  {r.name}
+                  {labelText(r.name)}
                   <small>{r.remarks}</small>
                 </td>
                 <td>
@@ -121,8 +125,8 @@ export function PermissionPackagesPage() {
                   {(r.templateIds ?? [])
                     .map(
                       (id: number) =>
-                        options.data?.templates.find((t: Row) => t.id === id)
-                          ?.name ?? String(id),
+                        labelText(options.data?.templates.find((t: Row) => t.id === id)
+                          ?.name ?? String(id)),
                     )
                     .join("、") || "—"}
                 </td>
@@ -187,6 +191,7 @@ function PackageEditor({
 
   onSaved: () => void
 }) {
+  const { menuLabel, clientLabel, labelText } = usePermissionLabels(options.allMenus ?? options.menus ?? [], (options.templates ?? []).map((t: Row) => t.name))
   const [form, setForm] = useState<Row>({
     ...row,
 
@@ -254,7 +259,7 @@ function PackageEditor({
       {(["web", "app"] as const).map((client) => (
         <CheckList
           key={client}
-          label={`${client.toUpperCase()} 一级菜单 *`}
+          label={`${clientLabel(client)} 一级菜单 *`}
           options={(options.allMenus ?? options.menus ?? [])
 
             .filter(
@@ -298,7 +303,7 @@ function PackageEditor({
             [
               String(t.id),
 
-              `${t.name}${t.enabled ? "" : "（已停用）"}`,
+              `${labelText(t.name)}${t.enabled ? "" : "（已停用）"}`,
             ] as const,
         )}
         value={form.templateIds}
@@ -320,8 +325,9 @@ export function RoleTemplatesPage() {
     [edit, setEdit] = useState<Row | null>(null),
     [status, setStatus] = useState<Row | null>(null)
 
-  const rows = list.data ?? [],
-    role = rows.find((r) => r.id === selected) ?? rows[0]
+  const rows = list.data ?? []
+  const { labelText } = usePermissionLabels([], rows.map(r => r.name))
+  const role = rows.find((r) => r.id === selected) ?? rows[0]
 
   const menus: MenuRow[] = (
     options.data?.allMenus ??
@@ -361,14 +367,14 @@ export function RoleTemplatesPage() {
             />
           </Field>
           {rows
-            .filter((r) => r.name.toLowerCase().includes(query.toLowerCase()))
+            .filter((r) => `${r.name} ${labelText(r.name)}`.toLowerCase().includes(query.toLowerCase()))
             .map((r) => (
               <Button
                 key={r.id}
                 variant={role?.id === r.id ? "primary" : "default"}
                 onClick={() => setSelected(r.id)}
               >
-                {r.name}
+                {labelText(r.name)}
               </Button>
             ))}
           <Button onClick={() => setEdit({ name: "", permissions: [] })}>
@@ -378,7 +384,7 @@ export function RoleTemplatesPage() {
         {role && (
           <section className="tenant-card tenant-spaced-card">
             <PageHeader
-              title={role.name}
+              title={labelText(role.name)}
               description={`修改时间：${date(role.updated_at)}`}
               actions={
                 <>
@@ -496,6 +502,7 @@ function TemplateEditor({
 }
 
 export function MenuManagementPage() {
+  const [side,setSide]=useState<''|'enterprise'|'platform'>('')
   const list = useTenantQuery<MenuRow[]>("/platform/menus"),
     options = useTenantQuery<Row>("/platform/permission-options")
 
@@ -508,6 +515,7 @@ export function MenuManagementPage() {
     [error, setError] = useState("")
 
   const rows = list.data ?? []
+  const { menuLabel, clientLabel } = usePermissionLabels(rows)
   const initialized = useRef(false)
   useEffect(() => {
     if (!list.data || initialized.current) return
@@ -560,7 +568,7 @@ export function MenuManagementPage() {
 
   function branch(parent: number | null, depth = 0): React.ReactNode[] {
     return children(parent)
-      .filter(matches)
+      .filter(r=>(!side||menuAppliesTo(rows,r,side))&&matches(r))
       .flatMap((r, index) => {
         const hasChildren = children(r.id).length > 0,
           open = !!query || !collapsed.has(r.id),
@@ -670,6 +678,7 @@ export function MenuManagementPage() {
         description="定义 EMS 平台菜单与操作权限。按钮只能作为叶子节点，最多四级。"
       />
       <div className="tenant-toolbar">
+        <select aria-label="菜单适用端" value={side} onChange={e=>setSide(e.target.value as ''|'enterprise'|'platform')}><option value="">全部适用端</option><option value="enterprise">企业端</option><option value="platform">平台运维端</option></select>
         <nav className="tenant-tabs" style={{ margin: 0 }}>
           {(["web", "app"] as const).map((c) => (
             <Button
@@ -677,7 +686,7 @@ export function MenuManagementPage() {
               aria-selected={client === c}
               onClick={() => setClient(c)}
             >
-              {c.toUpperCase()}
+              <span translate="no">{clientLabel(c)}</span>
             </Button>
           ))}
         </nav>
@@ -779,6 +788,7 @@ function MenuEditor({
 
   onSaved: () => void
 }) {
+  const { menuLabel, permissionLabel } = usePermissionLabels(menus, (options.permissions ?? []).map((p: Row) => permissionNames[p.code]?.[0] ?? p.name))
   const [form, setForm] = useState({ ...row })
 
   const set = (key: string, v: unknown) => setForm({ ...form, [key]: v })
@@ -886,7 +896,7 @@ function MenuEditor({
               <option value="">选择页面</option>
               {options.routes?.map((r: string) => (
                 <option key={r} value={r}>
-                  {routeLabels[r] ?? r} · {r}
+                  {menuLabel({ id: 0, parent_id: null, client: 'web', route_path: r, name_key: `page.${r}` })}
                 </option>
               ))}
             </select>
@@ -902,7 +912,7 @@ function MenuEditor({
               <option value="">选择权限</option>
               {options.permissions?.map((p: Row) => (
                 <option key={p.code} value={p.code}>
-                  {p.name} · {p.code}
+                  {permissionLabel(p.code, p.name)}
                 </option>
               ))}
             </select>

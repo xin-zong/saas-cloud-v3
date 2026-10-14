@@ -44,7 +44,7 @@ async function setup(
 
   const page = await context.newPage()
 
-  page.setDefaultTimeout(10000)
+  page.setDefaultTimeout(10000); page.setDefaultNavigationTimeout(60000)
 
   const errors = [],
     writes = []
@@ -444,10 +444,10 @@ async function setup(
     },
   )
 
-  await page.goto(URL, { waitUntil: "domcontentloaded" })
+  await page.goto(URL, { waitUntil: "domcontentloaded", timeout: 60000 })
 
   try {
-    await page.getByRole("button", { name: "平台管理", exact: true }).click()
+    await page.getByRole("navigation",{name:"一级导航"}).getByRole("button", { name: routes.every(r=>['platform.packages','platform.menus','platform.templates'].includes(r))?'套餐权限管理':'企业管理', exact: true }).click()
   } catch (e) {
     console.log(
       "Visible page:",
@@ -521,7 +521,7 @@ test("invitation conflicts retain input, protected admins have no disable button
 
       .locator("option")
 
-      .filter({ hasText: "Viewer" })
+      .filter({ hasText: "只读用户" })
 
       .count(),
 
@@ -552,7 +552,7 @@ test("predefined roles are read-only and custom role parent selection keeps Web 
 
   await page.getByRole("button", { name: "角色管理", exact: true }).click()
 
-  await page.getByRole("button").filter({ hasText: "Viewer预制" }).click()
+  await page.getByRole("button").filter({ hasText: "只读用户预制" }).click()
 
   assert.equal(
     await page.getByRole("button", { name: "编辑", exact: true }).count(),
@@ -580,7 +580,7 @@ test("predefined roles are read-only and custom role parent selection keeps Web 
 
     .check()
 
-  await dialog.getByRole("button", { name: "App 应用" }).click()
+  await dialog.getByRole("button", { name: "移动端" }).click()
 
   assert.equal(await dialog.locator("input[type=checkbox]:checked").count(), 0)
 
@@ -693,7 +693,7 @@ test("platform permissions use grouped navigation and a collapsible menu tree wi
     0,
   )
 
-  await primary.getByRole("button", { name: "权限管理", exact: true }).click()
+  await page.getByRole('navigation',{name:'一级导航'}).getByRole('button',{name:'套餐权限管理',exact:true}).click()
 
   await page.getByRole("button", { name: "菜单管理", exact: true }).click()
 

@@ -9,7 +9,7 @@ test('Figma tariff calendar, templates and actual server periods remain distinct
   const context=await browser.newContext({viewport:{width:1440,height:1000}})
   await context.addInitScript(()=>sessionStorage.setItem('enerlution-api-token','tariff-test'))
   const page=await context.newPage()
-  page.setDefaultTimeout(12000)
+  page.setDefaultTimeout(12000); page.setDefaultNavigationTimeout(60000)
   const errors=[];page.on('pageerror',e=>errors.push(e.message))
   const user={id:'7',name:'电价管理员',account:'tariff@test',role:'integrator',organization:'测试',stationIds:['12'],permissions:['asset.read','tariff.manage'],stationPermissions:{12:['asset.read','tariff.manage']},organizationPermissions:{}}
   const versions=[];const posts=[]

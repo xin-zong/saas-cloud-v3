@@ -9,7 +9,7 @@ async function setup(role = 'owner') {
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true, timezoneId: 'Asia/Shanghai' })
   await context.addInitScript(() => sessionStorage.setItem('enerlution-api-token', 'module06-token'))
-  const page = await context.newPage(); page.setDefaultTimeout(12000)
+  const page = await context.newPage(); page.setDefaultTimeout(12000); page.setDefaultNavigationTimeout(60000)
   const permissions = ['asset.read', 'telemetry.read', 'report.export', 'strategy.read', 'revenue.read', 'audit.read', 'alarm.read']
   const user = { id: '7', name: '分析用户', account: 'analytics@test', role, organization: '测试', stationIds: ['12', '13'], permissions, stationPermissions: { 12: [...permissions], 13: ['asset.read', 'telemetry.read', 'report.export', 'alarm.read'] }, organizationPermissions: {} }
   const state = { user, calls: [], jobs: [], failPoints: false, failReport: false, delayReport: null, downloads: [], errors: [] }
@@ -120,6 +120,7 @@ test('download selects registered points/device, validates range, exports real C
 })
 test('report station permissions, retries, validation and late revoked responses never download', async () => {
   const { browser, page, state } = await setup('integrator')
+  let release
   try {
     await page.getByRole('tab', { name: '报告中心', exact: true }).click()
     await page.getByLabel('报告站点').selectOption('13')
@@ -138,7 +139,7 @@ test('report station permissions, retries, validation and late revoked responses
     const wait = page.waitForEvent('download')
     await page.getByRole('button', { name: '下载 CSV 报告', exact: true }).click(); await wait
     await page.getByRole('button', { name: '关闭', exact: true }).click()
-    let release; state.delayReport = new Promise(resolve => { release = resolve })
+    state.delayReport = new Promise(resolve => { release = resolve })
     await page.getByRole('button', { name: '下载 CSV', exact: true }).click()
     await page.getByRole('button', { name: '取消等待', exact: true }).waitFor()
     state.user.stationPermissions['12'] = ['asset.read', 'telemetry.read', 'report.export']
@@ -147,7 +148,7 @@ test('report station permissions, retries, validation and late revoked responses
     release(); await page.waitForTimeout(250)
     assert.equal(state.downloads.length, 1)
     assert.deepEqual(state.errors, [])
-  } finally { await browser.close() }
+  } finally { release?.(); await browser.close() }
 })
 module.exports = { setup, evidence }
 

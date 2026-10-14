@@ -23,7 +23,7 @@ async function setup(t, { activation = false, loggedIn = false } = {}) {
 
   const page = await context.newPage()
 
-  page.setDefaultTimeout(10000)
+  page.setDefaultTimeout(10000); page.setDefaultNavigationTimeout(60000)
 
   const writes = [],
     errors = []

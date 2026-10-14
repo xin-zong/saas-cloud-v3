@@ -1064,6 +1064,7 @@ export default function MaintenanceCenterPage({
 
   role = "operator",
   registerLeaveGuard,
+  onOpenDevice,
 }: {
   stations: Station[]
 
@@ -1086,6 +1087,7 @@ export default function MaintenanceCenterPage({
   allowedTabs?: readonly Tab[]
 
   role?: UserRole
+  onOpenDevice?:(stationId:string,deviceId:string)=>void
   registerLeaveGuard?: RegisterLeaveGuard
 }) {
   const { user } = useAuth()
@@ -1691,7 +1693,7 @@ export default function MaintenanceCenterPage({
             : "责任站点运维范围"}
         </p>
       )}
-      {toolsOpen&&!ordersOnly ? <div className="maintenance-content"><MaintenanceWorkbench stations={eligible} registerLeaveGuard={registerToolGuard} onServerChange={onServerChange} onOpenOrders={onOpenOrders} onHealthDevice={(stationId,deviceId)=>{setToolsOpen(false);setTab("设备健康");setSelectedHealthDeviceId(`${stationId}-${deviceId}`)}}/></div> : <div className="maintenance-content">
+      {toolsOpen&&!ordersOnly ? <div className="maintenance-content"><MaintenanceWorkbench stations={eligible} registerLeaveGuard={registerToolGuard} onServerChange={onServerChange} onOpenOrders={onOpenOrders} onHealthDevice={(stationId,deviceId)=>{setToolsOpen(false);setTab("设备健康");onOpenDevice?onOpenDevice(stationId,deviceId):setSelectedHealthDeviceId(`${stationId}-${deviceId}`)}}/></div> : <div className="maintenance-content">
         {(ordersOnly || tab === "运维总览") && (
           <section className="maintenance-toolbar" aria-label="运维筛选">
             <label>
@@ -2457,7 +2459,7 @@ export default function MaintenanceCenterPage({
                         <button
                           className="operations-link"
                           onClick={() =>
-                            onOpenStation(row.station.id, "告警信息")
+                            onOpenStation(row.station.id, "运维管理")
                           }
                         >
                           {row.station.name}

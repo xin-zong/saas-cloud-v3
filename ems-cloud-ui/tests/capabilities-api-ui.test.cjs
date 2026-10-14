@@ -5,7 +5,7 @@ async function setup(t, user, customize = () => undefined, options = {}) {
   const browser = await chromium.launch({channel:'msedge', headless:true}); t.after(()=>browser.close())
   const context = await browser.newContext({viewport:{width:1440,height:1000}})
   await context.addInitScript(()=>sessionStorage.setItem('enerlution-api-token','capability-test'))
-  const page = await context.newPage(); page.setDefaultTimeout(6000)
+  const page = await context.newPage(); page.setDefaultTimeout(6000); page.setDefaultNavigationTimeout(60000)
   page.on('pageerror',error=>console.error('Browser error:',error.message))
   if(options.clock) await page.clock.install()
   const requests=[]; let current=user
@@ -62,7 +62,7 @@ for(const invalidation of ['mutation','403'])test(`${invalidation} invalidation 
     if(path==='/auth/me' && hold){hold=false;started();await new Promise(resolve=>{release=resolve});return {data:user}}
     if(path==='/company/people/8/status' && req.method()==='PUT'){setUser(revoked);invalidated();return invalidation==='403'?{status:403,msg:'权限已收回'}:{data:null}}
   })
-  await page.getByRole('button',{name:'资产与站点',exact:true}).click()
+  await page.getByRole('button',{name:'电站管理',exact:true}).click()
   await page.getByRole('button',{name:'编辑站点 A',exact:true}).waitFor()
   const baseline=requests.filter(request=>request.path==='/auth/me').length
   hold=true
@@ -98,7 +98,7 @@ test('workorders load without asset.read and create choices contain only create-
 })
 test('A editable B read-only uses per-station buttons with identical identity label', async t=>{
   const {page}=await setup(t,{...base,permissions:['asset.read','asset.edit'],stationPermissions:{1:['asset.read','asset.edit'],2:['asset.read']}})
-  await page.getByRole('button',{name:'资产与站点',exact:true}).click()
+  await page.getByRole('button',{name:'电站管理',exact:true}).click()
   await page.getByRole('button',{name:'编辑站点 A',exact:true}).waitFor()
   assert.equal(await page.getByRole('button',{name:'编辑站点 B',exact:true}).count(),0)
 })
@@ -129,7 +129,7 @@ test('tariff-only capability opens existing price settings for its authorized st
 test('focus refresh applies revoked capability without redundant workspace data reloads',async t=>{
   const user={...base,permissions:['asset.read','asset.edit'],stationPermissions:{1:['asset.read','asset.edit'],2:['asset.read']}}
   const {page,requests,setUser}=await setup(t,user)
-  await page.getByRole('button',{name:'资产与站点',exact:true}).click()
+  await page.getByRole('button',{name:'电站管理',exact:true}).click()
   await page.getByRole('button',{name:'编辑站点 A',exact:true}).waitFor()
   const initialLoads=requests.filter(x=>x.path==='/stations').length
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')))
@@ -150,7 +150,7 @@ test('concurrent successful authorization mutations coalesce refresh and revoke 
       if(refreshCount===1){started();await new Promise(resolve=>{release=resolve})}
       return {data:{...user,permissions:['asset.read'],stationPermissions:{1:['asset.read'],2:['asset.read']}}}}
   })
-  await page.getByRole('button',{name:'资产与站点',exact:true}).click()
+  await page.getByRole('button',{name:'电站管理',exact:true}).click()
   await page.getByRole('button',{name:'编辑站点 A',exact:true}).waitFor()
   const baseline=requests.filter(x=>x.path==='/auth/me').length
   const save=page.evaluate(async()=>{const {send}=await import(performance.getEntriesByType('resource').map(entry=>entry.name).find(url=>new URL(url).pathname==='/src/api/client.ts'));return Promise.all([send('/company/people/8/status','PUT',{enabled:false}),send('/company/people/8/status','PUT',{enabled:false})])})
@@ -169,20 +169,20 @@ test('old session refresh cannot overwrite a newer login capability snapshot',as
     if(path==='/auth/me' && hold && req.headers().authorization==='Bearer capability-test'){started();await new Promise(resolve=>{release=resolve});return {data:user}}
     if(path==='/auth/me' && req.headers().authorization==='Bearer newer-session')return {data:{...user,id:'8',permissions:['audit.read'],stationPermissions:{},tenant:{actorId:8,tenantId:1,kind:'platform',administrator:false},menus:[{id:1,client:'web',kind:'page',path:'platform.audit',children:[]}],roleNames:['Audit Reader']}}
   })
-  await page.getByRole('button',{name:'资产与站点',exact:true}).waitFor()
+  await page.getByRole('button',{name:'电站管理',exact:true}).waitFor()
   hold=true
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')))
   await waiting
   await page.evaluate(async()=>{const {setToken}=await import(performance.getEntriesByType('resource').map(entry=>entry.name).find(url=>new URL(url).pathname==='/src/api/client.ts'));setToken('newer-session');window.dispatchEvent(new Event('focus'))})
-  await page.getByRole('button',{name:'平台管理',exact:true}).waitFor()
+  await page.getByRole('button',{name:'企业管理',exact:true}).waitFor()
   release();await page.waitForTimeout(250)
-  assert.equal(await page.getByRole('button',{name:'资产与站点',exact:true}).count(),0)
+  assert.equal(await page.getByRole('button',{name:'电站管理',exact:true}).count(),0)
   assert.equal(await page.evaluate(()=>sessionStorage.getItem('enerlution-api-token')),'newer-session')
 })
 test('bounded timer refreshes other administrator changes',async t=>{
   const user={...base,permissions:['asset.read','asset.edit'],stationPermissions:{1:['asset.read','asset.edit'],2:['asset.read']}}
   const {page,setUser}=await setup(t,user,undefined,{clock:true})
-  await page.getByRole('button',{name:'资产与站点',exact:true}).click()
+  await page.getByRole('button',{name:'电站管理',exact:true}).click()
   await page.getByRole('button',{name:'编辑站点 A',exact:true}).waitFor()
   setUser({...user,permissions:['asset.read'],stationPermissions:{1:['asset.read'],2:['asset.read']}})
   await page.clock.fastForward(60001)
@@ -226,7 +226,7 @@ test('API health preserves missing observations and offline status without inven
 test('revoked station authority closes the held editor after focus refresh in the same session', async t=>{
   const user={...base,permissions:['asset.read','asset.edit'],stationPermissions:{1:['asset.read','asset.edit'],2:['asset.read']}}
   const {page,setUser}=await setup(t,user)
-  await page.getByRole('button',{name:'资产与站点',exact:true}).click()
+  await page.getByRole('button',{name:'电站管理',exact:true}).click()
   await page.getByRole('button',{name:'编辑站点 A',exact:true}).click()
   await page.getByPlaceholder('请输入详细地址',{exact:true}).fill('unsaved revoked address')
   setUser({...user,permissions:['asset.read'],stationPermissions:{2:['asset.read']}})

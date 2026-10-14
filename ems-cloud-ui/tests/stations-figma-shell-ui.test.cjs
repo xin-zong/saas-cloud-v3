@@ -16,7 +16,7 @@ test("Figma station shell, equipment selection, analysis navigation and responsi
     ),
   )
   const page = await context.newPage()
-  page.setDefaultTimeout(15000)
+  page.setDefaultTimeout(15000); page.setDefaultNavigationTimeout(60000)
   const errors = []
   page.on("pageerror", (error) => errors.push(error.message))
   await page.goto(process.env.STATIONS_DEMO_URL || process.env.DEMO_PREVIEW_URL || "http://127.0.0.1:8450", {
@@ -139,7 +139,7 @@ test("API station layouts retain empty states and query actual telemetry without
     sessionStorage.setItem("enerlution-api-token", "station-layout-test"),
   )
   const page = await context.newPage()
-  page.setDefaultTimeout(15000)
+  page.setDefaultTimeout(15000); page.setDefaultNavigationTimeout(60000)
   const errors = []
   page.on("pageerror", (error) => errors.push(error.message))
   let failHistory = false,

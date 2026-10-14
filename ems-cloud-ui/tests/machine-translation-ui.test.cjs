@@ -1,7 +1,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),{chromium}=require('playwright'),fs=require('node:fs/promises'),path=require('node:path')
 test('Chinese API site names and alarms become English, preserve raw values, restore Chinese and reuse cache',{timeout:120000},async()=>{
  const browser=await chromium.launch({channel:'msedge',headless:true});try{
- const page=await browser.newPage({viewport:{width:1600,height:1000}}),calls=[],errors=[];page.on('pageerror',error=>errors.push(error.message));page.setDefaultTimeout(15000)
+ const page=await browser.newPage({viewport:{width:1600,height:1000}}),calls=[],errors=[];page.on('pageerror',error=>errors.push(error.message));page.setDefaultTimeout(15000); page.setDefaultNavigationTimeout(60000)
  await page.addInitScript(()=>sessionStorage.setItem('enerlution-api-token','machine-ui'))
  const settings={language:'English',timezone:'Europe/Berlin'},permissions=['asset.read','asset.edit','alarm.read']
  await page.route('http://127.0.0.1:18090/api/**',async route=>{

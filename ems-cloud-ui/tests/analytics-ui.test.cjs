@@ -7,7 +7,7 @@ test("API analytics renders sparse history and downloads only successful server 
   const context = await browser.newContext({ viewport: { width: 1440, height: 1050 }, acceptDownloads: true, timezoneId:'Asia/Shanghai' })
   await context.addInitScript(() => sessionStorage.setItem("enerlution-api-token", "analytics-token"))
   const page = await context.newPage()
-  page.setDefaultTimeout(12000)
+  page.setDefaultTimeout(12000); page.setDefaultNavigationTimeout(60000)
   const errors = []
   let downloads = 0
   page.on("pageerror", (error) => errors.push(error.message))

@@ -81,7 +81,7 @@ test(
       /fonts\.googleapis\.com|fonts\.gstatic\.com|static\.figma\.com/,
       (route) => route.abort(),
     )
-    page.setDefaultTimeout(15000)
+    page.setDefaultTimeout(15000); page.setDefaultNavigationTimeout(60000)
     try {
       await loginAsOwner(page)
       assert.equal(

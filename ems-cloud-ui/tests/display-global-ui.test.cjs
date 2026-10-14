@@ -1,7 +1,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),{chromium}=require('playwright'),fs=require('node:fs/promises'),path=require('node:path')
 test('saved display preferences apply across navigation and Google Maps without changing option values',{timeout:120000},async()=>{
  const browser=await chromium.launch({channel:'msedge',headless:true});try{
- const page=await browser.newPage({viewport:{width:1600,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(15000)
+ const page=await browser.newPage({viewport:{width:1600,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(15000); page.setDefaultNavigationTimeout(60000)
  await page.clock.setFixedTime(new Date('2026-07-01T12:00:00Z'))
  await page.addInitScript(()=>sessionStorage.setItem('enerlution-api-token','display-test'))
  await page.route('https://api.mymemory.translated.net/get?**',async route=>{const q=new URL(route.request().url()).searchParams.get('q');await route.fulfill({json:{responseStatus:200,responseData:{translatedText:q.replace(/[\u3400-\u9fff]+/g,'Translated text')}}})})

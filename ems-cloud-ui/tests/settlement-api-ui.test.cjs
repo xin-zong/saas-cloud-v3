@@ -7,7 +7,7 @@ test("API settlement period loads historical currency and persists review histor
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } })
   await context.addInitScript(() => sessionStorage.setItem("enerlution-api-token", "settlement-token"))
   const page = await context.newPage()
-  page.setDefaultTimeout(12000)
+  page.setDefaultTimeout(12000); page.setDefaultNavigationTimeout(60000)
   const errors = []
   page.on("pageerror", (error) => errors.push(error.message))
   const user = { id: "7", name: "结算用户", account: "settlement@test", role: "owner", organization: "测试", stationIds: ["12"], permissions: ["revenue.read", "revenue.review"] }

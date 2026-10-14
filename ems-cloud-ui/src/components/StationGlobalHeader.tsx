@@ -11,12 +11,14 @@ export default function StationGlobalHeader({
   status,
   loading,
   onRefresh,
+  onSettings,
 }: {
   user: AuthUser
   onLogout: () => void
   status?: string
   loading: boolean
   onRefresh: () => void
+  onSettings?:()=>void
 }) {
   const [now, setNow] = useState(() => new Date())
   const [menu, setMenu] = useState(false)
@@ -38,6 +40,7 @@ export default function StationGlobalHeader({
       </a>
       <div className="station-global-tools">
         <MachineTranslationStatus />
+        {onSettings&&<button aria-label="设置" title="设置" onClick={onSettings}><img src="/figma/overview/navigation/imgIcon6.svg" alt="" width="20" height="20"/></button>}
         <time dateTime={now.toISOString()}>{__locale(now, 'toLocaleString', "sv-SE")}</time>
         <div className="station-header-popover">
           <button

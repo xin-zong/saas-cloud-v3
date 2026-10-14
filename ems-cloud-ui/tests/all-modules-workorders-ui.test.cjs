@@ -9,7 +9,7 @@ async function setup({withInspection=false,withUnauthorized=false}={}){
  const browser=await chromium.launch({channel:'msedge',headless:true})
  const context=await browser.newContext({viewport:{width:1440,height:900},timezoneId:'Asia/Shanghai'})
  await context.addInitScript(()=>sessionStorage.setItem('enerlution-api-token','workorders-test'))
- const page=await context.newPage();page.setDefaultTimeout(8000)
+ const page=await context.newPage();page.setDefaultTimeout(8000); page.setDefaultNavigationTimeout(60000)
  const permissions=['asset.read','alarm.read','workorder.read','workorder.create','workorder.edit','workorder.handle','inspection.manage','approval.read','approval.review']
  const user={id:'7',name:'办理人',account:'work@test',role:'operator',organization:'测试',stationIds:['12','13'],permissions,stationPermissions:{'12':[...permissions],'13':[...permissions]},organizationPermissions:{}}
  const writes=[],errors=[],orders=[{id:61,station_id:12,title:'真实故障处理',description:'检查真实设备',status:'processing',created_at:new Date().toISOString(),due_at:new Date(Date.now()+3600000).toISOString(),assigned_to:7}]

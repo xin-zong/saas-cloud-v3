@@ -31,7 +31,7 @@ async function openPage(browser, viewport = { width: 1440, height: 1000 }) {
     timezoneId: "Asia/Shanghai",
   })
   const page = await context.newPage()
-  page.setDefaultTimeout(15000)
+  page.setDefaultTimeout(15000); page.setDefaultNavigationTimeout(60000)
   await page.route(
     /fonts\.googleapis\.com|fonts\.gstatic\.com|static\.figma\.com/,
     (route) => route.abort(),

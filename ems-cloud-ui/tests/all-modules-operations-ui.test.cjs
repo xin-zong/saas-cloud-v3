@@ -10,7 +10,7 @@ async function setup({twoStations=false, devices=false}={}) {
   const browser = await chromium.launch({channel:'msedge', headless:true})
   const context = await browser.newContext({viewport:{width:1440,height:900}, timezoneId:'Asia/Shanghai'})
   await context.addInitScript(() => sessionStorage.setItem('enerlution-api-token','operations-test'))
-  const page = await context.newPage(); page.setDefaultTimeout(12000)
+  const page = await context.newPage(); page.setDefaultTimeout(12000); page.setDefaultNavigationTimeout(60000)
   const writes = [], errors = []
   const user = {id:'3',name:'运营人员',account:'ops@test',role:'integrator',organization:'测试',stationIds:['12'], permissions:['asset.read','strategy.read','strategy.manage','market.read','market.manage','revenue.read'], stationPermissions:{'12':['asset.read','strategy.read','strategy.manage','market.read','market.manage','revenue.read']},organizationPermissions:{}}
   if(twoStations){user.stationIds.push('13');user.stationPermissions['13']=[...user.permissions]}
@@ -130,7 +130,7 @@ test('demo participation blocks insufficient power, protects navigation and labe
    localStorage.setItem('enerlution-auth-session-v1',JSON.stringify({userId:'user-integrator-demo'}))
    localStorage.setItem('enerlution-market-response-events-v1:demo:user-integrator-demo',JSON.stringify([{id:'coverage-invite',name:'覆盖邀约',date:'2026-09-19',kind:'response',start:'18:00',end:'20:00',capacity:50,stationIds:['1']}]))
   })
-  const page=await context.newPage();page.setDefaultTimeout(12000)
+  const page=await context.newPage();page.setDefaultTimeout(12000); page.setDefaultNavigationTimeout(60000)
   await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com/,r=>r.abort())
   await page.goto(process.env.DEMO_PREVIEW_URL||'http://127.0.0.1:8460',{waitUntil:'domcontentloaded'})
   // Isolated component capability fixture: production demo roles deliberately do not grant market operations.

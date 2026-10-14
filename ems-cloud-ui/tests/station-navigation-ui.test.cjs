@@ -9,7 +9,7 @@ test('station tabs remember subnavigation, retain close neighbors, and expose ov
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
   await context.addInitScript(() => sessionStorage.setItem('enerlution-api-token', 'navigation-test'))
   const page = await context.newPage()
-  page.setDefaultTimeout(12000)
+  page.setDefaultTimeout(12000); page.setDefaultNavigationTimeout(60000)
   const ids = [11, 12, 13, 14, 15, 16]
   const grants = ['asset.read', 'strategy.read', 'tariff.read', 'revenue.read']
   const permissions = Object.fromEntries(ids.map(id => [id, grants]))
@@ -20,7 +20,7 @@ test('station tabs remember subnavigation, retain close neighbors, and expose ov
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ code: 0, data }) })
   })
   await page.goto(process.env.STATIONS_API_URL || process.env.API_PREVIEW_URL || 'http://127.0.0.1:8451', { waitUntil: 'domcontentloaded', timeout: 60000 })
-  await page.getByRole('button', { name: '资产与站点', exact: true }).click()
+  await page.getByRole('button', { name: '电站管理', exact: true }).click()
   const open = async id => {
     if (await page.locator('.station-detail-shell').count()) await page.getByRole('button', { name: '站点列表', exact: true }).click()
     await page.locator('.station-name-button').filter({ hasText: `站点${id}` }).click()

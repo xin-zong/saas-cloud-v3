@@ -2,23 +2,13 @@ import { useEffect, useRef, useState } from "react"
 
 import type { MenuRow, PermissionSelection, Client } from "./types"
 
-import { routeLabels } from "./types"
+import { usePermissionLabels } from './usePermissionLabels'
+export { menuLabel } from './permissionLabels'
 
 import { descendantPermissions, selectionState } from "./permissionTree"
 
 import { Button } from "@/components/ui/Workspace"
 
-export function menuLabel(row: MenuRow) {
-  return (
-    row.name ??
-    (row.name_key && !/^(nav|page|action)\./.test(row.name_key) ? row.name_key : undefined) ??
-    routeLabels[row.route_path] ??
-    routeLabels[String(row.name_key ?? "").replace(/^(nav|page)\./, "")] ??
-    row.permission_name ??
-    row.permission_code ??
-    row.name_key
-  )
-}
 
 export default function PermissionTree({
   rows,
@@ -38,6 +28,7 @@ export default function PermissionTree({
   readonly?: boolean
 }) {
   const [client, setClient] = useState<Client>("web")
+  const { menuLabel, clientLabel } = usePermissionLabels(rows)
 
   function node(row: MenuRow) {
     const desired = descendantPermissions(rows, row.id, client),
@@ -64,7 +55,7 @@ export default function PermissionTree({
             disabled={readonly || !desired.length || row.configurable === false}
             onChange={set}
           />
-          <span>{menuLabel(row)}</span>
+          <span translate="no">{menuLabel(row)}</span>
           {row.configurable === false && (
             <small className="tenant-muted">超出可委派范围</small>
           )}
@@ -85,7 +76,7 @@ export default function PermissionTree({
             aria-selected={client === c}
             onClick={() => setClient(c)}
           >
-            {c === "web" ? "Web 网页" : "App 应用"}
+            <span translate="no">{clientLabel(c)}</span>
           </Button>
         ))}
       </nav>

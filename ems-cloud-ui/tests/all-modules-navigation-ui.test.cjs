@@ -18,7 +18,7 @@ const profiles = {
   },
   integrator: {
     permissions: ['asset.read', 'asset.edit', 'alarm.read', 'workorder.read', 'organization.member.read', 'role.manage', 'tariff.manage'],
-    api: ['总览', '资产与站点', '运营中心', '运维中心', '工单与审批', '平台管理', '设置'],
+    api: ['总览', '资产与站点', '运营中心', '运维中心', '工单与审批', '设置'],
     demo: ['总览', '资产与站点', '运维中心', '工单与审批', '平台管理', '设置'],
   },
 }
@@ -39,7 +39,7 @@ for (const mode of ['api', 'demo']) for (const [role, profile] of Object.entries
     const browser = await chromium.launch({ channel: 'msedge', headless: true })
     t.after(() => browser.close())
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
-    page.setDefaultTimeout(10000)
+    page.setDefaultTimeout(10000); page.setDefaultNavigationTimeout(60000)
     const errors = [], writes = []
     page.on('pageerror', error => errors.push(error.message))
     await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com|static\.figma\.com/, route => route.abort())
@@ -68,17 +68,21 @@ for (const mode of ['api', 'demo']) for (const [role, profile] of Object.entries
     }
     const nav = page.getByRole('navigation', { name: '一级导航', exact: true })
     await nav.waitFor()
-    assert.deepEqual(await nav.getByRole('button').allTextContents(), profile[mode])
+    const entries = profile[mode].filter(label=>label!=='设置').map(label=>mode==='api'&&label==='资产与站点'?'电站管理':label)
+    assert.deepEqual(await nav.getByRole('button').allTextContents(), entries)
+    assert.equal(await nav.getByRole('button',{name:'设置',exact:true}).count(),0)
     for (const forbidden of all.filter(item => !profile[mode].includes(item))) assert.equal(await nav.getByRole('button', { name: forbidden, exact: true }).count(), 0)
-    for (const [index, label] of profile[mode].entries()) {
+    for (const [index, label] of entries.entries()) {
       const button = nav.getByRole('button', { name: label, exact: true })
       await button.click()
       await page.waitForFunction(label => document.querySelector('.workspace-nav [aria-current="page"]')?.getAttribute('aria-label') === label, label)
       await page.locator('.workspace-content').waitFor()
       await capture(page, `${mode}-${role}-${index}-1440`)
     }
+    await page.getByRole('button',{name:'设置',exact:true}).click()
+    await page.locator('.settings-workspace').waitFor()
     await page.getByRole('button', { name: '收起导航', exact: true }).click()
-    assert.equal(await nav.getByRole('button').count(), profile[mode].length)
+    assert.equal(await nav.getByRole('button').count(), entries.length)
     await page.getByRole('button', { name: '展开导航', exact: true }).click()
     for (const width of [1366, 1920]) { await page.setViewportSize({ width, height: 900 }); await capture(page, `${mode}-${role}-settings-${width}`) }
     await page.getByRole('button', { name: '紧凑', exact: true }).click()

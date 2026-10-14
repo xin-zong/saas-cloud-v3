@@ -1,11 +1,15 @@
 import { english } from './en'
 import { shellEnglish } from './shell-en'
 import { businessEnglish } from './business-en'
-const dictionary={...businessEnglish,...english,...shellEnglish}
+import { knownName } from '../tenant/permissionLabels'
+import { tenantEnglish } from './tenant-en'
+const dictionary={...businessEnglish,...english,...shellEnglish,...tenantEnglish}
 export function translate(text:string,language:string):string {
   if(language!=='English')return text
   const match=text.match(/^(\s*)(.*?)(\s*)$/s);if(!match)return text
   const [,before,body,after]=match
+  const domainName=knownName(body,language)
+  if(domainName)return before+domainName+after
   if(dictionary[body])return before+dictionary[body]+after
   // Common action labels carry an ID, count, or decorative prefix.
   const prefix=body.match(/^(＋ |← |→ |⚠ )(.+)$/)

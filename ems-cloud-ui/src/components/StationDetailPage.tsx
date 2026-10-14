@@ -3,6 +3,9 @@ import type { Station } from "@/App"
 import { DEMO_MODE } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
 import { hasStationPermission } from "@/auth/apiPermissions"
+import {stationRoleConfig} from '@/auth/apiPermissions'
+import OperationsCenterPage from './OperationsCenterPage'
+import MaintenanceCenterPage from './MaintenanceCenterPage'
 import type { StationSubNav, UserRole } from "@/auth/roles"
 import StationOverviewPage from "./StationOverviewPage"
 import StationRevenuePage from "./StationRevenuePage"
@@ -15,6 +18,7 @@ import StationPriceSettingsPage from "./StationPriceSettingsPage"
 
 const SUB_NAVS: readonly StationSubNav[] = [
   "站点概览",
+  "运维管理",
   "运营收益",
   "运行策略",
   "告警信息",
@@ -37,11 +41,13 @@ interface Props {
   onBack: () => void
   onRefresh?: () => void
   initialSubNav?: string
+  initialDeviceId?:string
   allowedSubNavs?: readonly StationSubNav[]
   role?: UserRole
   onSubNavChange?: (stationId: string, subNav: string) => void
   registerLeaveGuard?: (guard: null | (() => Promise<boolean>)) => void
   requestLeave?: () => Promise<boolean>
+  onOpenOrders?:(stationId:string,orderId?:string)=>void
 }
 function Placeholder({ nav }: { nav: string }) {
   return <div className="ui-page">{nav}暂无数据</div>
@@ -59,16 +65,19 @@ export default function StationDetailPage({
   onSubNavChange,
   registerLeaveGuard,
   requestLeave,
+  onOpenOrders,
+  initialDeviceId,
 }: Props) {
   const { user } = useAuth()
   const station = tabs.find((item) => item.id === activeId)
-  const normalizedInitialSubNav =
+  const normalizedInitialSubNav = initialSubNav==='运营管理'?'站点概览':
     initialSubNav === "数据分析" ? "运行曲线" : initialSubNav
   const visibleSubNavs = SUB_NAVS.filter((item) =>
     allowedSubNavs.includes(item),
   )
   const allowedKey = visibleSubNavs.join("|")
   const [deviceId, setDeviceId] = useState<string>()
+  const [overviewMode,setOverviewMode]=useState<'live'|'operations'>(initialSubNav==='运营管理'?'operations':'live')
   const [subNav, setSubNav] = useState<string>(
     visibleSubNavs.includes(normalizedInitialSubNav as StationSubNav)
       ? normalizedInitialSubNav
@@ -92,7 +101,8 @@ export default function StationDetailPage({
         : (allowedKey.split("|")[0] ?? ""),
     )
   }, [activeId, normalizedInitialSubNav, allowedKey])
-  useEffect(() => { setDeviceId(undefined) }, [activeId])
+  useEffect(() => { setDeviceId(initialDeviceId);setOverviewMode(initialSubNav==='运营管理'?'operations':'live') }, [activeId,initialDeviceId,initialSubNav])
+  useEffect(()=>{if(!allowedSubNavs.includes('运营管理'))setOverviewMode('live')},[allowedSubNavs.join('|')])
   if (!station) return null
   const visibleTabs = tabs.length <= 5 ? tabs : tabs.slice(0, 4).concat(tabs.find(tab => tab.id === activeId && !tabs.slice(0, 4).some(item => item.id === tab.id)) ?? tabs[4])
   const overflowTabs = tabs.filter(tab => !visibleTabs.some(item => item.id === tab.id))
@@ -149,7 +159,10 @@ export default function StationDetailPage({
       </nav>
 
       {/* ── Content ── */}
-      {subNav === "站点概览" && (
+      {subNav==='站点概览'&&allowedSubNavs.includes('运营管理')&&<nav className="station-overview-classification" aria-label="站点概览分类"><button aria-pressed={overviewMode==='live'} onClick={()=>void(async()=>{if(overviewMode!=='live'&&requestLeave&&!(await requestLeave()))return;setOverviewMode('live')})()}>运行概览</button><button aria-pressed={overviewMode==='operations'} onClick={()=>setOverviewMode('operations')}>运营总览</button></nav>}
+      {subNav==='站点概览'&&overviewMode==='operations'&&allowedSubNavs.includes('运营管理')&&<OperationsCenterPage stations={[station]} allowedTabs={user?stationRoleConfig(user,station.id).operationsTabs:[]} registerLeaveGuard={registerLeaveGuard} requestLeave={requestLeave} onOpenStation={(_id,next)=>selectSubNav(next??'站点概览')}/>}
+      {subNav==='运维管理'&&<MaintenanceCenterPage stations={[station]} allowedTabs={user?stationRoleConfig(user,station.id).maintenanceTabs:[]} registerLeaveGuard={registerLeaveGuard} onServerChange={onRefresh} onOpenOrders={onOpenOrders} onOpenStation={(_id,next)=>selectSubNav(next??'站点概览')} onOpenDevice={(_stationId,id)=>{setDeviceId(id);selectSubNav('设备详情')}}/>}
+      {subNav === "站点概览" && overviewMode==='live' && (
         <StationOverviewPage
           key={station.id}
           station={station}
@@ -201,6 +214,7 @@ export default function StationDetailPage({
         />
       )}
       {subNav !== "站点概览" &&
+        subNav !== "运营管理" && subNav !== "运维管理" &&
         subNav !== "运营收益" &&
         subNav !== "运行策略" &&
         subNav !== "告警信息" &&

@@ -7,6 +7,7 @@ import { Button, PageHeader, Badge } from "@/components/ui/Workspace"
 import { Field, QueryState, TenantDialog, useTenantQuery } from "./shared"
 
 import PermissionTree from "./PermissionSelector"
+import { usePermissionLabels } from './usePermissionLabels'
 
 import type { Row, MenuRow, PermissionSelection } from "./types"
 
@@ -21,6 +22,7 @@ export default function TenantRolesPage() {
     [remove, setRemove] = useState<Row | null>(null)
 
   const rows = roles.data ?? []
+  const { labelText } = usePermissionLabels([], rows.map(r => r.name))
 
   useEffect(() => {
     if (!rows.some((r) => `${r.source}:${r.id}` === selected))
@@ -66,14 +68,14 @@ export default function TenantRolesPage() {
             />
           </Field>
           {rows
-            .filter((r) => r.name.toLowerCase().includes(query.toLowerCase()))
+            .filter((r) => `${r.name} ${labelText(r.name)}`.toLowerCase().includes(query.toLowerCase()))
             .map((r) => (
               <Button
                 key={`${r.source}:${r.id}`}
                 variant={role === r ? "primary" : "default"}
                 onClick={() => setSelected(`${r.source}:${r.id}`)}
               >
-                {r.name}
+                {labelText(r.name)}
                 <Badge>
                   {r.source === "system"
                     ? "系统身份"
@@ -87,7 +89,7 @@ export default function TenantRolesPage() {
         {role && (
           <section className="tenant-card tenant-spaced-card">
             <PageHeader
-              title={role.name}
+              title={labelText(role.name)}
               description={
                 role.source === "system"
                   ? "受保护管理员自动覆盖本企业全部站点，不能通过普通角色授权修改。"
@@ -158,7 +160,7 @@ export default function TenantRolesPage() {
           }}
         >
           <p>
-            角色“{status.name}”被 {status.member_count ?? 0}{" "}
+            角色“{labelText(status.name)}”被 {status.member_count ?? 0}{" "}
             个员工引用。变更后权限立即重新计算。
           </p>
         </TenantDialog>
@@ -173,7 +175,7 @@ export default function TenantRolesPage() {
             reload()
           }}
         >
-          <p>确认删除“{remove.name}”？仍被员工引用的角色不可删除。</p>
+          <p>确认删除“{labelText(remove.name)}”？仍被员工引用的角色不可删除。</p>
         </TenantDialog>
       )}
     </>

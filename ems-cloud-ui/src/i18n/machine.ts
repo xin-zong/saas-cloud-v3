@@ -8,8 +8,8 @@ const MAX_BYTES = 480
 const CACHE_LIMIT = 2000
 const CACHE_AGE = 30 * 86400000
 
-function eligible(text: string) {
-  if (!containsChinese(text) || text.length > 12000) return false
+function eligible(text: string, targetChinese = false) {
+  if (!(targetChinese ? /[A-Za-z]/.test(text) : containsChinese(text)) || text.length > 12000) return false
   if (/(?:password|token|secret|authorization|密码|口令)\s*[:=]\s*\S+/i.test(text)) return false
   try { const value = JSON.parse(text); if (value && typeof value === 'object') return false } catch { /* Human-readable text. */ }
   return true
@@ -58,17 +58,19 @@ export class MachineTranslator {
   private fetcher: Fetcher
   private storage?: StorageLike
   private endpoint: string
+  private targetChinese: boolean
 
-  constructor(options: { fetcher?: Fetcher; storage?: StorageLike; endpoint?: string } = {}) {
+  constructor(options: { fetcher?: Fetcher; storage?: StorageLike; endpoint?: string; targetLanguage?: 'zh-CN' | 'en-GB' } = {}) {
     this.fetcher = options.fetcher ?? ((url, init) => fetch(url, init))
     this.storage = options.storage
     this.endpoint = options.endpoint ?? 'https://api.mymemory.translated.net/get'
+    this.targetChinese = options.targetLanguage === 'zh-CN'
   }
   getRevision = () => this.revision
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
   getStatus = () => ({ pending: this.pending.size, failed: this.failed.size, enabled: this.enabled })
   private emit() { this.revision++; this.listeners.forEach(listener => listener()) }
-  private storageKey() { return `enerlution:machine-translations:v1:${this.scope}` }
+  private storageKey() { return `enerlution:machine-translations:v1:${this.scope}${this.targetChinese ? ':zh-CN' : ''}` }
 
   configure(scope: string, enabled: boolean) {
     if (this.scope === scope && this.enabled === enabled) return
@@ -81,7 +83,7 @@ export class MachineTranslator {
       try {
         const entries: unknown = JSON.parse(this.storage?.getItem(this.storageKey()) ?? '[]')
         if (Array.isArray(entries)) for (const entry of entries.slice(-CACHE_LIMIT)) {
-          if (Array.isArray(entry) && typeof entry[0] === 'string' && typeof entry[1]?.text === 'string' && !containsChinese(entry[1].text) && Number.isFinite(entry[1].savedAt) && Date.now() - entry[1].savedAt < CACHE_AGE) this.cache.set(entry[0], entry[1])
+          if (Array.isArray(entry) && typeof entry[0] === 'string' && typeof entry[1]?.text === 'string' && (this.targetChinese ? containsChinese(entry[1].text) : !containsChinese(entry[1].text)) && Number.isFinite(entry[1].savedAt) && Date.now() - entry[1].savedAt < CACHE_AGE) this.cache.set(entry[0], entry[1])
         }
       } catch { /* Optional local cache cannot prevent rendering. */ }
     }
@@ -95,7 +97,7 @@ export class MachineTranslator {
   }
   request(text: string): Promise<string | undefined> {
     const source = text.trim()
-    if (!this.enabled || !eligible(source)) return Promise.resolve(undefined)
+    if (!this.enabled || !eligible(source, this.targetChinese)) return Promise.resolve(undefined)
     const cached = this.read(source)
     if (cached) return Promise.resolve(cached)
     if (this.failed.has(source)) return Promise.resolve(undefined)
@@ -129,9 +131,9 @@ export class MachineTranslator {
       const { tokens, chunks } = protect(job.text)
       const translations: string[] = []
       for (const chunk of chunks) {
-        if (!containsChinese(chunk)) { translations.push(chunk); continue }
+        if (!(this.targetChinese ? /[A-Za-z]/.test(chunk.replace(/ZXQ\d+QXZ/g, '')) : containsChinese(chunk))) { translations.push(chunk); continue }
         const url = new URL(this.endpoint, typeof location === 'undefined' ? 'http://localhost' : location.origin)
-        url.searchParams.set('q', chunk); url.searchParams.set('langpair', 'zh-CN|en-GB'); url.searchParams.set('mt', '1')
+        url.searchParams.set('q', chunk); url.searchParams.set('langpair', this.targetChinese ? 'en-GB|zh-CN' : 'zh-CN|en-GB'); url.searchParams.set('mt', '1')
         let response: Awaited<ReturnType<Fetcher>>
         try { response = await this.fetcher(url.toString(), { signal: controller.signal, credentials: 'omit', referrerPolicy: 'no-referrer' }) }
         catch (error) { serviceUnavailable = true; throw error }
@@ -139,7 +141,7 @@ export class MachineTranslator {
         const body = await response.json()
         const translated = body?.responseData?.translatedText
         if (Number(body?.responseStatus) !== 200 || /MYMEMORY WARNING|DAILY.*LIMIT/i.test(String(translated))) { serviceUnavailable = true; throw new Error('Translation service unavailable') }
-        if (typeof translated !== 'string' || !translated.trim() || containsChinese(translated)) throw new Error('Translation not available')
+        if (typeof translated !== 'string' || !translated.trim() || (this.targetChinese ? !containsChinese(translated) : containsChinese(translated))) throw new Error('Translation not available')
         translations.push(decodeEntities(translated.trim()))
       }
       let text = translations.join(' ')
@@ -172,3 +174,4 @@ export class MachineTranslator {
 let browserStorage: StorageLike | undefined
 try { if (typeof localStorage !== 'undefined') browserStorage = localStorage } catch { /* Storage may be disabled. */ }
 export const machineTranslator = new MachineTranslator({ storage: browserStorage, endpoint: import.meta.env.VITE_TRANSLATION_ENDPOINT || undefined })
+export const chineseLabelTranslator = new MachineTranslator({ storage: browserStorage, endpoint: import.meta.env.VITE_TRANSLATION_ENDPOINT || undefined, targetLanguage: 'zh-CN' })
