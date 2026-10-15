@@ -1,6 +1,6 @@
 # 权限重构执行与验收记录
 
-工作区 `codex/saas-tenant-permissions`。按用户要求，本地验收通过后才部署云端；当前没有推送 main、替换云端程序或切换正式数据库。
+实施工作区 `codex/saas-tenant-permissions`。用户确认本地效果后，已于 2026-10-15 合并并推送 main，更新云端 18085，并将 API/采集服务切换到新库 `ems_cloud_saas_v3`。原业务库和 ClickHouse 历史保留。发布版本、核对结果及未接通边界见 [云端发布记录](superpowers/verification/2026-10-15-cloud-saas-release.md)。
 
 ## 实施结果
 
