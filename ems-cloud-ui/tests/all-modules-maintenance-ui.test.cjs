@@ -37,8 +37,10 @@ async function setup({withAlarms=false,historicalInspection=false}={}){
  return {browser,page,user,writes,errors,setFail:v=>failCreate=v,setFailNotes:v=>failNotes=v}
 }
 async function tools(page,name){await page.getByRole('button',{name:'运维工具',exact:true}).click();await page.getByRole('button',{name,exact:true}).click()}
+// Retained for restoration: these draft-only screens are intentionally unavailable to all roles.
+const hiddenToolsTest=(name,fn)=>test(name,{skip:'运维工具暂时隐藏；现行入口和巡检闭环由 maintenance-entry-consolidation-ui.test.cjs 覆盖'},fn)
 
-test('maintenance retains every composed workbench and unknown analytical data at three widths',async()=>{
+test('maintenance retains primary tabs and hides unfinished tools at three widths',async()=>{
  const {browser,page,writes,errors}=await setup()
  try{
   await fs.mkdir(artifacts,{recursive:true})
@@ -52,29 +54,13 @@ test('maintenance retains every composed workbench and unknown analytical data a
     await page.screenshot({path:path.join(artifacts,`${tab}-${width}.png`)})
    }
   }
-  await tools(page,'巡检管理')
-  await page.getByRole('columnheader',{name:'检查项进度',exact:true}).waitFor()
-  for(const width of [1366,1440,1920]){
-   await page.setViewportSize({width,height:900})
-   for(const [name,heading] of [['巡检管理','本月巡检完成率'],['备件管理','快速出入库申请'],['维修工单','平均响应时间'],['远程诊断','诊断记录'],['维护计划','未来 7 天待执行任务'],['健康分析','场站设备类型健康热力分布']]){
-    await page.getByRole('button',{name,exact:true}).click();await page.getByText(heading,{exact:true}).waitFor()
-    await page.locator('main').evaluate(el=>el.scrollTo(0,0))
-    assert.ok(await page.locator('main').evaluate(el=>el.scrollWidth<=el.clientWidth+1))
-    await page.screenshot({path:path.join(artifacts,`${name}-${width}.png`)})
-   }
-  }
-  assert.match(await page.locator('.maintenance-workbench').innerText(),/评分.*未接通/)
-  await page.getByRole('button',{name:'远程诊断',exact:true}).click()
-  const asset=page.locator('img[src="/figma/maintenance/search.svg"]')
-  await asset.evaluate(el=>el.decode())
-  const geometry=await asset.evaluate(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,naturalWidth:el.naturalWidth,naturalHeight:el.naturalHeight}))
-  assert.equal(geometry.width,geometry.naturalWidth);assert.equal(geometry.height,geometry.naturalHeight)
-  await fs.writeFile(path.join(artifacts,'asset-geometry.json'),JSON.stringify(geometry,null,2))
+  assert.equal(await page.getByRole('button',{name:'运维工具',exact:true}).count(),0)
+  assert.equal(await page.locator('.maintenance-workbench').count(),0)
   assert.deepEqual(writes,[]);assert.deepEqual(errors,[])
  }finally{await browser.close()}
 })
 
-test('spare request validates, protects outer navigation, isolates drafts and reports storage failure',async()=>{
+hiddenToolsTest('spare request validates, protects outer navigation, isolates drafts and reports storage failure',async()=>{
  const {browser,page,writes,user}=await setup()
  try{
   await tools(page,'备件管理')
@@ -107,7 +93,7 @@ test('spare request validates, protects outer navigation, isolates drafts and re
  }finally{await browser.close()}
 })
 
-test('inspection uses real create API and keeps form on server error',async()=>{
+hiddenToolsTest('inspection uses real create API and keeps form on server error',async()=>{
  const {browser,page,writes,setFail}=await setup()
  try{
   await tools(page,'巡检管理');await page.getByRole('button',{name:'创建巡检任务',exact:true}).click()
@@ -149,7 +135,7 @@ test('firmware reads registered devices and validates a real local file without 
  }finally{await browser.close()}
 })
 
-test('inspection edit is explicitly a local amendment and never creates a duplicate server task',async()=>{
+hiddenToolsTest('inspection edit is explicitly a local amendment and never creates a duplicate server task',async()=>{
  const {browser,page,writes}=await setup()
  try{
   await tools(page,'巡检管理');await page.getByRole('button',{name:'创建巡检任务',exact:true}).click()
@@ -168,7 +154,7 @@ test('inspection edit is explicitly a local amendment and never creates a duplic
  }finally{await browser.close()}
 })
 
-test('remote diagnostics validates bounds and maintenance calendar preserves an isolated local plan',async()=>{
+hiddenToolsTest('remote diagnostics validates bounds and maintenance calendar preserves an isolated local plan',async()=>{
  const {browser,page,writes}=await setup()
  try{
   await tools(page,'远程诊断');await page.getByRole('button',{name:'真实 PCS A PCS-A',exact:true}).click()
@@ -212,7 +198,7 @@ test('alarm workbench retains real acknowledgment and notes with honest diagnosi
 })
 
 
-test('review discard resets all shared forms and new inspection does not inherit an edit',async()=>{
+hiddenToolsTest('review discard resets all shared forms and new inspection does not inherit an edit',async()=>{
  const {browser,page}=await setup({historicalInspection:true})
  try{
   await tools(page,'维护计划')
@@ -236,7 +222,7 @@ test('review discard resets all shared forms and new inspection does not inherit
  }finally{await browser.close()}
 })
 
-test('review completed inspection supplement preserves historical due date without creating a schedule',async()=>{
+hiddenToolsTest('review completed inspection supplement preserves historical due date without creating a schedule',async()=>{
  const {browser,page,writes}=await setup({historicalInspection:true})
  try{
   await tools(page,'巡检管理')

@@ -404,6 +404,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
     stationId: string
 
     orderId?: string
+    queue?: "inspections"
   } | null>(null)
 
   const [immersive, setImmersive] = useState(false)
@@ -956,7 +957,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
             requestLeave={requestStationLeave}
             allowedSubNavs={DEMO_MODE ? roleConfig.stationSubNavs : stationRoleConfig(user, activeDetailId).stationSubNavs}
             role={user.role}
-            onOpenOrders={(stationId,orderId)=>{setWorkOrderFocus({stationId,orderId});setActiveNav('工单与审批')}}
+            onOpenOrders={(stationId,orderId,queue)=>{setWorkOrderFocus({stationId,orderId,queue});setActiveNav('工单与审批')}}
           />
         )}
 
@@ -1011,8 +1012,8 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
             onOpenStation={handleOpenStation}
             allowedTabs={roleConfig.maintenanceTabs}
             role={user.role}
-            onOpenOrders={(stationId, orderId) => {
-              setWorkOrderFocus({ stationId, orderId })
+            onOpenOrders={(stationId, orderId, queue) => {
+              setWorkOrderFocus({ stationId, orderId, queue })
 
               setActiveNav("工单与审批")
             }}

@@ -163,7 +163,6 @@ test("role-scoped centers: responsive layouts, tabs and role-specific actions", 
         "告警事件",
         "设备健康",
         "固件升级",
-        "运维工具",
       ])
       await screenshotWidths(page, "operator", "maintenance", 6)
       await maintenanceTabs
@@ -222,7 +221,6 @@ test("role-scoped centers: responsive layouts, tabs and role-specific actions", 
         "告警事件",
         "设备健康",
         "固件升级",
-        "运维工具",
       ])
       await screenshotWidths(page, "integrator", "delivery", 6)
       await maintenanceTabs

@@ -47,7 +47,7 @@ interface Props {
   onSubNavChange?: (stationId: string, subNav: string) => void
   registerLeaveGuard?: (guard: null | (() => Promise<boolean>)) => void
   requestLeave?: () => Promise<boolean>
-  onOpenOrders?:(stationId:string,orderId?:string)=>void
+  onOpenOrders?:(stationId:string,orderId?:string,queue?:"inspections")=>void
 }
 function Placeholder({ nav }: { nav: string }) {
   return <div className="ui-page">{nav}暂无数据</div>

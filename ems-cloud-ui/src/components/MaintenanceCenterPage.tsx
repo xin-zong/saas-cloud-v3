@@ -62,7 +62,6 @@ import "./operations-center.css"
 import "./maintenance-center.css"
 
 import { PageHeader } from "./ui/Workspace"
-import MaintenanceWorkbench from "./maintenance/MaintenanceWorkbench"
 import MaintenanceFirmware from "./maintenance/MaintenanceFirmware"
 import type { RegisterLeaveGuard } from "./useEditorLeaveGuard"
 
@@ -1072,7 +1071,7 @@ export default function MaintenanceCenterPage({
 
   onOpenStation: (id: string, subNav?: string) => void
 
-  onOpenOrders?: (stationId: string, orderId?: string) => void
+  onOpenOrders?: (stationId: string, orderId?: string, queue?: "inspections") => void
 
   ordersOnly?: boolean
 
@@ -1091,7 +1090,6 @@ export default function MaintenanceCenterPage({
   registerLeaveGuard?: RegisterLeaveGuard
 }) {
   const { user } = useAuth()
-  const [toolsOpen,setToolsOpen] = useState(false)
   const toolGuard=useRef<null|(()=>Promise<boolean>)>(null)
   const detailGuard=useRef<null|(()=>Promise<boolean>)>(null)
   const registerToolGuard=useCallback<RegisterLeaveGuard>(guard=>{toolGuard.current=guard},[])
@@ -1675,13 +1673,12 @@ export default function MaintenanceCenterPage({
           {visibleTabs.map((value) => (
             <button
               key={value}
-              aria-current={!toolsOpen && tab === value ? "page" : undefined}
-              onClick={() => leaveTools(()=>{setToolsOpen(false);switchTab(value)})}
+              aria-current={tab === value ? "page" : undefined}
+              onClick={() => leaveTools(()=>switchTab(value))}
             >
               {value}
             </button>
           ))}
-          <button aria-current={toolsOpen?"page":undefined} onClick={()=>leaveTools(()=>{setDetail(null);setToolsOpen(true)})}>运维工具</button>
           {liveStatus}
         </nav>
       )}
@@ -1693,7 +1690,7 @@ export default function MaintenanceCenterPage({
             : "责任站点运维范围"}
         </p>
       )}
-      {toolsOpen&&!ordersOnly ? <div className="maintenance-content"><MaintenanceWorkbench stations={eligible} registerLeaveGuard={registerToolGuard} onServerChange={onServerChange} onOpenOrders={onOpenOrders} onHealthDevice={(stationId,deviceId)=>{setToolsOpen(false);setTab("设备健康");onOpenDevice?onOpenDevice(stationId,deviceId):setSelectedHealthDeviceId(`${stationId}-${deviceId}`)}}/></div> : <div className="maintenance-content">
+      <div className="maintenance-content">
         {(ordersOnly || tab === "运维总览") && (
           <section className="maintenance-toolbar" aria-label="运维筛选">
             <label>
@@ -2075,7 +2072,7 @@ export default function MaintenanceCenterPage({
                   id: "inspections", label: "今日到期巡检", icon: ClipboardList, tone: "neutral",
                   value: number(summary.dueToday),
                   note: summary.dueToday && summary.completedToday !== null ? `完成率 ${Math.round(summary.completedToday / summary.dueToday * 100)}%` : "按已接入计划时间统计",
-                  action: () => setToolsOpen(true),
+                  action: () => onOpenOrders?.(scope, undefined, "inspections"),
                 },
 
                 {
@@ -2984,7 +2981,7 @@ export default function MaintenanceCenterPage({
                 : "SLA 按接入截止时间计算"}
           </span>
         </footer>
-      </div>}
+      </div>
       {detail && selected && (
         <MaintenanceDetail
           key={JSON.stringify(detail)}

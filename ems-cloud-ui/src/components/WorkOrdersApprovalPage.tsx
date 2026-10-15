@@ -594,6 +594,7 @@ export default function WorkOrdersApprovalPage({
   initialFocus?: {
     stationId: string
     orderId?: string
+    queue?: "inspections"
   } | null
   initialView?: View
   allowedViews?: readonly View[]
@@ -603,7 +604,7 @@ export default function WorkOrdersApprovalPage({
   const storageScope=(key:string)=>`${key}:${DEMO_MODE?'demo':'api'}:${user?.id||role}`
   const [serverBusy, setServerBusy] = useState(false)
   const initialNow = DEMO_MODE ? stationsDataNow(stations) : new Date()
-  const requestedInitialView: View = initialFocus?.orderId
+  const requestedInitialView: View = initialFocus?.orderId || initialFocus?.queue === "inspections"
     ? "工单中心"
     : (initialView ?? "工单中心")
   const visibleViews = PAGE_TABS.filter((item) => allowedViews.includes(item))
@@ -623,7 +624,7 @@ export default function WorkOrdersApprovalPage({
     defaultQuickFilter(initialVisibleView),
   )
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [repairQueue,setRepairQueue]=useState(false)
+  const [repairQueue,setRepairQueue]=useState(initialFocus?.queue === "inspections")
   const [extendedFilters,setExtendedFilters]=useState<WorkflowFilterValues>({})
   const [selectedKey, setSelectedKey] = useState("")
   const [orderDetailKey, setOrderDetailKey] = useState("")
@@ -1619,6 +1620,7 @@ export default function WorkOrdersApprovalPage({
               />
             ))}
           </div>
+          <div className="operations-actions">
           {view === "工单中心" && (DEMO_MODE || createRows.length > 0) && (
             <button
               className="operations-button work-orders-new"
@@ -1629,6 +1631,12 @@ export default function WorkOrdersApprovalPage({
               新建工单
             </button>
           )}
+          {!DEMO_MODE && view === "工单中心" && repairQueue && inspectionRows.length > 0 && (
+            <button className="operations-button work-orders-new" disabled={serverBusy} onClick={openInspectionCreateDialog}>
+              <Plus size={14} />新建巡检
+            </button>
+          )}
+          </div>
         </section>
         <section className="work-orders-toolbar" aria-label="工单审批筛选">
           <label className="work-orders-search">
