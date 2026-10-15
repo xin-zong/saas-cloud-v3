@@ -1,4 +1,5 @@
 import { createDevice, newNodeId, type Device, type DeviceType, type ProvisionDraft, type Connection, } from "./model";
+import { availableEmus, hasDcPv, portKind } from './deviceConfiguration';
 export type TopologyIssue = {
     nodeId: string;
     field: string;
@@ -35,7 +36,8 @@ export function cabinetNodes(count: number, withPv: boolean, emsId: string) {
     nodes.forEach((n) => {
         n.cabinetId = cabinet.id;
         n.emsId = emsId;
-        n.enabled = n.type !== "光伏 DC/DC" || withPv;
+        n.enabled = true;
+        if (n.type === '光伏 DC/DC') n.dcPvConfigured = withPv;
         n.access = n.type === "光伏 DC/DC" ? "EMU" : "EMS";
         n.protocol = "Modbus TCP";
         n.interface = "ETH-1";
@@ -229,6 +231,7 @@ export function validateSiteTopology(draft: ProvisionDraft): TopologyIssue[] {
             });
     });
     for (const d of draft.devices) {
+        if (d.type === '光伏 DC/DC' && !hasDcPv(d)) continue;
         if (d.cabinetId) {
             const parent = draft.devices.find(n => n.id === d.cabinetId && n.type === '标准柜');
             if (!parent || parent.emsId !== d.emsId)
@@ -252,7 +255,8 @@ export function validateSiteTopology(draft: ProvisionDraft): TopologyIssue[] {
                 if (!p.id || names.has(p.id))
                     add(d, "ports", "接口名称为空或重复");
                 names.add(p.id);
-                if (p.interface.startsWith("RS485") &&
+                if (!portKind(p)) add(d, 'ports', '请选择接口类型');
+                if (portKind(p) === "RS485" &&
                     ![
                         "1200",
                         "2400",
@@ -269,8 +273,11 @@ export function validateSiteTopology(draft: ProvisionDraft): TopologyIssue[] {
         }
         if (d.enabled === false || d.access === "不接入")
             continue;
+        if (['PCS', '光伏 DC/DC'].includes(d.type) && d.rating &&
+            (!Number.isFinite(Number(d.rating)) || Number(d.rating) < 0))
+            add(d, 'rating', '功率上限必须为非负数');
         if (d.access === "EMU") {
-            if (!draft.devices.some((n) => n.id === d.emuId && n.type === "电池 / BMS" && n.enabled !== false))
+            if (!availableEmus(draft, d).some(n => n.id === d.emuId))
                 add(d, "emuId", "请选择关联的 EMU");
             continue;
         }
@@ -280,8 +287,8 @@ export function validateSiteTopology(draft: ProvisionDraft): TopologyIssue[] {
         const ems = draft.devices.find((n) => n.id === d.emsId && n.type === "EMS");
         const port = ems?.ports?.find((p) => p.id === d.interface);
         if (!port ||
-            (d.protocol === "Modbus TCP" && !port.interface.startsWith("ETH")) ||
-            (d.protocol === "Modbus RTU" && !port.interface.startsWith("RS485")))
+            (d.protocol === "Modbus TCP" && portKind(port) !== 'ETH') ||
+            (d.protocol === "Modbus RTU" && portKind(port) !== 'RS485'))
             add(d, "interface", "接入 EMS 接口与通信协议不兼容");
         if (!["Modbus TCP", "Modbus RTU"].includes(d.protocol))
             add(d, "protocol", "请选择通信协议");

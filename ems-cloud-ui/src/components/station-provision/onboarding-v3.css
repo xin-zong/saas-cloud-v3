@@ -5,3 +5,14 @@
 .onboarding-v3 .unified-cabinet{height:calc(28% + 110px)}
 .onboarding-v3 .unified-library section button{min-width:0}
 @media(max-width:1200px){.onboarding-v3 .topology-v3{grid-template-columns:150px minmax(300px,1fr);height:auto}.onboarding-v3 .unified-library section>div{grid-template-columns:1fr}.onboarding-v3 .unified-inspector{grid-column:1/-1;border-top:1px solid #dce2e5;padding:16px;max-height:450px}.onboarding-v3 .unified-viewport{height:560px;flex:none}.onboarding-v3 .unified-surface{min-height:560px}.onboarding-v3 .topology-expanded{overflow:auto}}
+/* Fullscreen uses the available viewport, independently of the normal shell breakpoint. */
+.onboarding-v3 .topology-v3.topology-expanded{grid-template-columns:150px minmax(300px,1fr) 280px;grid-template-rows:auto minmax(0,1fr);overflow:hidden;gap:12px}
+.topology-fullscreen-heading{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 0 10px}
+.topology-fullscreen-heading h2{margin:0;font-size:13px;color:#18232d;font-weight:500}
+.onboarding-v3 .topology-expanded .unified-inspector{grid-column:auto;border-top:0;max-height:none;padding:0 8px;overflow:auto}
+.onboarding-v3 .topology-expanded .unified-library{overflow:auto}
+.onboarding-v3 .topology-expanded .unified-viewport{height:auto;flex:1;min-height:0}
+.onboarding-v3 .topology-expanded .unified-surface{min-height:100%;min-width:600px}
+.onboarding-v3 .unified-toolbar [aria-pressed=true]{background:#e8f1ee}
+.model-manual{font-size:10px;color:#6f7d8b;margin:0 0 12px}.model-manual summary{cursor:pointer;margin:0 0 8px}.model-catalog-error{background:#fff8ed;border-radius:6px;padding:8px;margin-bottom:12px}.model-catalog-error button{font-size:11px;border:0;background:none;color:#1e6656;padding:0}
+@media(max-width:850px){.onboarding-v3 .topology-v3.topology-expanded{grid-template-columns:135px minmax(250px,1fr);grid-template-rows:auto 500px auto;overflow:auto}.onboarding-v3 .topology-expanded .unified-inspector{grid-column:1/-1;border-top:1px solid #dce2e5;padding:16px;max-height:450px}}

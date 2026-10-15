@@ -375,7 +375,7 @@ export default function RuntimeParametersPage({
             )}
             <div className="runtime-slot-pair">
               {[
-                ["maxPower", "最大功率（kW）"],
+                ["maxPower", slot.key === "gridPeriods" ? "最大充电功率（kW）" : "最大功率（kW）"],
                 ...(slot.key === "peakPeriods"
                   ? [
                       ["peakPower", "调峰功率（kW）"],

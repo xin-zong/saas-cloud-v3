@@ -54,6 +54,7 @@ export type Device = {
   emsId?: string
   emuId?: string
   enabled?: boolean
+  dcPvConfigured?: boolean
   cooling?: boolean
   coolingModel?: string
   access?: string
@@ -148,6 +149,7 @@ export type ProvisionDraft = {
 }
 
 export type CommunicationPort = {
+  kind?: '' | 'ETH' | 'RS485'
   baud?: string
   parity?: string
   bits?: string
@@ -661,6 +663,7 @@ export function parseDraft(raw: string | null): ProvisionDraft | null {
           !v ||
           typeof v.id !== "string" ||
           !deviceTypes.includes(v.type) ||
+          (v.dcPvConfigured !== undefined && typeof v.dcPvConfigured !== 'boolean') ||
           [
             "name",
 
@@ -715,6 +718,7 @@ export function parseDraft(raw: string | null): ProvisionDraft | null {
             n.ports.some(
               (p) =>
                 !p ||
+                (p.kind !== undefined && !['', 'ETH', 'RS485'].includes(p.kind)) ||
                 [
                   "id",
 

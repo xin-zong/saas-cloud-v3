@@ -10,6 +10,60 @@ function load(name) {
   new Function('require','exports','module',code)(p => load(p.replace('./','')),result.exports,result)
   return result.exports
 }
+
+test('DC PV configuration and runtime enable are independent and old drafts retain their meaning',()=>{
+ const m=load('model'),c=load('deviceConfiguration'),n=load('topologyModel')
+ const d={...m.emptyProvision(),...n.buildSiteTemplate('工商业储能')},pv=d.devices.find(x=>x.type==='光伏 DC/DC')
+ assert.equal(c.hasDcPv(pv),false)
+ Object.assign(pv,c.configureDcPv(pv,true));pv.enabled=false
+ assert.equal(c.hasDcPv(pv),true,'stopping DCDC must not remove configured DC PV')
+ assert.equal(c.hasDcPv({...pv,dcPvConfigured:undefined,enabled:false}),false,'legacy false means not configured')
+ const restored=m.parseDraft(JSON.stringify(d)).devices.find(x=>x.id===pv.id)
+ assert.equal(restored.dcPvConfigured,true);assert.equal(restored.enabled,false)
+})
+
+test('stopping an independent or legacy DCDC normalizes the old configuration flag first',()=>{
+ const m=load('model'),c=load('deviceConfiguration'),device=m.createDevice('光伏 DC/DC',1)
+ device.enabled=true
+ const stopped={...device,...c.setOperationEnabled(device,false)}
+ assert.equal(stopped.enabled,false);assert.equal(c.hasDcPv(stopped),true)
+ assert.equal(c.hasDcPv({...stopped,...c.setOperationEnabled(stopped,true)}),true)
+})
+
+test('EMS port types allocate unused names after deletion and clear dependent references',()=>{
+ const m=load('model'),n=load('topologyModel'),c=load('deviceConfiguration')
+ const d={...m.emptyProvision(),...n.buildSiteTemplate('光储协同')},ems=d.devices.find(x=>x.type==='EMS'),pcs=d.devices.find(x=>x.type==='PCS')
+ ems.ports=[{...ems.ports[0],id:'ETH-2',interface:'ETH-2'}, {...ems.ports[0],id:'new',interface:''}]
+ pcs.interface='new'
+ const changed=c.setEmsPortType(d,ems.id,1,'ETH'),ports=changed.devices.find(x=>x.id===ems.id).ports
+ assert.equal(ports[1].id,'ETH-1');assert.equal(new Set(ports.map(x=>x.id)).size,2)
+ assert.equal(changed.devices.find(x=>x.id===pcs.id).interface,'')
+ const reset=c.setEmsPortType({...d,...changed},ems.id,1,'').devices.find(x=>x.id===ems.id).ports[1]
+ assert.equal(reset.interface,'');assert.equal(reset.protocol,'')
+})
+
+test('DCDC powers and EMU associations are validated without hiding stopped devices',()=>{
+ const m=load('model'),n=load('topologyModel'),c=load('deviceConfiguration')
+ const d={...m.emptyProvision(),...n.buildSiteTemplate('光储协同')},pv=d.devices.find(x=>x.type==='光伏 DC/DC'),bat=d.devices.find(x=>x.type==='电池 / BMS')
+ pv.dcPvConfigured=true;pv.rating='-2'
+ assert.ok(n.validateSiteTopology(d).some(x=>x.nodeId===pv.id&&x.field==='rating'))
+ pv.rating='100';bat.emsId='foreign'
+ assert.deepEqual(c.availableEmus(d,pv),[])
+ assert.ok(n.validateSiteTopology(d).some(x=>x.nodeId===pv.id&&x.field==='emuId'))
+ pv.dcPvConfigured=false
+ assert.ok(!n.validateSiteTopology(d).some(x=>x.nodeId===pv.id))
+})
+
+test('model options are isolated by category and malformed new draft fields are rejected',()=>{
+ const c=load('deviceConfiguration'),m=load('model'),n=load('topologyModel')
+ const models=[{id:1,category:'PCS'},{id:2,category:'BMS'},{id:3,category:'HVAC'},{id:4,category:'OTHER'}]
+ assert.deepEqual(c.modelsForDevice(models,'PCS').map(x=>x.id),[1])
+ assert.deepEqual(c.modelsForDevice(models,'电池 / BMS',true).map(x=>x.id),[3])
+ assert.deepEqual(c.modelsForDevice(models,'柴油发电机'),[],'OTHER does not imply a generator is adapted')
+ const d={...m.emptyProvision(),...n.buildSiteTemplate('光储协同')}
+ d.devices.find(x=>x.type==='光伏 DC/DC').dcPvConfigured='false'
+ assert.equal(m.parseDraft(JSON.stringify(d)),null)
+})
 test('run parameters restore old drafts with defaults, round trip edited parameters', () => {
   const m=load('runtimeModel'), value=m.defaultRuntime()
   assert.equal(value.peakPeriods.length,8); assert.equal(value.gridPeriods.length,6)
@@ -40,7 +94,7 @@ test('new topology templates provide cabinets and prevent EMS electrical wiring'
   assert.ok(d.devices.some(x=>x.type==='EMS'&&x.ports.length===2))
   const ems=d.devices.find(x=>x.type==='EMS'), bus=d.devices.find(x=>x.type==='交流母线')
   assert.equal(n.canWire(ems,bus,'AC'),false)
-  assert.equal(n.buildSiteTemplate('工商业储能').devices.find(x=>x.type==='光伏 DC/DC').enabled,false)
+  assert.equal(n.buildSiteTemplate('工商业储能').devices.find(x=>x.type==='光伏 DC/DC').dcPvConfigured,false)
 })
 test('splitting a cabinet preserves child configuration, locations and electrical edges',()=>{
  const m=load('model'),n=load('topologyModel'),d={...m.emptyProvision(),...n.buildSiteTemplate('光储协同')},cab=d.devices.find(x=>x.type==='标准柜'),pcs=d.devices.find(x=>x.type==='PCS')
