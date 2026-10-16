@@ -18,7 +18,7 @@ async function setup(t,options={}) {
  import React from '${react}';import ReactDOM from'${dom}';
  import Panel from '/src/components/StationGenerationPlansPanel.tsx';import'/src/index.css';import'/src/components/station-provision/station-entry.css';
  function Harness(){const[open,setOpen]=React.useState(true);const[canEdit,setCanEdit]=React.useState(${options.readOnly?'false':'true'});const guard=React.useRef(null);const register=React.useCallback(g=>{guard.current=g},[]);
- window.__revoke=()=>setCanEdit(false);window.__navigate=async()=>{const allowed=guard.current?await guard.current():true;if(allowed)setOpen(false);return allowed};
+ window.__revoke=()=>setCanEdit(false);window.__restore=()=>setCanEdit(true);window.__navigate=async()=>{const allowed=guard.current?await guard.current():true;if(allowed)setOpen(false);return allowed};
  return React.createElement('div',{className:'station-entry-scope'},open?React.createElement(Panel,{station:{id:'101',name:'测试站点'},canEdit,onClose:()=>setOpen(false),registerLeaveGuard:register}):React.createElement('p',null,'已关闭计划'));}
  ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Harness));`})})
  if(options.demo)await page.route('**/src/api/client.ts*',r=>r.fulfill({contentType:'text/javascript',body:`export const DEMO_MODE=true;export class ApiError extends Error{};export function api(){window.__unexpectedCalls=(window.__unexpectedCalls||0)+1;throw Error('demo network prohibited')}export const send=api;`}))
@@ -40,6 +40,30 @@ async function setup(t,options={}) {
  await page.goto(preview,{waitUntil:'domcontentloaded',timeout:60000})
  return {page,writes,records,release}
 }
+test('403 recovery requires successful refresh, preserves generation draft and still respects canEdit',async t=>{
+ const{page,writes,records}=await setup(t,{existing:true});let deny=true,failRefresh=false,attempts=0
+ await page.route(url=>url.pathname.includes('/generation-plans'),async route=>{
+  const method=route.request().method();let status=0
+  if(method==='PUT'){attempts++;if(deny){deny=false;status=403}}
+  if(method==='GET'&&failRefresh)status=503
+  if(status)return route.fulfill({status,headers:{'access-control-allow-origin':'*'},json:{code:status,data:null,msg:status===403?'测试撤权':'测试刷新失败'}})
+  return route.fallback()
+ })
+ await page.getByRole('button',{name:'编辑2026年计划',exact:true}).click()
+ const field=page.getByLabel('1月常规计划（kWh）',{exact:true}),save=page.getByRole('button',{name:'保存年度计划',exact:true}),refresh=page.getByRole('button',{name:'刷新计划（保留草稿）',exact:true})
+ await field.fill('42.12');await save.click();await page.getByRole('alert').filter({hasText:'测试撤权'}).waitFor()
+ assert.equal(await save.isDisabled(),true);assert.equal(writes.length,0)
+ await page.evaluate(()=>window.__revoke());await page.evaluate(()=>window.__restore());failRefresh=true
+ await refresh.click();await page.getByRole('alert').filter({hasText:'测试刷新失败'}).waitFor()
+ assert.equal(await save.isDisabled(),true);assert.equal(await field.inputValue(),'42.12')
+ failRefresh=false;await refresh.click();await refresh.and(page.locator(':enabled')).waitFor()
+ assert.equal(await save.isDisabled(),false)
+ await page.evaluate(()=>window.__revoke());await refresh.click();await refresh.and(page.locator(':enabled')).waitFor()
+ assert.equal(await save.isDisabled(),true);assert.equal(await field.isDisabled(),true);assert.equal(attempts,1)
+ await page.evaluate(()=>window.__restore());await save.click();await page.getByRole('status').filter({hasText:'已保存'}).waitFor()
+ assert.equal(records[0].months[0].plannedKwh,'42.12');assert.equal(attempts,2);assert.equal(writes.length,1)
+})
+
 test('creates only after all twelve exact kWh values validate and survives refresh',async t=>{
  const{page,writes}=await setup(t)
  await page.getByRole('button',{name:'新增年度计划',exact:true}).click()

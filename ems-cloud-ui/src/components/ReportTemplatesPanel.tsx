@@ -64,6 +64,7 @@ function ReportTemplateEditor({ kind, canEdit, onClose, registerLeaveGuard, onCh
           if (latest && draft.mode === 'edit') setBaseline(fingerprint({ mode: 'edit', value: latest }))
         }
       }
+      setRevoked(false)
     } catch (cause) { if (current()) failed(cause) }
     finally { if (current()) { lock.current = false; setBusy(false) } }
   }

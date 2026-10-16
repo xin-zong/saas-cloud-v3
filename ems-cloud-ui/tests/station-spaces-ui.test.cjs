@@ -15,7 +15,7 @@ async function setup(t, options = {}) {
   const source=await(await r.fetch()).text(),react=source.match(/["']([^"']*\/react\.js\?v=[^"']+)["']/)?.[1],dom=source.match(/["']([^"']*\/react-dom_client\.js\?v=[^"']+)["']/)?.[1]
   assert.ok(react&&dom,'Use live Vite React versions')
   await r.fulfill({contentType:'text/javascript',body:`import React from '${react}';import ReactDOM from '${dom}';import Panel from '/src/components/StationSpacesPanel.tsx';import '/src/index.css';
-  function Harness(){const[open,setOpen]=React.useState(true),[canEdit,setCanEdit]=React.useState(${options.readOnly?'false':'true'});const guard=React.useRef(null);const register=React.useCallback(g=>guard.current=g,[]);window.__revoke=()=>setCanEdit(false);window.__unmount=()=>setOpen(false);window.__navigate=async()=>{const allowed=guard.current?await guard.current():true;if(allowed)setOpen(false);return allowed};return open?React.createElement(Panel,{station:{id:'101',name:'空间测试站点'},canEdit,onClose:()=>setOpen(false),registerLeaveGuard:register}):React.createElement('p',null,'空间管理已关闭')};ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Harness));`})
+  function Harness(){const[open,setOpen]=React.useState(true),[canEdit,setCanEdit]=React.useState(${options.readOnly?'false':'true'});const guard=React.useRef(null);const register=React.useCallback(g=>guard.current=g,[]);window.__revoke=()=>setCanEdit(false);window.__restore=()=>setCanEdit(true);window.__unmount=()=>setOpen(false);window.__navigate=async()=>{const allowed=guard.current?await guard.current():true;if(allowed)setOpen(false);return allowed};return open?React.createElement(Panel,{station:{id:'101',name:'空间测试站点'},canEdit,onClose:()=>setOpen(false),registerLeaveGuard:register}):React.createElement('p',null,'空间管理已关闭')};ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Harness));`})
  })
  if(options.demo)await page.route('**/src/api/client.ts*',r=>r.fulfill({contentType:'text/javascript',body:`export const DEMO_MODE=true;export class ApiError extends Error{};export function api(){window.__unexpectedCalls=(window.__unexpectedCalls||0)+1;throw Error('No demo API')}export const send=api;`}))
  const recount=()=>state.spaces.forEach(space=>space.deviceCount=state.devices.filter(d=>d.spaceId===space.id).length)
@@ -57,6 +57,30 @@ async function setup(t, options = {}) {
 }
 async function choose(page,name){await page.getByRole('treeitem',{name:`选择空间${name}`,exact:true}).click()}
 async function create(page,name,type='10',child=false){await page.getByRole('button',{name:child?'新增子空间':'新增空间',exact:true}).click();await page.getByLabel('空间名称',{exact:true}).fill(name);await page.getByLabel('空间类型',{exact:true}).selectOption(type);await page.getByRole('button',{name:'保存空间',exact:true}).click();await page.getByRole('status').filter({hasText:'空间配置已保存'}).waitFor()}
+
+test('403 recovery requires successful refresh, preserves space draft and still respects canEdit', {timeout:90000},async t=>{
+ const{page,state}=await setup(t,{existing:true});let deny=true,failRefresh=false,attempts=0
+ await page.route(url=>url.pathname.startsWith('/api/stations/101/'),async route=>{
+  const method=route.request().method();let status=0
+  if(method==='PUT'){attempts++;if(deny){deny=false;status=403}}
+  if(method==='GET'&&failRefresh&&new URL(route.request().url()).pathname==='/api/stations/101/space-devices')status=503
+  if(status)return route.fulfill({status,headers:{'access-control-allow-origin':'*'},json:{code:status,data:null,msg:status===403?'测试撤权':'测试刷新失败'}})
+  return route.fallback()
+ })
+ await choose(page,'园区');await page.getByRole('button',{name:'重命名空间',exact:true}).click()
+ const field=page.getByLabel('空间名称',{exact:true}),save=page.getByRole('button',{name:'保存空间',exact:true}),refresh=page.getByRole('button',{name:'刷新空间（保留草稿）',exact:true})
+ await field.fill('恢复后保留的空间草稿');await save.click();await page.getByRole('alert').filter({hasText:'测试撤权'}).waitFor()
+ assert.equal(await save.isDisabled(),true);assert.equal(state.writes.length,0)
+ await page.evaluate(()=>window.__revoke());await page.evaluate(()=>window.__restore());failRefresh=true
+ await refresh.click();await page.getByRole('alert').filter({hasText:'测试刷新失败'}).waitFor()
+ assert.equal(await save.isDisabled(),true);assert.equal(await field.inputValue(),'恢复后保留的空间草稿')
+ failRefresh=false;await refresh.click();await refresh.and(page.locator(':enabled')).waitFor()
+ assert.equal(await save.isDisabled(),false)
+ await page.evaluate(()=>window.__revoke());await refresh.click();await refresh.and(page.locator(':enabled')).waitFor()
+ assert.equal(await save.isDisabled(),true);assert.equal(await field.isDisabled(),true);assert.equal(attempts,1)
+ await page.evaluate(()=>window.__restore());await save.click();await page.getByRole('status').filter({hasText:'空间配置已保存'}).waitFor()
+ assert.equal(state.spaces[0].name,'恢复后保留的空间草稿');assert.equal(attempts,2);assert.deepEqual(state.errors,[])
+})
 
 test('space tree creates hierarchy, renames, moves and protects nonempty parents', {timeout:90000},async t=>{
  const{page,state}=await setup(t)

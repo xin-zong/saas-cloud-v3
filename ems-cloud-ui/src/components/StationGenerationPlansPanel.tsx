@@ -53,6 +53,7 @@ function GenerationPlansEditor({ station, canEdit, onClose, registerLeaveGuard }
         setDeleting(latest ?? null)
         if (!latest) setNotice('该计划已不存在。')
       }
+      setRevoked(false)
     } catch (e) { if (alive.current) failed(e) }
     finally { lock.current = false; if (alive.current) setBusy(false) }
   }

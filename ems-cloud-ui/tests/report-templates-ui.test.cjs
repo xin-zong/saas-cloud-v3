@@ -17,7 +17,7 @@ async function setup(t,options={}){
   const source=await(await r.fetch()).text(),react=source.match(/["']([^"']*\/react\.js\?v=[^"']+)["']/)?.[1],dom=source.match(/["']([^"']*\/react-dom_client\.js\?v=[^"']+)["']/)?.[1];reactUrl=react;assert.ok(react&&dom)
   await r.fulfill({contentType:'text/javascript',body:`import React from '${react}';import ReactDOM from '${dom}';import Component from '/src/components/${options.center?'ApiAnalyticsPage':'ReportTemplatesPanel'}.tsx';import '/src/index.css';
   window.__reportUser={id:'7',account:'report@test',permissions:['report.export','revenue.read'],stationPermissions:{'101':['report.export','revenue.read']}};
-  function Harness(){const[open,setOpen]=React.useState(true),[canEdit,setCanEdit]=React.useState(true);const guard=React.useRef(null),register=React.useCallback(g=>guard.current=g,[]);window.__revoke=()=>setCanEdit(false);window.__unmount=()=>setOpen(false);window.__navigate=async()=>{if(!guard.current||await guard.current())setOpen(false)};return open?React.createElement(Component,${options.center?`{stations:[{id:'101',name:'报表测试站点'}],allowedTabs:['报告中心'],allowedReportTypes:['收益报告'],role:'owner',registerLeaveGuard:register}`:`{kind:'revenue',canEdit,onClose:()=>setOpen(false),registerLeaveGuard:register}`}):React.createElement('p',null,'报表页面已关闭')};ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Harness));`})
+  function Harness(){const[open,setOpen]=React.useState(true),[canEdit,setCanEdit]=React.useState(true);const guard=React.useRef(null),register=React.useCallback(g=>guard.current=g,[]);window.__revoke=()=>setCanEdit(false);window.__restore=()=>setCanEdit(true);window.__unmount=()=>setOpen(false);window.__navigate=async()=>{if(!guard.current||await guard.current())setOpen(false)};return open?React.createElement(Component,${options.center?`{stations:[{id:'101',name:'报表测试站点'}],allowedTabs:['报告中心'],allowedReportTypes:['收益报告'],role:'owner',registerLeaveGuard:register}`:`{kind:'revenue',canEdit,onClose:()=>setOpen(false),registerLeaveGuard:register}`}):React.createElement('p',null,'报表页面已关闭')};ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Harness));`})
  })
  const report=(job)=>{const selected=job.templateSnapshot?.fields??fields;return {job,summary:selected.includes('summary.revenue')?[{label:'确认收益',value:'125',unit:'CNY'}]:[],sections:[{title:'收益明细',columns:[...(selected.includes('section.revenue.amount')?[{key:'amount',label:'账单金额'}]:[]),...(selected.includes('section.revenue.currency')?[{key:'currency',label:'币种'}]:[])],rows:[{amount:'88.88',currency:'CNY'}]}].filter(section=>section.columns.length)}}
  await page.route(url=>url.pathname.startsWith('/api/'),async r=>{
@@ -56,6 +56,30 @@ async function setup(t,options={}){
  return{page,state,release}
 }
 async function closePanel(page){await page.getByRole('button',{name:'关闭报表模板',exact:true}).click()}
+
+test('403 recovery requires successful refresh, preserves report draft and still respects canEdit', {timeout:90000},async t=>{
+ const{page,state}=await setup(t,{existing:true});let deny=true,failRefresh=false,attempts=0
+ await page.route(url=>url.pathname.startsWith('/api/report-template'),async route=>{
+  const method=route.request().method();let status=0
+  if(method==='PUT'){attempts++;if(deny){deny=false;status=403}}
+  if(method==='GET'&&failRefresh&&new URL(route.request().url()).pathname==='/api/report-template-fields')status=503
+  if(status)return route.fulfill({status,headers:{'access-control-allow-origin':'*'},json:{code:status,data:null,msg:status===403?'测试撤权':'测试刷新失败'}})
+  return route.fallback()
+ })
+ await page.getByRole('button',{name:'编辑我的月报',exact:true}).click()
+ const field=page.getByLabel('报表模板名称',{exact:true}),save=page.getByRole('button',{name:'保存报表模板',exact:true}),refresh=page.getByRole('button',{name:'刷新模板与目录（保留草稿）',exact:true})
+ await field.fill('恢复后保留的报表草稿');await save.click();await page.getByRole('alert').filter({hasText:'测试撤权'}).waitFor()
+ assert.equal(await save.isDisabled(),true);assert.equal(state.writes.length,0)
+ await page.evaluate(()=>window.__revoke());await page.evaluate(()=>window.__restore());failRefresh=true
+ await refresh.click();await page.getByRole('alert').filter({hasText:'测试刷新失败'}).waitFor()
+ assert.equal(await save.isDisabled(),true);assert.equal(await field.inputValue(),'恢复后保留的报表草稿')
+ failRefresh=false;await refresh.click();await refresh.and(page.locator(':enabled')).waitFor()
+ assert.equal(await save.isDisabled(),false)
+ await page.evaluate(()=>window.__revoke());await refresh.click();await refresh.and(page.locator(':enabled')).waitFor()
+ assert.equal(await save.isDisabled(),true);assert.equal(await field.isDisabled(),true);assert.equal(attempts,1)
+ await page.evaluate(()=>window.__restore());await save.click();await page.getByRole('status').filter({hasText:'报表模板已保存'}).waitFor()
+ assert.equal(state.templates.find(t=>t.id==='custom-1').name,'恢复后保留的报表草稿');assert.equal(attempts,2);assert.deepEqual(state.errors,[])
+})
 test('report template generic catalog dependencies persist in private CRUD and refresh', {timeout:90000},async t=>{
  const{page,state}=await setup(t);assert.equal(state.writes.length,0);await page.getByRole('button',{name:'新增报表模板',exact:true}).click();await page.getByLabel('报表模板名称',{exact:true}).fill('私人月报');await page.getByLabel('模板周期',{exact:true}).selectOption('month');assert.equal(await page.getByRole('checkbox',{name:'站点标识',exact:true}).isDisabled(),true);await page.getByRole('checkbox',{name:'账单金额',exact:true}).check();assert.equal(await page.getByRole('checkbox',{name:'币种',exact:true}).isChecked(),true);await page.getByRole('button',{name:'保存报表模板',exact:true}).click();await page.getByRole('status').filter({hasText:'报表模板已保存'}).waitFor();assert.ok(state.writes[0].body.fields.includes('meta.stationId'));assert.ok(state.writes[0].body.fields.includes('section.revenue.currency'))
  await page.getByRole('button',{name:'刷新模板与目录（保留草稿）',exact:true}).click();await page.getByRole('button',{name:'编辑私人月报',exact:true}).click();assert.equal(await page.getByLabel('模板周期',{exact:true}).inputValue(),'month');assert.equal(await page.getByRole('checkbox',{name:'账单金额',exact:true}).isChecked(),true);await page.getByLabel('报表模板名称',{exact:true}).fill('改名月报');await page.getByRole('checkbox',{name:'币种',exact:true}).uncheck();assert.equal(await page.getByRole('checkbox',{name:'账单金额',exact:true}).isChecked(),false);await page.getByRole('button',{name:'保存报表模板',exact:true}).click();await page.getByRole('status').filter({hasText:'报表模板已保存'}).waitFor();assert.equal('kind'in state.writes[1].body,false)

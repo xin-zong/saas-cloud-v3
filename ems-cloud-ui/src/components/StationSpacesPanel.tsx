@@ -92,6 +92,7 @@ function StationSpacesEditor({ station, canEdit, onClose, registerLeaveGuard }: 
         setConfirm(latest ? { ...confirm, space: latest } : null)
       }
       await refreshedSelection(rows, current)
+      if (current()) setRevoked(false)
     } catch (e) { if (current()) failed(e) }
     finally { if (current()) { lock.current = false; setBusy(false) } }
   }
