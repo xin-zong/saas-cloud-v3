@@ -1,0 +1,20 @@
+const test = require('node:test')
+const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const ts = require('typescript')
+const exportsObject = {}
+new Function('exports', 'require', ts.transpileModule(fs.readFileSync(`${__dirname}/../src/api/stationProfile.ts`, 'utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText)(exportsObject, () => ({api:async(path, options)=>({path, options})}))
+test('profile fields display real zero capacity and missing dates without fabricated defaults', () => {
+  const fields = Object.fromEntries(exportsObject.stationProfileFields({timezone:'Europe/Berlin', solarCapacityKw:0, gridConnectionDate:null, commissionedOn:'2025-06-09', country:'Germany', province:null, city:null, postcode:'00123'}))
+  assert.equal(fields['时区'], 'Europe/Berlin')
+  assert.equal(fields['光伏容量 (kW)'], '0')
+  assert.equal(fields['并网日期'], '—')
+  assert.equal(fields['投运日期'], '2025-06-09')
+  assert.equal(fields['邮编'], '00123')
+})
+test('profile request uses an encoded station route and propagates cancellation', async () => {
+  const controller = new AbortController()
+  const result = await exportsObject.loadStationProfile('a/b', controller.signal)
+  assert.equal(result.path, '/stations/a%2Fb/profile')
+  assert.equal(result.options.signal, controller.signal)
+})

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 
 import { DEMO_MODE, api } from "@/api/client"
+import { loadStationProfile, stationProfileFields, type StationProfile } from "@/api/stationProfile"
 
 import { useAuth } from "@/auth/AuthContext"
 
@@ -91,6 +92,21 @@ function StationEditor({
   const [error, setError] = useState("")
 
   const [saving, setSaving] = useState(false)
+  const [profile, setProfile] = useState<StationProfile | null>(null)
+  const [profileState, setProfileState] = useState<'loading' | 'ready' | 'error'>(DEMO_MODE ? 'ready' : 'loading')
+
+  useEffect(() => {
+    if (DEMO_MODE || !station) return
+    const controller = new AbortController()
+    setProfile(null)
+    setProfileState('loading')
+    loadStationProfile(station.id, controller.signal).then(value => {
+      if (controller.signal.aborted) return
+      setProfile(value)
+      setProfileState('ready')
+    }).catch(() => { if (!controller.signal.aborted) setProfileState('error') })
+    return () => controller.abort()
+  }, [station?.id])
 
   const [coords, setCoords] = useState({
     lat: draft.lat ?? "",
@@ -553,6 +569,13 @@ function StationEditor({
               </Field>
             )}
           </>,
+        )}
+        {!DEMO_MODE && section(
+          "站点档案",
+          profileState === 'loading' ? <p role="status">正在加载站点档案…</p> :
+          profileState === 'error' ? <p role="alert">站点档案加载失败，请重新打开此页重试。</p> :
+          profile ? <>{stationProfileFields(profile).map(([label, value]) => <Field key={label} label={label}><input readOnly value={value} /></Field>)}</> :
+          <p>暂无站点档案</p>,
         )}
         {section(
           "负责人",

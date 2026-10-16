@@ -129,12 +129,16 @@ public class AssetController {
     s.access.requireStationPermission(id, "asset.read");
     return ApiResponse.ok(
         s.db.queryForList(
-            "SELECT d.*,m.name AS model_name,m.category,o.observed_at,CASE WHEN o.observed_at>now()"
+            "SELECT d.*,COALESCE(m.name,rp.model) AS model_name,"
+                + "COALESCE(m.category,rp.category,'OTHER') AS category,rp.source_type,"
+                + "COALESCE(m.manufacturer,rp.manufacturer) AS manufacturer,"
+                + "rp.rated_power_kw,rp.capacity_kwh,o.observed_at,CASE WHEN o.observed_at>now()"
                 + " THEN NULL WHEN o.observed_at<now()-interval '15 minutes' THEN 'offline' ELSE"
                 + " o.communication_status END AS communication_status,CASE WHEN o.observed_at"
                 + " BETWEEN now()-interval '24 hours' AND now() THEN o.health_score ELSE NULL END"
                 + " AS health_score,o.firmware_version FROM device d LEFT JOIN device_model m ON"
-                + " m.id=d.model_id LEFT JOIN device_observation o ON o.device_id=d.id WHERE"
+                + " m.id=d.model_id LEFT JOIN device_reference_profile rp ON rp.device_id=d.id"
+                + " LEFT JOIN device_observation o ON o.device_id=d.id WHERE"
                 + " d.station_id=? ORDER BY d.id",
             id));
   }
