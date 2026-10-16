@@ -1,0 +1,24 @@
+/* Figma alternative 1114:8271: white surface, restrained green actions and subtle table borders. */
+.generation-plans-scope .station-modal:has(.generation-plans-panel) { width: min(900px, calc(100vw - 32px)); max-height: calc(100vh - 40px); overflow: auto; }
+.generation-plans-panel { display: grid; gap: 14px; }
+.generation-plans-panel p { margin: 0; }
+.generation-plans-toolbar, .generation-plans-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.generation-plans-toolbar .station-field { display: flex; align-items: center; gap: 8px; margin: 0; }
+.generation-plans-panel .station-table { min-width: 0; width: 100%; }
+.generation-plans-panel .station-table td { padding: 10px 12px; }
+.generation-plans-panel .station-table th { padding: 10px 12px; }
+.generation-plans-panel .station-table .ui-button { margin: 2px 4px 2px 0; }
+.generation-plans-list { overflow: auto; max-height: 230px; border: 1px solid var(--entry-border); border-radius: 8px; }
+.generation-plans-editor, .generation-plans-delete { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--entry-border); border-radius: 8px; background: white; }
+.generation-plans-editor h3 { margin: 0; }
+.generation-plans-editor > .station-field { max-width: 220px; }
+.generation-plans-actions { justify-content: flex-end; }
+.generation-months { padding: 0; margin: 0; border: 0; min-width: 0; }
+.generation-month-table-wrap { max-height: min(420px, 45vh); overflow: auto; border: 1px solid var(--entry-border); border-radius: 8px; }
+.generation-months thead { position: sticky; top: 0; z-index: 1; }
+.generation-months tbody th { background: white; width: 70px; }
+.generation-months input { width: 100%; }
+.generation-plans-panel [role=alert] { color: #b33030; }
+.generation-plans-panel [role=status] { color: var(--entry-accent); }
+.generation-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media(max-width: 600px) { .generation-plans-editor { padding: 10px; } .generation-plans-toolbar { align-items: stretch; } .generation-plans-panel .station-table td, .generation-plans-panel .station-table th { padding: 8px; } }

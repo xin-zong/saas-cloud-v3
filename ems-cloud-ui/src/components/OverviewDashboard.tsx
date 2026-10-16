@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { Station } from "@/App"
 import type { AuthUser, NavLabel } from "@/auth/roles"
 import { Button } from "./ui/Workspace"
@@ -9,6 +9,7 @@ import LeftPanel from "./LeftPanel"
 import RightPanel from "./RightPanel"
 import BottomBar from "./BottomBar"
 import MapView from "./MapView"
+import { DEMO_MODE } from "@/api/client"
 import { dateKey } from "@/preferences/date"
 type Props = {
   stations: Station[]
@@ -19,8 +20,10 @@ type Props = {
   registerLeaveGuard: (guard: null | (() => Promise<boolean>)) => void
   cards: string[]
   availableCards: string[]
-  onUpdateCards: (cards: string[]) => void
+  onUpdateCards: (cards: string[], targetId: string | null) => void | Promise<void>
+  layoutTargetId: string | null
   region: string
+  onRefreshTemplates: () => Promise<unknown>
 }
 export default function OverviewDashboard({
   stations,
@@ -32,7 +35,9 @@ export default function OverviewDashboard({
   cards,
   availableCards,
   onUpdateCards,
+  layoutTargetId,
   region,
+  onRefreshTemplates,
 }: Props) {
   const [editing, setEditing] = useState(false),
     [draft, setDraft] = useState(cards),
@@ -45,6 +50,8 @@ export default function OverviewDashboard({
       start: dateKey(new Date()),
       end: dateKey(new Date()),
     })
+  const [saving, setSaving] = useState(false)
+  const [editingTargetId,setEditingTargetId] = useState<string|null>(null)
   const pending = useRef<null | (() => void)>(null)
   const dirty = editing && JSON.stringify(draft) !== JSON.stringify(cards)
   const { settleLeave } = useEditorLeaveGuard({
@@ -53,6 +60,15 @@ export default function OverviewDashboard({
     onConfirm: () => setLeave(true),
     onCancel: () => setLeave(false),
   })
+  useEffect(() => {
+    setDraft(previous => previous.filter(card => availableCards.includes(card)))
+    if (!availableCards.length) {
+      setEditing(false)
+      setLeave(false)
+      pending.current = null
+      settleLeave(false)
+    }
+  }, [availableCards.join('|')])
   const role = overviewPresentationRole(user)
   const viewStations = nav.includes("资产与站点")
     ? () => onNavigate("资产与站点")
@@ -119,6 +135,7 @@ export default function OverviewDashboard({
           <Button
             onClick={() => {
               setDraft(cards)
+              setEditingTargetId(layoutTargetId)
               setEditing(true)
               setError("")
             }}
@@ -174,6 +191,7 @@ export default function OverviewDashboard({
         <Modal
           title="页面定制"
           onClose={() => {
+            if (saving) return
             if (dirty) {
               pending.current = () => setEditing(false)
               setLeave(true)
@@ -182,6 +200,7 @@ export default function OverviewDashboard({
           actions={
             <>
               <Button
+                disabled={saving}
                 onClick={() => {
                   if (dirty) {
                     pending.current = () => setEditing(false)
@@ -193,18 +212,21 @@ export default function OverviewDashboard({
               </Button>
               <Button
                 variant="primary"
-                onClick={() => {
+                disabled={saving}
+                onClick={async () => {
                   if (!draft.length) {
                     setError("请至少保留一个看板模块")
                     return
                   }
+                  setSaving(true)
+                  setError("")
                   try {
-                    onUpdateCards(draft)
+                    await onUpdateCards(draft,editingTargetId)
                     setEditing(false)
-                    setNotice("布局已保存至本机，地图总览同步更新")
-                  } catch {
-                    setError("无法保存至本机，请检查浏览器存储后重试")
-                  }
+                    setNotice(DEMO_MODE ? "演示布局已保存至本机，地图总览同步更新" : "布局已保存至服务器，地图总览同步更新")
+                  } catch (e) {
+                    setError(DEMO_MODE ? "无法保存至本机，请检查浏览器存储后重试" : (e as Error).message)
+                  } finally { setSaving(false) }
                 }}
               >
                 保存页面布局
@@ -213,12 +235,13 @@ export default function OverviewDashboard({
           }
         >
           <p>
-            两个视图展示相同卡片；布局仅保存在当前账号和站点范围的本机浏览器。
+            {DEMO_MODE ? "演示模式：布局保存在当前浏览器。" : "两个视图展示相同卡片；显式保存到当前选中的私人模板。版本冲突时可刷新版本并保留卡片草稿，核对后再次保存。"}
           </p>
           {availableCards.map((s) => (
             <label key={s} className="overview-checkbox">
               <input
                 type="checkbox"
+                disabled={saving}
                 checked={draft.includes(s)}
                 onChange={(e) =>
                   setDraft(
@@ -232,6 +255,7 @@ export default function OverviewDashboard({
             </label>
           ))}
           {error && <p role="alert">{error}</p>}
+          {!DEMO_MODE && <Button disabled={saving} onClick={async () => { setSaving(true); try { await onRefreshTemplates(); setError("已刷新模板版本；卡片草稿已保留，请核对后保存") } catch(e) { setError((e as Error).message) } finally { setSaving(false) } }}>刷新版本（保留卡片草稿）</Button>}
         </Modal>
       )}
       {custom && (

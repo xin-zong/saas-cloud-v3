@@ -1,0 +1,2762 @@
+{
+  "branch": "develop-toyingzhen",
+  "targetDatabase": "ems_cloud_saas_toyingzhen",
+  "overallComplete": false,
+  "records": [
+    {
+      "workflowId": "report-template",
+      "title": "常规报表模板",
+      "status": "in-progress-batch-4",
+      "completed": false,
+      "notes": "Task7实施中：个人模板、现有真实字段目录及报表任务不可变快照；尚未完成迁移/真实HTTP验收，不标完成。",
+      "domainIds": [
+        "reports"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "缺系统/自定义模板分区、模板名称及周期字段方案和模板CRUD。",
+        "最多10个自定义、系统模板另存的规则需本项目服务端明确，不能照搬参考文案当已实现限制。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：新增/改名/删除自定义模板后刷新可复读；系统模板不能原地修改；容量与越权请求被服务端校验。"
+      ],
+      "contractUnknowns": [
+        "参考SYS按钮实际走update，服务端是否克隆未知；本项目模板容量策略待确认。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "report-export",
+      "title": "报表导出闭环",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "reports"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺模板选择、全站/指定站/筛选站范围快照、报告名称与输出语言的创建契约。",
+        "现有持久任务不等于参考queue/report后台队列；不能因前端轮询推断异步执行。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：零站点拒绝；同一产物预览与CSV一致；建任务后撤权则下载拒绝；失败可显式重试。"
+      ],
+      "contractUnknowns": [
+        "参考最终文件与队列状态未运行；本项目是否需要异步大报告待明确。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "report-auto-task",
+      "title": "报表自动化任务",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "reports"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "缺名称、类型、模板、目标站点、数据范围、频率、生成时点的自动任务CRUD。",
+        "服务重启会把中断任务标failed，不能视作周期任务补跑或调度恢复。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：保存任务后可复读；修改只影响后续实例；同周期只生成一次；停用后不再创建实例。"
+      ],
+      "contractUnknowns": [
+        "参考启停及实际调度结果未知；收件人投递是否在本项目范围待定。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "comparison",
+      "title": "多对象参数对比",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "comparison_ai"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "未建立至少两个站点/子站/设备、逐对象参数选择、基准线、万点上限与未命名离开确认的统一比较流程。"
+      ],
+      "acceptanceScenarios": [
+        "选择两个有权对象及各自指标；对象不足、撤权、超过点数限制分别拒绝或降采样；取消选型不创建记录。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "跨对象单位归一化和原始采样对齐策略仍需业务确认。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "tariff",
+      "title": "电价模板与费率",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "station_metrics"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺独立可复用的手工/自动/外部模板生命周期、价格用途及容量/需量费用；当前创建电价不能代表这些模板已实现。"
+      ],
+      "acceptanceScenarios": [
+        "手工模板保存后重读；外部来源不可用显示明确错误；购售方向和基本费独立核算。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "参考外部数据可用性及法定电价分类未确定。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "monitor-5",
+      "title": "策略配置与发布",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "参考多模式配置、模板发布及设备回执不能由内部审批覆盖；SOC/追踪电表等参数未进入现有四字段时段载荷。"
+      ],
+      "acceptanceScenarios": [
+        "保存高级模板后重载一致；审批通过仍显示未发送，真实适配回执才进入后续执行状态。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "参考九模式服务端支持与设备能力未知；本条为旧摘要，以深流程条目细化。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "monitor-6",
+      "title": "需求响应邀约与执行",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺邀约编号、交易品种、任务接收时间及待执行/执行中约束编辑与实例生效时点；市场response类型不是实例执行证明。"
+      ],
+      "acceptanceScenarios": [
+        "待执行实例只在约定开始时生效；执行中编辑依据契约生效并保留审计；终态不可编辑。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "参考数值状态枚举和实际后台调度仍未知。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "monitor-7",
+      "title": "操作二次验证",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "缺专用于发布的验证码/密码验证证明与控制请求绑定；普通登录或审批不能替代一次操作验证。"
+      ],
+      "acceptanceScenarios": [
+        "取消验证不发布；过期、重复使用、跨动作证明被拒绝；发送验证码单独计为写动作。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "参考验证码后台风控、密码摘要协议未知；不照搬摘要算法。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "property-8",
+      "title": "资产录入与管理",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺资产类型/项目类型驱动extraInfo配置、SN导入、经营资产终止删除、项目负责人分配及版本日志链。",
+        "现有站点字段编辑不等于动态资产saveOrUpdate；该legacy汇总需由asset-manage/detail细项承接。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：动态必填项阻止提交；资产类型变更规则明确；终止/删除校验状态及引用；越站操作拒绝。"
+      ],
+      "contractUnknowns": [
+        "参考动态字段全集和SN行校验未知。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "property-9",
+      "title": "发电量/收益台账与结算闭环",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺PLAN/ESTIMATE/RECEIVABLE/ACTUAL四类台账的来源及导入提交；不能将estimated_amount字段当完整预估台账。",
+        "缺确认出账、收款登记/批量登记、金额与电量调整、重跑写链；reviews只保存意见。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：四类来源可区分；预估不计实收；复核备注不改状态；重复收款及并发调整有明确定义。"
+      ],
+      "contractUnknowns": [
+        "出账计算、税/币种、批量部分成功和重跑规则需业务确认。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "property-10",
+      "title": "能源客户及合同管理",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "未建立独立能源客户列表/导出及能源合同维护/详情服务。",
+        "能源客户不是company_profile或已删除customer的直接同义实体；合同不能强制缩为一站一合同。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：一个合同关联同租户两站可读取；跨租户关联拒绝；旧结算复读不受合同新条款影响。"
+      ],
+      "contractUnknowns": [
+        "能源客户数据主权、客户与站点/合同关系、迁移范围待确认。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "device-detail",
+      "title": "设备详情与类型差异",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "devices"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺参考各设备族专属档案与配置字段、单体多分类曲线和不同权限的Settings；泛型详情不能覆盖全部设备类型。"
+      ],
+      "acceptanceScenarios": [
+        "逆变器与电池显示不同合法字段；单体数据缺失保持空态；只读角色不能通过配置接口写入。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "Full Cell Analysis准确处理器、参考设备类型编码及历史单体契约未确定。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "system-group-role",
+      "title": "业务组成员与角色权限",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "business_groups",
+        "tenant_rbac"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "参考业务组树/成员关联不等于当前tenant隔离；菜单/功能结构需映射到当前权限码，不直接搬参考编号。"
+      ],
+      "acceptanceScenarios": [
+        "角色变更不能越出自身可委派范围",
+        "业务组关联不能扩大站点权限。"
+      ],
+      "contractUnknowns": [
+        "业务组与tenant/成员grant是否一一对应需确认",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "personal-center",
+      "title": "个人中心与偏好",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "personal"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "参考头像/邮箱手机号用户名变更和温度电量枚举未形成同等闭环；cookie文案声明不能证明实际存储行为。"
+      ],
+      "acceptanceScenarios": [
+        "资料保存后刷新",
+        "改密全会话撤销",
+        "未实现项真实空态。"
+      ],
+      "contractUnknowns": [
+        "头像文件、联系方式唯一性、cookie同意实际范围待定义",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "screen",
+      "title": "大屏配置与入口",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "screens"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "未建立参考大屏配置列表/get/set、迁移提示及独立目录；沉浸总览不能当可配置大屏产品。"
+      ],
+      "acceptanceScenarios": [
+        "无配置展示空态",
+        "无站点权限不可从大屏绕过读取。"
+      ],
+      "contractUnknowns": [
+        "迁移对象、配置owner与分享边界需确认",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "onboarding-end",
+      "title": "切换业务引导结束",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "monitor"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "建站向导不是业务切换引导；缺结束/重置与偏好允许时本地记忆、迁移提示的独立状态边界。"
+      ],
+      "acceptanceScenarios": [
+        "结束后按偏好决定重开是否显示；禁用记忆时不持久；结束不发业务创建或配置请求。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "第三方driver内部行为和本项目引导需求需确认。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "comparison-type-confirm-safety",
+      "title": "选择对比类型Sure的初始化链",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "comparison_ai"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "缺STATION/SYSTEM/DEVICE类型确认后的本地抽屉、清空旧选择和只读分页查询链；不能把确认类型当保存比较。"
+      ],
+      "acceptanceScenarios": [
+        "仅确认类型不新增比较；取消对象选择无持久记录；确认对象后仍为未保存状态。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "子站对象scope及候选查询契约需确定。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "shell-org-groups",
+      "title": "内部业务组创建/修改/移动/删除及对象范围",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "business_groups"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "本次检索未建立内部业务组parentId/businessType/isProject层级CRUD、组移动、成员移动及对象范围。"
+      ],
+      "acceptanceScenarios": [
+        "空白名称拒绝",
+        "循环移动拒绝",
+        "删除含成员/资源组需先说明影响。"
+      ],
+      "contractUnknowns": [
+        "组内资源是否继承及删除转移规则待明确",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "shell-members",
+      "title": "员工创建/编辑/角色分配/密码重置及外部成员边界",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "business_groups"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "参考管理员直接创建账号密码、phone登录、department多选与至多2角色不对应当前邀请模型；不能推断外部员工canEdit。"
+      ],
+      "acceptanceScenarios": [
+        "邀请不直接激活",
+        "受保护管理员不可删除",
+        "跨租户人员编辑拒绝。"
+      ],
+      "contractUnknowns": [
+        "是否采用参考角色数限制和手机登录需产品决定",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "shell-member-invite",
+      "title": "成员关联邀请及资源迁移容量确认",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "business_groups"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "未建立已有账号手机号/邮箱验证码关联、业务组同类型唯一选择、资源迁移容量shortage确认。"
+      ],
+      "acceptanceScenarios": [
+        "验证码过期/重复消费拒绝",
+        "容量不足不能误示迁移成功",
+        "不发送真实邀请做调查。"
+      ],
+      "contractUnknowns": [
+        "资源迁移是否影响tenant ownership和商业额度未定",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "shell-role-permissions",
+      "title": "角色创建/复制/编辑/详情与菜单功能数据权限保存",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "tenant_rbac"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "参考create/copy/detail和条件数据权限tab不等同当前权限集合；名称120/描述2000与参考30不同，未建立复制按钮闭环。"
+      ],
+      "acceptanceScenarios": [
+        "内建角色保护",
+        "权限加载失败禁保存",
+        "复制不能复制超范围权限。"
+      ],
+      "contractUnknowns": [
+        "参考数据权限具体对象及角色类型映射待确认",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "shell-basic-info",
+      "title": "个人资料姓名与头像",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "personal"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "参考头像上传及50字长度限制与当前name120不同；成功提示提及头像不证明上传实现。"
+      ],
+      "acceptanceScenarios": [
+        "空白名失败",
+        "未保存关闭不变",
+        "头像失败不能误报资料全部成功。"
+      ],
+      "contractUnknowns": [
+        "头像存储服务、格式尺寸和孤立文件回收未知",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "shell-account-security",
+      "title": "账号安全：邮箱/手机号/用户名/密码变更",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "personal"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺少参考邮箱/手机号验证码换绑、username变更及首次设密分支；密码规则与参考不一致。"
+      ],
+      "acceptanceScenarios": [
+        "旧密码错误不变",
+        "两次密码不一致阻止",
+        "新联系方式冲突拒绝且不改账号。"
+      ],
+      "contractUnknowns": [
+        "手机号支持、恢复身份和密码策略由业务确定",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "shell-preferences",
+      "title": "温度与电量单位偏好立即保存",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "personal"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "参考摄氏/华氏和kWh/MWh/GWh/中文单位onChange立即写并reload；当前只有公制/英制kW/kWh枚举，检索units消费者仅设置选择器，未建立温度/电量转换消费者。"
+      ],
+      "acceptanceScenarios": [
+        "用户A偏好不污染B",
+        "未保存不改",
+        "缺数据仍空态",
+        "单位切换数值与标签同步。"
+      ],
+      "contractUnknowns": [
+        "所有遥测/报表单位转换点及后端量纲合同需清单核对",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "shell-screen-config",
+      "title": "大屏目录、标题多语言与区域配置",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "screens"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "未建立参考BASIC/BUSINESS_GROUP_1/BASIC_1/BASIC_YW目录、多语言标题50字和行政区district配置保存；不能把总览local偏好当大屏配置。"
+      ],
+      "acceptanceScenarios": [
+        "空标题禁保存",
+        "地区读取失败保留原配置",
+        "配置更新后展示刷新。"
+      ],
+      "contractUnknowns": [
+        "组织特殊分支与运维组配置是否保留需确认",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "shell-root-child-distribution",
+      "title": "根业务组与子业务组的场站分配及写入边界",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "business_groups"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "成员grant不是根/子业务组站点归属分配；未建立根只读单列表、非根双列表和显式transfer箭头事务。"
+      ],
+      "acceptanceScenarios": [
+        "根无checkbox/箭头",
+        "无选择不能转移",
+        "筛选分页不写归属",
+        "转移后两侧一致。"
+      ],
+      "contractUnknowns": [
+        "站点能否多组归属、跨组容量限制未知",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "openapi-entry-guard",
+      "title": "OpenAPI角色与开通状态路由边界",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "openapi"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "未建立OpenAPI application开通态缓存及初始化/凭证路由互斥；不应照搬roleId=1为本项目权限判断。"
+      ],
+      "acceptanceScenarios": [
+        "未开通仅初始化",
+        "开通后可凭证页",
+        "跨tenant不复用缓存。"
+      ],
+      "contractUnknowns": [
+        "开通角色权限与应用数限制需确定",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "openapi-initialize",
+      "title": "开通验证与一次性凭证交付",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "openapi"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "缺少开发者协议版本、password/code校验开通、appId/secret一次性交付；注册邮箱挑战不能直接当OpenAPI身份校验。"
+      ],
+      "acceptanceScenarios": [
+        "未勾协议不得开通",
+        "挑战失效拒绝",
+        "重复提交不建多应用",
+        "secret不入日志。"
+      ],
+      "contractUnknowns": [
+        "开发者合同、验证渠道、secret安全与撤销策略待确认",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "openapi-credentials",
+      "title": "凭证查看、剩余额度及直接重置Secret边界",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "openapi"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "缺少应用凭证读取/5分钟刷新、低额阈值/耗尽状态、重置secret立即写和一次展示下载；权限包不提供remainingCalls。"
+      ],
+      "acceptanceScenarios": [
+        "跨tenant不可读",
+        "重置成功旧secret失效",
+        "弹窗关闭清临时secret",
+        "耗尽显示真实状态。"
+      ],
+      "contractUnknowns": [
+        "密钥可见策略、轮换重叠期与额度服务合同未知",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "openapi-statistics",
+      "title": "API调用统计与按月趋势",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "openapi"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "audit_event不是API调用计量；缺少按API/月summary/trend/top10及5分钟刷新销毁机制。"
+      ],
+      "acceptanceScenarios": [
+        "切API仅影响对应趋势",
+        "跨月日期正确",
+        "未调用显示0或真实空态",
+        "跨租户隔离。"
+      ],
+      "contractUnknowns": [
+        "计量事件来源、时区、失败调用是否计费未定",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "openapi-topups",
+      "title": "充值记录与汇总",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "openapi"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "缺少充值汇总、分页流水、金额币种和余额对账；参考本页只有读取，不证明充值提交/支付流程。"
+      ],
+      "acceptanceScenarios": [
+        "分页不重复",
+        "金额两位展示不改原值",
+        "退款/撤销与余额可对账。"
+      ],
+      "contractUnknowns": [
+        "充值来源、币种、账务规则及支付系统待指定",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "openapi-packages",
+      "title": "套餐中心静态报价与客服入口",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "openapi"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "没有参考静态API次数套餐展示/客服入口；能力包不等于已购套餐，也不能将参考静态报价当实时价格。"
+      ],
+      "acceptanceScenarios": [
+        "价格来自明确目录",
+        "无购买handler不显示已下单成功",
+        "能力配置不改余额。"
+      ],
+      "contractUnknowns": [
+        "套餐定价、有效期、销售渠道待确认",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "openapi-docs-help",
+      "title": "API文档和FAQ后端文本渲染",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "openapi"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "未建立scene desc/faq及locale文本解析、目录锚点和FAQ折叠；不能声称取得参考后端文档内容。"
+      ],
+      "acceptanceScenarios": [
+        "空文档真实空态",
+        "不可信内容不执行脚本",
+        "语言切换目录与正文一致。"
+      ],
+      "contractUnknowns": [
+        "文档来源、版本和开放权限待提供",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "admin-enterprise-profile",
+      "title": "企业资料多语言编辑与Logo自动上传写入边界",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "tenant_rbac"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "当前单name160不支持domains locale/name行、zh/tc映射及多语言去重；未建立选图即Logo上传后保存URL流程。"
+      ],
+      "acceptanceScenarios": [
+        "地区/类型/范围必选",
+        "语言行不重复",
+        "Logo失败不改资料",
+        "单名称迁移不丢失。"
+      ],
+      "contractUnknowns": [
+        "公司名称唯一规则、Logo裁剪/存储清理未知",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "admin-platform-logs",
+      "title": "平台登录/场站/敏感操作日志查询、详情与导出",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "tenant_rbac"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "未建立登录/站点/敏感三类独立日志、IP账户/模块筛选、before/after批量详情和受控导出；当前actor过滤不能当整租户日志。"
+      ],
+      "acceptanceScenarios": [
+        "无权限不可查敏感字段",
+        "跨tenant导出拒绝",
+        "详情与导出范围一致",
+        "大批量不截断冒充全量。"
+      ],
+      "contractUnknowns": [
+        "登录事件完备性、保留期、敏感字段权限未知",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "admin-account-orders",
+      "title": "账户产品余额、订单及支付明细只读闭环",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "commercial"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "缺少账户software/addService/license/OEM余额、订单分页、只读订单详情及支付日志；无证据支持下单支付退款。"
+      ],
+      "acceptanceScenarios": [
+        "无订单空态",
+        "订单id越权拒绝",
+        "金额/容量单位匹配",
+        "只读详情不触发支付。"
+      ],
+      "contractUnknowns": [
+        "订单权威系统、税币种、长期有效期表达待确定",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "admin-station-services",
+      "title": "场站服务筛选、详情、License余量预览及Consume确认边界",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "commercial"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "缺少场站服务状态、按PV/storage容量计算、license余量预览及consume确认；已有权限不能等同active服务。"
+      ],
+      "acceptanceScenarios": [
+        "打开详情不consume",
+        "重复激活幂等",
+        "并发不能超额扣减",
+        "PV与储能容量单位正确。"
+      ],
+      "contractUnknowns": [
+        "服务品类、额度来源、超额与自动续费合同未定",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "admin-renewal-write-boundary",
+      "title": "单站/批量自动续费：请求先于信息确认",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "commercial"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "未建立单站/批量auto-renew/cancel及失败回显；参考请求先于信息modal不能误作只读确认。"
+      ],
+      "acceptanceScenarios": [
+        "未选站禁批量",
+        "失败恢复展示",
+        "重复请求不重复扣费",
+        "批次部分失败逐站回报。"
+      ],
+      "contractUnknowns": [
+        "续费触发时间、价格锁定、退订生效与失败补偿待定义",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "video-view",
+      "title": "视频监控画面按场站查询与播放地址获取",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "video_monitoring"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "未建立摄像头列表/load more、HIK_FE preview-urls或播放器；3D场景camera不是视频摄像头。"
+      ],
+      "acceptanceScenarios": [
+        "无摄像头不播样例",
+        "过期地址刷新受权",
+        "切站清上站画面",
+        "跨tenant不可获取地址。"
+      ],
+      "contractUnknowns": [
+        "视频厂商协议、流格式、收费与隐私授权未知",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "video-camera-management",
+      "title": "摄像头创建编辑、绑定站点与删除确认",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "video_monitoring"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "未建立cameraName/sn/captcha/channel/defaultPlayFlag及站点绑定创建编辑删除；通用设备列表不能证明摄像头管理。"
+      ],
+      "acceptanceScenarios": [
+        "创建校验按模式",
+        "未变化不保存",
+        "删除确认",
+        "不可绑定无权限站点。"
+      ],
+      "contractUnknowns": [
+        "设备SN唯一性、通道枚举和播放默认规则待定",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "video-external-keys",
+      "title": "视频外部平台密钥管理：详情可能读取秘密字段",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "video_monitoring"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "缺少EZVIZ/HIK等平台appKey/secret管理与cameraCount删除约束；密钥详情是敏感读不能调查调用。"
+      ],
+      "acceptanceScenarios": [
+        "普通角色不可读secret",
+        "已有摄像头拒删",
+        "敏感值不写日志/浏览器持久化。"
+      ],
+      "contractUnknowns": [
+        "厂商接入许可、密钥轮换、公共平台服务期需合同",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "account-registration",
+      "title": "企业/终端用户注册多步骤与新增账户写点",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "identity_lifecycle"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "参考企业/终端用户b/c双路径、手机号滑块验证、Reg2即时账号注册与Reg3企业注册不同；不能把企业申请当终端用户自注册。"
+      ],
+      "acceptanceScenarios": [
+        "企业待审不能登录",
+        "激活一次性",
+        "终端分支无企业字段",
+        "测试种子默认密码不放宽真实校验。"
+      ],
+      "contractUnknowns": [
+        "终端用户是否纳入及防滥用/验证码供应商未知",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "account-password-recovery",
+      "title": "找回密码：验证身份、重设密码及成功页",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "identity_lifecycle"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "当前激活限定invited，不覆盖已激活用户忘记密码；未建立邮箱/手机号验证→reset→成功页。"
+      ],
+      "acceptanceScenarios": [
+        "已激活账号可按合同恢复",
+        "过期/已用token拒绝",
+        "重置撤销所有会话且不泄露账号存在。"
+      ],
+      "contractUnknowns": [
+        "恢复渠道与MFA丢失处理需定义",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "account-cancellation",
+      "title": "账号注销：密码校验、验证码后立即注销、完成页",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "identity_lifecycle"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "成员停用/删除不是本人注销；缺少密码检查→绑定渠道验证码→立即注销及组织管理员资格判断。"
+      ],
+      "acceptanceScenarios": [
+        "唯一管理员被阻止并有转移说明",
+        "验证码失败不注销",
+        "完成页前服务端已确认。"
+      ],
+      "contractUnknowns": [
+        "法定保留、财务未结、责任移交和恢复期限待定",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "knowledge-file-preview",
+      "title": "知识库目录搜索、文件预览与下载边界",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "knowledge_content"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "未建立知识目录/关键字分页文件查询、通用文件metadata、图片视频Office/PDF预览；CSV下载不证明通用预览依赖可用。"
+      ],
+      "acceptanceScenarios": [
+        "无目录空态",
+        "文件URL不可绕过授权",
+        "不可信文档隔离渲染",
+        "下载与预览权限一致。"
+      ],
+      "contractUnknowns": [
+        "对象存储、病毒扫描、Office预览供应商与参考依赖能力未知",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "incoming-sso-bridge",
+      "title": "进件入口：自动SSO票据与外站iframe",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "application_intake"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "未建立外部进件JJ票据交换与iframe；本地company_application不是外部业务进件对象，参考挂载自动换票有写入边界。"
+      ],
+      "acceptanceScenarios": [
+        "打开前明示换票动作",
+        "ticket不入日志",
+        "重复/过期票据拒绝",
+        "不将现有会话token给iframe。"
+      ],
+      "contractUnknowns": [
+        "外部业务对象、签约/域名/跨域及回执协议未知",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "header-notifications",
+      "title": "全局通知抽屉：读取与标已读/签约回执边界",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "messages_tasks"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "没有参考分类msg-item分页、msg-change已读/全部已读、签约回执与工单报警详情导航闭环；连接状态不是收件箱。"
+      ],
+      "acceptanceScenarios": [
+        "展开列表不误确认业务",
+        "读回执幂等",
+        "签约失败不标成功",
+        "越权消息详情拒绝。"
+      ],
+      "contractUnknowns": [
+        "消息来源、投递去重和读回执触发语义待定义",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "global-announcements",
+      "title": "全局公告：读取列表与关闭也标已读",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "messages_tasks"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "未建立公告unreadList、link/info弹窗及确认/关闭均标已读；不能将关闭当无副作用dismiss。"
+      ],
+      "acceptanceScenarios": [
+        "关闭按明确策略写一次receipt",
+        "外链允许名单",
+        "已读不影响其他用户",
+        "未授权不见公告。"
+      ],
+      "contractUnknowns": [
+        "发布审批/有效期、强制阅读与多语言合同未知",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "report-template-editor-boundaries",
+      "title": "报表内容编辑器保存前可达、字段联动与SYS另存边界",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "reports"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "缺保存前读取字段schema、锁定字段自动选中、deviceInfo与deviceData联动及类型切换清理。",
+        "参考保存即写模板，SYS另存实际update语义未知；当前无法承接这条编辑闭环。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：关闭草稿无写入；移除设备信息同步清关联数据；锁定字段不可取消；系统模板另存产生新ID。"
+      ],
+      "contractUnknowns": [
+        "参考实际字段名单、SYS克隆服务端语义及模板上限未验证。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "report-manual-all-types",
+      "title": "手动报表Daily/Monthly/Yearly/Total的周期与字段变化",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "reports"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "未按Daily/Monthly/Yearly/Total选择模板和参数组；当前业务kind与参考timeType不是同一维度。",
+        "缺各类型日/月/年控件、Total半年窗口、对应跨度上限及站点范围/名称/语言输入；现有366天限制不支持参考多年范围。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：日/月/年/Total边界分别验证；起晚于止拒绝；无权限站点被剔除或拒绝且行为明确；空数据保留真实空态。"
+      ],
+      "contractUnknowns": [
+        "参考Monthly默认值算法与服务器日期归一、文件格式未验证。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "report-auto-type-frequency-matrix",
+      "title": "自动任务只支持Daily/Monthly类型，数据范围与调度频率分离",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "reports"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "缺Daily/Monthly数据类型与每日/每N月频率分离，以及类型切换清模板/范围和跨频率清生成时间联动。",
+        "不能把每年执行frequency12当Yearly报告；参考指定站非空提前return仅静态异常线索，不应复制。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：Monthly拒绝前一天dataRange；Daily可前一天；每日频率不接受月末；指定站非空正常保存且执行时复核权限。"
+      ],
+      "contractUnknowns": [
+        "时区、月底缺日处理、漏跑追补及参考实际调度未验证。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "pricing-basic-electricity",
+      "title": "基本电费单一/两部制及容量/合同需量/实际需量联动",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "station_metrics"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "未建立单一/两部制及容量/合同需量/实际需量政策、变压器kVA与户号；storage capacityKwh不能用作变压器容量。"
+      ],
+      "acceptanceScenarios": [
+        "三种两部制切换仅改草稿；保存再读单位不漂移；实际需量型不提交无关容量；取消不写。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "零值、实际需量账单计算与服务端精度须确定。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "pricing-template-mode-conditions",
+      "title": "费率手工/外部/自动模板及定价方式真实可选条件",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "station_metrics"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺国家/地区、用途、工作日、外部来源附加费与自动库条件；dynamic模式在当前UI不能发布。"
+      ],
+      "acceptanceScenarios": [
+        "外部picker确认仅改模板草稿；父保存才持久；不支持的用途/来源组合在API被拒绝。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "阶梯电价支持及外部动态来源真实契约未知。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "pricing-time-segments-import",
+      "title": "峰谷时段编辑与小时分时电价文件本地预览/保存边界",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "station_metrics"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "普通全天时段不覆盖按月每日24报价导入、日期完整性、重复小时与小数校验；不能把本地文件预览当已发布。"
+      ],
+      "acceptanceScenarios": [
+        "重复小时、缺日、跨月及无效小数拒绝；换月清预览；取消无上传；正确数据保存重读一致。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "参考特殊跨午夜边界行为未运行；本项目导入可见性按业务再确认。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "alarm-condition-algorithm",
+      "title": "告警条件算法、运算符、触发与恢复阈值联动",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "alarms"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "缺单/双指标单位周期一致校验、self/dpc_rate、同比环比和区间端点组合矩阵。",
+        "缺连续周期窗口、缺数/零分母处理、条件本地提交与父规则保存分离；事件cleared不等于配置条件恢复运算。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：不同单位双指标拒绝；相等边界开闭区间准确；缺数/零分母输出未知；编辑条件未保存规则不触发评估。"
+      ],
+      "contractUnknowns": [
+        "真实指标全集、同比基期和恢复引擎调度规则待确认。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "alarm-rule-notification-write",
+      "title": "告警规则时间段、通知/收件人、恢复时长及即时启停写边界",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "alarms"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "缺规则名称/对象/业务组/等级/条件、15分钟有效时段、恢复时长和独立即时启停命令。",
+        "缺规则通知次数上限、渠道资质/收件人验证与恢复通知调度；账号邮件模板不是告警送达服务。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：条件为空/跨午夜不支持时拒绝；启停有审计；超限抑制；撤权收件人不再投递；不发送真实外部通知。"
+      ],
+      "contractUnknowns": [
+        "参考AND语义、限流退避、恢复任务和渠道可用资格未知；本项目邮件适配范围待定。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "pricing-station-template-binding",
+      "title": "站点费率模板绑定、日期编辑与解除的读写边界",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "station_metrics"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺已有手工/自动模板库的批量绑定、日期编辑及解绑；当前创建新电价不是引用已有模板。"
+      ],
+      "acceptanceScenarios": [
+        "打开picker/改日期不写；绑定后重读；并发重叠、跨租户模板拒绝；解绑保留历史核算来源。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "参考绑定日期含边界与当前排他结束日不能直接映射。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "account-login-and-sso-entry",
+      "title": "登录身份、组织选择、密码升级与SSO入口",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "identity_lifecycle"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "未建立参考手机号/邮箱/账号identityType、登录滑块、组织选择switchOrgLogin、强制密码升级和外部SSO挂载链；当前会话使用tenant上下文，已查范围未确立登录后的组织切换流程，不能据此断言用户绝对不能属于多组织。"
+      ],
+      "acceptanceScenarios": [
+        "错误密码不登录",
+        "MFA前不授业务会话",
+        "组织切换重算权限",
+        "外部回调防重放。"
+      ],
+      "contractUnknowns": [
+        "是否支持同账号多tenant、IdP协议和密码升级策略未定",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "station-metric-source-strategy",
+      "title": "计量数据源策略与指标/设备选择",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "station_metrics"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺每指标DYNAMIC自动选源/STATIC设备类型和天气站选择；STATIC不是数值常量输入，固定遥测映射不等于可配置选源。"
+      ],
+      "acceptanceScenarios": [
+        "不可用设备类型不可选；None保留未知；切自动有独立写审计；取消STATIC不改来源。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "能量守恒、累计算法优先级及天气刷新时效需冻结契约。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "station-energy-offset-calibration",
+      "title": "累计/日能源偏移校准与日期替换",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "station_metrics"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "缺正负累计校准、按日期替换日偏移、删除及重算传播；原始积分不应被直接覆盖伪装校准。"
+      ],
+      "acceptanceScenarios": [
+        "0和负偏移合法；日编辑不能偷改日期；撤销后月年统计可追踪重算；权限撤销拒写。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "生效延迟、累计与日偏移叠加顺序、历史账单重算边界待定。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "station-generation-monthly-plans",
+      "title": "年度常规/卓越月发电计划",
+      "status": "implemented-and-verified",
+      "completed": true,
+      "notes": "年度12个月配置CRUD闭环完成：V28、真实HTTP22次、规则/PG13项、浏览器5项及真实Assets入口/撤权集成验证通过。实际完成率和预测属于独立流程，未声称已实现。",
+      "domainIds": [
+        "station_metrics"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [],
+      "acceptanceScenarios": [
+        "缺常规月拒绝保存；卓越月空不转0；编辑锁定年；并发同年变更检测并重读。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "是否同年覆盖、统计单位和目标历史版本政策待确定。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "station-energy-analysis-algorithm",
+      "title": "能源流分析算法即时配置与结果读取",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "station_metrics"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "缺两类能流算法及去向/来源比例读模型、即时切换失败回滚；积分不等于能源分摊。"
+      ],
+      "acceptanceScenarios": [
+        "切换失败恢复服务器值；缺组合测点比例未知；变更后结果携带算法版本且不冒充已完成回填。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "参考后端两算法公式与回填范围未知。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "station-actual-demand-calculation",
+      "title": "实际需量15分钟固定/滑窗算法与首页月/年展示",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "station_metrics"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "固定窗允许正负抵消、滑窗负功率按0是不同规则；缺开关、月/年头屏偏好及固定/滑动版本化计算。"
+      ],
+      "acceptanceScenarios": [
+        "相同正负样本两算法结果按契约不同；缺样/时区跨日测试；关闭不产生假0需量；失败回滚。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "滑窗采样步长、积分权重和追溯回填政策未确认。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "station-power-factor-enable",
+      "title": "功率因数统计开关即时保存",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "station_metrics"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "显示测点不等于站点统计服务；缺适用系统门禁、即时保存开关及失败重读，不应增添目标功率因数/罚率字段冒充参考流程。"
+      ],
+      "acceptanceScenarios": [
+        "不适用站点明确不可用；radio保存失败回滚；关闭显示未启用，不删除原始功率因数。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "站点功率因数计算窗、聚合公式和历史重算未确定。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "station-income-calculation-enable",
+      "title": "收益计算开关与生效费率缺失检查",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "station_metrics"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "不能以存在收益数据认定支持开关；缺按系统/能源分类及时区生效日检查购售价、启用确认与禁用即时保存。"
+      ],
+      "acceptanceScenarios": [
+        "缺售价时禁止启用且可导航绑定；取消确认不写；禁用后保留历史收益；费率读取失败不能宣称库为空。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "哪些系统适用、结算任务停启和回填边界待定。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ems-container-status-auto-hide",
+      "title": "能量管理父容器轮询、成功记录自动隐藏与退出边界",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "缺按站点EMS轮询发送记录、单条自动隐藏/批量隐藏区别；查询状态不能当执行状态，也不能默认读页面安全无写。"
+      ],
+      "acceptanceScenarios": [
+        "成功提示隐藏只改可见性；切站/卸载不延续计时写；已在途写必须可审计而非声称撤回。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "参考调查期间是否自动hidden发生仍未核验；不重新挂载验证。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ems-real-time-device-command-drafts",
+      "title": "实时控制六类设备命令参数、验证与下发回执",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "缺六设备族命令schema、离线设备拦截、命令参数联动、操作验证、批次发送与回执；只读query outbox不可当control通道。"
+      ],
+      "acceptanceScenarios": [
+        "取消草稿不发送；液冷热泵温度关系错误拒绝；离线设备拒绝；超时/部分失败不显示物理完成。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "scene编码、设备支持表、断路器执行时序与物理成功标准需适配器契约。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ems-send-logs-execution-read-model",
+      "title": "下发日志、重试边界与执行收益/偏差读取",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "缺EMS/设备族/发布类型分页、失败一次重试限制、计划实际SOC/收益偏差读模型；审批审计不能当发送或执行收益。"
+      ],
+      "acceptanceScenarios": [
+        "只查询日志不重发；已重试或响应中拒绝；部分失败保留原记录；缺回执时绩效未知。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "收益对比基线、AI绩效计算和参考状态枚举后台未验证。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "child-station-create-capacity-device-link",
+      "title": "子站草稿、父容量约束与创建后设备关联",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "stations"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "缺父站能力约束的子系统创建、首步即持久创建后再绑设备、容量和授权继承；本地向导下一步不是创建成功。"
+      ],
+      "acceptanceScenarios": [
+        "子容量超过父拒绝；首步成功后取消第二步保留待绑定子站；重复设备归属拒绝；父权限变化即时生效。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "容量总和约束、父子计量去重及继承规则尚未取得。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "station-battery-health-read-and-theory-config",
+      "title": "电池健康类别、寿命/性能图与理论值配置边界",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "comparison_ai"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "缺健康/异常/未知类别、寿命曲线、电芯差异及理论循环/SOH版本；原始SOH不能命名为理论诊断结果。"
+      ],
+      "acceptanceScenarios": [
+        "无理论值只开空配置不自动保存；1000..20000循环和0..100 SOH校验；全站应用需明确scope和审计。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "参考理论值含义、寿命模型与单体诊断算法未知；GET命名不代表只读。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "station-pv-health-loss-cleaning-read-model",
+      "title": "站内PV健康、损失/清洗与设备指标读模型",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "comparison_ai"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "缺近30天效率/故障/恢复/可用分项、月损失读模型、清洗收益及回本估计；现有健康分不可套用参考权重。"
+      ],
+      "acceptanceScenarios": [
+        "缺气象/装机或分母为0显示未知；月损失与比例单位一致；修改清洗成本不启动诊断或保存配置。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "参考PV叶入口可见性、原始分项单位和后台模型未知。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "station-create-edit-masterdata",
+      "title": "站点主档创建/编辑、容量许可检查与创建后步骤",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "stations"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺站点创建持久化、光储充/MPPT条件容量、时区并网日期、关联方、许可差额和创建后绑定步骤；UI扩字段需同步DTO。"
+      ],
+      "acceptanceScenarios": [
+        "有效站点创建返回正式id并重读；取消草稿不创建；容量降低与既有承诺冲突拒绝；上传写独立提示。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "许可扣减、坐标反查、关联方与地域字段契约待定。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "station-tag-management",
+      "title": "站点标签定义新建、编辑、检索与删除",
+      "status": "implemented-and-verified",
+      "completed": true,
+      "notes": "标签CRUD和站点分配已落新库V26；11项规则/PG、实际HTTP正反例与浏览器CRUD/刷新/冲突/草稿/撤权验证通过。",
+      "domainIds": [
+        "stations"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [],
+      "acceptanceScenarios": [
+        "空白名拒绝；取消编辑无写；删除已绑定标签按明确策略处理；越租户分配拒绝。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "参考标签唯一性和站点标签分配深流程未取得。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "virtual-weather-create-edit-and-binding",
+      "title": "虚拟气象站开通、编辑绑定与历史/预测读图",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "station_metrics"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "缺历史/预测开通额度、固定位置、年限、辐照历史图与站点绑定；天气字段展示不能证明开通生命周期。"
+      ],
+      "acceptanceScenarios": [
+        "位置开通确认前不创建；额度不足明确拒绝；绑定重复检测；解除按写操作审计；预测缺失不补示例。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "供应商服务、费用/额度、历史/预测单位和数据质量待确认。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "station-space-management",
+      "title": "空间树创建、重命名移动、设备关联与解除",
+      "status": "implemented-and-verified",
+      "completed": true,
+      "notes": "V29空间树与设备关联CRUD闭环：21项规则/真实PG（含3项双连接并发）、32次真实HTTP及6项浏览器测试通过。覆盖环/删除保护、批量原子性、版本/权限与恢复草稿。物理布局画布、空间能耗汇总属于独立未知范围，未伪造计算或布局。",
+      "domainIds": [
+        "stations"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [],
+      "acceptanceScenarios": [
+        "移动到后代拒绝；跨站设备绑定拒绝；删除父空间按明确规则处理；取消modal不持久。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "空间类型合法层级、名称限制及删除子树策略待确认。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "operation-production-and-meter-reports",
+      "title": "运营生产日报预览/导出任务与电表统计报表查询",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "reports"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "PRODUCTION_DAY日报含业务组/多站、最近29完整日期、报告名与语言；现有operations计划报告不等同生产日报。",
+        "缺meterName/倍率/正反向电量/动态分时列的电表统计；遥测点CSV不自动等于电量统计。",
+        "参考Preview也创建任务；本项目预览现存产物为读取，两个动作必须明确区分。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：今日和超窗日报拒绝；多站范围复核；电表倍率/缺数/动态单位正确；取消等待不伪称服务器取消。"
+      ],
+      "contractUnknowns": [
+        "日报经营口径、计量算法和参考任务取消行为未验证。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "dashboard-global-configuration",
+      "title": "全局监控看板选择、配置和排序",
+      "status": "partially-implemented",
+      "completed": false,
+      "notes": "V27个人模板新建/重命名/置顶/选择/删除与现有白名单卡片显式保存已闭环，真实库回读及冲突/多标签页草稿保护通过。自定义指标、模板共享、参考卡片指标与查询筛选的其余差异继续保留待办。",
+      "domainIds": [
+        "monitor"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺服务端模板场景、名称、标签、置顶排序和删除；本地卡片列表不等同模板CRUD。"
+      ],
+      "acceptanceScenarios": [
+        "模板新增/改名重登可读；置顶顺序持久；无权widget不可通过旧模板恢复；删除需确认。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "服务端候选卡片、系统模板修改权限及业务场景规则待确认。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "dashboard-station-status-and-automatic-hide",
+      "title": "站内看板类型选择、指标和策略状态自动隐藏",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "monitor"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺按系统/地域能力装配的全部看板及执行提示轮询；当前数据展示不能认定SUCCESS自动隐藏已实现或安全只读。"
+      ],
+      "acceptanceScenarios": [
+        "无能力显示真实不可用；切站不泄露前站提示；页面读不改变执行结果；若隐藏写存在须有独立审计。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "参考历史自动hidden是否触发未知，站内许可入口后台效果未核验。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "alarm-live-history-lifecycle",
+      "title": "全局/站内实时与历史告警、详情和处置",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "alarms"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "参考实时详情条件标读与本项目业务确认不同；当前acknowledge不能冒充readFlag读回执。",
+        "缺全局规则/设备告警统一高级查询、关闭/删除命令及其权限/审计语义；恢复时间来自事件不能当人工关闭。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：历史详情无写入；标读不确认；确认不恢复；跨站告警建工单拒绝；删除/关闭需独立权限。"
+      ],
+      "contractUnknowns": [
+        "参考删除是否软删除、真实恢复/通知结果未知。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "station-external-control-and-layout-wrappers",
+      "title": "站内用能控制与系统布局iframe包装边界",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "stations",
+        "strategy"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "现有站点图不能覆盖外部SSO临时码/iframe生命周期；参考布局外壳不证明内部编辑业务已扫描。"
+      ],
+      "acceptanceScenarios": [
+        "未授权不换码；错误来源message不清登录；票据过期显式提示；外壳加载不算布局保存或设备控制。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "参考iframe内部业务、SSO票据协议及本项目服务选型未知。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "station-wiring-diagram-view-edit",
+      "title": "接线图读取、设备参数绑定及画布保存",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "stations"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺画布元件/连线/位置/旋转/文字保存与设备参数动态绑定；拓扑读取不是持久化接线图编辑。"
+      ],
+      "acceptanceScenarios": [
+        "拖动/绑定只改草稿；取消后服务器图不变；保存重读布局一致；越站参数绑定拒绝。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "参考动态元件所有交互副作用和服务器拓扑校验未知。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "station-operation-log-query",
+      "title": "站点操作日志分页、位置和全局跳转",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "stations"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺站点维度内容/人员组/通道/IP/时间筛选与位置查看；当前自有审计不代表授权站点全部操作日志可查。"
+      ],
+      "acceptanceScenarios": [
+        "只读分页不写审计状态；无权站不可查；坐标缺失不绘图；导航不混同日志查询。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "通道/IP保留政策、位置更新事件schema及全局日志权限待确定。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "station-authorize-sharing",
+      "title": "站点授权开关、业务账号关联和撤销",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "tenant_rbac"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "未建立owner对外授权authOpen立即保存、关联企业账号及跨组织角色预览；同租户委派限制不能直接放宽成共享。"
+      ],
+      "acceptanceScenarios": [
+        "打开详情不grant",
+        "关闭共享撤销派生权限",
+        "过期无权",
+        "跨tenant拒绝未签合同关联。"
+      ],
+      "contractUnknowns": [
+        "owner判断、共享嵌套/继承和撤销历史数据访问规则未知",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "station-license-records",
+      "title": "场站许可状态、额度和使用记录",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "commercial"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "未建立license激活状态/容量、status-usedWay-日期分页及操作记录；本路由参考只有读模型，不推断详情能激活续费。"
+      ],
+      "acceptanceScenarios": [
+        "筛选分页准确",
+        "查看不扣额度",
+        "单位与licenseType一致",
+        "越权站点不返回记录。"
+      ],
+      "contractUnknowns": [
+        "许可状态权威来源、使用方及记录保留未知",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ai-diagnostics-statistics-settings-and-report",
+      "title": "智能分析统计、阈值设置、单站诊断和报告任务",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "comparison_ai"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "缺EP/NA阈值配置、诊断统计/损失原因、单站诊断解释及AI报告任务；确定性报告任务不等于AI诊断。"
+      ],
+      "acceptanceScenarios": [
+        "阈值非法或EP<=NA拒绝；缺模型显示不可用；查询统计不触发生成；显式报告任务完成后方能下载。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "模型公式、准确度、许可与报告内容未知，不能凭AI命名认定训练需求。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ops-region-fence-team-and-station-binding",
+      "title": "运维区域行政围栏、团队和站点绑定",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "tenant_rbac"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "未建立行政区域fenceList重叠校验、personList/executorId团队与区域CRUD；站点绑定Confirm独立于区域Save也无对应已核实流程。"
+      ],
+      "acceptanceScenarios": [
+        "区域名2..20非空",
+        "围栏不可重叠",
+        "唯一成员自动执行人",
+        "取消区域草稿不撤销已确认绑定。"
+      ],
+      "contractUnknowns": [
+        "围栏拓扑、跨区域站点与并发分配规则待定",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ops-personnel-certificate-and-location",
+      "title": "运维人员添加、区域/接单、证书和位置编辑",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "tenant_rbac"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "未建立维护员选择已有user、receiveStatus、证书开关/到期及度分秒位置；企业人员不是运维资质档案。"
+      ],
+      "acceptanceScenarios": [
+        "证书到期按UTC日末",
+        "经纬度极值分秒清零",
+        "重复user拒绝",
+        "未保存上传的孤立附件可回收。"
+      ],
+      "contractUnknowns": [
+        "资质审核、位置隐私与派工计量未知",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "external-enterprise-signing-lifecycle",
+      "title": "合作企业签约发起、同意拒绝和终止",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "tenant_rbac"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "未建立合作企业发起→待确认/生效→有效→拒绝/终止双方状态机、预设菜单功能和相关消息同步；参考terminate GET仍是写。"
+      ],
+      "acceptanceScenarios": [
+        "只有接收方可同意拒绝",
+        "重复确认幂等",
+        "终止撤销派生授权",
+        "查询不能触发terminate。"
+      ],
+      "contractUnknowns": [
+        "生效条件、两方同意、在途任务和终止级联待业务合同",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "signing-contract-roles-and-scheme-inspection",
+      "title": "签约授权新增变更、取消及方案权限查看",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "tenant_rbac"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺少对外个人/组织接收方签约、永久/期限分支及独立关联站点链；角色模板不是参考外部方案只读检查页。"
+      ],
+      "acceptanceScenarios": [
+        "过去日期拒绝",
+        "永久与到期互斥",
+        "取消撤销权限",
+        "方案分页读全不固定首50",
+        "UI warning不能代替服务端拒绝。"
+      ],
+      "contractUnknowns": [
+        "外部角色包含关系、跨tenant转授和部分关联失败补偿需定义",
+        "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ]
+    },
+    {
+      "workflowId": "property-deep-dashboard",
+      "title": "资产看板：组织资产概览、收益排名与趋势",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺经营资产组织级数量/收益趋势、光伏储能切换和ACTUAL等收益口径排名分页服务。",
+        "现有结算前端聚合不证明资产看板统计引擎；参考排名导出省略排序/分页，不能直接照用当前列表导出。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：组织切换刷新全部面板；分页与导出范围明确；币种不混算；缺口径数据展示空态。"
+      ],
+      "contractUnknowns": [
+        "数量口径、收益ACTUAL定义和排名排序稳定键待确认。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "property-deep-asset-manage",
+      "title": "资产列表、新建编辑、终止与删除",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺经营资产独立列表/高级字段、类型驱动动态extraInfo、提交状态与项目负责人分配。",
+        "缺NORMAL/DRAFT/STOP状态下的编辑/终止/删除及备注规则；参考直接删除与备注弹窗并存，不能合并为已验证要求。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：非草稿禁止改类型；动态子表全部验证；终止原因必填；有账单引用的删除处理符合约定。"
+      ],
+      "contractUnknowns": [
+        "动态extraInfo和SN格式、参考两条删除路径可达性未知。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "property-deep-asset-detail",
+      "title": "共享资产详情：当前版本/历史、看板和业务信息",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺经营资产当前/历史版本切换、指定versionId原始快照、owner/income/power/resume等独立业务读模型。",
+        "缺SYSTEM_SYNC来源与经营状态控制动作；现有技术资产编辑不能证明资产历史/经营履历实现。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：历史版内容稳定且不暴露修改动作；系统同步资产禁止人工维护；无收益权限不可读取收益tab。"
+      ],
+      "contractUnknowns": [
+        "参考历史快照完整性及隐藏路由直接访问鉴权未知。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "property-deep-capital",
+      "title": "资方投资收益：维度查询、列配置与导入分支",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "缺SOLAR/ENERGY_STORAGE、DAY/MONTH/YEAR/TOTAL维度与动态收费项聚合。",
+        "列确认在参考为服务端模板写入，不是纯本地偏好；导入组件挂载但入口可达性不明，不能承诺完全复刻。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：TOTAL不使用日期；列保存只影响约定主体；格式/业务错误阻止导入；重复忽略/覆盖产生逐行结果。"
+      ],
+      "contractUnknowns": [
+        "费用、税/币种、动态列来源与参考导入可达性待确认。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "property-deep-ledgers",
+      "title": "四类收益台账：计划、预估、应收、实收的查询、导入与删除",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "缺PLAN/ESTIMATE/RECEIVABLE/ACTUAL各自字段、incomeSubType字典及DAY/月/年查询。",
+        "ACTUAL的手续费、付款渠道/账户/日期等不是其他台账复制；现有payments不足以等价。",
+        "缺xlsx预览、覆盖判定、逐行错误、显式提交及仅IMPORT来源允许删除的来源约束。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：四类字段校验不同；本地删预览行不删线上；篡改/过期预览拒绝；重试不重复记账；非导入来源不可删除。"
+      ],
+      "contractUnknowns": [
+        "台账与结算转换、重复覆盖键、导入临时持久化及财务来源契约待确认。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "property-deep-pgs",
+      "title": "发用电统计：光伏/储能与时间维度查询、收益导入分支",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "缺DAY/MONTH/YEAR/TOTAL的estimated/actual上网、自用、电量和补贴差额读模型。",
+        "当前收益字段不是发用电推导结果；参考导入按钮v-show:false仅能记录交付分支，不证明可见可用。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：TOTAL无需日期；切维度清区间；缺电表依据不算差额；忽略/覆盖重复策略可审计。"
+      ],
+      "contractUnknowns": [
+        "参考隐藏入口可达性、计量算法和组织范围待确认。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "property-deep-bill-list",
+      "title": "电费结算单：查询、确认、备注、结算、批量登记和重跑",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺经营电费单筛选、生成异常PRICE/ASSET/STATION分流、确认、备注与单笔/批量收款、重跑。",
+        "reviews是复核意见，不改变账目状态；既有settled等不能直接映射UNCONFIRM/UNSETTLE/SETTLING。",
+        "缺批量xlsx isSubmit:false预览与true提交及部分成功结果；付款表存在不证明收款接口。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：非可确认状态拒绝；重复/超额收款规则生效；批量部分失败可定位且重试不重收；复核意见不改状态。"
+      ],
+      "contractUnknowns": [
+        "防超收、部分成功事务、重跑范围与实际状态转换需业务确认。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "property-deep-bill-detail",
+      "title": "电费账单详情：账单分项、电表读数和状态动作",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺按billNo独立详情、billSum与GENERATION/LOSS/GRID_CONNECTION/CHARGE/DISCHARGE电表及分时读数结构。",
+        "缺按资产类型渲染账单、电量分项导出和确认/结算/重跑成功后复读取链；现有CSV收益行不是该明细格式。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：按账单直接访问也验证站点权限；缺分项保留空态；动作完成后读取版本一致；历史入口无写入。"
+      ],
+      "contractUnknowns": [
+        "电表分项来源、混合资产结构、附件与导出授权需确定。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "property-deep-bill-adjust",
+      "title": "账单调整：金额直接提交与电量预览后提交",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "缺金额非零/理由/凭证直接提交，以及电量非负输入→试算→review→显式提交两段链。",
+        "读取adjustment不证明可修改；现有review不可复用为power/adjust；试算成功也不能视作保存。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：金额0拒绝；电量试算无最终记账；返回不提交；账单修订/费率变化使旧试算失效；重复提交至多生效一次。"
+      ],
+      "contractUnknowns": [
+        "负数、防超收、调差审批、试算是否暂存及并发锁策略待业务明确。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "property-deep-energy-contract-maintain",
+      "title": "能源合同列表、维护及电价模板绑定",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "缺能源客户、运营年、结算周期/月归属、税、收益分成/折扣、租金/收款/附件和合同日期维护。",
+        "现有station_tariff不等于合同电价模板绑定及历史；参考先绑定后合同两请求存在部分成功未知，不应复制。",
+        "未建立SYSTEM_SYNC不可维护及一次修改限制契约，不能从文案新增强制锁定。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：绑定失败合同不生效、合同失败绑定不独立生效；旧账单引用旧版本；同租户两站兼容；跨租户拒绝。"
+      ],
+      "contractUnknowns": [
+        "交易相对方、税/收益计算、修改次数和历史账单追溯政策待确认。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "property-deep-energy-contract-detail",
+      "title": "能源合同详情、模板使用历史及操作记录",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺独立energyNo合同详情、条款只读结构、分年折扣/租金表、附件及费率模板使用历史/操作时间线。",
+        "资产ID、站点ID和合同编号不能复用成同一身份；现有合同标签不能证明详情链实现。"
+      ],
+      "acceptanceScenarios": [
+        "仅隔离验收：组织/合同切换后不显示旧数据；只读详情无维护写入；附件逐次鉴权；历史版条款与账单引用吻合。"
+      ],
+      "contractUnknowns": [
+        "合同级独立权限、附件访问、审计来源及模板历史保留策略需确定。",
+        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ]
+    },
+    {
+      "workflowId": "ems-deep-container-boundaries",
+      "title": "能量管理装配、权限线索与自动单条隐藏边界",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺EMS实例、子站、产品白名单、九模式可见性及需求响应占用的统一能力契约；仅菜单/本地模式不能证明设备支持。"
+      ],
+      "acceptanceScenarios": [
+        "切换EMS后旧请求不污染新实例；无白名单不出现可执行入口；提示隐藏不改发布记录。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "参考设备能力白名单和后台权限未知，自动hidden历史影响仍未知。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ems-deep-operation-verification",
+      "title": "策略发布的验证码/密码操作验证",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "缺6位验证码、图形验证证明、发送倒计时与单次发布验证；本地表单通过不能当服务端验证已成功。"
+      ],
+      "acceptanceScenarios": [
+        "无图形证明拒绝；过期/重放/换EMS证明拒绝；关闭不发布；验证码发送不能被归为读取。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "参考摘要和验证码风控实现未知，不复制秘密或散列值。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ems-deep-solar-control-history",
+      "title": "光伏控制任务列表与限发/恢复详情",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "缺按组织/站组/月分页的controlPlan详情、限发与恢复段、目标百分比或kW语义及设备操作日志关联；此参考流程只读，不应凭文件名添加下发按钮。"
+      ],
+      "acceptanceScenarios": [
+        "切月重置页码；限发与恢复分别展示；比例与kW不混用；只读查看不发命令。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "历史记录来源及非执行设备策略含义需确定。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ems-deep-follow",
+      "title": "跟随EMS：验证后切换与发布回执",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "跟随模式是独立验证后发布，不等同保存standby或审批；缺需求响应占用互斥及record回执。"
+      ],
+      "acceptanceScenarios": [
+        "打开页面不切换；取消验证无命令；响应中拒发；请求成功仍等待设备回执。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "设备切回EMS时已有计划如何失效及物理状态口径待定。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ems-deep-template-schedule",
+      "title": "策略模板CRUD及月/周/日期绑定独立于发布",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺模板/分组CRUD、MONTH/WEEK/DATE调度、当前未来日绑定解绑与历史发布分支；本地方案复制不是模板绑定。"
+      ],
+      "acceptanceScenarios": [
+        "模板改名保留历史版本；过去日期拒绑；并发修改检测；解绑不删除已执行历史。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "跨月/周/日期优先级及重复绑定冲突策略待冻结。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ems-deep-shared-restrictions",
+      "title": "策略公共限制：SOC、防逆流、防超需、变压器",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺SOC上下限、防逆流、防超需、变压器限制的统一持久化、触发/限值方向和响应动作；本地通用字段不等价。"
+      ],
+      "acceptanceScenarios": [
+        "SOC下>=上、反流limit>=trigger及需量limit<=trigger分别拒绝；禁用字段不误生效；旧字段迁移可审计。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "参考旧contract字段兼容与响应动作语义须设备契约核实。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ems-deep-customized",
+      "title": "自定义充放：连续全天时段、动作与功率",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "当前仅防重叠，允许时段缺口且不要求15分钟格点；缺全天连续、放电负荷跟踪、限制及MONTH/WEEK/DATE调度。"
+      ],
+      "acceptanceScenarios": [
+        "00:00至24:00缺口/非15分钟段拒绝；standby功率0；负荷跟踪不误转固定功率；保存不自动发布。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "混合类型20段上限及后端功率单位需单独约定。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ems-deep-peak-valley",
+      "title": "削峰填谷：费率前置、模板与发布",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺基本费前置、站点有效电价库选择绑定及专属策略模板/日历/验证发布；buy规则发布不是EMS策略执行。"
+      ],
+      "acceptanceScenarios": [
+        "无基本费或生效价时阻止发布；picker取消不绑；绑定成功不显示执行成功；负价与时区边界核对。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "自动计算分支和策略生成公式未确认。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ems-deep-demand",
+      "title": "需量管理：政策匹配与动作参数",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺两部制需量政策匹配、合同/实际需量、充放系数及固定/跟踪动作、公共限制与发布回执。"
+      ],
+      "acceptanceScenarios": [
+        "容量缴费政策拒绝需量模式；充电系数>=放电系数拒绝；修改政策需明确保存；无回执不能声称控制生效。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "实际需量计算口径、系数0是否有效及执行互斥待定。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ems-deep-dynamicUprating",
+      "title": "动态增容：政策匹配与动作参数",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺两部制容量政策匹配、充放动作系数、跟踪模式及动态增容设备发布，不能用储能capacityKwh代替kVA。"
+      ],
+      "acceptanceScenarios": [
+        "需量缴费政策不能启用容量模式；容量缺失拒绝；参数保存重读一致；发布失败保留草稿。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "变压器容量来源、功率因数换算及设备执行支持待确认。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ems-deep-utilization",
+      "title": "新能源消纳：系统组合与装机容量前置",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺GEN_GRID_USE_BTR能力匹配、PV装机容量前置与显式更新、基本费前置和持久模板发布；平滑模式不是参考消纳模式等价实现。"
+      ],
+      "acceptanceScenarios": [
+        "无PV+储能组合显示不可用；0装机拒绝；取消容量弹窗不改主档；保存主档不自动执行策略。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "消纳算法、装机来源及MPPT边界待冻结。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ems-deep-hybrid",
+      "title": "混合策略：3优先级半小时成员与策略类型约束",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺P0/P1/P2、48半小时成员、组CRUD及各类型政策匹配；本地priority数组不等于三层时间网格调度。"
+      ],
+      "acceptanceScenarios": [
+        "同层重复占用拒绝；成员无权或版本失效拒绝；23:30末格按24:00结束；组保存不发布。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "跨优先级冲突、降级与同类去重的设备语义未知。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ems-deep-demand-response",
+      "title": "需求响应：邀约列表、约束草稿与实例发布",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺按月邀约列表/实例详情、约束编辑的EMS配置保存与instance发布两条路径，市场草稿不承担此实例发布。"
+      ],
+      "acceptanceScenarios": [
+        "只查邀约不写；待执行/执行中按状态允许修改；配置保存不自动发布实例；终态/无权实例拒绝。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "实例来源、状态枚举、变更生效时点和市场签约不在已确认契约内。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ems-deep-ai",
+      "title": "AI策略：许可、价差风险约束、训练生成与验证执行",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "缺许可/数据就绪检查、价差风险设置、双训练任务状态、生成/模拟/验证执行分离及充电桩分组即时写；本地规则不是AI。"
+      ],
+      "acceptanceScenarios": [
+        "任一训练任务失败/非法状态停止生成；无模型真实不可用；模拟不发命令；分组更改立即写须明确反馈。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "模型有效性、训练窗口、外部数据传输与设备发布支持未知。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "ems-deep-track-meter",
+      "title": "追踪电表：配置候选与直接发送EMS",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "strategy"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "普通measurement point绑定不等于防逆流/防超需/防超压追踪电表；缺已发布映射、必选meter0、发送执行和回执。"
+      ],
+      "acceptanceScenarios": [
+        "无meter0阻止发送；删tag只改草稿；响应中禁发；旧映射保留直到新回执确认；跨站候选拒绝。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "此参考页不走通用操作验证，不能强行套用；数量上限及电表语义待确认。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "dashboard-custom-editor-save-boundary",
+      "title": "看板独立编辑器：候选交集、布局草稿和统一保存",
+      "status": "partially-implemented",
+      "completed": false,
+      "notes": "V27个人模板新建/重命名/置顶/选择/删除与现有白名单卡片显式保存已闭环，真实库回读及冲突/多标签页草稿保护通过。自定义指标、模板共享、参考卡片指标与查询筛选的其余差异继续保留待办。",
+      "domainIds": [
+        "monitor"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺服务端候选交集、x/y/w/h布局、sort/isChecked完整保存及系统模板覆盖规则；关闭编辑器不能当保存成功。"
+      ],
+      "acceptanceScenarios": [
+        "拖动后关闭丢弃或提示；保存后服务器重读一致；无权候选无法通过手工载荷加入；空布局规则明确。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "参考空模板允许性和系统模板覆盖权限未证实。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "dashboard-operation-summary-and-map",
+      "title": "经营概览与地图：场景、通信状态及授权站点跳转",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "monitor"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺业务组/标签、PV/储能/混合场景统计与组织时区经营汇总；当前快照不等于历史经营结果。"
+      ],
+      "acceptanceScenarios": [
+        "无权站点不计总数；缺坐标不编造点位；总量缺样未知；切场景刷新统计与地图同一scope。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "地图服务地区行为、统计时区和超10000站处理需明确。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "dashboard-alarm-widgets-and-read-receipts",
+      "title": "看板规则报警：分页、声音、阅读状态及处理状态统计",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "monitor",
+        "alarms"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺规则报警分页/发生恢复统计、个人阅读回执及5分钟本地静音；不能用ack代替打开行已读。"
+      ],
+      "acceptanceScenarios": [
+        "打开详情可按契约写阅读但绝不确认业务；批量阅读逐项鉴权；编辑模式禁动作；静音不改报警状态。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "规则引擎、处理状态映射与声音需求待确定。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "dashboard-pv-full-hours-and-pr-ranking",
+      "title": "光伏峰值小时与PR：周/月/年曲线、排行及完整列表",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "monitor"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "缺两个指标不同周锚点、独立趋势/汇总/排行、前5与更多100条及服务端排序；日期UI不等于历史聚合。"
+      ],
+      "acceptanceScenarios": [
+        "当日与昨日周锚点分别生效；PR比例只转换一次%；无辐照/装机分母返回未知；更多与卡片scope一致。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "服务端周窗、PR公式和100条截断业务含义未知。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "dashboard-generation-plan-completion",
+      "title": "发电计划完成率：基础/高级计划、年度与累计口径",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "monitor"
+      ],
+      "baselineAssessment": "no-corresponding-implementation-established",
+      "remainingScope": [
+        "缺BASIC/BRILLIANT两类目标、year/total范围、各自计划/实际量和排行；日计划执行率不能充当发电计划完成率。"
+      ],
+      "acceptanceScenarios": [
+        "基础和卓越目标独立空态；目标为0或缺失不除零；累计与年度范围匹配；修改目标可追溯旧结果。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "总量比/平均比、累计年范围和未结算处理待确认。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "dashboard-storage-efficiency-and-utilization",
+      "title": "储能充放电效率与利用率：周平均、月年累计及持续时间",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "monitor"
+      ],
+      "baselineAssessment": "requires-business-contract",
+      "remainingScope": [
+        "缺效率与利用率分开的周平均/月年累计、持续时间、排行及不同聚合键；现有积分不能直接推出利用率。"
+      ],
+      "acceptanceScenarios": [
+        "相同样本效率与利用率不混值；缺段不累计假数据；周平均与月总量比用不同契约；统一单位展示。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "时长原始单位、分母时长和零充电量处理待确认。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    },
+    {
+      "workflowId": "dashboard-generation-and-charge-history-export",
+      "title": "发电历史与整体充放电历史：参数筛选、单位和浏览器导出",
+      "status": "pending-implementation",
+      "completed": false,
+      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "domainIds": [
+        "monitor"
+      ],
+      "baselineAssessment": "partial-current-capability",
+      "remainingScope": [
+        "缺发电月/年/累计与充放月/年历史、参数单位种类限制、浏览器当前结果Excel导出及未结算逐字段null处理。"
+      ],
+      "acceptanceScenarios": [
+        "导出字段/时间与当前查询一致；超过允许单位种类提示；null保持空；电量两方向采用共同单位；隐藏日分支不算入口。",
+        "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
+      ],
+      "contractUnknowns": [
+        "参数数量与单位种类上限、未结算字段清单需明确。",
+        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ]
+    }
+  ],
+  "unavailableResourceRouteCount": 49,
+  "nestedImplementationUnknownCount": 2,
+  "comparisonBaselinePath": "docs/reference-platform/function-comparison.json",
+  "comparisonBaselineMeaning": "实施前静态比较快照；当前实施结果以本台账和逐批验收证据为准，不反写历史静态结论。",
+  "verificationPath": "docs/superpowers/verification/2026-10-16-known-reference-features.md",
+  "databaseMigrationVersion": 29
+}

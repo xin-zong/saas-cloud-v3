@@ -13,12 +13,17 @@ public class DatabaseGuard implements BeanPostProcessor {
   private final String database;
 
   public DatabaseGuard() {
-    this("ems_cloud_v2_proto");
+    this("ems_cloud_saas_toyingzhen");
   }
 
   @org.springframework.beans.factory.annotation.Autowired
   public DatabaseGuard(org.springframework.core.env.Environment environment) {
-    this(environment.getProperty("ems.database-name", "ems_cloud_v2_proto"));
+    this(branchDatabase(environment.getProperty("ems.database-name", "ems_cloud_saas_toyingzhen")));
+  }
+
+  private static String branchDatabase(String database) {
+    if (!"ems_cloud_saas_toyingzhen".equals(database)) throw invalid();
+    return database;
   }
 
   public DatabaseGuard(String database) {
@@ -26,6 +31,7 @@ public class DatabaseGuard implements BeanPostProcessor {
             "ems_cloud_v2_proto",
             "ems_cloud_saas_refactor_test",
             "ems_cloud_saas_final_test",
+            "ems_cloud_saas_toyingzhen",
             "ems_cloud_saas_v3")
         .contains(database)) throw invalid();
     this.database = database;
@@ -49,6 +55,8 @@ public class DatabaseGuard implements BeanPostProcessor {
   public Object postProcessAfterInitialization(Object bean, String name) {
     if (!(bean instanceof DataSource)) return bean;
     if (!(bean instanceof HikariDataSource source)) throw invalid();
+    if ("ems_cloud_saas_toyingzhen".equals(database)
+        && !"ems_toyingzhen_owner".equals(source.getUsername())) throw invalid();
     validateUrl(source.getJdbcUrl());
     if (!"public".equals(source.getSchema())
         || source.getConnectionInitSql() != null

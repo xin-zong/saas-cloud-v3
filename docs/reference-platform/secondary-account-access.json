@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-16T02:18:36.661807+00:00",
+  "accountAlias": "user-provided-secondary-account",
+  "credentialsRecorded": false,
+  "userCompletedLogin": true,
+  "roleLabel": "Super admin",
+  "roleLabelDoesNotProveAllModuleAccess": true,
+  "visiblePrimaryModules": [
+    "Monitor",
+    "Screen",
+    "OpenAPI",
+    "System"
+  ],
+  "openApiMenuNewlyVisibleComparedWithPriorAccount": true,
+  "openApiBusinessFlowsExecuted": false,
+  "businessPerspectiveOptionsObserved": 1,
+  "perspectiveChanged": false,
+  "serviceApplicationChildrenObserved": [
+    "Site Tags",
+    "Tariff Rates"
+  ],
+  "checks": [
+    {
+      "path": "/energyTrading/weather",
+      "result": "page-missing-message",
+      "visibleMessage": "Sorry, the page you visited is missing",
+      "evidenceKind": "authenticated-browser-accessibility-observation",
+      "businessPageLoaded": false,
+      "backendPermissionCauseEstablished": false,
+      "scope": "This entry and current account only; not every child route in this module."
+    },
+    {
+      "path": "/maintenance/overview",
+      "result": "page-missing-message",
+      "visibleMessage": "Sorry, the page you visited is missing",
+      "evidenceKind": "authenticated-browser-accessibility-observation",
+      "businessPageLoaded": false,
+      "backendPermissionCauseEstablished": false,
+      "scope": "This entry and current account only; not every child route in this module."
+    },
+    {
+      "path": "/monitor/application/planGeneration",
+      "result": "page-missing-message",
+      "visibleMessage": "Sorry, the page you visited is missing",
+      "evidenceKind": "authenticated-browser-accessibility-observation",
+      "businessPageLoaded": false,
+      "backendPermissionCauseEstablished": false,
+      "scope": "This entry and current account only; not every child route in this module."
+    },
+    {
+      "path": "/planners/workbench/home",
+      "result": "page-missing-message",
+      "visibleMessage": "Sorry, the page you visited is missing",
+      "evidenceKind": "authenticated-browser-accessibility-observation",
+      "businessPageLoaded": false,
+      "backendPermissionCauseEstablished": false,
+      "scope": "This entry and current account only; not every child route in this module."
+    },
+    {
+      "path": "/property/assetManage/assetPackageList",
+      "result": "page-missing-message",
+      "visibleMessage": "Sorry, the page you visited is missing",
+      "evidenceKind": "authenticated-browser-accessibility-observation",
+      "businessPageLoaded": false,
+      "backendPermissionCauseEstablished": false,
+      "scope": "This entry and current account only; not every child route in this module."
+    },
+    {
+      "path": "/virtualPowerPlant/demandResponse/tradingFloor",
+      "result": "permission-denied-message",
+      "visibleMessage": "Permission has not been granted. Please contact Super Admin.",
+      "evidenceKind": "authenticated-browser-accessibility-observation",
+      "businessPageLoaded": false,
+      "backendPermissionCauseEstablished": true,
+      "scope": "This entry and current account only; not every child route in this module."
+    }
+  ],
+  "counts": {
+    "checkedRepresentativeEntries": 6,
+    "resultCounts": {
+      "permission-denied-message": 1,
+      "page-missing-message": 5
+    },
+    "missingBusinessSpecificationsResolved": 0
+  },
+  "returnedTo": "/monitor/dashboard",
+  "boundary": {
+    "intentionalBusinessWritesExecuted": false,
+    "roleOrPermissionChanged": false,
+    "authenticatedBusinessApiCalledDirectly": false,
+    "authenticationStorageRead": false,
+    "notificationReadOrAcknowledgementExecuted": false,
+    "deviceCommandExecuted": false,
+    "onboardingEndOrNextClicked": false,
+    "priorAutomaticStateChangesRemainUnverified": true,
+    "zeroServerWriteClaim": false
+  },
+  "registryCountPolicy": "These are secondary-account access/error checks, kept separate from the original 70 business UI observation groups; they do not add completed business pages.",
+  "conclusions": [
+    "新账号身份菜单显示Super admin，但仅凭角色名称不能推出所有产品、模块或组织均已授权。",
+    "六个已声明的代表性缺失入口未显示业务页面；VPP入口明确显示未获授权，另五个显示页面不存在。",
+    "当前仅新增OpenAPI菜单可见性证据，未打开凭证页或执行开通/重置；不能把菜单可见当相关业务已验证。",
+    "错误页面不证明模块在所有部署都不存在，也不能仅据404确定是权限还是构建版本原因。",
+    "49条原资源/业务规格缺口及2个iframe内部实现缺口仍保留；需要与这些功能匹配的可用部署入口或版本化业务说明。"
+  ]
+}

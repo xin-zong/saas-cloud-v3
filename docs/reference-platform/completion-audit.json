@@ -1,0 +1,2579 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-16T02:18:37.305785+00:00",
+  "objective": "继续只读扫描，把所有模块、页面、功能和业务流程完整整理出来，对照现有系统列出差异和实施方案。",
+  "goalAchieved": false,
+  "status": "in-progress",
+  "inputSnapshots": [
+    {
+      "path": "docs/reference-platform/scan-registry.json",
+      "bytes": 226108,
+      "sha256": "b8690244759ba319fb1bc776ef5f6ab4a9cf07437ace3fad520aba4ae88463b7"
+    },
+    {
+      "path": "docs/reference-platform/public-business-flows.json",
+      "bytes": 2164723,
+      "sha256": "4ec601c32a2b6e234e948edc0f2c58ac4a7fc263f08e4db4acc66b07a8c43b3b"
+    },
+    {
+      "path": "docs/reference-platform/gap-implementation-plan.json",
+      "bytes": 2576029,
+      "sha256": "f12916407052b4925dc8506bf55d6c4871b83a4598421d6ad73d222d5fa6a806"
+    },
+    {
+      "path": "docs/reference-platform/function-comparison.json",
+      "bytes": 967787,
+      "sha256": "b7d5004e8723271b32663d47f57015c40c2d1ed2422b5d1a04e0a3736679c014"
+    },
+    {
+      "path": "docs/reference-platform/resource-availability.json",
+      "bytes": 29382,
+      "sha256": "3c0f9fb9a40cdd5f0fd71946922a7e46a5579d4ac3b747c02622b9c9698d18d5"
+    },
+    {
+      "path": "docs/reference-platform/secondary-account-access.json",
+      "bytes": 4847,
+      "sha256": "2c69a5de1705ab95568f7a4fe8ff4af829e65252514e42f18da09a438e176a08"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "all-modules-and-pages",
+      "requirement": "全部模块与业务页面取得可核查规格，并区分容器、重定向和状态页。",
+      "status": "incomplete",
+      "evidence": [
+        "routeCoverageManifest",
+        "remainingCoverageSupplement.priorUnresolvedRouteReview",
+        "resource-availability.json",
+        "secondary-account-access.json"
+      ],
+      "remaining": [
+        "49条业务或布局路由仍缺独立业务规格。",
+        "233条主壳声明包含结构节点，不是233个独立业务页；菜单当前不可见不等于账号无权限。",
+        "最新公开入口复查：运维/测算仍502，VPP/交易仍为主站外壳；监控/资产公开配置未声明替代入口。构建时间元数据不能代替缺失业务规格。",
+        "第二账号显示Super admin，但六个代表性入口仍未显示业务页面：VPP明确未授权，其余五个页面不存在；不能把角色名称当模块开通证明。"
+      ]
+    },
+    {
+      "id": "all-functions-and-business-flows",
+      "requirement": "整理页面功能、字段/校验、条件、状态、权限及跨页读写流程。",
+      "status": "partial-specifications",
+      "evidence": [
+        "public-business-flows.json/workflows",
+        "sourceSpecificationCoverageAudit",
+        "scan-registry.json/observedPages"
+      ],
+      "remaining": [
+        "141条源码有据路由逐条标记规格深度；路径或组件关联只能证明局部覆盖。",
+        "本批47条浅层目标已逐项检查，其中45条为部分规格、2条iframe内部实现仍受阻；待深挖计数归零不代表全业务完成。",
+        "看板独立编辑器及11个静态内置卡片已追加focused源码审查；动态卡片目录、后台公式与实际结果仍未穷尽。",
+        "只读调查不执行写流程来验证效果；未知的服务端规则、不可达组件和缺少的业务契约仍保留未知。"
+      ],
+      "writeRuntimeTestsRequiredForReadOnlyScan": false
+    },
+    {
+      "id": "comparison-with-existing-system",
+      "requirement": "对照现有权限体系、架构、API、数据表和实际数据链列出差异。",
+      "status": "partial-evidence-backed-comparison",
+      "evidence": [
+        "gap-implementation-plan.json/domains",
+        "function-comparison.json/records"
+      ],
+      "remaining": [
+        "源码定位是静态证据；已存在类/接口不代表已装配、已落库或实际执行。",
+        "参考规格未取得的模块不能被本项目现有能力或推测需求替代。"
+      ]
+    },
+    {
+      "id": "implementation-and-closure-plan",
+      "requirement": "保留全部功能范围，提出依赖、版本化数据/权限/状态与闭环验收方案。",
+      "status": "draft-not-implementation-ready-for-all-scope",
+      "evidence": [
+        "gap-implementation-plan.json/phases",
+        "gap-implementation-plan.json/domains/*/scopeWorkPackages"
+      ],
+      "remaining": [
+        "全部24个业务域保留范围；工作包仍是方案，不是已实施功能。",
+        "未知的外部协议、诊断依据、计价/计量及受阻模块须取得业务契约后再实施，不能用mock充当闭环。"
+      ]
+    },
+    {
+      "id": "reference-read-only-boundary",
+      "requirement": "不删除或修改参考平台数据，不执行通知、授权或设备控制。",
+      "status": "automatic-state-change-unverified",
+      "evidence": [
+        "scan-registry.json/investigationBoundary",
+        "energyManagementAndAnalysisSupplement.parentUiInterruptionRecord"
+      ],
+      "remaining": [
+        "未主动提交参考写操作；能量管理及部分站点总览在自动隐藏行为核对返回前已访问，随后已退出监控总览。",
+        "是否自动更新历史成功提示未知；不能声称参考业务零写入，访问埋点/会话日志也可能更新。"
+      ]
+    },
+    {
+      "id": "isolated-branch-and-target-database",
+      "requirement": "代码及后续数据库改造仅使用隔离分支和新库，不影响原库或线上服务。",
+      "status": "branch-verified-database-configuration-only-this-batch",
+      "evidence": [
+        "git branch --show-current",
+        "AGENTS.md",
+        "docs/toyingzhen-development.md"
+      ],
+      "branch": "develop-toyingzhen",
+      "configuredTargetDatabase": "ems_cloud_saas_toyingzhen",
+      "liveDatabaseOrProductionServiceCheckedThisBatch": false,
+      "remaining": [
+        "本轮只生成调查文档及分析视图，未执行数据库或线上服务命令；数据库运行状态未在本批重新验证。"
+      ]
+    }
+  ],
+  "counts": {
+    "shellRouteDeclarations": 233,
+    "observedViewGroups": 70,
+    "evidenceFiles": 226,
+    "publicFeaturePaths": 231,
+    "sourceEvidencedFeatures": 141,
+    "workflowGroups": 122,
+    "businessDomains": 24,
+    "proposedWorkPackages": 25,
+    "unresolvedBusinessOrLayoutRoutes": 49,
+    "dashboardStaticCardsReviewed": 11
+  },
+  "sourceSpecificationDepth": {
+    "workflow-specification-partial": 127,
+    "container-navigation-only": 9,
+    "status-navigation-only": 5
+  },
+  "sourceSpecificationSummary": {
+    "sourceEvidencedFeaturesReviewed": 141,
+    "classificationCounts": {
+      "workflow-specification-partial": 127,
+      "container-navigation-only": 9,
+      "status-navigation-only": 5
+    },
+    "featuresWithAnyWorkflowRelationship": 131,
+    "featuresWithPartialWorkflowSpecification": 127,
+    "businessFunctionsClaimedComplete": 0,
+    "runtimeValidatedFeatures": 0
+  },
+  "nextSafeSpecificationTargets": [],
+  "deepSpecificationPass": {
+    "source": "public-source-only",
+    "targetPaths": [
+      "/monitor/dashboard",
+      "/monitor/plant/plantDetail/:stationId/dashboard",
+      "/monitor/plant/plantDetail/:stationId/alarm/realTime",
+      "/monitor/plant/plantDetail/:stationId/alarm/history",
+      "/monitor/plant/plantDetail/:stationId/energyManagement/solar/control",
+      "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/follow",
+      "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/customized",
+      "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/peakValley",
+      "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/demand",
+      "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/dynamicUprating",
+      "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/demandResponse",
+      "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/utilization",
+      "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/hybrid",
+      "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/aistrategy",
+      "/monitor/plant/plantDetail/:stationId/energyManagement/trackMeterConfig",
+      "/monitor/plant/plantDetail/:stationId/energyUseControl",
+      "/monitor/plant/plantDetail/:stationId/layout",
+      "/monitor/plant/plantDetail/:stationId/diagram",
+      "/monitor/plant/plantDetail/:stationId/edit-diagram",
+      "/monitor/plant/plantDetail/:stationId/operationLog",
+      "/monitor/plant/plantDetail/:stationId/settings/authorize",
+      "/monitor/plant/plantDetail/:stationId/settings/license",
+      "/monitor/alarm/realTime",
+      "/monitor/alarm/history",
+      "/monitor/analysis/aiAnalysis",
+      "/monitor/analysis/aiAnalysisDetail/:id",
+      "/property/dashboard",
+      "/property/assetManage/assetList",
+      "/property/assetManage/assetsManagementDetail/:stationId",
+      "/property/operationalAnalysis/returns/capital",
+      "/property/operationalAnalysis/ledger/planLedger",
+      "/property/operationalAnalysis/ledger/estimateLedger",
+      "/property/operationalAnalysis/ledger/receivableLedger",
+      "/property/operationalAnalysis/ledger/actualLedger",
+      "/property/operationalAnalysis/pgsList",
+      "/property/operationalAnalysis/electricManagement",
+      "/property/operationalAnalysis/electricManagement_detail/:billNo",
+      "/property/operationalAnalysis/electricManagement_adjust/:billNo",
+      "/property/energyContract/contractList",
+      "/property/energyContract/assetsDetail/:stationId",
+      "/property/energyContract/contractDetail/:stationId",
+      "/system/opsManagement/areaManagement",
+      "/system/opsManagement/create/:id",
+      "/system/opsManagement/personnel",
+      "/system/externalEnterprise",
+      "/system/signingManage/signingList",
+      "/system/signingManage/schemeList"
+    ],
+    "targetCount": 47,
+    "routeReviews": [
+      {
+        "path": "/property/dashboard",
+        "workflowIds": [
+          "property-deep-dashboard"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "各图统计口径、币种和数据权限须由后台确认；日期控件初始化及图表真实数据未运行。",
+          "后台鉴权、数据隔离、事务、实际状态转移及请求成功未验证；未执行任何业务API或页面脚本。"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-C69YPt4f.js",
+            "charOffset": 4523,
+            "matchedIdentifier": "__name:\"AssetsInfo\"",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-C69YPt4f.js",
+            "charOffset": 15864,
+            "matchedIdentifier": "sortBizType:y?T.value",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-C69YPt4f.js",
+            "charOffset": 15979,
+            "matchedIdentifier": "stationGroupId:$.curOrgId",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "path": "/property/assetManage/assetList",
+        "workflowIds": [
+          "property-deep-asset-manage"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "服务端动态extraInfo字段全集、模板条件分支和设备SN导入行校验未知；未调用配置API。",
+          "列表直接删除handler和DeleteAsset备注弹窗并存，实际入口可达性及后台备注要求未知。",
+          "后台鉴权、数据隔离、事务、实际状态转移及请求成功未验证；未执行任何业务API或页面脚本。"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-C1WALoMb.js",
+            "charOffset": 10830,
+            "matchedIdentifier": "__name:\"DeleteAsset\"",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-C1WALoMb.js",
+            "charOffset": 17242,
+            "matchedIdentifier": "if(!ge(\"ZF1/A7\"))",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-C1WALoMb.js",
+            "charOffset": 16601,
+            "matchedIdentifier": "Ne({id:f.id})",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "path": "/property/assetManage/assetsManagementDetail/:stationId",
+        "workflowIds": [
+          "property-deep-asset-detail"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "历史extraInfo动态表单、收益/能源统计后台计算和版本保留策略未知。",
+          "两入口共享组件，不能把第二入口视为缺失页或独立业务复制。",
+          "后台鉴权、数据隔离、事务、实际状态转移及请求成功未验证；未执行任何业务API或页面脚本。"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--detail-ehwnbuh5.js",
+            "charOffset": 8800,
+            "matchedIdentifier": "__name:\"detail\"",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--detail-ehwnbuh5.js",
+            "charOffset": 10044,
+            "matchedIdentifier": "y.query.isRecord?Je:We",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--detail-ehwnbuh5.js",
+            "charOffset": 9423,
+            "matchedIdentifier": "p.name!=\"assetsHome\"",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "path": "/property/energyContract/assetsDetail/:stationId",
+        "workflowIds": [
+          "property-deep-asset-detail"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "历史extraInfo动态表单、收益/能源统计后台计算和版本保留策略未知。",
+          "两入口共享组件，不能把第二入口视为缺失页或独立业务复制。",
+          "后台鉴权、数据隔离、事务、实际状态转移及请求成功未验证；未执行任何业务API或页面脚本。"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--detail-ehwnbuh5.js",
+            "charOffset": 8800,
+            "matchedIdentifier": "__name:\"detail\"",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--detail-ehwnbuh5.js",
+            "charOffset": 10044,
+            "matchedIdentifier": "y.query.isRecord?Je:We",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--detail-ehwnbuh5.js",
+            "charOffset": 9423,
+            "matchedIdentifier": "p.name!=\"assetsHome\"",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "path": "/property/operationalAnalysis/returns/capital",
+        "workflowIds": [
+          "property-deep-capital"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "导出覆盖范围、费用口径、每租户动态列及导入对话框实际入口未运行验证。",
+          "后台鉴权、数据隔离、事务、实际状态转移及请求成功未验证；未执行任何业务API或页面脚本。"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--Capital-Du2PeTGB.js",
+            "charOffset": 6252,
+            "matchedIdentifier": "__name:\"Capital\"",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--Capital-Du2PeTGB.js",
+            "charOffset": 6740,
+            "matchedIdentifier": "stationGroupId:F.curOrgId",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--Capital-Du2PeTGB.js",
+            "charOffset": 8089,
+            "matchedIdentifier": "I.tableHeadExOption",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "path": "/property/operationalAnalysis/ledger/planLedger",
+        "workflowIds": [
+          "property-deep-ledgers"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "这四项均已读取独立组件和资产API别名；legacy property-8/9/10不作为空白。",
+          "重复覆盖决策、解析预览是否暂存、事务与财务记账口径均未知；权限码映射须以实际平台配置确认。",
+          "后台鉴权、数据隔离、事务、实际状态转移及请求成功未验证；未执行任何业务API或页面脚本。"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-9BYepQEz.js",
+            "charOffset": 3202,
+            "matchedIdentifier": "incomeType:\"PLAN\"",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-9BYepQEz.js",
+            "charOffset": 3294,
+            "matchedIdentifier": "extend.isCover===!0",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-9BYepQEz.js",
+            "charOffset": 4101,
+            "matchedIdentifier": "Xe({incomeType:\"PLAN\"},w.value)",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "path": "/property/operationalAnalysis/ledger/estimateLedger",
+        "workflowIds": [
+          "property-deep-ledgers"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "这四项均已读取独立组件和资产API别名；legacy property-8/9/10不作为空白。",
+          "重复覆盖决策、解析预览是否暂存、事务与财务记账口径均未知；权限码映射须以实际平台配置确认。",
+          "后台鉴权、数据隔离、事务、实际状态转移及请求成功未验证；未执行任何业务API或页面脚本。"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-9BYepQEz.js",
+            "charOffset": 3202,
+            "matchedIdentifier": "incomeType:\"PLAN\"",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-9BYepQEz.js",
+            "charOffset": 3294,
+            "matchedIdentifier": "extend.isCover===!0",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-9BYepQEz.js",
+            "charOffset": 4101,
+            "matchedIdentifier": "Xe({incomeType:\"PLAN\"},w.value)",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "path": "/property/operationalAnalysis/ledger/receivableLedger",
+        "workflowIds": [
+          "property-deep-ledgers"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "这四项均已读取独立组件和资产API别名；legacy property-8/9/10不作为空白。",
+          "重复覆盖决策、解析预览是否暂存、事务与财务记账口径均未知；权限码映射须以实际平台配置确认。",
+          "后台鉴权、数据隔离、事务、实际状态转移及请求成功未验证；未执行任何业务API或页面脚本。"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-9BYepQEz.js",
+            "charOffset": 3202,
+            "matchedIdentifier": "incomeType:\"PLAN\"",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-9BYepQEz.js",
+            "charOffset": 3294,
+            "matchedIdentifier": "extend.isCover===!0",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-9BYepQEz.js",
+            "charOffset": 4101,
+            "matchedIdentifier": "Xe({incomeType:\"PLAN\"},w.value)",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "path": "/property/operationalAnalysis/ledger/actualLedger",
+        "workflowIds": [
+          "property-deep-ledgers"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "这四项均已读取独立组件和资产API别名；legacy property-8/9/10不作为空白。",
+          "重复覆盖决策、解析预览是否暂存、事务与财务记账口径均未知；权限码映射须以实际平台配置确认。",
+          "后台鉴权、数据隔离、事务、实际状态转移及请求成功未验证；未执行任何业务API或页面脚本。"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-9BYepQEz.js",
+            "charOffset": 3202,
+            "matchedIdentifier": "incomeType:\"PLAN\"",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-9BYepQEz.js",
+            "charOffset": 3294,
+            "matchedIdentifier": "extend.isCover===!0",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-9BYepQEz.js",
+            "charOffset": 4101,
+            "matchedIdentifier": "Xe({incomeType:\"PLAN\"},w.value)",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "path": "/property/operationalAnalysis/pgsList",
+        "workflowIds": [
+          "property-deep-pgs"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "计量与收益差额算法、隐藏导入触发方式及租户权限配置未知；不能仅凭组件已挂载称公开可见。",
+          "后台鉴权、数据隔离、事务、实际状态转移及请求成功未验证；未执行任何业务API或页面脚本。"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--pgsList-DzufD8p8.js",
+            "charOffset": 6201,
+            "matchedIdentifier": "__name:\"pgsList\"",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--pgsList-DzufD8p8.js",
+            "charOffset": 7957,
+            "matchedIdentifier": "stationGroupId:m.isOrganization",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--pgsList-DzufD8p8.js",
+            "charOffset": 4492,
+            "matchedIdentifier": "L(\"COVER_DUP\")",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "path": "/property/operationalAnalysis/electricManagement",
+        "workflowIds": [
+          "property-deep-bill-list"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "confirm/settle后台实际状态机、重复付款保护、批量事务/部分成功语义与重跑异步完成状态未知。",
+          "后台鉴权、数据隔离、事务、实际状态转移及请求成功未验证；未执行任何业务API或页面脚本。"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-C12FGrEb.js",
+            "charOffset": 15757,
+            "matchedIdentifier": "ue(\"ZF4/A1\")",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-C12FGrEb.js",
+            "charOffset": 16071,
+            "matchedIdentifier": "D.setOnceParam(\"toAdjust\",!0)",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-C12FGrEb.js",
+            "charOffset": 7914,
+            "matchedIdentifier": "_.set(\"isSubmit\",!1)",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "path": "/property/operationalAnalysis/electricManagement_detail/:billNo",
+        "workflowIds": [
+          "property-deep-bill-detail"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "隐藏路由直接访问权限、返回数据分项完整性和settle金额防超收规则未知。",
+          "后台鉴权、数据隔离、事务、实际状态转移及请求成功未验证；未执行任何业务API或页面脚本。"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--detail-Bl1Hfa9p.js",
+            "charOffset": 8497,
+            "matchedIdentifier": "__name:\"bill_detail\"",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--detail-Bl1Hfa9p.js",
+            "charOffset": 9180,
+            "matchedIdentifier": "k.detailInfo.status==\"UNCONFIRM\"",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--detail-Bl1Hfa9p.js",
+            "charOffset": 28872,
+            "matchedIdentifier": "S.getOnceParam(\"toAdjust\")",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "path": "/property/operationalAnalysis/electricManagement_adjust/:billNo",
+        "workflowIds": [
+          "property-deep-bill-adjust"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "隐藏adjust路由props会隐藏detail动作，但未发现自动打开调整对话框的独立pageType分支；实际入口要运行验证。",
+          "计算是否持久化草稿、调整历史、金额负数边界、并发及账单锁定规则未知。",
+          "后台鉴权、数据隔离、事务、实际状态转移及请求成功未验证；未执行任何业务API或页面脚本。"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-D5AyrZSh.js",
+            "charOffset": 753177,
+            "matchedIdentifier": "pageType:\"adjust\"",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--detail-Bl1Hfa9p.js",
+            "charOffset": 16462,
+            "matchedIdentifier": "__name:\"bill_adjust\"",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--detail-Bl1Hfa9p.js",
+            "charOffset": 17004,
+            "matchedIdentifier": "d==0?Promise.reject",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "path": "/property/energyContract/contractList",
+        "workflowIds": [
+          "property-deep-energy-contract-maintain"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "结算频率提示称历史账单不受影响、其他修改仅可一次并联系管理员，前端未找到可靠次数锁定实现，必须后台确认。",
+          "绑定和合同两请求的事务/幂等/回滚未知；不把该静态风险扩展为已发生自动写。",
+          "手机号/真实客户值/账号均未采集；仅记录字段名。",
+          "后台鉴权、数据隔离、事务、实际状态转移及请求成功未验证；未执行任何业务API或页面脚本。"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-CVvpT76Y.js",
+            "charOffset": 58731,
+            "matchedIdentifier": "__name:\"index\"",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-CVvpT76Y.js",
+            "charOffset": 61688,
+            "matchedIdentifier": "W(l,\"energy\",\"ZF1/A6\")",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-CVvpT76Y.js",
+            "charOffset": 62283,
+            "matchedIdentifier": "l.createWay!==\"SYSTEM_SYNC\"",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "path": "/property/energyContract/contractDetail/:stationId",
+        "workflowIds": [
+          "property-deep-energy-contract-detail"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "隐藏路由鉴权、模板历史完整性、变更审计来源及附件下载授权未知。",
+          "后台鉴权、数据隔离、事务、实际状态转移及请求成功未验证；未执行任何业务API或页面脚本。"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-CfQTUP82.js",
+            "charOffset": 2908,
+            "matchedIdentifier": "__name:\"showContractInfo\"",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-CfQTUP82.js",
+            "charOffset": 15885,
+            "matchedIdentifier": "ot((Z=o.params)",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-CfQTUP82.js",
+            "charOffset": 16259,
+            "matchedIdentifier": "priceTemplateUseHistory",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/energyManagement/solar/control",
+        "workflowIds": [
+          "ems-deep-solar-control-history"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "仅公开静态实现语义；当前scope可达性、完整后台状态机、权限、幂等与真实执行未验收",
+          "参考平台不运行写流程，闭环只在本分支独立新库验收"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--Control-BmqhXR-R.js",
+            "charOffset": 1243,
+            "matchedIdentifier": "__name:\"Control\""
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/follow",
+        "workflowIds": [
+          "ems-deep-operation-verification",
+          "ems-deep-follow"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "仅公开静态实现语义；当前scope可达性、完整后台状态机、权限、幂等与真实执行未验收",
+          "参考平台不运行写流程，闭环只在本分支独立新库验收"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--Follow-DRok8k5A.js",
+            "charOffset": 1138,
+            "matchedIdentifier": "__name:\"Follow\""
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/customized",
+        "workflowIds": [
+          "ems-deep-operation-verification",
+          "ems-deep-template-schedule",
+          "ems-deep-shared-restrictions",
+          "ems-deep-customized"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "仅公开静态实现语义；当前scope可达性、完整后台状态机、权限、幂等与真实执行未验收",
+          "参考平台不运行写流程，闭环只在本分支独立新库验收"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--NewCustomized-D6EfhwYR.js",
+            "charOffset": 1914,
+            "matchedIdentifier": "__name:\"NewCustomized\""
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/peakValley",
+        "workflowIds": [
+          "ems-deep-operation-verification",
+          "ems-deep-template-schedule",
+          "ems-deep-shared-restrictions",
+          "ems-deep-peak-valley"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "仅公开静态实现语义；当前scope可达性、完整后台状态机、权限、幂等与真实执行未验收",
+          "参考平台不运行写流程，闭环只在本分支独立新库验收"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--NewPeakValley-D8Dxu8Yt.js",
+            "charOffset": 2733,
+            "matchedIdentifier": "__name:\"SelectElectricityPrice\""
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/demand",
+        "workflowIds": [
+          "ems-deep-operation-verification",
+          "ems-deep-template-schedule",
+          "ems-deep-shared-restrictions",
+          "ems-deep-demand"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "仅公开静态实现语义；当前scope可达性、完整后台状态机、权限、幂等与真实执行未验收",
+          "参考平台不运行写流程，闭环只在本分支独立新库验收"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--Demand-DJLZ61t5.js",
+            "charOffset": 1936,
+            "matchedIdentifier": "__name:\"Demand\""
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/dynamicUprating",
+        "workflowIds": [
+          "ems-deep-operation-verification",
+          "ems-deep-template-schedule",
+          "ems-deep-shared-restrictions",
+          "ems-deep-dynamicUprating"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "仅公开静态实现语义；当前scope可达性、完整后台状态机、权限、幂等与真实执行未验收",
+          "参考平台不运行写流程，闭环只在本分支独立新库验收"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--DynamicUprating-e1RjhL8y.js",
+            "charOffset": 1938,
+            "matchedIdentifier": "__name:\"DynamicUprating\""
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/demandResponse",
+        "workflowIds": [
+          "ems-deep-shared-restrictions",
+          "ems-deep-demand-response"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "仅公开静态实现语义；当前scope可达性、完整后台状态机、权限、幂等与真实执行未验收",
+          "参考平台不运行写流程，闭环只在本分支独立新库验收"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--DemandResponse-mvqmvfSO.js",
+            "charOffset": 779,
+            "matchedIdentifier": "__name:\"DemandResponse\""
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/utilization",
+        "workflowIds": [
+          "ems-deep-operation-verification",
+          "ems-deep-template-schedule",
+          "ems-deep-shared-restrictions",
+          "ems-deep-utilization"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "仅公开静态实现语义；当前scope可达性、完整后台状态机、权限、幂等与真实执行未验收",
+          "参考平台不运行写流程，闭环只在本分支独立新库验收"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--Utilization-D3bTTp3h.js",
+            "charOffset": 2003,
+            "matchedIdentifier": "__name:\"Utilization\""
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/hybrid",
+        "workflowIds": [
+          "ems-deep-operation-verification",
+          "ems-deep-template-schedule",
+          "ems-deep-shared-restrictions",
+          "ems-deep-hybrid"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "仅公开静态实现语义；当前scope可达性、完整后台状态机、权限、幂等与真实执行未验收",
+          "参考平台不运行写流程，闭环只在本分支独立新库验收"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--NewHybrid-BVPYU-XU.js",
+            "charOffset": 1995,
+            "matchedIdentifier": "__name:\"NewHybrid\""
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/aistrategy",
+        "workflowIds": [
+          "ems-deep-operation-verification",
+          "ems-deep-ai"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "仅公开静态实现语义；当前scope可达性、完整后台状态机、权限、幂等与真实执行未验收",
+          "参考平台不运行写流程，闭环只在本分支独立新库验收"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--NewAIIntelligentStrategy-n-bk1O5d.js",
+            "charOffset": 35522,
+            "matchedIdentifier": "name:\"AIIntelligentStrategy\""
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/energyManagement/trackMeterConfig",
+        "workflowIds": [
+          "ems-deep-track-meter"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "仅公开静态实现语义；当前scope可达性、完整后台状态机、权限、幂等与真实执行未验收",
+          "参考平台不运行写流程，闭环只在本分支独立新库验收"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-DCGt2sg_.js",
+            "charOffset": 6913,
+            "matchedIdentifier": "__name:\"index\""
+          }
+        ]
+      },
+      {
+        "path": "/monitor/dashboard",
+        "workflowIds": [
+          "dashboard-global-configuration",
+          "dashboard-custom-editor-save-boundary",
+          "dashboard-operation-summary-and-map",
+          "dashboard-alarm-widgets-and-read-receipts",
+          "dashboard-pv-full-hours-and-pr-ranking",
+          "dashboard-generation-plan-completion",
+          "dashboard-storage-efficiency-and-utilization",
+          "dashboard-generation-and-charge-history-export"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "11内置卡片已逐组件focused review；动态卡片、服务端指标公式/权限及运行结果仍未知。"
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-T_xEaj_I.js",
+            "charOffset": 10478,
+            "matchedIdentifier": "BULLETIN_BOARD"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-T_xEaj_I.js",
+            "charOffset": 11879,
+            "matchedIdentifier": "maxlength:50"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-T_xEaj_I.js",
+            "charOffset": 8652,
+            "matchedIdentifier": "layout_update"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-T_xEaj_I.js",
+            "charOffset": 11208,
+            "matchedIdentifier": "yield mt(s.id).then"
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/dashboard",
+        "workflowIds": [
+          "dashboard-station-status-and-automatic-hide"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "Actual automatic hidden occurrence during prior UI visits unverified. Provider metric formulas, widget permissions and all station-type branches not runtime tested."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-DtdqzL-q.js",
+            "charOffset": 21,
+            "matchedIdentifier": "index.vue_vue_type_script_setup_true_lang-uzrcRXWP.js"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index.vue_vue_type_script_setup_true_lang-uzrcRXWP.js",
+            "charOffset": 1784,
+            "matchedIdentifier": "powerSystemType"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index.vue_vue_type_script_setup_true_lang-uzrcRXWP.js",
+            "charOffset": 1768,
+            "matchedIdentifier": "geographyType"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--DashboardStrategyStatusBar-BURDsNw_.js",
+            "charOffset": 4374,
+            "matchedIdentifier": "SUCCESS\"?fe(!1):N()"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-CVXM-IsW.js",
+            "charOffset": 7038,
+            "matchedIdentifier": "SUCCESS\"?g(!1):v()"
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/alarm/realTime",
+        "workflowIds": [
+          "alarm-live-history-lifecycle"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "Backend alarm condition evaluation, actual records, recovery, notification and work-order results unknown. Opening live detail is not guaranteed read-only."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--RealTime-DwfMG_iA.js",
+            "charOffset": 6155,
+            "matchedIdentifier": "t.status==1&&t.readFlag==0&&(yield be({id:+t.id}))"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--History-BbWolHMQ.js",
+            "charOffset": 6136,
+            "matchedIdentifier": "__name:"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-BHEsonxc.js",
+            "charOffset": 17318,
+            "matchedIdentifier": "readFlag"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-2NirGtBj.js",
+            "charOffset": 6309,
+            "matchedIdentifier": "__name:"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Sreny44V.js",
+            "charOffset": 201325,
+            "matchedIdentifier": "/station-s/station/alert/read"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Sreny44V.js",
+            "charOffset": 201255,
+            "matchedIdentifier": "/station-s/station/alert/delete"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Sreny44V.js",
+            "charOffset": 212135,
+            "matchedIdentifier": "/station-s/close/"
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/alarm/history",
+        "workflowIds": [
+          "alarm-live-history-lifecycle"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "Backend alarm condition evaluation, actual records, recovery, notification and work-order results unknown. Opening live detail is not guaranteed read-only."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--RealTime-DwfMG_iA.js",
+            "charOffset": 6155,
+            "matchedIdentifier": "t.status==1&&t.readFlag==0&&(yield be({id:+t.id}))"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--History-BbWolHMQ.js",
+            "charOffset": 6136,
+            "matchedIdentifier": "__name:"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-BHEsonxc.js",
+            "charOffset": 17318,
+            "matchedIdentifier": "readFlag"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-2NirGtBj.js",
+            "charOffset": 6309,
+            "matchedIdentifier": "__name:"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Sreny44V.js",
+            "charOffset": 201325,
+            "matchedIdentifier": "/station-s/station/alert/read"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Sreny44V.js",
+            "charOffset": 201255,
+            "matchedIdentifier": "/station-s/station/alert/delete"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Sreny44V.js",
+            "charOffset": 212135,
+            "matchedIdentifier": "/station-s/close/"
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/energyUseControl",
+        "workflowIds": [
+          "station-external-control-and-layout-wrappers"
+        ],
+        "coverageStatus": "wrapper-specification-only-nested-implementation-blocked",
+        "remainingGaps": [
+          "External authentication/API semantics and both nested implementations unknown. No external request, iframe or source literal credential used."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Dv3qoM_c.js",
+            "charOffset": 1624,
+            "matchedIdentifier": "getWebCode"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Dv3qoM_c.js",
+            "charOffset": 1103,
+            "matchedIdentifier": "appKey"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Dv3qoM_c.js",
+            "charOffset": 1505,
+            "matchedIdentifier": "accessToken"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-CeJCi3lg.js",
+            "charOffset": 184,
+            "matchedIdentifier": "/sub-layout/systemlayout/"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-CeJCi3lg.js",
+            "charOffset": 486,
+            "matchedIdentifier": "httpStatus"
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/layout",
+        "workflowIds": [
+          "station-external-control-and-layout-wrappers"
+        ],
+        "coverageStatus": "wrapper-specification-only-nested-implementation-blocked",
+        "remainingGaps": [
+          "External authentication/API semantics and both nested implementations unknown. No external request, iframe or source literal credential used."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Dv3qoM_c.js",
+            "charOffset": 1624,
+            "matchedIdentifier": "getWebCode"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Dv3qoM_c.js",
+            "charOffset": 1103,
+            "matchedIdentifier": "appKey"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Dv3qoM_c.js",
+            "charOffset": 1505,
+            "matchedIdentifier": "accessToken"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-CeJCi3lg.js",
+            "charOffset": 184,
+            "matchedIdentifier": "/sub-layout/systemlayout/"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-CeJCi3lg.js",
+            "charOffset": 486,
+            "matchedIdentifier": "httpStatus"
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/diagram",
+        "workflowIds": [
+          "station-wiring-diagram-view-edit"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "Full graph interaction library and switch execution semantics not runtime validated. No diagram saved or device command executed."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-BKADPV9X.js",
+            "charOffset": 4363,
+            "matchedIdentifier": "mode:\"display\""
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--Edit-COmi-Nd_.js",
+            "charOffset": 13801,
+            "matchedIdentifier": "saveWiringDiagramDtoList"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--Edit-COmi-Nd_.js",
+            "charOffset": 13764,
+            "matchedIdentifier": "saveWiringElementConnectorDtoList"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--Edit-COmi-Nd_.js",
+            "charOffset": 6992,
+            "matchedIdentifier": "dynamicText"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index--vtvtjnk.js",
+            "charOffset": 829,
+            "matchedIdentifier": "/station-s/wiring/manage/addWiringPanel"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index--vtvtjnk.js",
+            "charOffset": 911,
+            "matchedIdentifier": "/station-s/wiring/manage/updateWiringPanel/"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index--vtvtjnk.js",
+            "charOffset": 1057,
+            "matchedIdentifier": "/station-s/wiring/manage/getPropertyValues/"
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/edit-diagram",
+        "workflowIds": [
+          "station-wiring-diagram-view-edit"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "Full graph interaction library and switch execution semantics not runtime validated. No diagram saved or device command executed."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-BKADPV9X.js",
+            "charOffset": 4363,
+            "matchedIdentifier": "mode:\"display\""
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--Edit-COmi-Nd_.js",
+            "charOffset": 13801,
+            "matchedIdentifier": "saveWiringDiagramDtoList"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--Edit-COmi-Nd_.js",
+            "charOffset": 13764,
+            "matchedIdentifier": "saveWiringElementConnectorDtoList"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--Edit-COmi-Nd_.js",
+            "charOffset": 6992,
+            "matchedIdentifier": "dynamicText"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index--vtvtjnk.js",
+            "charOffset": 829,
+            "matchedIdentifier": "/station-s/wiring/manage/addWiringPanel"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index--vtvtjnk.js",
+            "charOffset": 911,
+            "matchedIdentifier": "/station-s/wiring/manage/updateWiringPanel/"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index--vtvtjnk.js",
+            "charOffset": 1057,
+            "matchedIdentifier": "/station-s/wiring/manage/getPropertyValues/"
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/operationLog",
+        "workflowIds": [
+          "station-operation-log-query"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "Backend audit generation, retention and access policy unknown. Map provider requests not executed."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-BmrK69Ei.js",
+            "charOffset": 2410,
+            "matchedIdentifier": "UPDATE_LOC"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-BmrK69Ei.js",
+            "charOffset": 5235,
+            "matchedIdentifier": "trackingReport"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-BmrK69Ei.js",
+            "charOffset": 5251,
+            "matchedIdentifier": "plant_operation_log_jump"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Sreny44V.js",
+            "charOffset": 215520,
+            "matchedIdentifier": "/station-s/operation/log/station/log/"
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/settings/authorize",
+        "workflowIds": [
+          "station-authorize-sharing"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "Dynamic business/account picker validation, server grants, inherited permissions and cascade revoke outcomes remain partial."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-CALWBnSR.js",
+            "charOffset": 6795,
+            "matchedIdentifier": "authOpen"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-CALWBnSR.js",
+            "charOffset": 3418,
+            "matchedIdentifier": "F1/A12"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-CALWBnSR.js",
+            "charOffset": 4421,
+            "matchedIdentifier": "F1/A5"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-CALWBnSR.js",
+            "charOffset": 7680,
+            "matchedIdentifier": "authOpen?1:0"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-CALWBnSR.js",
+            "charOffset": 3075,
+            "matchedIdentifier": "onOk:()=>{ue(r,l)"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Sreny44V.js",
+            "charOffset": 204054,
+            "matchedIdentifier": "/queryRelated/businesses"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Sreny44V.js",
+            "charOffset": 204389,
+            "matchedIdentifier": "/deleteRelated/business/"
+          }
+        ]
+      },
+      {
+        "path": "/monitor/plant/plantDetail/:stationId/settings/license",
+        "workflowIds": [
+          "station-license-records"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "Activation, deduction, renewal and backend validation not tested; record detail is only the observed component scope."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-D7Mt4PFo.js",
+            "charOffset": 1278,
+            "matchedIdentifier": "licenseType"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-D7Mt4PFo.js",
+            "charOffset": 1422,
+            "matchedIdentifier": "usedWay"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-D7Mt4PFo.js",
+            "charOffset": 1536,
+            "matchedIdentifier": "createTime"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-D7Mt4PFo.js",
+            "charOffset": 5593,
+            "matchedIdentifier": "ae=t=>{W.value=t,D.value=!0}"
+          }
+        ]
+      },
+      {
+        "path": "/monitor/alarm/realTime",
+        "workflowIds": [
+          "alarm-live-history-lifecycle"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "Backend alarm condition evaluation, actual records, recovery, notification and work-order results unknown. Opening live detail is not guaranteed read-only."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--RealTime-DwfMG_iA.js",
+            "charOffset": 6155,
+            "matchedIdentifier": "t.status==1&&t.readFlag==0&&(yield be({id:+t.id}))"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--History-BbWolHMQ.js",
+            "charOffset": 6136,
+            "matchedIdentifier": "__name:"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-BHEsonxc.js",
+            "charOffset": 17318,
+            "matchedIdentifier": "readFlag"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-2NirGtBj.js",
+            "charOffset": 6309,
+            "matchedIdentifier": "__name:"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Sreny44V.js",
+            "charOffset": 201325,
+            "matchedIdentifier": "/station-s/station/alert/read"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Sreny44V.js",
+            "charOffset": 201255,
+            "matchedIdentifier": "/station-s/station/alert/delete"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Sreny44V.js",
+            "charOffset": 212135,
+            "matchedIdentifier": "/station-s/close/"
+          }
+        ]
+      },
+      {
+        "path": "/monitor/alarm/history",
+        "workflowIds": [
+          "alarm-live-history-lifecycle"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "Backend alarm condition evaluation, actual records, recovery, notification and work-order results unknown. Opening live detail is not guaranteed read-only."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--RealTime-DwfMG_iA.js",
+            "charOffset": 6155,
+            "matchedIdentifier": "t.status==1&&t.readFlag==0&&(yield be({id:+t.id}))"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--History-BbWolHMQ.js",
+            "charOffset": 6136,
+            "matchedIdentifier": "__name:"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-BHEsonxc.js",
+            "charOffset": 17318,
+            "matchedIdentifier": "readFlag"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-2NirGtBj.js",
+            "charOffset": 6309,
+            "matchedIdentifier": "__name:"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Sreny44V.js",
+            "charOffset": 201325,
+            "matchedIdentifier": "/station-s/station/alert/read"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Sreny44V.js",
+            "charOffset": 201255,
+            "matchedIdentifier": "/station-s/station/alert/delete"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Sreny44V.js",
+            "charOffset": 212135,
+            "matchedIdentifier": "/station-s/close/"
+          }
+        ]
+      },
+      {
+        "path": "/monitor/analysis/aiAnalysis",
+        "workflowIds": [
+          "ai-diagnostics-statistics-settings-and-report"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "Model equations, data windows, quality/accuracy, server task cancellation and report content unknown. No diagnostic/report task started."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-BVSh6qyX.js",
+            "charOffset": 17048,
+            "matchedIdentifier": "DIAGNOSTIC"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-BVSh6qyX.js",
+            "charOffset": 16957,
+            "matchedIdentifier": "EP_N"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-BVSh6qyX.js",
+            "charOffset": 16965,
+            "matchedIdentifier": "NA_N"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-BVSh6qyX.js",
+            "charOffset": 21835,
+            "matchedIdentifier": "min:1,max:100,precision:0"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--SiteDetails-Agl6A7gF.js",
+            "charOffset": 14641,
+            "matchedIdentifier": "aiMeasuredPr"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--SiteDetails-Agl6A7gF.js",
+            "charOffset": 4150,
+            "matchedIdentifier": "estimatedLossPower"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--ActiveTabs-mf5Vtwd8.js",
+            "charOffset": 1510,
+            "matchedIdentifier": "ai-reports"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--ActiveTabs-mf5Vtwd8.js",
+            "charOffset": 1154,
+            "matchedIdentifier": "diagnostics-overview"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--ActiveTabs-mf5Vtwd8.js",
+            "charOffset": 1239,
+            "matchedIdentifier": "statistic-cause"
+          }
+        ]
+      },
+      {
+        "path": "/monitor/analysis/aiAnalysisDetail/:id",
+        "workflowIds": [
+          "ai-diagnostics-statistics-settings-and-report"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "Model equations, data windows, quality/accuracy, server task cancellation and report content unknown. No diagnostic/report task started."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-BVSh6qyX.js",
+            "charOffset": 17048,
+            "matchedIdentifier": "DIAGNOSTIC"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-BVSh6qyX.js",
+            "charOffset": 16957,
+            "matchedIdentifier": "EP_N"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-BVSh6qyX.js",
+            "charOffset": 16965,
+            "matchedIdentifier": "NA_N"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--index-BVSh6qyX.js",
+            "charOffset": 21835,
+            "matchedIdentifier": "min:1,max:100,precision:0"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--SiteDetails-Agl6A7gF.js",
+            "charOffset": 14641,
+            "matchedIdentifier": "aiMeasuredPr"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--SiteDetails-Agl6A7gF.js",
+            "charOffset": 4150,
+            "matchedIdentifier": "estimatedLossPower"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--ActiveTabs-mf5Vtwd8.js",
+            "charOffset": 1510,
+            "matchedIdentifier": "ai-reports"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--ActiveTabs-mf5Vtwd8.js",
+            "charOffset": 1154,
+            "matchedIdentifier": "diagnostics-overview"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/monitor--ActiveTabs-mf5Vtwd8.js",
+            "charOffset": 1239,
+            "matchedIdentifier": "statistic-cause"
+          }
+        ]
+      },
+      {
+        "path": "/system/opsManagement/areaManagement",
+        "workflowIds": [
+          "ops-region-fence-team-and-station-binding"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "Backend fence topology, concurrent assignment, operational scheduling and effective team permissions unknown."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--create-DDdlDwP4.js",
+            "charOffset": 40050,
+            "matchedIdentifier": "fenceList"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--create-DDdlDwP4.js",
+            "charOffset": 36646,
+            "matchedIdentifier": "executorId"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--create-DDdlDwP4.js",
+            "charOffset": 41054,
+            "matchedIdentifier": "maxlength:20"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--create-DDdlDwP4.js",
+            "charOffset": 26860,
+            "matchedIdentifier": "F54/A2"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--create-DDdlDwP4.js",
+            "charOffset": 27176,
+            "matchedIdentifier": "F54/A3"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-CGMzD0Kv.js",
+            "charOffset": 3210,
+            "matchedIdentifier": "F54/A1"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 98950,
+            "matchedIdentifier": "/ops-s/ops/region/check"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 99164,
+            "matchedIdentifier": "/ops-s/ops/region/bindRegion"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 99231,
+            "matchedIdentifier": "/ops-s/ops/region/unbindRegion"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 99596,
+            "matchedIdentifier": "/ops-s/ops/region/create"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 99659,
+            "matchedIdentifier": "/ops-s/ops/region/update"
+          }
+        ]
+      },
+      {
+        "path": "/system/opsManagement/create/:id",
+        "workflowIds": [
+          "ops-region-fence-team-and-station-binding"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "Backend fence topology, concurrent assignment, operational scheduling and effective team permissions unknown."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--create-DDdlDwP4.js",
+            "charOffset": 40050,
+            "matchedIdentifier": "fenceList"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--create-DDdlDwP4.js",
+            "charOffset": 36646,
+            "matchedIdentifier": "executorId"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--create-DDdlDwP4.js",
+            "charOffset": 41054,
+            "matchedIdentifier": "maxlength:20"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--create-DDdlDwP4.js",
+            "charOffset": 26860,
+            "matchedIdentifier": "F54/A2"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--create-DDdlDwP4.js",
+            "charOffset": 27176,
+            "matchedIdentifier": "F54/A3"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-CGMzD0Kv.js",
+            "charOffset": 3210,
+            "matchedIdentifier": "F54/A1"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 98950,
+            "matchedIdentifier": "/ops-s/ops/region/check"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 99164,
+            "matchedIdentifier": "/ops-s/ops/region/bindRegion"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 99231,
+            "matchedIdentifier": "/ops-s/ops/region/unbindRegion"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 99596,
+            "matchedIdentifier": "/ops-s/ops/region/create"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 99659,
+            "matchedIdentifier": "/ops-s/ops/region/update"
+          }
+        ]
+      },
+      {
+        "path": "/system/opsManagement/personnel",
+        "workflowIds": [
+          "ops-personnel-certificate-and-location"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "Server account eligibility, certificate approval, workload calculation and upload cleanup unknown. No user data or actual uploads inspected."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-DEuBpLp3.js",
+            "charOffset": 31426,
+            "matchedIdentifier": "receiveStatus"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-DEuBpLp3.js",
+            "charOffset": 28313,
+            "matchedIdentifier": "certificate"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-DEuBpLp3.js",
+            "charOffset": 44413,
+            "matchedIdentifier": "F53/A1"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-DEuBpLp3.js",
+            "charOffset": 46320,
+            "matchedIdentifier": "F53/A2"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-DEuBpLp3.js",
+            "charOffset": 46504,
+            "matchedIdentifier": "F53/A3"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-DEuBpLp3.js",
+            "charOffset": 8335,
+            "matchedIdentifier": "customRequest"
+          }
+        ]
+      },
+      {
+        "path": "/system/externalEnterprise",
+        "workflowIds": [
+          "external-enterprise-signing-lifecycle"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "Backend signing enforcement, two-party consent, inherited menus, notifications and termination effects unknown."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-DD4UyU_Q.js",
+            "charOffset": 3262,
+            "matchedIdentifier": "signStatus"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-DD4UyU_Q.js",
+            "charOffset": 7177,
+            "matchedIdentifier": "F38/A1"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-DD4UyU_Q.js",
+            "charOffset": 7186,
+            "matchedIdentifier": "F38/A2"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-DD4UyU_Q.js",
+            "charOffset": 1701,
+            "matchedIdentifier": "oe({isAgree:!1"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-DD4UyU_Q.js",
+            "charOffset": 17940,
+            "matchedIdentifier": "Le(s)"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 108978,
+            "matchedIdentifier": "/crm-front-s/crm/signRelation/terminate/"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 108731,
+            "matchedIdentifier": "/crm-front-s/crm/signRelation/relationCallback"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 109138,
+            "matchedIdentifier": "/crm-front-s/crm/signRelation/startRelation"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 108908,
+            "matchedIdentifier": "/crm-front-s/crm/signRelation/view/"
+          }
+        ]
+      },
+      {
+        "path": "/system/signingManage/signingList",
+        "workflowIds": [
+          "signing-contract-roles-and-scheme-inspection"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "Server role containment, expiry boundaries, account ownership restrictions and partial grant rollback unknown."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-2E-GH3kH.js",
+            "charOffset": 1391,
+            "matchedIdentifier": "permanence"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-2E-GH3kH.js",
+            "charOffset": 14456,
+            "matchedIdentifier": "F16/A3"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-2E-GH3kH.js",
+            "charOffset": 14783,
+            "matchedIdentifier": "F16/A4"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-2E-GH3kH.js",
+            "charOffset": 10805,
+            "matchedIdentifier": "F16/A5"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-2E-GH3kH.js",
+            "charOffset": 1674,
+            "matchedIdentifier": "V=()=>{k.value.validate().then"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-CBpGLuQ-.js",
+            "charOffset": 2369,
+            "matchedIdentifier": "pageNum:1,pageSize:50"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 60551,
+            "matchedIdentifier": "/account-s/acc/sign-contract/personal"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 60480,
+            "matchedIdentifier": "/account-s/acc/sign-contract/org"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 149108,
+            "matchedIdentifier": "/station-s/station/auth/addRelated/business"
+          }
+        ]
+      },
+      {
+        "path": "/system/signingManage/schemeList",
+        "workflowIds": [
+          "signing-contract-roles-and-scheme-inspection"
+        ],
+        "coverageStatus": "focused-specification-partial",
+        "remainingGaps": [
+          "Server role containment, expiry boundaries, account ownership restrictions and partial grant rollback unknown."
+        ],
+        "evidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-2E-GH3kH.js",
+            "charOffset": 1391,
+            "matchedIdentifier": "permanence"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-2E-GH3kH.js",
+            "charOffset": 14456,
+            "matchedIdentifier": "F16/A3"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-2E-GH3kH.js",
+            "charOffset": 14783,
+            "matchedIdentifier": "F16/A4"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-2E-GH3kH.js",
+            "charOffset": 10805,
+            "matchedIdentifier": "F16/A5"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-2E-GH3kH.js",
+            "charOffset": 1674,
+            "matchedIdentifier": "V=()=>{k.value.validate().then"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/shell--index-CBpGLuQ-.js",
+            "charOffset": 2369,
+            "matchedIdentifier": "pageNum:1,pageSize:50"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 60551,
+            "matchedIdentifier": "/account-s/acc/sign-contract/personal"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 60480,
+            "matchedIdentifier": "/account-s/acc/sign-contract/org"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/../public-index.js",
+            "charOffset": 149108,
+            "matchedIdentifier": "/station-s/station/auth/addRelated/business"
+          }
+        ]
+      }
+    ],
+    "counts": {
+      "targetPathsReviewed": 47,
+      "businessFunctionsClaimedComplete": 0,
+      "runtimeValidatedFeatures": 0,
+      "reviewStatusCounts": {
+        "focused-specification-partial": 45,
+        "wrapper-specification-only-nested-implementation-blocked": 2
+      },
+      "newCuratedWorkflows": 39,
+      "originalUnresolvedResourceLeavesUnchanged": 49
+    },
+    "newWorkflowIds": [
+      "dashboard-global-configuration",
+      "dashboard-station-status-and-automatic-hide",
+      "alarm-live-history-lifecycle",
+      "station-external-control-and-layout-wrappers",
+      "station-wiring-diagram-view-edit",
+      "station-operation-log-query",
+      "station-authorize-sharing",
+      "station-license-records",
+      "ai-diagnostics-statistics-settings-and-report",
+      "ops-region-fence-team-and-station-binding",
+      "ops-personnel-certificate-and-location",
+      "external-enterprise-signing-lifecycle",
+      "signing-contract-roles-and-scheme-inspection",
+      "property-deep-dashboard",
+      "property-deep-asset-manage",
+      "property-deep-asset-detail",
+      "property-deep-capital",
+      "property-deep-ledgers",
+      "property-deep-pgs",
+      "property-deep-bill-list",
+      "property-deep-bill-detail",
+      "property-deep-bill-adjust",
+      "property-deep-energy-contract-maintain",
+      "property-deep-energy-contract-detail",
+      "ems-deep-container-boundaries",
+      "ems-deep-operation-verification",
+      "ems-deep-solar-control-history",
+      "ems-deep-follow",
+      "ems-deep-template-schedule",
+      "ems-deep-shared-restrictions",
+      "ems-deep-customized",
+      "ems-deep-peak-valley",
+      "ems-deep-demand",
+      "ems-deep-dynamicUprating",
+      "ems-deep-utilization",
+      "ems-deep-hybrid",
+      "ems-deep-demand-response",
+      "ems-deep-ai",
+      "ems-deep-track-meter"
+    ],
+    "downloadManifest": [
+      {
+        "url": "https://ess-cloud-login.qudeox.com/sub-monitor/assets/index.vue_vue_type_script_setup_true_lang-uzrcRXWP.js",
+        "file": "monitor--index.vue_vue_type_script_setup_true_lang-uzrcRXWP.js",
+        "bytes": 2541
+      },
+      {
+        "url": "https://ess-cloud-login.qudeox.com/sub-monitor/assets/index--vtvtjnk.js",
+        "file": "monitor--index--vtvtjnk.js",
+        "bytes": 90956
+      },
+      {
+        "url": "https://ess-cloud-login.qudeox.com/sub-monitor/assets/ActiveTabs-mf5Vtwd8.js",
+        "file": "monitor--ActiveTabs-mf5Vtwd8.js",
+        "bytes": 11659
+      },
+      {
+        "url": "https://ess-cloud-login.qudeox.com/sub-monitor/assets/AlarmFilter-BXOBmwaA.js",
+        "file": "monitor--AlarmFilter-BXOBmwaA.js",
+        "bytes": 5028
+      },
+      {
+        "url": "https://ess-cloud-login.qudeox.com/sub-monitor/assets/dashboard_panel-DmSX1Z9h.js",
+        "file": "monitor--dashboard_panel-DmSX1Z9h.js",
+        "bytes": 910
+      },
+      {
+        "url": "https://ess-cloud-login.qudeox.com/sub-monitor/assets/OperationOverview-CnMDKV_P.js",
+        "file": "monitor--OperationOverview-CnMDKV_P.js",
+        "bytes": 16254
+      },
+      {
+        "url": "https://ess-cloud-login.qudeox.com/sub-monitor/assets/RealTimeAlarm-CIYmPJyr.js",
+        "file": "monitor--RealTimeAlarm-CIYmPJyr.js",
+        "bytes": 6953
+      },
+      {
+        "url": "https://ess-cloud-login.qudeox.com/sub-monitor/assets/index-DwcWiwWp.js",
+        "file": "monitor--index-DwcWiwWp.js",
+        "bytes": 9162
+      },
+      {
+        "url": "https://ess-cloud-login.qudeox.com/sub-monitor/assets/index-CVXM-IsW.js",
+        "file": "monitor--index-CVXM-IsW.js",
+        "bytes": 12379
+      },
+      {
+        "url": "https://ess-cloud-login.qudeox.com/sub-monitor/assets/index-Bv7i7Evk.js",
+        "file": "monitor--index-Bv7i7Evk.js",
+        "bytes": 7642
+      },
+      {
+        "url": "https://ess-cloud-login.qudeox.com/sub-monitor/assets/DashboardStrategyStatusBar-BURDsNw_.js",
+        "file": "monitor--DashboardStrategyStatusBar-BURDsNw_.js",
+        "bytes": 9973
+      },
+      {
+        "file": ".local-tools/qudeox-scan/public-modules/property--dashboard-CEogdeL6.js",
+        "url": "https://ess-cloud-login.qudeox.com/sub-property/assets/dashboard-CEogdeL6.js",
+        "method": "unauthenticated GET, static JavaScript only",
+        "byteLength": 2240,
+        "sha256": "14d7c0ac1f060d1c5405f5d4124117382569381d951cc441e6072fbf3610d701",
+        "explicitImportEvidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--Capital-Du2PeTGB.js",
+            "charOffset": 838,
+            "matchedIdentifier": "./dashboard-CEogdeL6.js",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--dataBoard-6-c_rCL_.js",
+            "charOffset": 1358,
+            "matchedIdentifier": "./dashboard-CEogdeL6.js",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--detail-ehwnbuh5.js",
+            "charOffset": 1459,
+            "matchedIdentifier": "./dashboard-CEogdeL6.js",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "file": ".local-tools/qudeox-scan/public-modules/property--dateChoose-IRL3Xzog.js",
+        "url": "https://ess-cloud-login.qudeox.com/sub-property/assets/dateChoose-IRL3Xzog.js",
+        "method": "unauthenticated GET, static JavaScript only",
+        "byteLength": 827682,
+        "sha256": "509efc42473ec189d676d75dc6e58d9889d6c33cf77c62f167a8fc7cac334b08",
+        "explicitImportEvidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--dataBoard-6-c_rCL_.js",
+            "charOffset": 2345,
+            "matchedIdentifier": "./dateChoose-IRL3Xzog.js",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--detail-ehwnbuh5.js",
+            "charOffset": 2350,
+            "matchedIdentifier": "./dateChoose-IRL3Xzog.js",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-C1WALoMb.js",
+            "charOffset": 2264,
+            "matchedIdentifier": "./dateChoose-IRL3Xzog.js",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "file": ".local-tools/qudeox-scan/public-modules/property--dataBoard-6-c_rCL_.js",
+        "url": "https://ess-cloud-login.qudeox.com/sub-property/assets/dataBoard-6-c_rCL_.js",
+        "method": "unauthenticated GET, static JavaScript only",
+        "byteLength": 85821,
+        "sha256": "871b063af41d897cd585d51cf0dfdf90f7ed00ab356227dd7811ce22d6336c73",
+        "explicitImportEvidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--detail-ehwnbuh5.js",
+            "charOffset": 1334,
+            "matchedIdentifier": "./dataBoard-6-c_rCL_.js",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-C1WALoMb.js",
+            "charOffset": 1103,
+            "matchedIdentifier": "./dataBoard-6-c_rCL_.js",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "file": ".local-tools/qudeox-scan/public-modules/property--incomeTypeReceviable-BuSco1uu.js",
+        "url": "https://ess-cloud-login.qudeox.com/sub-property/assets/incomeTypeReceviable-BuSco1uu.js",
+        "method": "unauthenticated GET, static JavaScript only",
+        "byteLength": 9282,
+        "sha256": "222278c9f7154cc16fc83b642d45654e58a0040ac7ffea9a86498821f3ef7d35",
+        "explicitImportEvidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--Capital-Du2PeTGB.js",
+            "charOffset": 630,
+            "matchedIdentifier": "./incomeTypeReceviable-BuSco1uu.js",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--dataBoard-6-c_rCL_.js",
+            "charOffset": 1230,
+            "matchedIdentifier": "./incomeTypeReceviable-BuSco1uu.js",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--detail-ehwnbuh5.js",
+            "charOffset": 1387,
+            "matchedIdentifier": "./incomeTypeReceviable-BuSco1uu.js",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "file": ".local-tools/qudeox-scan/public-modules/property--type-DQeBf5aw.js",
+        "url": "https://ess-cloud-login.qudeox.com/sub-property/assets/type-DQeBf5aw.js",
+        "method": "unauthenticated GET, static JavaScript only",
+        "byteLength": 14313,
+        "sha256": "28635f56b5797bf7010d17be535587e32155486c3e5d24b7a7ca381028213e21",
+        "explicitImportEvidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--Capital-Du2PeTGB.js",
+            "charOffset": 694,
+            "matchedIdentifier": "./type-DQeBf5aw.js",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--dataBoard-6-c_rCL_.js",
+            "charOffset": 1926,
+            "matchedIdentifier": "./type-DQeBf5aw.js",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--detail-ehwnbuh5.js",
+            "charOffset": 1207,
+            "matchedIdentifier": "./type-DQeBf5aw.js",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "file": ".local-tools/qudeox-scan/public-modules/property--type-DFlEBeU6.js",
+        "url": "https://ess-cloud-login.qudeox.com/sub-property/assets/type-DFlEBeU6.js",
+        "method": "unauthenticated GET, static JavaScript only",
+        "byteLength": 1162426,
+        "sha256": "ba25056b25315b8970fe10f7e3b1d9a36b7cf982f3f1b7471c6900cd7d360d09",
+        "explicitImportEvidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-9BYepQEz.js",
+            "charOffset": 1243,
+            "matchedIdentifier": "./type-DFlEBeU6.js",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-BjYwZLSK.js",
+            "charOffset": 1243,
+            "matchedIdentifier": "./type-DFlEBeU6.js",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-BVmJMiRu.js",
+            "charOffset": 1243,
+            "matchedIdentifier": "./type-DFlEBeU6.js",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "file": ".local-tools/qudeox-scan/public-modules/property--paramsChoose-CXbEsWtd.js",
+        "url": "https://ess-cloud-login.qudeox.com/sub-property/assets/paramsChoose-CXbEsWtd.js",
+        "method": "unauthenticated GET, static JavaScript only",
+        "byteLength": 9788,
+        "sha256": "6428547ddc3689e2c9a70d0714af3497b3290b145f66aca39e42eb37125b09eb",
+        "explicitImportEvidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--Capital-Du2PeTGB.js",
+            "charOffset": 774,
+            "matchedIdentifier": "./paramsChoose-CXbEsWtd.js",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--dataBoard-6-c_rCL_.js",
+            "charOffset": 2006,
+            "matchedIdentifier": "./paramsChoose-CXbEsWtd.js",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--detail-ehwnbuh5.js",
+            "charOffset": 2259,
+            "matchedIdentifier": "./paramsChoose-CXbEsWtd.js",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "file": ".local-tools/qudeox-scan/public-modules/property--questionTip-ChSRthL3.js",
+        "url": "https://ess-cloud-login.qudeox.com/sub-property/assets/questionTip-ChSRthL3.js",
+        "method": "unauthenticated GET, static JavaScript only",
+        "byteLength": 1175,
+        "sha256": "ddeb0b200d0a7c6894735fd9f983edb6f8fc060281dbf3645e074f3f325d4701",
+        "explicitImportEvidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--detail-ehwnbuh5.js",
+            "charOffset": 1576,
+            "matchedIdentifier": "./questionTip-ChSRthL3.js",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--pgsList-DzufD8p8.js",
+            "charOffset": 1643,
+            "matchedIdentifier": "./questionTip-ChSRthL3.js",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "file": ".local-tools/qudeox-scan/public-modules/property--manos-design-s-y2G998fV.js",
+        "url": "https://ess-cloud-login.qudeox.com/sub-property/assets/manos-design-s-y2G998fV.js",
+        "method": "unauthenticated GET, static JavaScript only",
+        "byteLength": 5013,
+        "sha256": "3b37d3b2ffa4ecd1849787766925713def1d6693885f244dacb27d3b22fbea81",
+        "explicitImportEvidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-CfQTUP82.js",
+            "charOffset": 886,
+            "matchedIdentifier": "./manos-design-s-y2G998fV.js",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-CVvpT76Y.js",
+            "charOffset": 1447,
+            "matchedIdentifier": "./manos-design-s-y2G998fV.js",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "file": ".local-tools/qudeox-scan/public-modules/property--useTab-De7rMpZS.js",
+        "url": "https://ess-cloud-login.qudeox.com/sub-property/assets/useTab-De7rMpZS.js",
+        "method": "unauthenticated GET, static JavaScript only",
+        "byteLength": 637,
+        "sha256": "c822fa87e480819fd26acc5a05c41bb9c42aff6a823dfe57d198d62eb57d19c5",
+        "explicitImportEvidence": [
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--detail-ehwnbuh5.js",
+            "charOffset": 1774,
+            "matchedIdentifier": "./useTab-De7rMpZS.js",
+            "offsetUnit": "Unicode code points, zero based"
+          },
+          {
+            "file": ".local-tools/qudeox-scan/public-modules/property--index-CfQTUP82.js",
+            "charOffset": 1052,
+            "matchedIdentifier": "./useTab-De7rMpZS.js",
+            "offsetUnit": "Unicode code points, zero based"
+          }
+        ]
+      },
+      {
+        "file": ".local-tools/qudeox-scan/public-modules/monitor--AISettings-DojJ_HlZ.js",
+        "url": "https://ess-cloud-login.qudeox.com/sub-monitor/assets/AISettings-DojJ_HlZ.js",
+        "method": "unauthenticated GET",
+        "importer": ".local-tools/qudeox-scan/public-modules/monitor--NewAIIntelligentStrategy-n-bk1O5d.js",
+        "importIdentifier": "./AISettings-DojJ_HlZ.js",
+        "bytes": 86480,
+        "sha256": "63d5cbdf1072c2c4c7073a15372c0d204e6791bcd6337b3fcd4b74338717ce26",
+        "executed": false
+      }
+    ],
+    "limitations": [
+      "All reviews remain partial specifications; source path coverage does not establish all branches, backend behavior, permissions or runtime availability.",
+      "49 original resource leaves remain unknown; wrapper nested implementation gaps are additional and separately counted.",
+      "No business API or downloaded JavaScript was executed. Intentional writes absent; prior parent UI automatic hidden/telemetry occurrence remains unverified."
+    ]
+  },
+  "nestedImplementationUnknowns": [
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/layout",
+      "status": "wrapper-only-nested-implementation-unknown",
+      "reason": "Declared iframe URL requires runtime stationId/locale/oURL; no complete unauthenticated static HTML entry declared. No invented URL or real station credential used.",
+      "evidence": [
+        {
+          "file": ".local-tools/qudeox-scan/public-modules/monitor--index-CeJCi3lg.js",
+          "charOffset": 184,
+          "matchedIdentifier": "/sub-layout/systemlayout/"
+        }
+      ]
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/energyUseControl",
+      "status": "wrapper-only-nested-implementation-unknown",
+      "reason": "Mount calls external web-code API with source literal credential parameters before login iframe. Forbidden to call/copy credentials; nested implementation not obtained.",
+      "evidence": [
+        {
+          "file": ".local-tools/qudeox-scan/public-modules/monitor--index-Dv3qoM_c.js",
+          "charOffset": 1624,
+          "matchedIdentifier": "getWebCode"
+        }
+      ]
+    }
+  ],
+  "remainingTargetCountMeaning": "零条浅层待深挖目标只表示本批47条均已逐项检查；不代表业务完整，资源缺口及iframe内部实现仍保留未知。",
+  "unavailableRouteReasons": {
+    "entry-retrieved-no-matching-explicit-leaf-import": 16,
+    "declared-entry-502": 20,
+    "declared-entry-main-shell-fallback": 13
+  },
+  "domainComparisonEvidence": [
+    {
+      "id": "monitor",
+      "name": "监控总览与站点看板",
+      "ownStaticSourceReferences": 43,
+      "scopeWorkPackages": 2,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "stations",
+      "name": "场站建站、编辑、收藏、空间与布局",
+      "ownStaticSourceReferences": 21,
+      "scopeWorkPackages": 1,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "station_metrics",
+      "name": "站点指标映射、偏移、年度计划、电能算法与基本电费",
+      "ownStaticSourceReferences": 48,
+      "scopeWorkPackages": 4,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "devices",
+      "name": "九类设备、层级、单体、参数与固件",
+      "ownStaticSourceReferences": 40,
+      "scopeWorkPackages": 1,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "strategy",
+      "name": "EMS策略编排、发布与执行日志",
+      "ownStaticSourceReferences": 32,
+      "scopeWorkPackages": 2,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "alarms",
+      "name": "规则告警、设备事件、通知与恢复",
+      "ownStaticSourceReferences": 28,
+      "scopeWorkPackages": 2,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "reports",
+      "name": "报告、模板与自动任务",
+      "ownStaticSourceReferences": 24,
+      "scopeWorkPackages": 3,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "comparison_ai",
+      "name": "比较分析与AI诊断",
+      "ownStaticSourceReferences": 21,
+      "scopeWorkPackages": 1,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "maintenance",
+      "name": "运维对象、事件、工单、巡检、成本与知识",
+      "ownStaticSourceReferences": 17,
+      "scopeWorkPackages": 0,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "materials",
+      "name": "运维物料台账、入库、出库与个人账",
+      "ownStaticSourceReferences": 11,
+      "scopeWorkPackages": 0,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "assets_revenue_contracts",
+      "name": "资产、合同、电量/收益台账及结算",
+      "ownStaticSourceReferences": 13,
+      "scopeWorkPackages": 5,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "valuation",
+      "name": "价值测算与方案历史版本",
+      "ownStaticSourceReferences": 6,
+      "scopeWorkPackages": 2,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "vpp_trade",
+      "name": "VPP资源、邀约、交易、预测与结算",
+      "ownStaticSourceReferences": 19,
+      "scopeWorkPackages": 0,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "screens",
+      "name": "数据大屏与布局分享",
+      "ownStaticSourceReferences": 23,
+      "scopeWorkPackages": 0,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "openapi",
+      "name": "OpenAPI开通、凭证、配额与调用统计",
+      "ownStaticSourceReferences": 20,
+      "scopeWorkPackages": 0,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "business_groups",
+      "name": "业务组层级与员工/站点分发",
+      "ownStaticSourceReferences": 23,
+      "scopeWorkPackages": 0,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "tenant_rbac",
+      "name": "企业、人员、角色、授权、权限套餐与审计",
+      "ownStaticSourceReferences": 31,
+      "scopeWorkPackages": 2,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "commercial",
+      "name": "商业套餐、许可、增值服务与订单",
+      "ownStaticSourceReferences": 23,
+      "scopeWorkPackages": 0,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "personal",
+      "name": "个人中心、语言偏好、密码与会话",
+      "ownStaticSourceReferences": 34,
+      "scopeWorkPackages": 0,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "video_monitoring",
+      "name": "视频监控、摄像头绑定与平台凭据",
+      "ownStaticSourceReferences": 11,
+      "scopeWorkPackages": 0,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "identity_lifecycle",
+      "name": "注册、找回密码、账户退出及身份入口状态",
+      "ownStaticSourceReferences": 24,
+      "scopeWorkPackages": 0,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "messages_tasks",
+      "name": "站内消息、通知阅读状态与共享待办",
+      "ownStaticSourceReferences": 14,
+      "scopeWorkPackages": 0,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "knowledge_content",
+      "name": "全局知识库、目录权限与共享文档预览",
+      "ownStaticSourceReferences": 13,
+      "scopeWorkPackages": 0,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    },
+    {
+      "id": "application_intake",
+      "name": "进件业务与外部应用嵌入边界",
+      "ownStaticSourceReferences": 11,
+      "scopeWorkPackages": 0,
+      "referenceSpecificationComplete": false,
+      "implementationApplied": false
+    }
+  ],
+  "investigationBoundary": {
+    "businessWritesExecuted": null,
+    "intentionalBusinessWritesExecuted": false,
+    "energyManagementOpenedBeforeAutoHideReview": true,
+    "automaticBusinessStateChangesMayHaveOccurred": true,
+    "stationDashboardVisitedBeforeAutoHideReview": true,
+    "stationDashboardSubtypeExecutionUnverified": true,
+    "realtimeAlarmDetailMayMarkRead": true,
+    "automaticBusinessStateChangesVerified": false,
+    "accessTelemetryMayWrite": true,
+    "presentationOpenedBeforeTrackingReview": true,
+    "zeroServerWritesClaim": false,
+    "accessLogsUnchangedVerified": false,
+    "actualCookieStorageValuesRecorded": false
+  },
+  "individualFunctionComparisonCoverage": {
+    "referenceWorkflowGroups": 122,
+    "comparedWorkflowGroups": 122,
+    "remainingWorkflowIds": [],
+    "assessmentCounts": {
+      "no-corresponding-implementation-established": 40,
+      "partial-current-capability": 56,
+      "requires-business-contract": 26
+    },
+    "fullFunctionCoverageProven": false,
+    "unresolvedBusinessOrLayoutRoutes": 49,
+    "nestedImplementationUnknowns": 2
+  },
+  "secondaryAccountAccessCoverage": {
+    "checkedRepresentativeEntries": 6,
+    "resultCounts": {
+      "permission-denied-message": 1,
+      "page-missing-message": 5
+    },
+    "missingBusinessSpecificationsResolved": 0
+  },
+  "currentResourceAvailability": {
+    "checkedAt": "2026-10-15T19:04:39.373535+00:00",
+    "status": "resource-blockers-persist",
+    "counts": {
+      "total": 49,
+      "bySourceState": {
+        "entry-retrieved-no-matching-explicit-leaf-import": 16,
+        "declared-entry-502": 20,
+        "declared-entry-main-shell-fallback": 13
+      }
+    },
+    "nextRequiredEvidence": [
+      "与当前主站版本对应、可正常访问的运维/测算/VPP/交易演示入口，或这些模块的版本化业务手册。",
+      "资产子应用缺失15条路由及监控发电计划应用路由的对应实现/业务说明，不能只提供同名旧模块。",
+      "布局iframe及外域控制iframe的独立业务说明或无需真实身份交换即可只读审查的演示入口；不提供或调用真实凭据。"
+    ]
+  },
+  "externalPublicDocumentationReview": {
+    "reviewedPages": [
+      {
+        "url": "https://www.qudeox.com/",
+        "finding": "Vendor homepage links products and a Downloads section; no matching SaaS build specification established."
+      },
+      {
+        "url": "https://www.qudeox.com/downloads",
+        "finding": "Reviewed download listing describes company catalogues and hardware product datasheets, not the missing versioned platform business flows."
+      }
+    ],
+    "matchesReferenceBuildVersion": false,
+    "supportsReplacingUnresolvedBusinessSpecifications": false,
+    "documentationAbsenceProven": false,
+    "boundary": "Read-only public pages only. This bounded review does not prove that documentation is unavailable elsewhere, nor that other products or hardware brochures match this SaaS build."
+  },
+  "scopeLimit": "这是完成条件审计，不是已完成证明；计数、哈希、类型检查与匹配路径均不能单独证明全部业务已扫描。"
+}

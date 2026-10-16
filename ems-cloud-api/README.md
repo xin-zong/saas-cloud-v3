@@ -1,3 +1,5 @@
+> `develop-toyingzhen` 分支固定使用独立库 `ems_cloud_saas_toyingzhen`，启动、迁移和隔离规则以 [分支开发环境](../docs/toyingzhen-development.md) 为准；下文旧库、旧端口及迁移命令仅作历史参考，不适用于本分支。
+>
 > 当前租户权限重构使用 V19—V25。旧 V6—V9 组织权限说明仅作历史参考。新版本本地验收、SMTP 配置、正式新库及回退见 [权限重构切换说明](../docs/tenant-permission-cutover.md)。
 
 # EMS Cloud API

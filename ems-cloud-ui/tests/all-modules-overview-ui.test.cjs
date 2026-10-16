@@ -7,6 +7,20 @@ const apiUrl = process.env.API_PREVIEW_URL || 'http://127.0.0.1:8461'
 const demoUrl = process.env.DEMO_PREVIEW_URL || 'http://127.0.0.1:8460'
 const artifacts = path.resolve(__dirname, '../.figma/all-modules/01')
 
+// Exercise the current Google iframe contract without real keys, tiles or external calls.
+async function mockGoogleBridge(page) {
+  await page.route(/\/src\/components\/MapView\.tsx(?:\?.*)?$/, async route => {
+    const response = await route.fetch(), source = await response.text()
+    assert.ok(source.includes('import.meta.env.VITE_GOOGLE_MAPS_API_KEY'))
+    await route.fulfill({response,body:source.replace('import.meta.env.VITE_GOOGLE_MAPS_API_KEY',JSON.stringify('development-test-key'))})
+  })
+  await page.route('**/google-map.html', route => route.fulfill({contentType:'text/html',body:`<!doctype html><html><body><div id="markers"></div><output id="zoom"></output><script>
+    const notify=(type,data={})=>parent.postMessage({source:'ems-google-map',type,...data},location.origin);
+    function render(data){const root=document.getElementById('markers');root.replaceChildren();for(const station of data.stations??[]){const button=document.createElement('button');button.textContent=station.name;button.dataset.lat=String(station.position.lat);button.dataset.lng=String(station.position.lng);button.onclick=()=>notify('select',{id:station.id});root.append(button)}}
+    addEventListener('message',event=>{if(event.origin!==location.origin||event.source!==parent||event.data?.source!=='ems-map-host')return;const{type,data}=event.data;if(type==='handshake')notify('ready');if(type==='initialize'){render(data);notify('loaded');notify('zoom',{zoom:4})}if(type==='update')render(data);if(type==='zoom'){document.getElementById('zoom').textContent=String(data);notify('zoom',{zoom:data>0?5:3})}});notify('ready');
+  </script></body></html>`}))
+}
+
 async function apiPage(browser, options = {}) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
   await context.addInitScript(() => sessionStorage.setItem('enerlution-api-token', 'overview-test'))
@@ -14,10 +28,14 @@ async function apiPage(browser, options = {}) {
   page.setDefaultTimeout(12000)
   page.setDefaultNavigationTimeout(60000)
   await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com|static\.figma\.com/, route => route.abort())
+  if(options.googleBridge) await mockGoogleBridge(page)
   const user = { id: '7', name: '总览用户', account: 'overview@test', role: 'owner', organization: '测试组织', stationIds: ['12'], permissions: ['asset.read'], stationPermissions: { '12': ['asset.read'] }, organizationPermissions: {} }
   Object.assign(user, options.user)
-  await page.route('http://127.0.0.1:18090/api/**', async route => {
+  const configuration = {items:[{id:'overview-template',name:'测试看板',cards:['站点运营概况','在线运行容量','能源供应与构成',...(user.permissions.includes('alarm.read')?['当班处置态势','运行健康','异常与告警实时监控']:[])],pinned:false,sortOrder:0,version:0}],selectedId:'overview-template'}
+  await page.route(/^http:\/\/127\.0\.0\.1:1809[01]\/api\//, async route => {
     const p = new URL(route.request().url()).pathname.slice(4)
+    if(p === '/monitor/templates') return route.fulfill({json:{code:0,data:configuration}})
+    if(p === '/monitor/templates/overview-template' && route.request().method()==='PUT') { const body=route.request().postDataJSON();configuration.items[0]={...configuration.items[0],name:body.name,cards:body.cards,version:body.expectedVersion+1};return route.fulfill({json:{code:0,data:configuration.items[0]}}) }
     const data = p === '/auth/me' ? user : p === '/stations' ? options.stations ?? [{ id: 12, name: '授权测试站点', code: 'SITE-12', rated_power_kw: 100, capacity_kwh: 200 }, { id: 99, name: '禁止显示站点' }] : []
     await route.fulfill({ json: { code: 0, data } })
   })
@@ -96,7 +114,7 @@ test('overview API: dashboard range validation, honest empty data, customization
     await page.getByRole('button', { name: '页面定制', exact: true }).click()
     await page.getByLabel('在线运行容量', { exact: true }).uncheck()
     await page.getByRole('button', { name: '保存页面布局', exact: true }).click()
-    await page.getByText('布局已保存至本机，地图总览同步更新', { exact: true }).waitFor()
+    await page.getByText('布局已保存至服务器，地图总览同步更新', { exact: true }).waitFor()
     assert.equal(await page.locator('.overview-shared-card-grid [data-overview-card="在线运行容量"]').isVisible(), false)
     const downloaded = page.waitForEvent('download')
     await page.getByRole('button', { name: '数据导出', exact: true }).click()
@@ -192,7 +210,12 @@ test('overview demo: design shell, map modes, fullscreen exit and responsive evi
     assert.equal(await page.getByRole('button', { name: '示意底图', exact: true }).count(), 0)
     assert.equal(await page.locator('.overview-map-image').count(), 0)
     assert.equal(await page.getByRole('button', { name: '实时地图', exact: true }).count(), 0)
-    await page.locator('.leaflet-container').waitFor({ state: 'visible' })
+    await page.locator('[data-map-provider="google"]').waitFor({ state: 'visible' })
+    assert.equal(await page.locator('.leaflet-container').count(),0)
+    if(!await page.locator('iframe[title="Google Maps"]').count()) {
+      await page.getByText('Google 地图未配置密钥',{exact:true}).waitFor()
+      assert.equal(await page.getByRole('button',{name:'放大地图',exact:true}).isDisabled(),true)
+    }
     assert.equal(await page.getByRole('button', { name: '示意底图', exact: true }).count(), 0)
     await page.getByRole('button', { name: '沉浸模式（隐藏导航）', exact: true }).click()
     await page.getByRole('heading', { name: /实时事件日志/ }).waitFor()
@@ -213,16 +236,16 @@ test('overview demo: design shell, map modes, fullscreen exit and responsive evi
   } finally { await browser.close() }
 })
 
-test('overview customization: rejected storage, cancel/continue and outer navigation guard preserve edits', { timeout: 60000 }, async () => {
+test('overview customization: rejected server save, cancel/continue and outer navigation guard preserve edits', { timeout: 60000 }, async () => {
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   try {
     const { page } = await apiPage(browser)
     await page.getByRole('button', { name: '经营看板', exact: true }).click()
     await page.getByRole('button', { name: '页面定制', exact: true }).click()
     await page.getByLabel('在线运行容量', { exact: true }).uncheck()
-    await page.evaluate(() => { const original = Storage.prototype.setItem; Storage.prototype.setItem = function(key, value) { if (key.startsWith('enerlution-overview-cards-v2:')) throw new Error('quota'); return original.call(this, key, value) } })
+    await page.route(/\/api\/monitor\/templates\/overview-template$/, route => route.fulfill({status:503,json:{code:503,msg:'模板保存暂不可用'}}))
     await page.getByRole('button', { name: '保存页面布局', exact: true }).click()
-    await page.getByRole('alert').filter({ hasText: '无法保存至本机' }).waitFor()
+    await page.getByRole('alert').filter({ hasText: '模板保存暂不可用' }).waitFor()
     await page.screenshot({ path: path.join(artifacts, 'layout-save-failure-1440.png'), animations: 'disabled' })
     assert.equal(await page.getByRole('dialog', { name: '页面定制', exact: true }).isVisible(), true)
     await page.getByRole('button', { name: '取消', exact: true }).click()
@@ -343,23 +366,25 @@ test('fullscreen columns, live metrics and events never overlap and exit remains
  }finally{await browser.close()}
 })
 
-test('dashboard regional map uses live tiles, real coordinates and station navigation', { timeout: 60000 }, async () => {
+test('dashboard Google map bridge uses scoped coordinates, zoom and station navigation', { timeout: 60000 }, async () => {
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   try {
-    const { page } = await apiPage(browser, { stations: [{ id: 12, name: '授权测试站点', code: 'SITE-12', latitude: 31.82, longitude: 117.23 }] })
+    const { page } = await apiPage(browser, { googleBridge:true, stations: [{ id: 12, name: '授权测试站点', code: 'SITE-12', latitude: 31.82, longitude: 117.23 },{id:99,name:'禁止显示站点',code:'DENIED',latitude:10,longitude:10}] })
     await page.getByRole('button', { name: '经营看板', exact: true }).click()
     const map = page.getByRole('region', { name: '核心站点实时地图' })
-    const marker = map.locator('.leaflet-marker-icon')
+    const bridge=map.frameLocator('iframe[title="Google Maps"]')
+    const marker = bridge.getByRole('button',{name:'授权测试站点',exact:true})
     await marker.waitFor()
     assert.equal(await map.locator('img[src*="imgMapLayer"]').count(), 0)
-    assert.ok(await map.locator('img.leaflet-tile').count() > 0)
-    const box = await map.boundingBox()
-    const pin = await marker.boundingBox()
-    assert.ok(pin.x >= box.x && pin.x + pin.width <= box.x + box.width, JSON.stringify({box,pin}))
-    assert.ok(pin.y >= box.y && pin.y + pin.height <= box.y + box.height)
+    assert.equal(await marker.getAttribute('data-lat'),'31.82')
+    assert.equal(await marker.getAttribute('data-lng'),'117.23')
+    assert.equal(await bridge.getByRole('button',{name:'禁止显示站点',exact:true}).count(),0)
+    assert.equal(await map.locator('.leaflet-marker-icon').count(),0)
+    await page.waitForFunction(()=>!document.querySelector('[aria-label="核心站点实时地图"] button[aria-label="放大地图"]').disabled)
     await map.getByRole('button', { name: '放大地图' }).click()
+    await bridge.locator('#zoom').getByText('1',{exact:true}).waitFor()
     await fs.mkdir(artifacts, { recursive: true })
-    await page.screenshot({ path: path.join(artifacts, 'dashboard-live-map.png'), animations: 'disabled' })
+    await page.screenshot({ path: path.join(artifacts, 'dashboard-map-bridge-mock.png'), animations: 'disabled' })
     await marker.click()
     await page.locator('.station-detail-shell').waitFor()
   } finally { await browser.close() }

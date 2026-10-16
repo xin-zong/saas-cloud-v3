@@ -1,0 +1,632 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-15T19:06:10.016945+00:00",
+  "checkedAt": "2026-10-15T19:04:39.373535+00:00",
+  "status": "resource-blockers-persist",
+  "scope": "Six explicitly declared public HTML entries and two script references declared by those HTML entries.",
+  "entries": [
+    {
+      "module": "monitor",
+      "url": "https://ess-cloud-login.qudeox.com/sub-monitor/",
+      "checkedAt": "2026-10-15T19:04:34.971343+00:00",
+      "method": "GET",
+      "authenticationUsed": false,
+      "sourceExecuted": false,
+      "businessApiCalled": false,
+      "status": 200,
+      "finalUrl": "https://ess-cloud-login.qudeox.com/sub-monitor/",
+      "bytes": 1246,
+      "sha256": "5d44a8b7ab2941247a447cef4257bc8a926c81e333aec6c50864bf25949e2f17",
+      "scriptReferences": [
+        "/sub-monitor/_app.conf.js?v=1.0.0-1790759461193",
+        "/sub-monitor/assets/index-Sreny44V.js",
+        "/sub-monitor/resource/js/H5player_2.1.2/bin/h5player.min.js"
+      ],
+      "previousScriptReferences": [
+        "https://ess-cloud-login.qudeox.com/sub-monitor/assets/index-Sreny44V.js"
+      ],
+      "entryKind": "module-entry-candidate"
+    },
+    {
+      "module": "maintenance",
+      "url": "https://ess-cloud-login.qudeox.com/sub-maintenance/",
+      "checkedAt": "2026-10-15T19:04:34.972423+00:00",
+      "method": "GET",
+      "authenticationUsed": false,
+      "sourceExecuted": false,
+      "businessApiCalled": false,
+      "status": 502,
+      "error": "HTTP 502"
+    },
+    {
+      "module": "property",
+      "url": "https://ess-cloud-login.qudeox.com/sub-property/",
+      "checkedAt": "2026-10-15T19:04:34.972951+00:00",
+      "method": "GET",
+      "authenticationUsed": false,
+      "sourceExecuted": false,
+      "businessApiCalled": false,
+      "status": 200,
+      "finalUrl": "https://ess-cloud-login.qudeox.com/sub-property/",
+      "bytes": 1000,
+      "sha256": "ba0b0fe962fde2176816e06b4fd157d6e32c907800c2b58919746715f58e8c6b",
+      "scriptReferences": [
+        "/sub-property/_app.conf.js?v=1.0.0-1766652672607",
+        "/sub-property/assets/index-D5AyrZSh.js"
+      ],
+      "previousScriptReferences": [
+        "https://ess-cloud-login.qudeox.com/sub-property/assets/index-D5AyrZSh.js"
+      ],
+      "entryKind": "module-entry-candidate"
+    },
+    {
+      "module": "planner",
+      "url": "https://ess-cloud-login.qudeox.com/sub-planner/",
+      "checkedAt": "2026-10-15T19:04:34.973478+00:00",
+      "method": "GET",
+      "authenticationUsed": false,
+      "sourceExecuted": false,
+      "businessApiCalled": false,
+      "status": 502,
+      "error": "HTTP 502"
+    },
+    {
+      "module": "virtual-power-plant",
+      "url": "https://ess-cloud-login.qudeox.com/sub-virtual-power-plant/",
+      "checkedAt": "2026-10-15T19:04:36.421853+00:00",
+      "method": "GET",
+      "authenticationUsed": false,
+      "sourceExecuted": false,
+      "businessApiCalled": false,
+      "status": 200,
+      "finalUrl": "https://ess-cloud-login.qudeox.com/sub-virtual-power-plant/",
+      "bytes": 2495,
+      "sha256": "44dae83a2ae9c670bef2e9f1c42b30f1ac76d9c2b4c8456266facf44089c2542",
+      "scriptReferences": [
+        "/_app.conf.js?v=1.0.0-1791882430801",
+        "/assets/index-DFwO8lgU.js",
+        "https://g.alicdn.com/AWSC/AWSC/awsc.js"
+      ],
+      "previousScriptReferences": [
+        "https://ess-cloud-login.qudeox.com/assets/index-DFwO8lgU.js"
+      ],
+      "entryKind": "main-shell-fallback"
+    },
+    {
+      "module": "trade",
+      "url": "https://ess-cloud-login.qudeox.com/sub-trade/",
+      "checkedAt": "2026-10-15T19:04:36.571895+00:00",
+      "method": "GET",
+      "authenticationUsed": false,
+      "sourceExecuted": false,
+      "businessApiCalled": false,
+      "status": 200,
+      "finalUrl": "https://ess-cloud-login.qudeox.com/sub-trade/",
+      "bytes": 2495,
+      "sha256": "44dae83a2ae9c670bef2e9f1c42b30f1ac76d9c2b4c8456266facf44089c2542",
+      "scriptReferences": [
+        "/_app.conf.js?v=1.0.0-1791882430801",
+        "/assets/index-DFwO8lgU.js",
+        "https://g.alicdn.com/AWSC/AWSC/awsc.js"
+      ],
+      "previousScriptReferences": [
+        "https://ess-cloud-login.qudeox.com/assets/index-DFwO8lgU.js"
+      ],
+      "entryKind": "main-shell-fallback"
+    }
+  ],
+  "childConfigurationReview": [
+    {
+      "module": "monitor",
+      "url": "https://ess-cloud-login.qudeox.com/sub-monitor/_app.conf.js?v=1.0.0-1790759461193",
+      "sha256": "0446bbd04ada236a7ac533699ff4983b4c94d358b9bb49265db92cc421e17e11",
+      "bytes": 7726,
+      "declaredBaseUrl": "/sub-monitor/",
+      "declaredBuildTime": "2026-09-30 09:11:01",
+      "buildTimeMeaning": "Provider public configuration metadata, not independently verified deployment date or source revision.",
+      "moduleMapKeys": [],
+      "resourceKeys": [],
+      "docKeys": [],
+      "alternateEntryEstablished": false,
+      "sourceExecuted": false,
+      "evidence": [
+        {
+          "file": ".local-tools/qudeox-scan/public-modules/monitor--public-app-config.js",
+          "charOffset": 3462,
+          "matchedIdentifier": "\"moduleMap\":"
+        },
+        {
+          "file": ".local-tools/qudeox-scan/public-modules/monitor--public-app-config.js",
+          "charOffset": 3271,
+          "matchedIdentifier": "\"resource\":"
+        },
+        {
+          "file": ".local-tools/qudeox-scan/public-modules/monitor--public-app-config.js",
+          "charOffset": 7531,
+          "matchedIdentifier": "\"doc\":"
+        },
+        {
+          "file": ".local-tools/qudeox-scan/public-modules/monitor--public-app-config.js",
+          "charOffset": 3232,
+          "matchedIdentifier": "\"lastBuildTime\":"
+        },
+        {
+          "file": ".local-tools/qudeox-scan/public-modules/monitor--public-app-config.js",
+          "charOffset": 2759,
+          "matchedIdentifier": "\"baseUrl\":"
+        }
+      ]
+    },
+    {
+      "module": "property",
+      "url": "https://ess-cloud-login.qudeox.com/sub-property/_app.conf.js?v=1.0.0-1766652672607",
+      "sha256": "73c382af732e5fe18476a631aa7c9dcdb3d0530e298d852b5cabb3906c71866e",
+      "bytes": 7395,
+      "declaredBaseUrl": "/sub-property/",
+      "declaredBuildTime": "2025-12-25 08:51:12",
+      "buildTimeMeaning": "Provider public configuration metadata, not independently verified deployment date or source revision.",
+      "moduleMapKeys": [],
+      "resourceKeys": [],
+      "docKeys": [],
+      "alternateEntryEstablished": false,
+      "sourceExecuted": false,
+      "evidence": [
+        {
+          "file": ".local-tools/qudeox-scan/public-modules/property--public-app-config.js",
+          "charOffset": 3130,
+          "matchedIdentifier": "\"moduleMap\":"
+        },
+        {
+          "file": ".local-tools/qudeox-scan/public-modules/property--public-app-config.js",
+          "charOffset": 2939,
+          "matchedIdentifier": "\"resource\":"
+        },
+        {
+          "file": ".local-tools/qudeox-scan/public-modules/property--public-app-config.js",
+          "charOffset": 7200,
+          "matchedIdentifier": "\"doc\":"
+        },
+        {
+          "file": ".local-tools/qudeox-scan/public-modules/property--public-app-config.js",
+          "charOffset": 2900,
+          "matchedIdentifier": "\"lastBuildTime\":"
+        },
+        {
+          "file": ".local-tools/qudeox-scan/public-modules/property--public-app-config.js",
+          "charOffset": 2530,
+          "matchedIdentifier": "\"baseUrl\":"
+        }
+      ]
+    }
+  ],
+  "boundary": {
+    "authenticationUsed": false,
+    "businessApiCalled": false,
+    "downloadedSourceExecuted": false,
+    "automaticPriorParentUiStateChangesStillUnverified": true,
+    "zeroServerWriteClaim": false
+  },
+  "findings": [
+    "运维与测算公开入口本次仍为HTTP502；VPP与交易返回同一主站脚本，不能视为其独立业务实现。",
+    "监控和资产子应用HTML仍引用已取得的相同构建文件；公开配置的moduleMap/resource/doc均为空，未建立替代公开入口。",
+    "资产配置自报构建时间为2025-12-25，监控为2026-09-30；该元数据不证明实际部署时间，也不能用旧资产页面推断缺失的新路由功能。",
+    "本次资源复查没有补齐业务规格，49条原缺口和2个iframe内部实现缺口仍独立保留。"
+  ],
+  "unresolvedRouteCounts": {
+    "total": 49,
+    "bySourceState": {
+      "entry-retrieved-no-matching-explicit-leaf-import": 16,
+      "declared-entry-502": 20,
+      "declared-entry-main-shell-fallback": 13
+    }
+  },
+  "unresolvedRoutes": [
+    {
+      "path": "/monitor/application/planGeneration",
+      "domainIds": [
+        "station_metrics"
+      ],
+      "sourceState": "entry-retrieved-no-matching-explicit-leaf-import",
+      "nextHighestInformationEvidence": "Need an explicit planGeneration component import or visible project-plan entry; route hidden metadata alone does not show current account availability."
+    },
+    {
+      "path": "/maintenance/overview",
+      "domainIds": [
+        "maintenance"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/maintenance/map",
+      "domainIds": [
+        "maintenance"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/maintenance/object/maintenancePlant",
+      "domainIds": [
+        "maintenance"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/maintenance/object/maintenanceDevice",
+      "domainIds": [
+        "maintenance"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/maintenance/object/contract",
+      "domainIds": [
+        "maintenance"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/maintenance/alarm",
+      "domainIds": [
+        "alarms"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/maintenance/event",
+      "domainIds": [
+        "maintenance"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/maintenance/workOrderCenter",
+      "domainIds": [
+        "maintenance"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/maintenance/costCenter",
+      "domainIds": [
+        "maintenance"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/maintenance/workOrderTemplate",
+      "domainIds": [
+        "maintenance"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/maintenance/materialManage/materialAccount",
+      "domainIds": [
+        "materials"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/maintenance/materialManage/materialIn",
+      "domainIds": [
+        "materials"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/maintenance/materialManage/materialOut",
+      "domainIds": [
+        "materials"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/maintenance/materialManage/materialPersonal",
+      "domainIds": [
+        "materials"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/maintenance/faultKnowledge",
+      "domainIds": [
+        "maintenance"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/maintenance/queue/report",
+      "domainIds": [
+        "maintenance"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/property/assetManage/assetPackageList",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "sourceState": "entry-retrieved-no-matching-explicit-leaf-import",
+      "nextHighestInformationEvidence": "Need a concrete leaf script import or a currently visible leaf page resource reference; existing old sub-property route table does not declare this leaf. Re-fetching the same fallback or guessing asset names adds no evidence."
+    },
+    {
+      "path": "/property/assetManage/assetPackageCreate",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "sourceState": "entry-retrieved-no-matching-explicit-leaf-import",
+      "nextHighestInformationEvidence": "Need a concrete leaf script import or a currently visible leaf page resource reference; existing old sub-property route table does not declare this leaf. Re-fetching the same fallback or guessing asset names adds no evidence."
+    },
+    {
+      "path": "/property/assetManage/assetPackageDetail/:id",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "sourceState": "entry-retrieved-no-matching-explicit-leaf-import",
+      "nextHighestInformationEvidence": "Need a concrete leaf script import or a currently visible leaf page resource reference; existing old sub-property route table does not declare this leaf. Re-fetching the same fallback or guessing asset names adds no evidence."
+    },
+    {
+      "path": "/property/operationalAnalysis/cost/actualPaymentLedger",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "sourceState": "entry-retrieved-no-matching-explicit-leaf-import",
+      "nextHighestInformationEvidence": "Need a concrete leaf script import or a currently visible leaf page resource reference; existing old sub-property route table does not declare this leaf. Re-fetching the same fallback or guessing asset names adds no evidence."
+    },
+    {
+      "path": "/property/operationalAnalysis/cost/rentalSettlement",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "sourceState": "entry-retrieved-no-matching-explicit-leaf-import",
+      "nextHighestInformationEvidence": "Need a concrete leaf script import or a currently visible leaf page resource reference; existing old sub-property route table does not declare this leaf. Re-fetching the same fallback or guessing asset names adds no evidence."
+    },
+    {
+      "path": "/property/operationalAnalysis/cost/rentAnomaly",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "sourceState": "entry-retrieved-no-matching-explicit-leaf-import",
+      "nextHighestInformationEvidence": "Need a concrete leaf script import or a currently visible leaf page resource reference; existing old sub-property route table does not declare this leaf. Re-fetching the same fallback or guessing asset names adds no evidence."
+    },
+    {
+      "path": "/property/operationalAnalysis/risk/riskList",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "sourceState": "entry-retrieved-no-matching-explicit-leaf-import",
+      "nextHighestInformationEvidence": "Need a concrete leaf script import or a currently visible leaf page resource reference; existing old sub-property route table does not declare this leaf. Re-fetching the same fallback or guessing asset names adds no evidence."
+    },
+    {
+      "path": "/property/operationalAnalysis/risk/eventList",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "sourceState": "entry-retrieved-no-matching-explicit-leaf-import",
+      "nextHighestInformationEvidence": "Need a concrete leaf script import or a currently visible leaf page resource reference; existing old sub-property route table does not declare this leaf. Re-fetching the same fallback or guessing asset names adds no evidence."
+    },
+    {
+      "path": "/property/operationalAnalysis/risk/earlyWarningRule",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "sourceState": "entry-retrieved-no-matching-explicit-leaf-import",
+      "nextHighestInformationEvidence": "Need a concrete leaf script import or a currently visible leaf page resource reference; existing old sub-property route table does not declare this leaf. Re-fetching the same fallback or guessing asset names adds no evidence."
+    },
+    {
+      "path": "/property/operationalAnalysis/valueCalculation",
+      "domainIds": [
+        "assets_revenue_contracts",
+        "valuation"
+      ],
+      "sourceState": "entry-retrieved-no-matching-explicit-leaf-import",
+      "nextHighestInformationEvidence": "Need a concrete leaf script import or a currently visible leaf page resource reference; existing old sub-property route table does not declare this leaf. Re-fetching the same fallback or guessing asset names adds no evidence."
+    },
+    {
+      "path": "/property/operationalAnalysis/calculationCreate/:id",
+      "domainIds": [
+        "assets_revenue_contracts",
+        "valuation"
+      ],
+      "sourceState": "entry-retrieved-no-matching-explicit-leaf-import",
+      "nextHighestInformationEvidence": "Need a concrete leaf script import or a currently visible leaf page resource reference; existing old sub-property route table does not declare this leaf. Re-fetching the same fallback or guessing asset names adds no evidence."
+    },
+    {
+      "path": "/property/operationalAnalysis/calculationDetail/:id/:calcType",
+      "domainIds": [
+        "assets_revenue_contracts",
+        "valuation"
+      ],
+      "sourceState": "entry-retrieved-no-matching-explicit-leaf-import",
+      "nextHighestInformationEvidence": "Need a concrete leaf script import or a currently visible leaf page resource reference; existing old sub-property route table does not declare this leaf. Re-fetching the same fallback or guessing asset names adds no evidence."
+    },
+    {
+      "path": "/property/operationalAnalysis/calculationDetail/historyRecords/:id/:calcType",
+      "domainIds": [
+        "assets_revenue_contracts",
+        "valuation"
+      ],
+      "sourceState": "entry-retrieved-no-matching-explicit-leaf-import",
+      "nextHighestInformationEvidence": "Need a concrete leaf script import or a currently visible leaf page resource reference; existing old sub-property route table does not declare this leaf. Re-fetching the same fallback or guessing asset names adds no evidence."
+    },
+    {
+      "path": "/property/operationalAnalysis/agent",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "sourceState": "entry-retrieved-no-matching-explicit-leaf-import",
+      "nextHighestInformationEvidence": "Need a concrete leaf script import or a currently visible leaf page resource reference; existing old sub-property route table does not declare this leaf. Re-fetching the same fallback or guessing asset names adds no evidence."
+    },
+    {
+      "path": "/property/queue/report",
+      "domainIds": [
+        "assets_revenue_contracts"
+      ],
+      "sourceState": "entry-retrieved-no-matching-explicit-leaf-import",
+      "nextHighestInformationEvidence": "Need a concrete leaf script import or a currently visible leaf page resource reference; existing old sub-property route table does not declare this leaf. Re-fetching the same fallback or guessing asset names adds no evidence."
+    },
+    {
+      "path": "/planners/workbench/home",
+      "domainIds": [
+        "valuation"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/planners/workbench/projectSpace",
+      "domainIds": [
+        "valuation"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/planners/workbench/utilityTool",
+      "domainIds": [
+        "valuation"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/planners/tool/:projectId/projectinformation",
+      "domainIds": [
+        "valuation"
+      ],
+      "sourceState": "declared-entry-502",
+      "nextHighestInformationEvidence": "Need declared entry to deliver a real microfrontend HTML/build, or an explicit script URL from visible entry. No repeated retry planned."
+    },
+    {
+      "path": "/virtualPowerPlant/demandResponse/tradingFloor",
+      "domainIds": [
+        "vpp_trade"
+      ],
+      "sourceState": "declared-entry-main-shell-fallback",
+      "nextHighestInformationEvidence": "Need actual declared VPP business entry/script rather than current main-shell fallback. No alternate origin/prefix was declared in retrieved production configuration."
+    },
+    {
+      "path": "/virtualPowerPlant/demandResponse/profitManagement",
+      "domainIds": [
+        "vpp_trade"
+      ],
+      "sourceState": "declared-entry-main-shell-fallback",
+      "nextHighestInformationEvidence": "Need actual declared VPP business entry/script rather than current main-shell fallback. No alternate origin/prefix was declared in retrieved production configuration."
+    },
+    {
+      "path": "/virtualPowerPlant/demandResponse/plantDemandResConfig",
+      "domainIds": [
+        "vpp_trade"
+      ],
+      "sourceState": "declared-entry-main-shell-fallback",
+      "nextHighestInformationEvidence": "Need actual declared VPP business entry/script rather than current main-shell fallback. No alternate origin/prefix was declared in retrieved production configuration."
+    },
+    {
+      "path": "/virtualPowerPlant/groupControl/controlCenter",
+      "domainIds": [
+        "vpp_trade"
+      ],
+      "sourceState": "declared-entry-main-shell-fallback",
+      "nextHighestInformationEvidence": "Need actual declared VPP business entry/script rather than current main-shell fallback. No alternate origin/prefix was declared in retrieved production configuration."
+    },
+    {
+      "path": "/virtualPowerPlant/groupControl/substationControlConfig",
+      "domainIds": [
+        "vpp_trade"
+      ],
+      "sourceState": "declared-entry-main-shell-fallback",
+      "nextHighestInformationEvidence": "Need actual declared VPP business entry/script rather than current main-shell fallback. No alternate origin/prefix was declared in retrieved production configuration."
+    },
+    {
+      "path": "/energyTrading/weather",
+      "domainIds": [
+        "vpp_trade"
+      ],
+      "sourceState": "declared-entry-main-shell-fallback",
+      "nextHighestInformationEvidence": "Need actual declared trade business entry/script rather than current main-shell fallback. No alternate origin/prefix was declared in retrieved production configuration."
+    },
+    {
+      "path": "/energyTrading/market/spot-price/analysis",
+      "domainIds": [
+        "vpp_trade"
+      ],
+      "sourceState": "declared-entry-main-shell-fallback",
+      "nextHighestInformationEvidence": "Need actual declared trade business entry/script rather than current main-shell fallback. No alternate origin/prefix was declared in retrieved production configuration."
+    },
+    {
+      "path": "/energyTrading/market/spot-price/spread/performance",
+      "domainIds": [
+        "vpp_trade"
+      ],
+      "sourceState": "declared-entry-main-shell-fallback",
+      "nextHighestInformationEvidence": "Need actual declared trade business entry/script rather than current main-shell fallback. No alternate origin/prefix was declared in retrieved production configuration."
+    },
+    {
+      "path": "/energyTrading/market/spot-price/spread/trend",
+      "domainIds": [
+        "vpp_trade"
+      ],
+      "sourceState": "declared-entry-main-shell-fallback",
+      "nextHighestInformationEvidence": "Need actual declared trade business entry/script rather than current main-shell fallback. No alternate origin/prefix was declared in retrieved production configuration."
+    },
+    {
+      "path": "/energyTrading/market/supply-demand",
+      "domainIds": [
+        "vpp_trade"
+      ],
+      "sourceState": "declared-entry-main-shell-fallback",
+      "nextHighestInformationEvidence": "Need actual declared trade business entry/script rather than current main-shell fallback. No alternate origin/prefix was declared in retrieved production configuration."
+    },
+    {
+      "path": "/energyTrading/forecast/predict/data",
+      "domainIds": [
+        "vpp_trade"
+      ],
+      "sourceState": "declared-entry-main-shell-fallback",
+      "nextHighestInformationEvidence": "Need actual declared trade business entry/script rather than current main-shell fallback. No alternate origin/prefix was declared in retrieved production configuration."
+    },
+    {
+      "path": "/energyTrading/forecast/predict/daily-detail",
+      "domainIds": [
+        "vpp_trade"
+      ],
+      "sourceState": "declared-entry-main-shell-fallback",
+      "nextHighestInformationEvidence": "Need actual declared trade business entry/script rather than current main-shell fallback. No alternate origin/prefix was declared in retrieved production configuration."
+    },
+    {
+      "path": "/energyTrading/forecast/predict/daily-stats",
+      "domainIds": [
+        "vpp_trade"
+      ],
+      "sourceState": "declared-entry-main-shell-fallback",
+      "nextHighestInformationEvidence": "Need actual declared trade business entry/script rather than current main-shell fallback. No alternate origin/prefix was declared in retrieved production configuration."
+    }
+  ],
+  "nextRequiredEvidence": [
+    "与当前主站版本对应、可正常访问的运维/测算/VPP/交易演示入口，或这些模块的版本化业务手册。",
+    "资产子应用缺失15条路由及监控发电计划应用路由的对应实现/业务说明，不能只提供同名旧模块。",
+    "布局iframe及外域控制iframe的独立业务说明或无需真实身份交换即可只读审查的演示入口；不提供或调用真实凭据。"
+  ],
+  "notProven": [
+    "不存在其他入口或文档",
+    "当前账号缺少权限",
+    "全部内部组件和服务端规则已穷尽",
+    "参考平台此前自动提示状态零变化"
+  ]
+}

@@ -4,6 +4,10 @@ import { DEMO_MODE } from "@/api/client"
 import { useAuth } from "@/auth/AuthContext"
 import type { RegisterLeaveGuard } from "./useEditorLeaveGuard"
 import { Button } from "./ui/Workspace"
+import StationTagsPanel from "./StationTagsPanel"
+import StationGenerationPlansPanel from "./StationGenerationPlansPanel"
+import StationSpacesPanel from "./StationSpacesPanel"
+import { hasStationPermission } from "@/auth/apiPermissions"
 import StationEditPage from "./StationEditPage"
 import MapQueryTab from "./MapQueryTab"
 import SmartRulesTab from "./SmartRulesTab"
@@ -35,6 +39,9 @@ export default function AssetsPage({
   onEditorStateChange,
 }: Props) {
   const { user } = useAuth()
+  const [tagsTarget, setTagsTarget] = useState<Station | "manage" | null>(null)
+  const [generationTarget, setGenerationTarget] = useState<Station | null>(null)
+  const [spacesTarget, setSpacesTarget] = useState<Station | null>(null)
   const [tab, setTab] = useState("列表查询")
   const [search, setSearch] = useState("")
   const [region, setRegion] = useState("")
@@ -198,6 +205,7 @@ export default function AssetsPage({
                 ),
               )}
             </select>
+            {(DEMO_MODE || user?.permissions.includes("asset.read")) && <Button onClick={() => setTagsTarget("manage")}>标签管理</Button>}
             <Button aria-expanded={advanced} onClick={()=>setAdvanced(!advanced)}>高级筛选</Button>
           </div>
           {advanced&&<section className="station-advanced-filter"><label>高级筛选规则<select aria-label="高级筛选规则" value={rule} onChange={e=>setRule(e.target.value)}><option value="">全部电站</option><option value="fault">告警中的电站</option><option value="low_soc">低电量电站（SOC &lt;30%）</option><option value="building">建设中的电站</option></select></label><label>运行状态<select value={status} onChange={e=>setStatus(e.target.value)}><option value="">全部状态</option>{[['online','在线'],['fault','故障'],['offline','离线'],['building','建设中'],['unknown','未知']].map(([key,name])=><option key={key} value={key}>{name}</option>)}</select></label><label>SOC 下限（%）<input type="number" min="0" max="100" value={minimumSoc} onChange={e=>setMinimumSoc(e.target.value)}/></label><label>SOC 上限（%）<input type="number" min="0" max="100" value={maximumSoc} onChange={e=>setMaximumSoc(e.target.value)}/></label><Button onClick={()=>{setRule('');setStatus('');setMinimumSoc('');setMaximumSoc('')}}>重置</Button><Button onClick={()=>changeTab('智能规则')}>更多组合规则</Button></section>}
@@ -386,6 +394,7 @@ export default function AssetsPage({
                           )}
                           {menu === s.id && (
                             <div className="station-row-menu">
+                              {(DEMO_MODE || hasStationPermission(user, s.id, "asset.read")) && <><button onClick={() => { setTagsTarget(s); setMenu(null) }}>站点标签</button><button onClick={() => { setGenerationTarget(s); setMenu(null) }}>发电计划</button><button onClick={() => { setSpacesTarget(s); setMenu(null) }}>空间管理</button></>}
                               <button
                                 onClick={() => {
                                   setViewOnly(true)
@@ -490,6 +499,9 @@ export default function AssetsPage({
           </footer>
         </div>
       )}
+      {tagsTarget && (DEMO_MODE || (tagsTarget === "manage" ? user?.permissions.includes("asset.read") : hasStationPermission(user, tagsTarget.id, "asset.read"))) && <StationTagsPanel registerLeaveGuard={registerLeaveGuard} key={tagsTarget === "manage" ? "manage" : tagsTarget.id} station={tagsTarget === "manage" ? undefined : tagsTarget} canEdit={DEMO_MODE ? canEdit : tagsTarget === "manage" ? !!user?.permissions.includes("asset.edit") : hasStationPermission(user, tagsTarget.id, "asset.edit")} onClose={() => setTagsTarget(null)} />}
+      {generationTarget && (DEMO_MODE || (stations.some(station => station.id === generationTarget.id) && hasStationPermission(user, generationTarget.id, "asset.read"))) && <StationGenerationPlansPanel station={generationTarget} canEdit={DEMO_MODE ? canEditStation(generationTarget.id) : hasStationPermission(user, generationTarget.id, "asset.edit")} registerLeaveGuard={registerLeaveGuard} onClose={() => setGenerationTarget(null)} />}
+      {spacesTarget && (DEMO_MODE || (stations.some(station => station.id === spacesTarget.id) && hasStationPermission(user, spacesTarget.id, "asset.read"))) && <StationSpacesPanel station={spacesTarget} canEdit={DEMO_MODE ? canEditStation(spacesTarget.id) : hasStationPermission(user, spacesTarget.id, "asset.edit")} registerLeaveGuard={registerLeaveGuard} onClose={() => setSpacesTarget(null)} />}
       {notice && (
         <div className="station-toast" role="status">
           {notice}

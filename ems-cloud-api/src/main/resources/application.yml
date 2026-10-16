@@ -46,7 +46,7 @@ springdoc:
   swagger-ui:
     enabled: ${EMS_API_DOCS_ENABLED:false}
 ems:
-  database-name: ${EMS_DATABASE_NAME:ems_cloud_v2_proto}
+  database-name: ${EMS_DATABASE_NAME:ems_cloud_saas_toyingzhen}
   tenant:
     datacenter: ${EMS_TENANT_DATACENTER:apac}
     public-url: ${EMS_TENANT_PUBLIC_URL:}

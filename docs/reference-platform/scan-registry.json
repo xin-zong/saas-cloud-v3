@@ -1,0 +1,6251 @@
+{
+  "schemaVersion": 1,
+  "status": "in-progress",
+  "updatedAt": "2026-10-15T18:42:44.045090+00:00",
+  "referenceOrigin": "https://ess-cloud-login.qudeox.com",
+  "branch": "develop-toyingzhen",
+  "targetDatabase": "ems_cloud_saas_toyingzhen",
+  "rules": [
+    "参考业务调查未主动执行新增/保存/删除、授权、告警处理、通知发送或设备控制；未实测业务写流程。能量管理及站内看板在自动隐藏源码核对前曾打开；部分策略状态条SUCCESS轮询可能自动POST单条strategy-record/{recordId}/hidden，是否发生未知，不能声称参考业务零写",
+    "部分站内Dashboard也可能自动隐藏策略提示；实时告警详情可能先写已读。仅静态核对这些入口，既往具体子类型/状态的自动写执行未核验",
+    "只读浏览不保证服务端零写入：访问/埋点/会话日志可能更新；Presentation在track访问埋点源码反馈前已打开一次，不能声称访问日志不变",
+    "/system快照中的role=document可能是后台缓存monitor页面；只据当前系统主内容登记，不混入缓存费率表单或控件",
+    "前端路由包含菜单容器、重定向、隐藏路由，不等于独立页面数",
+    "设备分类是同一列表的标签，详情抽屉和标签不重复计为独立页面",
+    "设备分类快照可能保留异步旧行；只核验选中分类标题和列头，不推断行数或值",
+    "所有已观察页面均保留remaining，入口可见不等于完整扫描",
+    "账号未开放模块不通过更改权限或越权调用验证",
+    "原始客户行、账户信息、角色选中授权及实际Cookie存储值不进入本清单"
+  ],
+  "investigationBoundary": {
+    "businessWritesExecuted": null,
+    "intentionalBusinessWritesExecuted": false,
+    "energyManagementOpenedBeforeAutoHideReview": true,
+    "automaticBusinessStateChangesMayHaveOccurred": true,
+    "stationDashboardVisitedBeforeAutoHideReview": true,
+    "stationDashboardSubtypeExecutionUnverified": true,
+    "realtimeAlarmDetailMayMarkRead": true,
+    "automaticBusinessStateChangesVerified": false,
+    "accessTelemetryMayWrite": true,
+    "presentationOpenedBeforeTrackingReview": true,
+    "zeroServerWritesClaim": false,
+    "accessLogsUnchangedVerified": false,
+    "actualCookieStorageValuesRecorded": false
+  },
+  "moduleVisibilityReview": {
+    "evidenceFile": "system-module-visibility-review.txt",
+    "currentMainContent": "EnterpriseInfo",
+    "cachedMonitorDocumentExcluded": true,
+    "visibleTopLinkCount": 3,
+    "permissionMatrixInferred": false,
+    "scope": "current visible entries only; not complete module availability"
+  },
+  "observedPages": [
+    {
+      "id": "dashboard",
+      "route": "/monitor/dashboard",
+      "name": "监控总览",
+      "evidenceFiles": [
+        "report-navigation.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "业务组与光储场景筛选",
+        "站点状态、容量、累计发充放电、效率",
+        "规则报警打开/关闭分类",
+        "峰值小时、PR、计划完成率排行",
+        "时间粒度与基础/高级计划切换"
+      ],
+      "remaining": [
+        "储能指标切换的全部字段",
+        "排名指标公式与质量规则"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false
+    },
+    {
+      "id": "sites",
+      "route": "/monitor/plant/list",
+      "name": "场站列表与建站",
+      "evidenceFiles": [
+        "sites-current.txt",
+        "create-site.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "光伏/储能字段切换入口",
+        "站点名称、业务组、场景、高级筛选",
+        "在线/离线/不完整/部分离线/报警计数",
+        "关注列表、排序、分页、批量分发入口",
+        "建站表单：名称、经纬度、地图、区域、地址、时区、光伏/储能/充电系统、站点类型、关联方联系方式"
+      ],
+      "remaining": [
+        "储能字段页",
+        "高级筛选具体条件",
+        "分发和关注操作只读边界",
+        "所有建站校验规则与失败状态"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false
+    },
+    {
+      "id": "devices",
+      "route": "/monitor/device/list",
+      "name": "设备总表",
+      "evidenceFiles": [
+        "devices.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "逆变器、储能柜、PCS、电池簇、电池堆、空调、智能电表、采集器、EMS九类标签",
+        "站点、名称/SN、在线/报警/离线筛选",
+        "逆变器功率、趋势、发电、峰值小时、归一化、串配置、父设备、更新时间"
+      ],
+      "remaining": [
+        "九类列表标题和列头另列分类记录；异步快照数据行及数量未核验",
+        "已观察逆变器、PCS、电池簇/堆、电表、采集器的部分详情；储能柜/空调/EMS当前scope空态不证明全局无详情",
+        "设备导出、配置、Full Cell Analysis及跨域控制日志的实际状态机仍未核验"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false
+    },
+    {
+      "id": "device-category-inverter",
+      "route": "/monitor/device/list",
+      "name": "设备分类：逆变器",
+      "evidenceFiles": [
+        "devices-inverter.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "已选中 Inverter 分类标签",
+        "已观察列头：Status、Site、Configuration Status、Architecture、String Current Dispersion(%)、Power(kW)、Solar Trend、Daily Solar Production(kWh)、Daily Peak Hour(h)、Total Solar Production(kWh)、Power Normalization(%)、Actual String Capacity(kWp)、Parent Device、Updated、Name/SN、Operation",
+        "共用站点与名称/SN筛选、导出及列设置入口，仅观察"
+      ],
+      "remaining": [
+        "异步切换可保留上个分类的数据行，不能由快照推断本分类记录数、在线数或行内值",
+        "所有详情标签、完整参数及条件联动未核验；已观察局部详情另列，名称或列头不代表完整扫描",
+        "导出、编辑、配置和设备控制未执行"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "devices",
+      "viewKind": "tab",
+      "independentPage": false,
+      "evidenceScope": "selected-tab-title-and-column-headers-only",
+      "dataRowsVerified": false
+    },
+    {
+      "id": "device-category-energy-storage-cabinet",
+      "route": "/monitor/device/list",
+      "name": "设备分类：储能柜",
+      "evidenceFiles": [
+        "devices-energy-storage-cabinet.txt",
+        "device-cabinet-list-loaded.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "已选中 Energy Storage Cabinet 分类标签",
+        "已观察列头：Status、Site、Charge-discharge Status、Battery Current（A）、Active Power (AC)（kW）、SOC(%)、SOH(%)、Parent Device、Updated、Name/SN、Operation",
+        "共用站点与名称/SN筛选、导出及列设置入口，仅观察",
+        "另有loaded列表快照；仅补充分类/字段语义，不抄录客户设备行或推断总体数量",
+        "当前账户/当前筛选的loaded Energy Storage Cabinet列表为No Data，无可点入详情；不推断所有账户均无该类型或无对应功能"
+      ],
+      "remaining": [
+        "异步切换可保留上个分类的数据行，不能由快照推断本分类记录数、在线数或行内值",
+        "所有详情标签、完整参数及条件联动未核验；已观察局部详情另列，名称或列头不代表完整扫描",
+        "导出、编辑、配置和设备控制未执行",
+        "当前无可打开记录，因此此类型设备详情仍未核验"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "devices",
+      "viewKind": "tab",
+      "independentPage": false,
+      "evidenceScope": "selected-tab-title-and-column-headers-only",
+      "dataRowsVerified": false,
+      "loadedListObserved": true,
+      "currentAccountEmptyObserved": true,
+      "globalAbsenceInferred": false
+    },
+    {
+      "id": "device-category-pcs",
+      "route": "/monitor/device/list",
+      "name": "设备分类：PCS",
+      "evidenceFiles": [
+        "devices-pcs.txt",
+        "device-pcs-list-loaded.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "已选中 PCS 分类标签",
+        "已观察列头：Status、Site、Total DC Power（kW）、Total AC Active Power（kW）、Parent Device、Updated、Name/SN、Operation",
+        "共用站点与名称/SN筛选、导出及列设置入口，仅观察",
+        "另有loaded列表快照；仅补充分类/字段语义，不抄录客户设备行或推断总体数量"
+      ],
+      "remaining": [
+        "异步切换可保留上个分类的数据行，不能由快照推断本分类记录数、在线数或行内值",
+        "所有详情标签、完整参数及条件联动未核验；已观察局部详情另列，名称或列头不代表完整扫描",
+        "导出、编辑、配置和设备控制未执行"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "devices",
+      "viewKind": "tab",
+      "independentPage": false,
+      "evidenceScope": "selected-tab-title-and-column-headers-only",
+      "dataRowsVerified": false,
+      "loadedListObserved": true
+    },
+    {
+      "id": "device-category-battery-cluster",
+      "route": "/monitor/device/list",
+      "name": "设备分类：电池簇",
+      "evidenceFiles": [
+        "devices-battery-cluster.txt",
+        "device-battery-cluster-list-loaded.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "已选中 Battery Cluster 分类标签",
+        "已观察列头：Status、Site、Charge-discharge Status、Storage Charge-discharge(kW)、SOC(%)、SOH(%)、Range Cell Voltage(V)、Single Maximum Voltage(V)、Single Minimum Voltage(V)、Cell Temp Extreme(℃)、Single Maximum Temp(℃)、Single Minimum Temp(℃)、Parent Device、Updated、Name/SN、Operation",
+        "共用站点与名称/SN筛选、导出及列设置入口，仅观察",
+        "另有loaded列表快照；仅补充分类/字段语义，不抄录客户设备行或推断总体数量"
+      ],
+      "remaining": [
+        "异步切换可保留上个分类的数据行，不能由快照推断本分类记录数、在线数或行内值",
+        "所有详情标签、完整参数及条件联动未核验；已观察局部详情另列，名称或列头不代表完整扫描",
+        "导出、编辑、配置和设备控制未执行"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "devices",
+      "viewKind": "tab",
+      "independentPage": false,
+      "evidenceScope": "selected-tab-title-and-column-headers-only",
+      "dataRowsVerified": false,
+      "loadedListObserved": true
+    },
+    {
+      "id": "device-category-battery-stack",
+      "route": "/monitor/device/list",
+      "name": "设备分类：电池堆",
+      "evidenceFiles": [
+        "devices-battery-stack.txt",
+        "device-stack-list-loaded.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "已选中 Battery Stack 分类标签",
+        "已观察列头：Status、Site、Charge-discharge Status、Storage Charge-discharge(kW)、SOC(%)、SOH(%)、Range Cell Voltage(V)、Average Cell Voltage(V)、Single Maximum Voltage(V)、Single Minimum Voltage(V)、Cell Temp Extreme(℃)、单体温度均值(℃)、Single Maximum Temp(℃)、Single Minimum Temp(℃)、Parent Device、Updated、Name/SN、Operation",
+        "共用站点与名称/SN筛选、导出及列设置入口，仅观察",
+        "另有loaded列表快照；仅补充分类/字段语义，不抄录客户设备行或推断总体数量"
+      ],
+      "remaining": [
+        "异步切换可保留上个分类的数据行，不能由快照推断本分类记录数、在线数或行内值",
+        "所有详情标签、完整参数及条件联动未核验；已观察局部详情另列，名称或列头不代表完整扫描",
+        "导出、编辑、配置和设备控制未执行"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "devices",
+      "viewKind": "tab",
+      "independentPage": false,
+      "evidenceScope": "selected-tab-title-and-column-headers-only",
+      "dataRowsVerified": false,
+      "loadedListObserved": true
+    },
+    {
+      "id": "device-category-air-conditioner",
+      "route": "/monitor/device/list",
+      "name": "设备分类：空调",
+      "evidenceFiles": [
+        "devices-air-conditioner.txt",
+        "device-air-conditioner-list-loaded.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "已选中 Air Conditioner 分类标签",
+        "已观察列头：Name/SN、Status、Site、Parent Device、Updated、Operation",
+        "共用站点与名称/SN筛选、导出及列设置入口，仅观察",
+        "另有loaded列表快照；仅补充分类/字段语义，不抄录客户设备行或推断总体数量",
+        "当前账户/当前筛选的loaded Air Conditioner列表为No Data，无可点入详情；不推断所有账户均无该类型或无对应功能"
+      ],
+      "remaining": [
+        "异步切换可保留上个分类的数据行，不能由快照推断本分类记录数、在线数或行内值",
+        "所有详情标签、完整参数及条件联动未核验；已观察局部详情另列，名称或列头不代表完整扫描",
+        "导出、编辑、配置和设备控制未执行",
+        "当前无可打开记录，因此此类型设备详情仍未核验"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "devices",
+      "viewKind": "tab",
+      "independentPage": false,
+      "evidenceScope": "selected-tab-title-and-column-headers-only",
+      "dataRowsVerified": false,
+      "loadedListObserved": true,
+      "currentAccountEmptyObserved": true,
+      "globalAbsenceInferred": false
+    },
+    {
+      "id": "device-category-smart-meter",
+      "route": "/monitor/device/list",
+      "name": "设备分类：智能电表",
+      "evidenceFiles": [
+        "devices-smart-meter.txt",
+        "device-meter-list-loaded.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "已选中 Smart Meter 分类标签",
+        "已观察列头：Status、Site、Configuration Status、Apply to、Installation Site、Parent Device、Updated、Name/SN、Operation",
+        "共用站点与名称/SN筛选、导出及列设置入口，仅观察",
+        "另有loaded列表快照；仅补充分类/字段语义，不抄录客户设备行或推断总体数量"
+      ],
+      "remaining": [
+        "异步切换可保留上个分类的数据行，不能由快照推断本分类记录数、在线数或行内值",
+        "所有详情标签、完整参数及条件联动未核验；已观察局部详情另列，名称或列头不代表完整扫描",
+        "导出、编辑、配置和设备控制未执行"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "devices",
+      "viewKind": "tab",
+      "independentPage": false,
+      "evidenceScope": "selected-tab-title-and-column-headers-only",
+      "dataRowsVerified": false,
+      "loadedListObserved": true
+    },
+    {
+      "id": "device-category-logger",
+      "route": "/monitor/device/list",
+      "name": "设备分类：采集器",
+      "evidenceFiles": [
+        "devices-logger.txt",
+        "device-logger-list-loaded.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "已选中 Logger 分类标签",
+        "已观察列头：Name/SN、Status、Site、Updated、Operation",
+        "共用站点与名称/SN筛选、导出及列设置入口，仅观察",
+        "另有loaded列表快照；仅补充分类/字段语义，不抄录客户设备行或推断总体数量"
+      ],
+      "remaining": [
+        "异步切换可保留上个分类的数据行，不能由快照推断本分类记录数、在线数或行内值",
+        "所有详情标签、完整参数及条件联动未核验；已观察局部详情另列，名称或列头不代表完整扫描",
+        "导出、编辑、配置和设备控制未执行"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "devices",
+      "viewKind": "tab",
+      "independentPage": false,
+      "evidenceScope": "selected-tab-title-and-column-headers-only",
+      "dataRowsVerified": false,
+      "loadedListObserved": true
+    },
+    {
+      "id": "device-category-ems",
+      "route": "/monitor/device/list",
+      "name": "设备分类：EMS",
+      "evidenceFiles": [
+        "devices-ems.txt",
+        "device-ems-list-loaded.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "已选中 EMS 分类标签",
+        "已观察列头：Name/SN、Status、Site、Updated、Operation",
+        "共用站点与名称/SN筛选、导出及列设置入口，仅观察",
+        "另有loaded列表快照；仅补充分类/字段语义，不抄录客户设备行或推断总体数量",
+        "当前账户/当前筛选的loaded EMS列表为No Data，无可点入详情；不推断所有账户均无该类型或无对应功能"
+      ],
+      "remaining": [
+        "异步切换可保留上个分类的数据行，不能由快照推断本分类记录数、在线数或行内值",
+        "所有详情标签、完整参数及条件联动未核验；已观察局部详情另列，名称或列头不代表完整扫描",
+        "导出、编辑、配置和设备控制未执行",
+        "当前无可打开记录，因此此类型设备详情仍未核验"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "devices",
+      "viewKind": "tab",
+      "independentPage": false,
+      "evidenceScope": "selected-tab-title-and-column-headers-only",
+      "dataRowsVerified": false,
+      "loadedListObserved": true,
+      "currentAccountEmptyObserved": true,
+      "globalAbsenceInferred": false
+    },
+    {
+      "id": "device-inverter-detail",
+      "route": "/monitor/device/list",
+      "name": "逆变器详情抽屉：Dashboard",
+      "evidenceFiles": [
+        "device-inverter-detail.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "详情抽屉含 Dashboard、Historical Chart、Alerts、Connections、Settings 导航",
+        "Dashboard 可见直流输入功率、交流输出功率及电压/电流等指标区域，未抄录设备值",
+        "设备编辑入口，仅观察"
+      ],
+      "remaining": [
+        "详情其余标签的字段及权限；历史图若有单独证据另列",
+        "参数选择、告警记录、连接关系、设置表单与导出流程未完整核验",
+        "当前抽屉不是九种设备详情全部覆盖"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "devices",
+      "viewKind": "detail-drawer",
+      "independentPage": false,
+      "evidenceScope": "detail-drawer-dashboard",
+      "dataRowsVerified": false
+    },
+    {
+      "id": "device-inverter-history",
+      "route": "/monitor/device/list",
+      "name": "逆变器详情：历史图",
+      "evidenceFiles": [
+        "device-inverter-history.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "历史图含 Select Parameters 入口；Day/Month/Year/Total 时间粒度，当前 Day 选中",
+        "当日数据及前5日数据导出入口，仅观察；未执行导出"
+      ],
+      "remaining": [
+        "指标参数完整枚举、时间粒度/范围联动、质量与缺数语义、导出内容待核验",
+        "不由历史图入口推断时序数据完整性或导出成功"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "device-inverter-detail",
+      "viewKind": "detail-tab",
+      "independentPage": false,
+      "evidenceScope": "history-view-snapshot-only",
+      "dataRowsVerified": false
+    },
+    {
+      "id": "device-inverter-parameters",
+      "route": "/monitor/device/list",
+      "name": "逆变器历史图：参数选择",
+      "evidenceFiles": [
+        "device-inverter-parameters.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "Select Parameters 展开；System Templates 提供 AC Data、DC Current、DC Voltage、DC Current & DC Voltage"
+      ],
+      "remaining": [
+        "模板选择后的指标完整枚举、曲线加载及单位/质量语义未核验",
+        "当前仅参数选择器和无数据状态，不代表参数下发或数据导出成功"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "device-inverter-history",
+      "viewKind": "parameter-picker",
+      "independentPage": false,
+      "evidenceScope": "history-parameter-picker-only",
+      "dataRowsVerified": false
+    },
+    {
+      "id": "device-inverter-connections",
+      "route": "/monitor/device/list",
+      "name": "逆变器详情：连接关系",
+      "evidenceFiles": [
+        "device-inverter-connections.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "Connections 视图列头为 Type/SN、Status、Updated；当前 No Data"
+      ],
+      "remaining": [
+        "无连接记录可核验对象层级及详情；不能由列头推断已存在真实连接",
+        "连接编辑、绑定及数据权限未核验；未执行变更"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "device-inverter-detail",
+      "viewKind": "detail-tab",
+      "independentPage": false,
+      "evidenceScope": "connection-view-headers-only",
+      "dataRowsVerified": false
+    },
+    {
+      "id": "device-pcs-detail",
+      "route": "/monitor/device/list",
+      "name": "PCS详情：实时/历史/告警/设置",
+      "evidenceFiles": [
+        "device-pcs-list-loaded.txt",
+        "device-pcs-detail.txt",
+        "device-pcs-detail-loaded.txt",
+        "device-pcs-history.txt",
+        "device-pcs-alerts.txt",
+        "device-pcs-alerts-loaded.txt",
+        "device-pcs-settings.txt",
+        "device-pcs-settings-loaded.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "loaded详情抽屉已确认；初始device-pcs-detail.txt仍是列表中间态，不作为详情内容证据",
+        "Dashboard指标含DC总压/总流/总功率，AC有功/无功/视在功率、功率因数、内部温度、频率、运行/充放电状态及三相AC表；仅记录字段，不记录客户值",
+        "Historical Chart含当日和前5日导出、参数选取入口，均未执行导出",
+        "Alerts列头含名称、类型/告警、等级、打开及关闭时间；不记录告警行或据空态推断设备从未告警",
+        "Settings当前仅Basic Information下Device Name与Modify；未Modify，无设备参数写入或控制证据"
+      ],
+      "remaining": [
+        "未Modify、Export或控制，所有抽屉已关闭；名称编辑及导出结果/权限仍待核验",
+        "历史参数完整枚举/时间联动、告警详情与处理、运行状态质量/时间语义未完整核验",
+        "Settings标签不证明固件参数、远程控制或完整设备配置能力"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "device-category-pcs",
+      "viewKind": "detail-drawer-group",
+      "independentPage": false,
+      "evidenceScope": "loaded-pcs-dashboard-history-alerts-and-name-setting-only",
+      "initialDetailSnapshotHasDrawer": false,
+      "modifyExecuted": false,
+      "exportExecuted": false,
+      "deviceControlExecuted": false,
+      "detailClosed": true,
+      "customerDeviceValuesRecorded": false
+    },
+    {
+      "id": "device-battery-cluster-detail",
+      "route": "/monitor/device/list",
+      "name": "电池簇详情：实时指标与单体分析入口",
+      "evidenceFiles": [
+        "device-battery-cluster-list-loaded.txt",
+        "device-battery-cluster-detail-loaded.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "loaded电池簇详情可见整组/单体电压、温度、绝缘、SOC/SOH、循环、容量和充放电量等指标语义，不记录客户设备值",
+        "Full Cell Analysis入口可见，但未点击；其handler语义未从源码确认"
+      ],
+      "remaining": [
+        "未打开Full Cell Analysis，不声称已取得单体分析字段、热力图、诊断或计算结果",
+        "其他详情标签、历史参数、告警/设置及设备控制未完整核验；未修改/导出/控制，详情已关闭"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "device-category-battery-cluster",
+      "viewKind": "detail-drawer",
+      "independentPage": false,
+      "evidenceScope": "loaded-battery-cluster-live-field-semantics-only",
+      "fullCellAnalysisOpened": false,
+      "fullCellHandlerSemanticsVerified": false,
+      "modifyExecuted": false,
+      "exportExecuted": false,
+      "deviceControlExecuted": false,
+      "detailClosed": true,
+      "customerDeviceValuesRecorded": false
+    },
+    {
+      "id": "device-meter-detail",
+      "route": "/monitor/device/list",
+      "name": "智能电表详情与未保存配置",
+      "evidenceFiles": [
+        "device-meter-list-loaded.txt",
+        "device-meter-detail-loaded.txt",
+        "device-meter-configuration-form.txt",
+        "device-meter-configuration-form-loaded.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "loaded电表详情含CT配置、正反向连接/计量、CT及电压电流倍率等字段语义",
+        "三相AC电压/电流、有功/无功/视在功率/功率因数；尖/峰/平/谷/深谷和15分钟电量表",
+        "Meter Configuration实际对话框已展开后取消；含三相制、适用对象、安装位置、CT/电流/电压倍率及Save/Cancel，仅记录字段"
+      ],
+      "remaining": [
+        "配置未保存，未验证CT倍率/正反向修改或对计量、结算、历史回算的影响",
+        "字段完整枚举、输入范围、安装对象权限与保存反馈待核验；未导出/控制，详情已关闭"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "device-category-smart-meter",
+      "viewKind": "detail-drawer-and-cancelled-form",
+      "independentPage": false,
+      "evidenceScope": "loaded-meter-field-semantics-and-cancelled-configuration",
+      "configurationOpened": true,
+      "configurationCancelled": true,
+      "configurationSaved": false,
+      "exportExecuted": false,
+      "deviceControlExecuted": false,
+      "detailClosed": true,
+      "customerDeviceValuesRecorded": false
+    },
+    {
+      "id": "device-logger-detail",
+      "route": "/monitor/device/list",
+      "name": "采集器详情与跨域控制日志入口",
+      "evidenceFiles": [
+        "device-logger-list-loaded.txt",
+        "device-logger-detail-loaded.txt",
+        "device-logger-control-logs.txt",
+        "device-logger-control-logs-loaded.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "loaded采集器实时详情含网络模式、链路、版本、信号等字段语义，不记录设备身份或当前网络值",
+        "可见Device Control与Control Logs导航；Device Control未点击",
+        "Control Logs已只读打开，主代理DOM检查仅确认跨域iframe指向globalpro.solarmanpv.com/application/deviceControl/；内部DOM不可见，未取得日志字段或数据"
+      ],
+      "remaining": [
+        "跨域iframe内部日志结构、查询、状态枚举及权限仍未知，不能把宿主列表列头当作控制日志字段",
+        "未点击Device Control，未执行修改、导出或设备控制；详情已关闭",
+        "iframe路径名称不证明本轮已执行控制，也不证明其内部实现仅限日志读取"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "device-category-logger",
+      "viewKind": "detail-drawer-and-cross-origin-frame",
+      "independentPage": false,
+      "evidenceScope": "logger-field-labels-and-opaque-cross-origin-frame-only",
+      "controlLogsOpened": true,
+      "controlLogFieldsRetrieved": false,
+      "crossOriginIframeInnerDomVisible": false,
+      "iframeTargetObservedByPrimary": "https://globalpro.solarmanpv.com/application/deviceControl/",
+      "iframeTargetEvidenceBasis": "read-only DOM inspection reported by primary",
+      "deviceControlOpened": false,
+      "modifyExecuted": false,
+      "exportExecuted": false,
+      "deviceControlExecuted": false,
+      "detailClosed": true,
+      "customerDeviceValuesRecorded": false
+    },
+    {
+      "id": "device-stack-detail",
+      "route": "/monitor/device/list",
+      "name": "电池堆详情：堆级指标与下属簇表",
+      "evidenceFiles": [
+        "device-stack-list-loaded.txt",
+        "device-stack-detail-loaded.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "loaded电池堆实时页可见堆级电压/电流、温度、绝缘、SOC/SOH、循环及能量等指标语义，不记录设备值",
+        "下属簇表含状态、充放电状态/功率、SOC/SOH、单体电压最大最小/范围、温度最大最小/范围及Device Info字段"
+      ],
+      "remaining": [
+        "子簇详情关联、其余历史/告警/设置标签、完整参数和层级权限未完整核验",
+        "未编辑提交、导出或控制；实际值质量和聚合口径仍未知，不把已观察实时页计为全部详情完成"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "device-category-battery-stack",
+      "viewKind": "detail-drawer",
+      "independentPage": false,
+      "evidenceScope": "loaded-stack-live-metrics-and-child-cluster-column-labels",
+      "modifyExecuted": false,
+      "exportExecuted": false,
+      "deviceControlExecuted": false,
+      "detailClosed": true,
+      "customerDeviceValuesRecorded": false
+    },
+    {
+      "id": "alarm-open",
+      "route": "/monitor/alarm/realTime",
+      "name": "实时告警",
+      "evidenceFiles": [
+        "alerts-opened.txt",
+        "alerts-opened-device.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "规则告警/设备告警",
+        "紧急、重要、次要、提示四等级",
+        "对象、所属站、触发/恢复时间、持续时间",
+        "高级过滤、搜索、导出入口",
+        "设备告警通知设置入口"
+      ],
+      "remaining": [
+        "高级过滤及通知设置字段",
+        "告警详情；当前无事件可点入",
+        "实际处置/恢复流程不在参考平台执行"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false
+    },
+    {
+      "id": "alarm-history",
+      "route": "/monitor/alarm/history",
+      "name": "历史告警",
+      "evidenceFiles": [
+        "alerts-history.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "规则/设备维度",
+        "月份、分布趋势、列表、等级、状态、对象、所属站、持续时间"
+      ],
+      "remaining": [
+        "历史事件详情；当前筛选无数据",
+        "统计时间窗口及恢复语义"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false
+    },
+    {
+      "id": "alarm-rule",
+      "route": "/monitor/alarm/rules",
+      "name": "告警规则",
+      "evidenceFiles": [
+        "alert-rule-form.txt",
+        "alert-condition-form.txt",
+        "alert-rules-list-loaded.txt",
+        "alert-rule-new-conditions.txt",
+        "alert-rule-object-type-options.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "名称、对象类型、站点业务组、四等级",
+        "多条件AND；指标、取数周期、算法、阈值、连续周期",
+        "有效时间范围、恢复周期、解决建议",
+        "通知开关、每日次数2/10/20/50、站内/邮件/短信/APP、接收员工",
+        "启停、编辑、删除入口，仅观察",
+        "loaded规则列表和新建条件抽屉已观察；对象实际选项为Sites/Devices，条件同时满足的AND声明可见",
+        "站点/设备条件联动另列局部记录；默认notification经GET异步填充，不能把前后默认状态变化当作调查者切换",
+        "所有条件和规则抽屉已取消，未输入业务值、提交、启停、删除或变更通知；不记录客户规则行、收件人或其选中状态"
+      ],
+      "remaining": [
+        "站点/设备条件局部UI已补；其他指标和算法组合、恢复窗口及缺数/时间口径仍未完整核验",
+        "不在参考平台执行规则保存、启停、告警触发/恢复、通知发送；运行调度、重试、权限及送达闭环仅新库验收"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "notificationChanged": false,
+      "notificationDefaultMayLoadAsynchronously": true,
+      "notificationRecipientsOrSelectionRecorded": false,
+      "businessValuesEntered": false,
+      "ruleSubmitted": false,
+      "allDrawersCancelled": true,
+      "remainingOpenDrawers": 0
+    },
+    {
+      "id": "alert-site-condition",
+      "route": "/monitor/alarm/rules",
+      "name": "站点告警：未提交条件编辑器",
+      "evidenceFiles": [
+        "alert-rule-new-conditions.txt",
+        "alert-rule-object-type-options.txt",
+        "alert-site-condition-editor.txt",
+        "alert-site-indicator-options.txt",
+        "alert-site-retrieval-cycle-options.txt",
+        "alert-site-algorithm-options.txt",
+        "alert-site-mom-condition-fields.txt",
+        "alert-site-range-condition-fields.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "站点指标下拉含日/月/年发电量；本轮只读选择日发电量后观察条件字段，不抄录或输入业务阈值",
+        "日发电量取数周期可见连续1/3/5/7/9/11周期，界面说明一个周期为每日23:59，不套用到所有指标",
+        "算法可见等于/不等于、环比下降/上升、同比下降/上升、属于/不属于及大小比较选项",
+        "MoM条件出现Threshold1/Threshold2两个百分比端点；Belong出现两个kWh端点及不含端点的开区间边界说明",
+        "仅观察字段联动，条件/规则两层抽屉均Cancel，未提交任何业务条件"
+      ],
+      "remaining": [
+        "各指标完整算法兼容矩阵、环比/同比基期、端点顺序和服务端校验、空值/重置、时区及连续周期语义仍未知",
+        "开区间为界面说明，不证明运行时比较和恢复算法；参考平台不测试触发或通知，闭环仅新库验收"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "alarm-rule",
+      "viewKind": "cancelled-condition-editor",
+      "independentPage": false,
+      "evidenceScope": "site-indicator-cycle-and-two-bound-ui-fields-only",
+      "observedSiteIndicators": [
+        "daily production",
+        "monthly production",
+        "yearly production"
+      ],
+      "observedDailyContinuousCycles": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11
+      ],
+      "dailyCycleUiTime": "23:59",
+      "momThresholdUiUnits": "two percent endpoints",
+      "belongThresholdUiUnits": "two kWh endpoints",
+      "belongOpenIntervalUiStatementObserved": true,
+      "backendComparisonVerified": false,
+      "businessValuesEntered": false,
+      "conditionSubmitted": false,
+      "ruleSubmitted": false,
+      "notificationChanged": false,
+      "notificationRecipientsOrSelectionRecorded": false,
+      "allDrawersCancelled": true
+    },
+    {
+      "id": "alert-device-condition",
+      "route": "/monitor/alarm/rules",
+      "name": "设备告警：指标与状态枚举条件",
+      "evidenceFiles": [
+        "alert-device-object-draft.txt",
+        "alert-device-condition-editor.txt",
+        "alert-device-indicator-options.txt",
+        "alert-device-status-condition-fields.txt",
+        "alert-device-status-enumerations.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "设备条件指标列表实际观察逆变器直流离散度/任一路/平均电流、日/累计发电及日峰时、Device Status和Device Alert Duration",
+        "status-fields快照末部还含电池簇单体电压极值/均值及温度极值/均值，不能因虚拟列表首屏未出现而视为不存在",
+        "选Device Status后阈值改为枚举值，实际选项Online=1、Offline=0；这些是通用枚举码，不是客户设备状态",
+        "没有输入业务值、提交或测试触发；两个drawer均已取消，通知默认由GET异步加载且未切换"
+      ],
+      "remaining": [
+        "其他设备指标取数周期/单位/算法完整组合、状态与通信丢失/陈旧的区别、Alert Duration边界及恢复语义仍未知",
+        "不记录真实设备行或选中收件人状态，不在参考平台保存/启停/发送通知；运行闭环仅新库验收"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "alarm-rule",
+      "viewKind": "cancelled-device-condition-editor",
+      "independentPage": false,
+      "evidenceScope": "device-indicator-labels-and-online-offline-enumeration-only",
+      "observedStatusEnumeration": {
+        "online": 1,
+        "offline": 0
+      },
+      "tailBatteryTemperatureIndicatorsObserved": true,
+      "businessValuesEntered": false,
+      "conditionSubmitted": false,
+      "ruleSubmitted": false,
+      "notificationChanged": false,
+      "notificationRecipientsOrSelectionRecorded": false,
+      "allDrawersCancelled": true
+    },
+    {
+      "id": "reports",
+      "route": "/monitor/report/common/list",
+      "name": "常规报表",
+      "evidenceFiles": [
+        "general-reports.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "报表列表、报表模板、自动化任务三个标签",
+        "模板筛选、高级筛选、手动创建入口",
+        "列表名称、模板、类型、生成时间、生成方式、操作"
+      ],
+      "remaining": [
+        "模板编辑器、日/月任务本地条件矩阵及手动创建字段已有局部观察，公式/完整联动及实际产物仍待核验",
+        "任务运行状态/产物/失败重试及权限未执行验证"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false
+    },
+    {
+      "id": "report-templates",
+      "route": "/monitor/report/common/template",
+      "name": "报表模板列表",
+      "evidenceFiles": [
+        "report-templates.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "稳定 Report Template 实际标签页；自定义模板区和系统模板区",
+        "当前展示6个系统模板；界面说明最多创建10个自定义模板",
+        "系统模板不允许直接编辑或删除，可用于生成报告，修改后另存为自定义模板"
+      ],
+      "remaining": [
+        "四种类型的编辑器字段另列局部观察；系统模板正文生成、复制另存为持久化及权限未完整核验",
+        "模板容量/不可改删为界面说明，参考平台不执行保存，闭环仅新库验收"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "reports",
+      "viewKind": "tab",
+      "independentPage": false,
+      "evidenceScope": "stable-template-list-and-ui-rules"
+    },
+    {
+      "id": "report-template-form",
+      "route": "/monitor/report/common/template",
+      "name": "自定义报表模板：未保存表单",
+      "evidenceFiles": [
+        "report-template-form.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "创建表单报告类型可见日/月/年/汇总（Daily/Monthly/Yearly/Total Report）",
+        "模板名称为必填；可见取消与保存入口，仅观察"
+      ],
+      "remaining": [
+        "未保存模板；后续编辑器四类字段另列，但参数/聚合口径及完整条件联动仍待核验",
+        "未实测重名、上限、编辑/删除权限或失败提示"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "report-templates",
+      "viewKind": "unsaved-form",
+      "independentPage": false,
+      "evidenceScope": "blank-template-form-only"
+    },
+    {
+      "id": "report-template-editor",
+      "route": "/monitor/report/common/template",
+      "name": "未保存模板编辑器：日/月/年/汇总字段",
+      "evidenceFiles": [
+        "report-template-editor-loaded.txt",
+        "report-template-editor-monthly.txt",
+        "report-template-editor-monthly-loaded.txt",
+        "report-template-editor-yearly-loaded.txt",
+        "report-template-editor-total-loaded.txt",
+        "report-template-total-device-fields.txt",
+        "report-template-editor-daily-loaded.txt",
+        "report-template-daily-device-fields.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "初始Daily及Monthly快照尚未加载完整字段；只据各类型loaded快照登记UI差异，不从源码推测界面字段",
+        "四类均可选择站名/区域/地址、光储容量/功率、系统/站点类型、方位倾角、投运/创建日期、标签及Device Info等元信息",
+        "Monthly/Yearly的已观察字段相同：含子站名/容量、发用购售电、充放电、电池充放、MPPT、辐照、峰值小时、PR及子站发电/峰时",
+        "Daily另见stationID、所属业务组、天气；Device Info本地展开后见设备SN/名称/类型、采集器SN、组串容量、倍率/位置/分类、逆变器发电/峰时、正反向尖峰平谷深谷电量及组件/微逆发电",
+        "Total当前主要为站点元信息、stationID/业务组和Device Info；展开设备字段含电表电流倍率、安装位置、采集器SN、正反向累计总电量和深谷电量，不能套用Daily能量字段",
+        "类型切换的公开源码语义为本地状态及GET field/list；Device Info勾选先确认仅本地n+emit，无保存请求，展开后Cancel并重开默认Daily，未Save或修改原模板"
+      ],
+      "remaining": [
+        "未保存模板，字段依赖、聚合/单位/时间口径、校验、版本、权限及生成结果仍未知；闭环仅新库验收",
+        "日/月/年/汇总字段仅代表本次实际loaded视图；Monthly/Yearly设备展开未完整观察，不推断与Daily相同",
+        "本地勾选/切类型与GET字段目录不等于已创建模板或已验证报告产物；所有表单已Cancel"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "report-template-form",
+      "viewKind": "unsaved-template-editor",
+      "independentPage": false,
+      "evidenceScope": "type-specific-loaded-template-checkbox-labels-only",
+      "uiFieldLabelsByType": {
+        "daily": [
+          "Site Name",
+          "Administrative Area",
+          "Address",
+          "Solar Capacity",
+          "Storage Installed Power",
+          "Storage Installed Capacity",
+          "System Type",
+          "Site type",
+          "Azimuth",
+          "Tilt Angle",
+          "On-grid Date",
+          "Creation Date",
+          "Tag",
+          "stationID",
+          "Belong To Group",
+          "Name of sub-site",
+          "Sub-site Capacity",
+          "Device Info",
+          "Production",
+          "Consumption",
+          "Grid Feed-in",
+          "Energy Purchased",
+          "Charge",
+          "Discharge",
+          "Battery Charged",
+          "Battery Discharged",
+          "MPPT Production",
+          "Irradiation",
+          "Weather",
+          "Full Load Hours",
+          "PR",
+          "Sub-site Production",
+          "Sub-site Peak Hours"
+        ],
+        "monthly": [
+          "Site Name",
+          "Administrative Area",
+          "Address",
+          "Solar Capacity",
+          "Storage Installed Power",
+          "Storage Installed Capacity",
+          "System Type",
+          "Site type",
+          "Azimuth",
+          "Tilt Angle",
+          "On-grid Date",
+          "Creation Date",
+          "Tag",
+          "Name of sub-site",
+          "Sub-site Capacity",
+          "Device Info",
+          "Production",
+          "Consumption",
+          "Grid Feed-in",
+          "Energy Purchased",
+          "Charge",
+          "Discharge",
+          "Battery Charged",
+          "Battery Discharged",
+          "MPPT Production",
+          "Irradiation",
+          "Full Load Hours",
+          "PR",
+          "Sub-site Production",
+          "Sub-site Peak Hours"
+        ],
+        "yearly": [
+          "Site Name",
+          "Administrative Area",
+          "Address",
+          "Solar Capacity",
+          "Storage Installed Power",
+          "Storage Installed Capacity",
+          "System Type",
+          "Site type",
+          "Azimuth",
+          "Tilt Angle",
+          "On-grid Date",
+          "Creation Date",
+          "Tag",
+          "Name of sub-site",
+          "Sub-site Capacity",
+          "Device Info",
+          "Production",
+          "Consumption",
+          "Grid Feed-in",
+          "Energy Purchased",
+          "Charge",
+          "Discharge",
+          "Battery Charged",
+          "Battery Discharged",
+          "MPPT Production",
+          "Irradiation",
+          "Full Load Hours",
+          "PR",
+          "Sub-site Production",
+          "Sub-site Peak Hours"
+        ],
+        "total": [
+          "Site Name",
+          "Administrative Area",
+          "Address",
+          "Solar Capacity",
+          "Storage Installed Power",
+          "Storage Installed Capacity",
+          "System Type",
+          "Site type",
+          "Azimuth",
+          "Tilt Angle",
+          "On-grid Date",
+          "Creation Date",
+          "Tag",
+          "stationID",
+          "Belong To Group",
+          "Device Info"
+        ]
+      },
+      "expandedDeviceFieldLabelsByType": {
+        "daily": [
+          "Device SN",
+          "Device Name",
+          "Device Type",
+          "Logger SN",
+          "Actual Connected String Capacity",
+          "Ratio",
+          "Meter Location",
+          "Meter Data Classification",
+          "Inverter Production",
+          "Inverter Peak Hours",
+          "Meter Positive Total Energy",
+          "Meter Positive Sharp Energy",
+          "Meter Positive Peak Energy",
+          "Meter Positive Ordinary Energy",
+          "Meter Positive Valley Energy",
+          "Meter Positive Deep Valley Energy",
+          "Meter Negative Total Energy",
+          "Meter Negative Sharp Energy",
+          "Meter Negative Peak Energy",
+          "Meter Negative Ordinary Energy",
+          "Meter Negative Valley Energy",
+          "Meter Negative Deep Valley Energy",
+          "Module Production",
+          "Microinverter Production"
+        ],
+        "total": [
+          "Device SN",
+          "Device Name",
+          "Device Type",
+          "Meter Magnification (current ratio)",
+          "Meter Location",
+          "Logger SN",
+          "Meter Total Positive Total Energy",
+          "Meter Positive Deep Valley Energy",
+          "Meter Total Negative Total Energy",
+          "Meter Negative Deep Valley Energy"
+        ]
+      },
+      "initialDailyFieldsLoaded": false,
+      "monthlyInitialFieldsLoaded": false,
+      "localDeviceInfoExpanded": true,
+      "typeSwitchSourceSemantics": "local-state plus GET field/list; public-source-only supplemental evidence",
+      "deviceInfoToggleSourceSemantics": "local n state plus emit; no persistence request confirmed by primary source review",
+      "templateSaved": false,
+      "originalTemplateModified": false,
+      "cancelExecuted": true
+    },
+    {
+      "id": "report-tasks",
+      "route": "/monitor/report/common/task",
+      "name": "报表自动任务列表",
+      "evidenceFiles": [
+        "report-tasks.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "稳定 Automated Tasks 实际标签页；模板/任务名称筛选、重置查询、创建任务入口",
+        "列头为模板、报表类型、报告数据范围、生成频率、生成时间、任务名称、操作"
+      ],
+      "remaining": [
+        "任务执行日志、状态/产物、失败重试、停用和投递配置未核验",
+        "列头不证明存在已运行任务或服务端调度成功"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "reports",
+      "viewKind": "tab",
+      "independentPage": false,
+      "evidenceScope": "stable-automated-task-list-headers"
+    },
+    {
+      "id": "report-task-form",
+      "route": "/monitor/report/common/task",
+      "name": "创建报表自动任务：未提交表单",
+      "evidenceFiles": [
+        "report-task-form.txt",
+        "report-task-range.txt",
+        "report-task-frequency.txt",
+        "report-task-time.txt",
+        "report-task-type-form.txt",
+        "report-task-type-options.txt",
+        "report-task-daily-range-options.txt",
+        "report-task-daily-frequency-options.txt",
+        "report-task-daily-time-options.txt",
+        "report-task-monthly-transition.txt",
+        "report-task-monthly-range-options.txt",
+        "report-task-monthly-frequency-options.txt",
+        "report-task-frequency-transition.txt",
+        "report-task-monthly-time-options.txt",
+        "report-task-station-conditions.txt",
+        "report-task-specific-station-selector.txt",
+        "report-task-station-picker.txt",
+        "report-task-station-picker-loaded.txt",
+        "report-task-monthly-template-options.txt",
+        "report-task-monthly-template-options-loaded.txt",
+        "report-task-daily-template-options.txt",
+        "report-task-daily-template-options-loaded.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "任务名、报告类型、模板为表单字段；选站方式含全部、指定站点、按条件选站",
+        "必填报告数据范围、生成频率、生成时间；取消/确认入口仅观察",
+        "Report Type 尚未选择的空白表单：数据范围下拉可见前1/2/3/6/12个月",
+        "同一空白表单的频率下拉可见每天、每月、每2/3/6个月、每年；时间下拉可见月初、每月15日、月末",
+        "本批已选择类型并只读观察条件矩阵：任务报告类型实际下拉仅Daily/Monthly；频率的每年不等于Yearly任务类型",
+        "Daily范围含前1天及前1/2/3/6/12个月；Monthly范围含前1/2/3/6/12个月，不由空白表单推断其他类型",
+        "Daily和Monthly的频率下拉均见每天、每月、每2/3/6个月、每年；Daily+每天时生成时间可选每日凌晨DAY",
+        "从Daily前1天切Monthly后范围清空；从每天DAY切每月频率后时间清空；已选Monthly+每月时生成时间为月初/15日/月末",
+        "按条件选站可见容量范围、区域、业务组、投产状态；指定站点选择器及loaded picker只读展开，未选择站点或点击Sure，已Cancel",
+        "Monthly模板下拉初始/loaded在当前账户和当前条件下为空，不推断全平台缺月报模板；Daily loaded下拉有当前可选系统模板，不记录客户模板值",
+        "类型/频率/范围切换仅本地表单调查；未创建或保存任务，所有表单已Cancel"
+      ],
+      "remaining": [
+        "已观察日/月类型的局部UI矩阵；其他频率对应时间、模板/选站完整联动、参数校验及调度时区仍待核验",
+        "Monthly模板可用性仅当前scope空态，不能推断全局缺失；未选站/未Sure，未验证跨企业可见范围或批量范围持久化",
+        "未提交任务；运行状态、产物、失败/重试/停用、权限、幂等与通知投递未知；参考平台不执行，闭环仅新库验收"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "report-tasks",
+      "viewKind": "unsubmitted-form",
+      "independentPage": false,
+      "evidenceScope": "unsubmitted-daily-monthly-task-ui-matrix-and-unselected-site-picker",
+      "reportTypeSelected": true,
+      "conditionalApplicabilityVerified": false,
+      "observedTaskReportTypes": [
+        "daily",
+        "monthly"
+      ],
+      "yearlyFrequencyIsYearlyTaskType": false,
+      "conditionalUiTransitionsObserved": true,
+      "selectedStationsRecorded": false,
+      "stationPickerConfirmed": false,
+      "taskSubmitted": false,
+      "cancelExecuted": true,
+      "monthlyTemplatesGloballyAbsentInferred": false,
+      "currentTemplateAvailabilityByType": {
+        "monthly": "loaded empty in current account/conditions only",
+        "daily": "current system template options visible"
+      },
+      "observedUiMatrix": {
+        "dailyRange": [
+          "previous 1 day",
+          "previous 1/2/3/6/12 months"
+        ],
+        "monthlyRange": [
+          "previous 1/2/3/6/12 months"
+        ],
+        "dailyAndMonthlyFrequency": [
+          "daily",
+          "monthly",
+          "every 2/3/6 months",
+          "yearly"
+        ],
+        "dailyWithDailyFrequencyTime": [
+          "DAY: early morning"
+        ],
+        "monthlyWithMonthlyFrequencyTime": [
+          "FIRST: beginning of month",
+          "MID: 15th",
+          "end of month: wire code unverified"
+        ],
+        "resets": [
+          "Daily previous-day range -> Monthly clears range",
+          "daily DAY time -> monthly frequency clears time"
+        ],
+        "applicability": "Only observed combinations; not a validated scheduling contract"
+      }
+    },
+    {
+      "id": "report-manual-form",
+      "route": "/monitor/report/common/list",
+      "name": "手动创建报表：未导出表单",
+      "evidenceFiles": [
+        "report-manual-form.txt",
+        "report-manual-form-loaded.txt",
+        "report-manual-template-parameters.txt",
+        "report-manual-template-options.txt",
+        "report-manual-total-template.txt",
+        "report-manual-total-template-loaded.txt",
+        "report-manual-export-languages.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "默认系统模板 Solar and Storage Sites Report（Daily Report）；可选择模板参数",
+        "选站含全部/指定/按条件；日期起止、导出语言、报告文件名字段",
+        "文件名界面显示200字符上限；导出按钮显示预计耗时，属于界面估计",
+        "loaded默认日报表单及模板参数已观察：站点/设备信息、天气、发用购售/储能电量、峰时/PR及电表正反向分时等字段只记录标签，不记录客户值",
+        "模板下拉可选当前系统模板；切Total系统模板后，以loaded表单确认起日取该日首条、终日取该日末条数据的界面说明，不套用普通日报日期语义",
+        "导出语言下拉可见8种语言；仅观察选项，未Export，所有表单已Cancel"
+      ],
+      "remaining": [
+        "未Export，未验证产物、生成记录、权限、质量/时区边界或预计耗时准确性；参考平台不执行生成闭环，仅新库验收",
+        "Total首末条为界面声明，未验证原始值取样/缺数/重置及计量差值口径；当前模板选项不推断全局模板可用性",
+        "模板参数、指定/条件选站和语言的完整校验仍待核验；文件名字符计数不证明服务端约束"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "reports",
+      "viewKind": "unsubmitted-form",
+      "independentPage": false,
+      "evidenceScope": "loaded-manual-form-parameters-total-period-semantics-and-language-options",
+      "exportExecuted": false,
+      "totalPeriodFirstLastSampleUiStatementObserved": true,
+      "exportLanguageOptionCountObserved": 8,
+      "cancelExecuted": true,
+      "customerFieldValuesRecorded": false
+    },
+    {
+      "id": "operation-report",
+      "route": "/monitor/report/proRun",
+      "name": "生产运行报表",
+      "evidenceFiles": [
+        "operation-reports.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "日报类型、业务组对象、日期、导出语言、文件名",
+        "预览与导出入口"
+      ],
+      "remaining": [
+        "报表类型完整枚举",
+        "预览/导出是否持久化任务；未执行生成"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false
+    },
+    {
+      "id": "comparison",
+      "route": "/monitor/analysis/contrast",
+      "name": "对比分析",
+      "evidenceFiles": [
+        "comparison.txt",
+        "comparison-type-form.txt",
+        "comparison-object-selector.txt",
+        "comparison-unsaved-editor.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "对比名称筛选、创建入口；已保存对比配置列表和最后编辑时间列头",
+        "创建对象类别 Sites/Sub-site/Devices；对象选择含 Search 与 near-target 两种方式",
+        "选择2个既有站点后进入未保存编辑器；Sure 仅确认对象和查询/本地未命名标签导航，未调用保存",
+        "编辑器参数搜索/类型、按对象展示；可见SOC、SOH、单体电压/温度最大最小值、Power、Irradiance、Power Normalization及储能充放电指标",
+        "时间选项为今日、昨日、过去7天、过去30天及日期区间；Export、Save Results 入口仅观察"
+      ],
+      "remaining": [
+        "未点击 Save Results 或 Export；未验证持久保存、导出内容、权限及失败重试",
+        "未核验全部对象类型、near-target匹配规则、指标单位/聚合与归一口径、跨对象缺数质量",
+        "当前是未保存比较编辑器，不等于AI生成服务或已持久化比较结果"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "list-and-unsaved-comparison-editor",
+      "saveExecuted": false,
+      "exportExecuted": false,
+      "objectSelectionConfirmationIsPersistence": false,
+      "editorSaved": false
+    },
+    {
+      "id": "tags",
+      "route": "/monitor/application/tag",
+      "name": "场站标签",
+      "evidenceFiles": [
+        "site-tags.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "名称筛选",
+        "新增标签入口",
+        "名称/描述、编辑/删除入口"
+      ],
+      "remaining": [
+        "标签校验和绑定关联规则"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false
+    },
+    {
+      "id": "tariffs",
+      "route": "/monitor/application/priceTemplate",
+      "name": "电价费率库",
+      "evidenceFiles": [
+        "tariff-rates.txt",
+        "tariff-create-form.txt",
+        "tariff-site-type-options.txt",
+        "tariff-type-options.txt",
+        "tariff-automatic-library.txt",
+        "tariff-automatic-library-loaded.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "手动费率库和自动费率库两个标签；手动列表含名称、费率类型、计价方式、区域、有效期筛选及新增入口",
+        "未提交新增表单字段含费率名称、适用站点类型、费率类型、适用国家/区域、有效期起止、价格来源、计价方式；区域当前禁用等待前置条件",
+        "价格来源可见手动输入或自动费率库；站点类型实际下拉已观察 C&I/Resident",
+        "界面声明：所创建费率仅供本企业/关联企业用户创建的站点使用，授权获得的站点不能使用；仅记录声明，未验证后端执行",
+        "自动库实际标签已选中；初始空表为异步中间态，loaded快照已显示系统标准，不能继续描述为稳定空库",
+        "自动库仅记录 entsoe 数据源、wholesale 批发及 dynamic 动态费率语义；不记录标准行名、价格、地域值或数量",
+        "自动库筛选为名称、邮编、来源、类型、计价、区域/国家；列头为来源、类型、计价、国家、区域、邮编、创建人、名称和操作",
+        "后续真实Tariff Type下拉另有证据：发电补贴、并网售电、购电、自用电价；C&I/Resident属于site architecture，不是法定电价分类",
+        "Grid Purchase手动Fixed/Static及Self-use的TOU局部草稿另列；本批只读改变了本地选项但没有保存/提交"
+      ],
+      "remaining": [
+        "真实类型与部分计价组合已有局部UI；季节/节假日/动态价格细节、区域及站点绑定、版本/适用scope仍未完整核验",
+        "tariff-type-options.txt仍是旧站点类型残留，不能作真实Tariff Type证据；正确枚举见tariff-real-type-options.txt",
+        "隐藏旧表单不计当前展示；loaded系统标准不证明自动源同步/价格更新/绑定闭环已验证",
+        "未提交或保存费率；参考平台不执行业务变更，企业适用范围及其他闭环仅独立新库验收"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "tariff-list-and-unsubmitted-form-with-snapshot-caveats",
+      "formSubmitted": false,
+      "tariffSaved": false,
+      "cancelExecuted": true,
+      "localSiteTypeSelectionChanged": true,
+      "incidentalLocalSiteType": "Resident",
+      "tariffTypeOptionsVerified": true,
+      "automaticLibraryVisible": true,
+      "automaticLibraryEmptyObserved": true,
+      "initialEmptyWasTransient": true,
+      "automaticLibraryStableEmpty": false,
+      "automaticLibraryLoadedStandardsObserved": true,
+      "automaticLibraryFunctionVerified": false,
+      "hiddenFormExcludedFromVisibleCapabilities": true,
+      "evidenceCaveats": [
+        {
+          "file": "tariff-type-options.txt",
+          "actualContent": "stale-site-type-dropdown",
+          "excludedClaim": "Tariff Type option enumeration"
+        },
+        {
+          "file": "tariff-automatic-library.txt",
+          "actualContent": "visible automatic library plus retained hidden form DOM",
+          "excludedClaim": "Add Tariff form is currently visible or initial empty state is stable"
+        }
+      ],
+      "tariffTypeVerificationScope": "read-only visible enum in new draft",
+      "siteArchitectureNotLegalTariffClass": true,
+      "localPricingSelectionsObserved": true
+    },
+    {
+      "id": "tariff-pricing-draft",
+      "route": "/monitor/application/priceTemplate",
+      "name": "费率未保存草稿：手动/自动源/Self-use TOU",
+      "evidenceFiles": [
+        "tariff-real-type-options.txt",
+        "tariff-pricing-method-options.txt",
+        "tariff-fixed-pricing-form.txt",
+        "tariff-country-currency-linked.txt",
+        "tariff-static-pricing-form.txt",
+        "tariff-period-editor.txt",
+        "tariff-period-type-options.txt",
+        "tariff-period-price-input-constraints.txt",
+        "tariff-automatic-source-form.txt",
+        "tariff-automatic-source-picker.txt",
+        "tariff-automatic-source-picker-loaded.txt",
+        "tariff-self-use-pricing-options.txt",
+        "tariff-self-use-tou-form.txt",
+        "tariff-self-use-tou-unit-options.txt",
+        "tariff-self-use-tou-ready.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "真实费率类型下拉有发电补贴、并网售电、Grid Purchase、Self-use；C&I/Resident是站点架构选项，不能混作法定费率类型",
+        "Grid Purchase新草稿的手动计价可见Fixed/Static；已观察国家与币种联动，不记录实际本地国家/币种选择值，未输入名称、价格或其他业务值",
+        "Static可打开Period Edit，含时段类型、起止时间、单价；类型为Sharp/Peak/Flat/Valley/Deep time period（深谷）",
+        "自动来源可只读打开批发价格源picker，含名称/来源/类型/计价/国家区域/邮编列和筛选；仅查看后Cancel，不记录标准行值或选择绑定",
+        "Self-use才出现TOU Pricing（源码计价码5）且自动来源禁用；TOU显示禁用时间粒度和电价单位，单位选项EUR/kWh、EUR/MWh",
+        "新建草稿未显示Import；公开源码严格gate为编辑态且type=4且charge=5，不应解释为没填完字段，也不证明全局没有导入",
+        "所有层级表单均已取消，未Sure/Save/导入/业务提交；排除Cancel后隐藏保留表单"
+      ],
+      "remaining": [
+        "DOM约束文件当前bounds=[]，没有捕获可验证数值界限；负价/6位小数规则需按公开源码精确出处单独校准，不能用本项目model推断参考平台，更不能声称输入或服务端校验已实测",
+        "国家/货币完整映射、计价完整兼容矩阵、时段覆盖/重叠/跨日、价格单位/负价处理及动态来源版本仍未知",
+        "Import仅有公开源码条件线索，参考平台不执行；自动源同步/绑定、保存状态、权限和结算影响闭环仅新库验收"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "tariffs",
+      "viewKind": "cancelled-pricing-draft-group",
+      "independentPage": false,
+      "evidenceScope": "actual-new-draft-pricing-variants-and-read-only-source-picker",
+      "observedTariffTypes": [
+        "generation subsidy",
+        "grid sales",
+        "grid purchase",
+        "self-use"
+      ],
+      "siteArchitectureOptions": [
+        "C&I",
+        "Resident"
+      ],
+      "siteArchitectureNotLegalTariffClass": true,
+      "countryCurrencyUiLinkObserved": true,
+      "actualCountryOrCurrencySelectionRecorded": false,
+      "observedPeriodTypes": [
+        "Sharp",
+        "Peak",
+        "Flat",
+        "Valley",
+        "Deep time period"
+      ],
+      "selfUseTouObserved": true,
+      "selfUseTouPricingSourceCode": 5,
+      "selfUseAutomaticSourceDisabled": true,
+      "newDraftImportVisible": false,
+      "importGateSourceLevel": "public-source-only",
+      "importGateReportedByPrimary": "edit state AND tariff type=4 AND charge=5",
+      "numericDomBoundsCaptured": false,
+      "numericDomBoundsEvidenceCount": 0,
+      "negativeSixDecimalServerValidationVerified": false,
+      "automaticSourceSelected": false,
+      "businessValuesEntered": false,
+      "formSubmitted": false,
+      "importExecuted": false,
+      "allFormsCancelled": true,
+      "remainingOpenForms": 0,
+      "customerDataRecorded": false
+    },
+    {
+      "id": "site-dashboard",
+      "route": "/monitor/plant/plantDetail/:stationId/dashboard",
+      "name": "站内看板",
+      "evidenceFiles": [
+        "site-detail-dashboard.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "整体/光伏/储能/电网能流及数据源入口",
+        "站点位置、容量、功率、发用电、自用、自给",
+        "设备类型在线状态统计",
+        "报警、日月年累计曲线、选择参数与导出",
+        "子站、设备、报警、能量管理、智能分析、布局、一次接线图、日志、设置十个业务标签"
+      ],
+      "remaining": [
+        "已登记子站、布局、接线、智能分析及设置授权/费率的只读入口，仍需完整详情与表单",
+        "图表参数列表、能量分摊计算口径",
+        "当前页面NaN/缺数需要本系统真空态处理"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false
+    },
+    {
+      "id": "site-subsites",
+      "route": "/monitor/plant/plantDetail/:stationId/childSystem",
+      "name": "站内子站",
+      "evidenceFiles": [
+        "site-subsites.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "Sub-site 标签选中；光伏/储能字段入口、子站名称筛选与新建子站入口",
+        "列表列头含子站名称、通信/报警、容量/功率、发电、PR、购售用电、更新时间与操作"
+      ],
+      "remaining": [
+        "子站创建表单、系统边界和父子计量/权限继承未核验",
+        "子站详情及储能字段完整枚举；不以列表名称判定详情已扫描"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false
+    },
+    {
+      "id": "site-layout",
+      "route": "/monitor/plant/plantDetail/:stationId/layout",
+      "name": "站内系统布局",
+      "evidenceFiles": [
+        "site-layout.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "Layout 标签选中；Create Layout 入口；Normal/slow 显示速度选项"
+      ],
+      "remaining": [
+        "布局编辑器、设备放置/绑定、保存发布与权限未核验",
+        "当前入口不证明布局配置及动画数据链路完整"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false
+    },
+    {
+      "id": "site-wiring",
+      "route": "/monitor/plant/plantDetail/:stationId/diagram",
+      "name": "站内一次接线图",
+      "evidenceFiles": [
+        "site-wiring.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "Wiring Diagram 标签选中；全屏与编辑入口"
+      ],
+      "remaining": [
+        "接线图编辑、元件类型、测点绑定、拓扑校验与持久化未核验",
+        "图中设备控制未执行，不由编辑入口推断可下发"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false
+    },
+    {
+      "id": "site-intelligent-analysis",
+      "route": "/monitor/plant/plantDetail/:stationId/intelligentAnalysis",
+      "name": "站内智能分析",
+      "evidenceFiles": [
+        "site-intelligent-analysis.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "Intelligent Analysis 标签选中；Battery Health Problems 子标签及缺数状态"
+      ],
+      "remaining": [
+        "其他分析类别、健康指标/诊断依据/模型版本和结论详情未核验",
+        "空态不证明AI诊断已运行或生成有效结论"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false
+    },
+    {
+      "id": "site-tariffs",
+      "route": "/monitor/plant/plantDetail/:stationId/settings/priceTemplate",
+      "name": "站内电价费率绑定",
+      "evidenceFiles": [
+        "site-tariffs.txt",
+        "site-tariff-binding-readonly.txt",
+        "site-tariff-binding-picker.txt",
+        "site-tariff-binding-picker-loaded.txt",
+        "site-tariff-binding-type-options.txt",
+        "site-tariff-binding-automatic-state.txt",
+        "site-tariff-binding-automatic-fields.txt",
+        "site-tariff-storage-binding-readonly.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "Solar/Storage列表只读分类均已观察；列头为适用时间、费率名、价格来源、费率类型、计价方式、国家/区域、绑定日期与操作，不记录客户站点、绑定值或实际国家选择",
+        "Bound Electricity Price查询picker已加载Manual/Automatic两个来源；初始picker没有Automatic是异步中间态，不推断权限缺失",
+        "Manual查询视图含类型/计价等筛选及费率名、类型、计价、国家区域、有效期列；Automatic更多国家/来源/区域/邮编筛选和来源/邮编列，出现Dynamic Tariff语义",
+        "type-options为虚拟列表，本轮只观察到类型码1/2/3对应切片，不视作完整枚举或推断其他类型不存在",
+        "公开源码补充：energyCategory切换只query，Automatic radio只清理查询条件并查询；不等于保存/绑定。未选row、未Sure、未打开新建模板，Cancel已关窗"
+      ],
+      "remaining": [
+        "绑定与解绑实际提交、有效期/冲突、版本/适用scope、币种/动态价格映射、自动源更新与计价后台未验证",
+        "Solar/Storage及Manual/Automatic仅已观察的查询组合；虚拟类型枚举、历史重绑、权限及并发/幂等仍不完整",
+        "没有执行费率绑定业务变更；参考平台不执行保存，完整结算与绑定闭环仅新库验收"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "solar-storage-read-only-binding-lists-and-cancelled-query-picker",
+      "energyCategoriesObserved": [
+        "solar",
+        "storage"
+      ],
+      "pickerSourcesObserved": [
+        "manual",
+        "automatic"
+      ],
+      "initialAutomaticMissingWasAsync": true,
+      "permissionAbsenceInferred": false,
+      "observedVirtualTariffTypeCodes": [
+        1,
+        2,
+        3
+      ],
+      "completeTariffTypeEnumerationVerified": false,
+      "rowSelected": false,
+      "pickerConfirmed": false,
+      "newTemplateOpened": false,
+      "bindingExecuted": false,
+      "actualCountrySelectionOrCustomerValuesRecorded": false,
+      "pickerCancelled": true,
+      "sourceSemanticsLevel": "public-source-only supplemental review reported by primary",
+      "energyCategorySourceSemantics": "query only",
+      "automaticRadioSourceSemantics": "clear query filters and query only",
+      "backendTariffCalculationVerified": false
+    },
+    {
+      "id": "site-authorizations",
+      "route": "/monitor/plant/plantDetail/:stationId/settings/authorize",
+      "name": "站内授权信息",
+      "evidenceFiles": [
+        "site-authorizations.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "Authorizations 页面；Site Authorization Restrictions 说明与当前限制状态提示"
+      ],
+      "remaining": [
+        "授权限制开启后的对象/字段、企业可见范围继承及保存流程未核验",
+        "未改变开关或权限；说明文字不等于授权状态机已测试"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false
+    },
+    {
+      "id": "site-control",
+      "route": "/monitor/plant/plantDetail/:stationId/energyManagement",
+      "name": "能量管理",
+      "evidenceFiles": [
+        "site-energy-management.txt",
+        "site-energy-management-log-entry.txt",
+        "site-energy-management-log-entry-loaded.txt",
+        "site-energy-management-visible-entry.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "稳定可见Energy Management选中、Real-time Control与Send Logs标签、Logger分类；控制项含急停/恢复、关机/恢复、故障复位、重启及Send command入口",
+        "未选择设备checkbox、command radio或Send，不记录设备SN、状态、身份及当前选择",
+        "log-entry及log-entry-loaded快照实际仍为Settings缓存，仅保留导航时序证据，不能证明进入Send Logs或读取日志字段",
+        "公开源码发现父容器SUCCESS轮询可能自动POST strategy-record/{recordId}/hidden隐藏单条成功提示；不是自动Allhidden。源码反馈前容器已打开一次，反馈后退出到Dashboard"
+      ],
+      "remaining": [
+        "自动单条隐藏是否实际发生未核验，不能保证参考业务零写；未主动执行控制或策略写流程",
+        "其他设备/策略入口、下发日志字段、权限、策略编排和执行回执仍未知；参考平台不执行控制，闭环仅独立新库验收"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "visible-control-labels-and-unverified-parent-auto-hide-boundary",
+      "evidenceScopes": {
+        "site-energy-management-log-entry.txt": "settings-cache-not-energy-management-evidence",
+        "site-energy-management-log-entry-loaded.txt": "settings-cache-not-energy-management-evidence"
+      },
+      "deviceCheckboxChanged": false,
+      "commandRadioChanged": false,
+      "sendExecuted": false,
+      "businessWritesExecuted": null,
+      "intentionalBusinessWritesExecuted": false,
+      "energyManagementOpenedBeforeAutoHideReview": true,
+      "automaticBusinessStateChangesMayHaveOccurred": true,
+      "automaticBusinessStateChangesVerified": false,
+      "autoHideSourceSemantics": "SUCCESS polling may POST strategy-record/{recordId}/hidden for one record; not automatic Allhidden",
+      "sourceSemanticsLevel": "public-source-only supplemental review reported by primary",
+      "deviceIdentityOrStatusRecorded": false
+    },
+    {
+      "id": "site-settings",
+      "route": "/monitor/plant/plantDetail/:stationId/settings/stationInfo",
+      "name": "站点信息",
+      "evidenceFiles": [
+        "site-settings.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "场站地址区域时区坐标",
+        "系统组合、C&I/居民/地面类型",
+        "光伏容量电压方位角倾角、消纳方式、并网日期状态",
+        "储能功率容量并网日期状态",
+        "关联方、封面、编辑/删除入口"
+      ],
+      "remaining": [
+        "编辑表单只读检查",
+        "空间管理与虚拟气象站仅公开路由可见，当前设置导航未显示"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false
+    },
+    {
+      "id": "basic-tariff",
+      "route": "/monitor/plant/plantDetail/:stationId/settings/basicElectricityCharge",
+      "name": "基本电费",
+      "evidenceFiles": [
+        "site-basic-tariff.txt",
+        "sites-list-for-finance-scan.txt",
+        "site-settings-finance-entry.txt",
+        "site-basic-tariff-readonly.txt",
+        "site-basic-tariff-editor.txt",
+        "site-basic-tariff-two-part-fields.txt",
+        "site-basic-tariff-capacity-fields.txt",
+        "site-basic-tariff-contract-demand-fields.txt",
+        "site-basic-tariff-actual-demand-fields.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "站点列表及财务设置入口文件仅作导航证据，不抄录站名、位置、客户行、户号或当前字段值",
+        "基本电费readonly可见政策与Account Number；实际Edit Basic Tariff表单有单一制/两部制本地radio分支",
+        "两部制细分容量费、按合同最大需量、按实际最大需量；容量分支需填写容量kVA，合同需量分支需填写合同最大需量kW，均有必填语义",
+        "实际最大需量分支不显示上述两项手填容量/合同需量字段，不据此推断实际需量计算算法已核验",
+        "consumerNum为电力户号字段名；未输入户号或任何数值，未Save。公开源码确认radio只改本地draft直到Save，Cancel仅关闭isVisible"
+      ],
+      "remaining": [
+        "单一/两部制分支局部UI已补；数值边界/校验、需量窗口/单位/时区、价格及账单计算、历史版本与权限仍未知",
+        "consumerNum建议作为本项目资产/结算关联的候选业务标识，属于待设计集成建议，不证明参考或本项目已有完整关联",
+        "未保存电价政策或户号，不推断计价后台执行；参考平台不执行变更，完整账单闭环仅新库验收"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "read-only-basic-tariff-and-cancelled-local-branch-editor",
+      "evidenceScopes": {
+        "sites-list-for-finance-scan.txt": "navigation-only",
+        "site-settings-finance-entry.txt": "navigation-only"
+      },
+      "basicPolicyBranchesObserved": [
+        "unitary",
+        "two-part"
+      ],
+      "twoPartUiBranches": {
+        "capacity": {
+          "requiredManualField": "capacity",
+          "unit": "kVA"
+        },
+        "contractedDemand": {
+          "requiredManualField": "contract maximum demand",
+          "unit": "kW"
+        },
+        "actualMaximumDemand": {
+          "capacityManualFieldVisible": false,
+          "contractDemandManualFieldVisible": false
+        }
+      },
+      "consumerNumFieldObserved": true,
+      "consumerNumValueRecorded": false,
+      "consumerNumIntegrationProposal": "candidate relation to this project asset/settlement; proposal only",
+      "sourceSemanticsLevel": "public-source-only supplemental review reported by primary",
+      "radioSourceSemantics": "local draft until Save",
+      "cancelSourceSemantics": "isVisible=false",
+      "businessNumericValuesEntered": false,
+      "accountValueEntered": false,
+      "saveExecuted": false,
+      "cancelExecuted": true,
+      "backendDemandOrTariffCalculationVerified": false
+    },
+    {
+      "id": "data-source",
+      "route": "/monitor/plant/plantDetail/:stationId/settings/dataSource",
+      "name": "指标数据源",
+      "evidenceFiles": [
+        "site-data-source.txt",
+        "site-data-source-definition-readonly.txt",
+        "site-data-source-solar-metrics.txt",
+        "site-data-source-storage-metrics.txt",
+        "site-data-source-consumption-metrics.txt",
+        "site-data-source-grid-metrics.txt",
+        "site-data-source-custom-draft.txt",
+        "site-data-source-custom-irradiation-options.txt",
+        "site-data-source-custom-grid-fields.txt",
+        "site-data-source-custom-solar-fields.txt",
+        "site-data-source-custom-solar-options.txt",
+        "site-data-source-custom-storage-fields.txt",
+        "site-data-source-custom-consumption-fields.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "智能选择/自定义入口；辐照、光伏、储能、用电、电网五类指标，列含指标、单位、数据源、计算方法、更新频率",
+        "指标包括辐照强度/日辐照、光伏功率及日/月/年/累计发电、储能充放电功率/状态/SOC及日/月/年/累计充放电、用电和电网购售电/无功等；仅登记字段语义",
+        "单位包括功率kW、电量kWh、辐照W/㎡及kWh/㎡；计算方法文案含求和、均值、日累计及能量守恒；频率文案含依赖设备上报、2 Hours，不证明实际调度执行",
+        "实际Custom Data Source草稿列含指标、单位、来源及Cancel/Save；太阳能候选类型见Smart Meter/Inverter/Microinverter，辐照候选当前仅见None，不推断全局设备可用性",
+        "仅展开各分类草稿和候选项，未选择新选项、切换智能选择或Save；Cancel关闭。未记录当前指标来源映射或选中状态"
+      ],
+      "remaining": [
+        "自定义来源完整候选矩阵、来源优先级、表达式/校验、历史重算与权限仍未知",
+        "公开源码15分钟算法为source-only补充，不等于当前UI已观察或后台已执行；实际采样、缺数、重算和生效结果仅新库验收"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "metric-labels-units-and-cancelled-custom-source-drafts",
+      "candidateSourceTypesObserved": [
+        "Smart Meter",
+        "Inverter",
+        "Microinverter",
+        "None"
+      ],
+      "currentMappingSelectionsRecorded": false,
+      "sourceOptionChanged": false,
+      "intelligentSelectionChanged": false,
+      "saveExecuted": false,
+      "cancelExecuted": true,
+      "backendScheduleOrRecalculationVerified": false
+    },
+    {
+      "id": "offset",
+      "route": "/monitor/plant/plantDetail/:stationId/settings/offset",
+      "name": "计量偏移量",
+      "evidenceFiles": [
+        "site-offset.txt",
+        "site-offset-dimensions-readonly.txt",
+        "site-offset-daily-history.txt",
+        "site-offset-daily-draft-fields.txt",
+        "site-offset-cumulative-draft-fields.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "日/累计光伏发电、储能充电/放电、上网/购电偏移，以及日用电偏移维度",
+        "历史结构及日/累计新增草稿可见日期、Offset(kWh)、操作列；日期及偏移输入有必填标记，格式说明允许正/负偏移概念",
+        "UI说明偏移在30分钟内生效并影响相关月/年统计；仅说明文案，未验证运行结果",
+        "未输入或保存偏移；Cancel关闭。原始历史行和当前偏移值仅留私有证据，不进入本清单"
+      ],
+      "remaining": [
+        "偏移边界、累计与日修订关系、时区、审计版本、重复日期和历史重算实际行为仍未知；参考平台不执行保存，闭环仅新库验收"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "offset-dimensions-history-structure-and-cancelled-drafts",
+      "currentOffsetValuesRecorded": false,
+      "historyRowsRecorded": false,
+      "inputEntered": false,
+      "saveExecuted": false,
+      "cancelExecuted": true,
+      "effectTimingTextOnly": true,
+      "backendRecalculationVerified": false
+    },
+    {
+      "id": "planned-production",
+      "route": "/monitor/plant/plantDetail/:stationId/settings/generation",
+      "name": "计划发电",
+      "evidenceFiles": [
+        "site-planned-production.txt",
+        "site-production-plan-structure-readonly.txt",
+        "site-production-plan-monthly-draft.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "年度筛选、年度基础/高级计划(kWh)、排序/分页/操作及新增计划入口",
+        "月度草稿含1—12月，Basic基础计划必填、Superior高级计划可选，单位kWh；仅观察结构，未记录当前计划值",
+        "未填写或Save，Cancel关闭草稿"
+      ],
+      "remaining": [
+        "月度/年度汇总公式、计划版本、重复年份/数值校验、完成率分母、权限和保存后生效仍未知"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "annual-plan-structure-and-cancelled-monthly-draft",
+      "monthlyFieldCount": 12,
+      "basicRequired": true,
+      "superiorRequired": false,
+      "unit": "kWh",
+      "currentPlanValuesRecorded": false,
+      "inputEntered": false,
+      "saveExecuted": false,
+      "cancelExecuted": true
+    },
+    {
+      "id": "energy-algorithm",
+      "route": "/monitor/plant/plantDetail/:stationId/settings/powerAnalysisAlgorithm",
+      "name": "电能分析算法",
+      "evidenceFiles": [
+        "site-energy-algorithm.txt",
+        "site-energy-algorithm-definition-readonly.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "算法1说明能量守恒下光伏到用电/充电/上网及用电来自光伏/放电/购电",
+        "算法2说明简化光伏自用/上网和用电来自光伏/购电；页面含两算法说明及展示区域",
+        "单选项切换可能即时POST保存，故未切换；不记录当前选中算法，不由展示说明证明计算已运行"
+      ],
+      "remaining": [
+        "精确时间序列、负值/缺数、跨日归集及历史重算仍未知；公开源码15分钟处理仅source-only，不视为UI或后台执行证据"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "algorithm-explanations-only",
+      "algorithmChanged": false,
+      "currentSelectionRecorded": false,
+      "selectionMaySaveImmediately": true,
+      "backendAlgorithmExecutionVerified": false
+    },
+    {
+      "id": "actual-demand",
+      "route": "/monitor/plant/plantDetail/:stationId/settings/actualDemand",
+      "name": "实际需量",
+      "evidenceFiles": [
+        "site-actual-demand.txt",
+        "site-actual-demand-definition-readonly.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "实际需量算法仅见关闭状态的开关，未切换；未据此推断开启后的字段或算法"
+      ],
+      "remaining": [
+        "开启后的参数、窗口/时区、算法、历史计算及权限未知；参考平台不切换开关，闭环仅新库验收"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "demand-switch-read-only",
+      "switchChanged": false,
+      "enabledParametersObserved": false
+    },
+    {
+      "id": "power-factor",
+      "route": "/monitor/plant/plantDetail/:stationId/settings/powerFactor",
+      "name": "功率因数",
+      "evidenceFiles": [
+        "site-power-factor.txt",
+        "site-power-factor-formula-readonly.txt",
+        "site-power-factor-formula-loaded.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "仅见Presentation/Not display展示偏好，未切换；文件名formula不代表存在公式编辑"
+      ],
+      "remaining": [
+        "未观察到公式、标准值或罚费编辑；计算口径、展示范围、持久化权限及后台生效未知"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "display-options-only",
+      "displaySelectionChanged": false,
+      "formulaObserved": false
+    },
+    {
+      "id": "income",
+      "route": "/monitor/plant/plantDetail/:stationId/settings/earnings",
+      "name": "收益展示设置",
+      "evidenceFiles": [
+        "site-income.txt",
+        "site-income-display-boundary-readonly.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "仅见Presentation/Not display收益展示偏好，未切换；未观察收益公式输入"
+      ],
+      "remaining": [
+        "收益公式、费率/时区/结算关联和展示偏好保存范围未知；不由显示选项推断后台计价已验证"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "income-display-options-only",
+      "displaySelectionChanged": false,
+      "formulaObserved": false
+    },
+    {
+      "id": "license",
+      "route": "/monitor/plant/plantDetail/:stationId/settings/license",
+      "name": "站点许可证消耗",
+      "evidenceFiles": [
+        "site-license.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "站点授权生产状态、光储容量",
+        "消耗状态、方式、时间过滤",
+        "消耗商品、数量、主体、企业、创建/生效/到期时间",
+        "自动/手动消耗和成功/失败记录、详情入口"
+      ],
+      "remaining": [
+        "消耗记录详情与授权状态迁移；不试运行续费"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false
+    },
+    {
+      "id": "enterprise",
+      "route": "/system/info",
+      "name": "企业信息",
+      "evidenceFiles": [
+        "system-navigation.txt",
+        "enterprise-edit-form.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "企业名称、所属区域、企业类型、业务范围；Edit导航后进入实际编辑表单",
+        "未提交表单含多语言企业名称、区域、企业类型多选、业务范围；仅登记通用字段，不记录当前企业值",
+        "本轮Cancel退出，未Submit；/system快照中的后台缓存monitor费率document不计当前主内容"
+      ],
+      "remaining": [
+        "字段必填/联动、名称语言回退、类型约束、保存结果及权限仍待核验",
+        "未提交企业修改，未验证跨企业隔离及并发处理"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "enterprise-main-content-and-cancelled-edit-form",
+      "enterpriseSubmitted": false,
+      "cancelExecuted": true,
+      "cachedMonitorDocumentExcluded": true,
+      "customerFieldValuesRecorded": false
+    },
+    {
+      "id": "organization",
+      "route": "/system/group",
+      "name": "内部组织",
+      "evidenceFiles": [
+        "internal-organization.txt",
+        "organization-create-employee-form.txt",
+        "organization-create-group-form.txt",
+        "organization-site-distribution.txt",
+        "organization-site-distribution-filter.txt",
+        "organization-child-distribution.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "业务组层级树、组名搜索；员工列表含姓名/角色/用户名/邮箱及编辑删除入口，不记录客户值",
+        "创建员工未填写/保存表单：姓名、邮箱、Password为必填；用户名、业务组、角色及搜索已有账号入口",
+        "新建业务组为实际 dialog；业务组名必填，取消/保存入口仅观察",
+        "根组站点分配当前仅已分配站点列表；筛选含容量范围、区域、投运状态、充放电状态、系统类型及场景",
+        "organization-site-distribution.txt 初始异步快照仅作为结构证据，不采信数据行、数量或站点归属",
+        "子组站点分配为待分配/已分配双侧视图，含搜索和左右分配箭头；仅核验结构，未选站或点击箭头"
+      ],
+      "remaining": [
+        "员工/业务组未填写或保存；已有账号搜索联动、用户名/密码规则和邀请生命周期仍待核验",
+        "父子组站点继承、分配/撤回权限、并发与审计未验证；未选择站点或执行分发",
+        "根组/子组结构差异仅为当前UI观察，不由列表推断实际客户站点或跨企业可见范围"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "organization-forms-and-distribution-structure-only",
+      "dataRowsVerified": false,
+      "employeeSaved": false,
+      "groupSaved": false,
+      "siteSelectionChanged": false,
+      "distributionExecuted": false
+    },
+    {
+      "id": "roles",
+      "route": "/system/role",
+      "name": "角色权限",
+      "evidenceFiles": [
+        "role-management.txt",
+        "role-edit-menu.txt",
+        "role-edit-permissions.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "角色列表名称/描述、创建、编辑、删除及复制入口；原第3行图标经本轮只读DOM检查为 icon-copy，不是查看",
+        "稳定实际编辑页仅有 Menu configuration 与 Permissions 两个标签；名称必填、描述、取消/保存入口",
+        "通用功能权限标签覆盖监控/场站/子站/设备、告警规则及通知、报表模板/自动任务、比较、标签、电价、企业/业务组/角色/员工、平台日志与场站服务",
+        "通用动作包含查看列表/详情、新增/编辑/删除、设备远程控制、规则启停和自动续费等标签；只记录标签，不记录当前客户角色勾选授权",
+        "唯一超级管理员规则为界面说明；未测试服务端限制"
+      ],
+      "remaining": [
+        "role-management.txt 的 Data Permission 属旧预渲染，不计当前可用标签或已核验数据权限维度",
+        "完整菜单对象、权限联动、角色复制表单、数据范围/授权继承与跨企业隔离仍待核验",
+        "未更改勾选或保存角色；UI权限标签与公开源码声明均不证明实际可执行授权或后端校验"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "stable-role-editor-menu-and-functional-permission-labels-only",
+      "currentAvailableTabs": [
+        "Menu configuration",
+        "Permissions"
+      ],
+      "dataPermissionTabVerified": false,
+      "permissionSelectionsRecorded": false,
+      "roleSaved": false,
+      "correctedRowAction": {
+        "position": 3,
+        "meaning": "copy",
+        "incorrectPriorMeaning": "view",
+        "basis": "read-only DOM icon-copy inspection"
+      },
+      "evidenceCaveats": [
+        {
+          "file": "role-management.txt",
+          "scope": "legacy-prerendered-structure-only",
+          "excludedClaim": "Data Permission is currently usable"
+        }
+      ]
+    },
+    {
+      "id": "platform-log",
+      "route": "/system/log",
+      "name": "平台日志",
+      "evidenceFiles": [
+        "platform-log.txt",
+        "platform-login-log-loaded.txt",
+        "platform-site-log.txt",
+        "platform-site-log-loaded.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "登录日志与站点日志实际loaded视图已观察；只记录字段语义，不记录客户日志值、IP或邮箱",
+        "登录日志列头为员工、角色、邮箱、登录终端、登录时间；支持分页",
+        "站点日志列头为用户、业务组、操作内容、操作对象、操作时间、Endpoint和IP",
+        "站点日志初始空态是异步中间态，loaded已显示记录，不能据此声称无日志；忽略后台缓存monitor费率document"
+      ],
+      "remaining": [
+        "日志过滤完整字段、时间范围/时区、留存/导出及跨企业scope未完整核验",
+        "日志读取不证明任何记录所述动作已由本次调查执行，也不证明服务端访问日志不变化"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "loaded-system-log-column-semantics-only",
+      "initialSiteLogEmptyWasTransient": true,
+      "logValuesRecorded": false,
+      "ipValuesRecorded": false,
+      "emailValuesRecorded": false,
+      "cachedMonitorDocumentExcluded": true
+    },
+    {
+      "id": "account-center",
+      "route": "/system/saas/account",
+      "name": "账户与订购",
+      "evidenceFiles": [
+        "account-center.txt",
+        "account-center-loaded.txt",
+        "account-order-detail.txt",
+        "account-order-detail-loaded.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "loaded账户中心展示软件授权及有效期、增值服务、剩余许可额度、OEM有效期等字段，不记录余额或企业值",
+        "订单列表列头含状态、商品/类型、单价/单位、折扣、数量、交易额、来源、产品到期/创建时间、订单号与操作",
+        "订单眼睛预览为只读详情，已加载并关闭；只记录所属企业、商品/服务、币种、计费起止、折扣、总价、实付金额/时间/方式、付款方企业、备注和附件字段",
+        "未下载附件；后台缓存monitor费率document不计订单内容"
+      ],
+      "remaining": [
+        "商业购买/支付/续费/退款不执行；订单状态迁移、价格与折扣校验、许可扣减及幂等未验证",
+        "未核验附件下载权限、文件内容、交易回执及跨企业订单访问scope"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "loaded-commercial-account-and-read-only-order-preview",
+      "orderPreviewOpened": true,
+      "orderPreviewClosed": true,
+      "attachmentDownloaded": false,
+      "commercialMutationExecuted": false,
+      "customerOrderValuesRecorded": false,
+      "cachedMonitorDocumentExcluded": true
+    },
+    {
+      "id": "station-service",
+      "route": "/system/saas/valueAddedServices",
+      "name": "场站服务",
+      "evidenceFiles": [
+        "station-service.txt",
+        "station-service-loaded.txt",
+        "station-service-detail.txt",
+        "station-service-detail-loaded.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "loaded场站服务列表含站点搜索/筛选、光储容量、光伏监控/储能监控/储能AI策略有效期及批量自动续费入口",
+        "详情已加载并关闭：基础字段含容量、资产类型、项目类型、地址；服务表含状态、到期、自动续费、服务名、激活入口",
+        "消耗/操作历史表含服务、消耗、当前服务有效期、操作日期、操作人，仅记录字段语义，不记录客户站点或数值",
+        "后台缓存monitor费率document不计当前服务详情；未activate、续费或切换开关"
+      ],
+      "remaining": [
+        "服务激活/续费、自动续费开关、额度消耗及状态变迁未执行；失败重试/幂等及权限待核验",
+        "服务商品与监控/AI策略实际能力的绑定关系、到期回收、合同及计费口径未验证"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "loaded-station-services-and-read-only-detail",
+      "serviceDetailOpened": true,
+      "serviceDetailClosed": true,
+      "activationExecuted": false,
+      "renewalExecuted": false,
+      "renewalSwitchChanged": false,
+      "customerServiceValuesRecorded": false,
+      "cachedMonitorDocumentExcluded": true
+    },
+    {
+      "id": "screen-dashboard",
+      "route": "/screen/dataDisplay",
+      "name": "监控大屏入口",
+      "evidenceFiles": [
+        "screen-dashboard.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "稳定入口显示 Monitoring Screen、O&M System、Presentation 与 Settings",
+        "Presentation 可打开独立大屏标签；Settings 为显示标题设置入口"
+      ],
+      "remaining": [
+        "入口呈现不等于所有大屏类型或运维系统已核验；实际大屏指标另列",
+        "布局定制、分享权限、更多排行榜及全部交互仍待核验"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "stable-screen-entry-controls",
+      "mainShellRoute": "/screen/dataDisplay",
+      "menuContainerRoute": "/screen",
+      "businessWritesExecuted": false,
+      "accessTelemetryMayWrite": true,
+      "zeroServerWritesClaim": false
+    },
+    {
+      "id": "screen-presentation",
+      "route": "/sub-screen/dataDisplay",
+      "name": "监控大屏：Presentation",
+      "evidenceFiles": [
+        "screen-presentation.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "独立标签实际路径 /sub-screen/dataDisplay；仅登记概念和指标名，不记录站点行名或数值",
+        "展示各类站点容量/完成度、地图、基础/高级年度计划完成率、峰值小时排行及 More 入口",
+        "展示日光伏发电、储能充放电、历史统计与环境效益区域"
+      ],
+      "remaining": [
+        "指标公式、排名分母、质量与缺数、地图数据、更多排名及跨期统计仍待核验",
+        "Presentation 已在源码埋点反馈前打开一次；公开源码发现 track 访问埋点，未确认访问日志/埋点是否落库",
+        "未执行业务新增/修改/删除、授权或设备控制，但不可声称零服务端写入或访问日志未变化"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "presentation-screen-labels-and-layout-only",
+      "mainShellRoute": "/screen/dataDisplay",
+      "standaloneRoute": "/sub-screen/dataDisplay",
+      "independentPage": false,
+      "presentationOpenedBeforeTrackingReview": true,
+      "businessWritesExecuted": false,
+      "accessTelemetryMayWrite": true,
+      "zeroServerWritesClaim": false,
+      "accessLogsUnchangedVerified": false,
+      "dataRowsRecorded": false
+    },
+    {
+      "id": "screen-settings-form",
+      "route": "/screen/dataDisplay",
+      "name": "大屏设置：多语言显示标题",
+      "evidenceFiles": [
+        "screen-settings-form.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "实际 Display Title 对话框；8种语言的标题文本框当前 disabled，分别有 Modify 入口及 Close",
+        "只观察对话框结构，不记录实际自定义标题值"
+      ],
+      "remaining": [
+        "未点击 Modify 或 Save；可编辑后的字段校验、多语种回退、保存权限与刷新持久化仍待核验"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "screen-dashboard",
+      "viewKind": "unsubmitted-dialog",
+      "independentPage": false,
+      "evidenceScope": "disabled-multilingual-title-controls-only",
+      "modifyExecuted": false,
+      "saveExecuted": false
+    },
+    {
+      "id": "personal-info",
+      "route": "/personCenter/info",
+      "name": "个人中心：个人资料",
+      "evidenceFiles": [
+        "personal-info.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "头像与姓名展示及修改入口；不记录个人身份、头像URL或当前字段值"
+      ],
+      "remaining": [
+        "未修改资料；头像上传、姓名校验、保存结果与权限待核验"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "profile-field-labels-and-modification-entry-only",
+      "profileChanged": false
+    },
+    {
+      "id": "personal-security",
+      "route": "/personCenter/account",
+      "name": "个人中心：账户安全",
+      "evidenceFiles": [
+        "personal-security.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "邮箱、用户名、密码修改入口以及账户注销入口；仅观察通用字段"
+      ],
+      "remaining": [
+        "未修改或注销；二次验证、校验、会话吊销及注销恢复/不可逆边界未核验"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "account-security-action-labels-only",
+      "accountChanged": false,
+      "cancellationExecuted": false
+    },
+    {
+      "id": "personal-preferences",
+      "route": "/personCenter/preference",
+      "name": "个人中心：显示偏好",
+      "evidenceFiles": [
+        "personal-preferences.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "温度单位含 ℃/℉；电量显示含 kWh/MWh/GWh 或 度/万度/亿度",
+        "选择会立即保存，因此本轮没有切换选项"
+      ],
+      "remaining": [
+        "未执行偏好变更；跨页/跨会话生效范围、服务端持久化与权限未核验"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "preference-option-labels-only",
+      "preferenceChanged": false,
+      "selectionMaySaveImmediately": true
+    },
+    {
+      "id": "personal-cookie-settings",
+      "route": "/personCenter/cookieSetting",
+      "name": "个人中心：Cookie设置",
+      "evidenceFiles": [
+        "personal-cookie-settings.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "Cookie分类含必要、功能、分析；可见设置、仅必要、全部接受及 Save/Cancel 入口"
+      ],
+      "remaining": [
+        "未选择 Accept/必要项或点击 Save；分类切换、同意持久化、撤回与实际Cookie效果未验证"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "evidenceScope": "consent-category-and-action-labels-only",
+      "consentChanged": false,
+      "acceptExecuted": false,
+      "saveExecuted": false,
+      "actualCookieStorageValuesRecorded": false
+    },
+    {
+      "id": "personal-cookie-declarations",
+      "route": "/personCenter/cookieSetting",
+      "name": "个人中心：Cookie用途声明",
+      "evidenceFiles": [
+        "personal-cookie-declarations.txt"
+      ],
+      "verified": "read-only-ui",
+      "features": [
+        "CookieList 用途声明表含 Type、Name、Domain、Description、Expiry 列头；只记录声明结构和用途概念",
+        "静态用途/到期说明不等于浏览器实际Cookie存储；未读取或记录Cookie值"
+      ],
+      "remaining": [
+        "未核验实际存储、第三方请求与同意分类之间的一致性；未选择 Accept 或 Save"
+      ],
+      "writeFlowsTested": false,
+      "coverage": "partial",
+      "complete": false,
+      "parentId": "personal-cookie-settings",
+      "viewKind": "declaration-view",
+      "independentPage": false,
+      "evidenceScope": "cookie-purpose-declarations-only",
+      "consentChanged": false,
+      "actualCookieStorageRead": false,
+      "actualCookieStorageValuesRecorded": false
+    }
+  ],
+  "sourceRoutes": [
+    {
+      "path": "/monitor",
+      "titleKey": "index.all.all1022",
+      "titleZh": "监控",
+      "titleEn": "Monitor",
+      "auth": "M1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/dashboard",
+      "titleKey": "index.all.k1",
+      "titleZh": "数据看板",
+      "titleEn": "Dashboard",
+      "auth": "M1/A1",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "dashboard"
+      ]
+    },
+    {
+      "path": "/monitor/plant",
+      "titleKey": "index.all.all1016",
+      "titleZh": "场站",
+      "titleEn": "Sites",
+      "auth": "M1/A3",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/list",
+      "titleKey": "index.all.all1016",
+      "titleZh": "场站",
+      "titleEn": "Sites",
+      "auth": "M1/A3",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "sites"
+      ]
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId",
+      "titleKey": "index.all.l2",
+      "titleZh": "场站",
+      "titleEn": "Plant",
+      "auth": "F1/A2",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/dashboard",
+      "titleKey": "index.all.k1",
+      "titleZh": "数据看板",
+      "titleEn": "Dashboard",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "site-dashboard"
+      ]
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/childSystem",
+      "titleKey": "index.all.l41",
+      "titleZh": "子系统",
+      "titleEn": "Subsystem",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "site-subsites"
+      ]
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/device",
+      "titleKey": "index.all.m1",
+      "titleZh": "设备",
+      "titleEn": "Devices",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/video",
+      "titleKey": "index.all.all278",
+      "titleZh": "视频监控",
+      "titleEn": "Video",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/alarm",
+      "titleKey": "index.all.m6",
+      "titleZh": "报警",
+      "titleEn": "Alerts",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/alarm/realTime",
+      "titleKey": "index.all.all851",
+      "titleZh": "实时报警",
+      "titleEn": "Alerts Opened",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/alarm/history",
+      "titleKey": "index.all.all1118",
+      "titleZh": "报警历史",
+      "titleEn": "Alerts History",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/energyManagement",
+      "titleKey": "index.all.all3702",
+      "titleZh": "能量管理",
+      "titleEn": "Energy Management",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "site-control"
+      ]
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/energyManagement/solar",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/energyManagement/solar/control",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/energyManagement/strategy",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/follow",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/customized",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/peakValley",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/demand",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/dynamicUprating",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/demandResponse",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/utilization",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/hybrid",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/energyManagement/strategy/aistrategy",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/energyManagement/realTime",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/energyManagement/log",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/energyManagement/execute",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/energyManagement/trackMeterConfig",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/energyUseControl",
+      "titleKey": "index.all.all4420",
+      "titleZh": "用能控制",
+      "titleEn": "Consumption Control",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/intelligentAnalysis",
+      "titleKey": "index.all.all4421",
+      "titleZh": "智能分析",
+      "titleEn": "Intelligent Analysis",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "site-intelligent-analysis"
+      ]
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/intelligentAnalysis/PVHealth",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/intelligentAnalysis/generationLoss",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/intelligentAnalysis/dustCleaning",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/intelligentAnalysis/deviceHealth",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/intelligentAnalysis/healthIndicators",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/intelligentAnalysis/batteryHealth",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/layout",
+      "titleKey": "index.all.all557",
+      "titleZh": "系统布局",
+      "titleEn": "Layout",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "site-layout"
+      ]
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/diagram",
+      "titleKey": "index.all.all862",
+      "titleZh": "一次接线图",
+      "titleEn": "Wiring Diagram",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "site-wiring"
+      ]
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/edit-diagram",
+      "titleKey": "index.all.all862",
+      "titleZh": "一次接线图",
+      "titleEn": "Wiring Diagram",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/operationLog",
+      "titleKey": "index.all.all1034",
+      "titleZh": "操作日志",
+      "titleEn": "Logs",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/settings",
+      "titleKey": "设置",
+      "titleZh": "设置",
+      "titleEn": "h(\"设置\")",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/settings/stationInfo",
+      "titleKey": "场站信息",
+      "titleZh": "场站信息",
+      "titleEn": "h(\"场站信息\")",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "site-settings"
+      ]
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/settings/basicElectricityCharge",
+      "titleKey": "基本电费",
+      "titleZh": "基本电费",
+      "titleEn": "h(\"基本电费\")",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "basic-tariff"
+      ]
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/settings/spaceManagement",
+      "titleKey": "空间管理",
+      "titleZh": "空间管理",
+      "titleEn": "h(\"空间管理\")",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/settings/priceTemplate",
+      "titleKey": "index.all.all3683",
+      "titleZh": "电价费率",
+      "titleEn": "Tariff Rates",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "site-tariffs"
+      ]
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/settings/authorize",
+      "titleKey": "授权信息",
+      "titleZh": "授权信息",
+      "titleEn": "h(\"授权信息\")",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "site-authorizations"
+      ]
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/settings/dataSource",
+      "titleKey": "数据源",
+      "titleZh": "数据源",
+      "titleEn": "h(\"数据源\")",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "data-source"
+      ]
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/settings/offset",
+      "titleKey": "偏移量",
+      "titleZh": "偏移量",
+      "titleEn": "h(\"偏移量\")",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "offset"
+      ]
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/settings/generation",
+      "titleKey": "计划发电",
+      "titleZh": "计划发电",
+      "titleEn": "h(\"计划发电\")",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "planned-production"
+      ]
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/settings/virtualWeatherStation",
+      "titleKey": "index.all.all3163",
+      "titleZh": "虚拟气象站",
+      "titleEn": "Virtual Weather Site",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/settings/powerAnalysisAlgorithm",
+      "titleKey": "index.all.all4850",
+      "titleZh": "电能分析算法",
+      "titleEn": "Energy Analysis Algorithm",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "energy-algorithm"
+      ]
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/settings/actualDemand",
+      "titleKey": "index.all.nengrui-web_60527",
+      "titleZh": "实际需量",
+      "titleEn": "Actual Demand",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "actual-demand"
+      ]
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/settings/powerFactor",
+      "titleKey": "index.all.nengrui-web_67381",
+      "titleZh": "功率因数",
+      "titleEn": "Power Factor",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "power-factor"
+      ]
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/settings/earnings",
+      "titleKey": "收益",
+      "titleZh": "收益",
+      "titleEn": "h(\"收益\")",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "income"
+      ]
+    },
+    {
+      "path": "/monitor/plant/plantDetail/:stationId/settings/license",
+      "titleKey": "License管理",
+      "titleZh": "License管理",
+      "titleEn": "h(\"License管理\")",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "license"
+      ]
+    },
+    {
+      "path": "/monitor/device",
+      "titleKey": "index.all.m1",
+      "titleZh": "设备",
+      "titleEn": "Devices",
+      "auth": "M1/A4",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/device/list",
+      "titleKey": "index.all.m1",
+      "titleZh": "设备",
+      "titleEn": "Devices",
+      "auth": "M1/A4",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "devices",
+        "device-category-inverter",
+        "device-category-energy-storage-cabinet",
+        "device-category-pcs",
+        "device-category-battery-cluster",
+        "device-category-battery-stack",
+        "device-category-air-conditioner",
+        "device-category-smart-meter",
+        "device-category-logger",
+        "device-category-ems",
+        "device-inverter-detail",
+        "device-inverter-history",
+        "device-inverter-parameters",
+        "device-inverter-connections",
+        "device-pcs-detail",
+        "device-battery-cluster-detail",
+        "device-meter-detail",
+        "device-logger-detail",
+        "device-stack-detail"
+      ]
+    },
+    {
+      "path": "/monitor/alarm",
+      "titleKey": "index.all.m6",
+      "titleZh": "报警",
+      "titleEn": "Alerts",
+      "auth": "M1/A5",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/alarm/realTime",
+      "titleKey": "index.all.all851",
+      "titleZh": "实时报警",
+      "titleEn": "Alerts Opened",
+      "auth": "M1/A5/B1",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "alarm-open"
+      ]
+    },
+    {
+      "path": "/monitor/alarm/history",
+      "titleKey": "index.all.all1118",
+      "titleZh": "报警历史",
+      "titleEn": "Alerts History",
+      "auth": "M1/A5/B2",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "alarm-history"
+      ]
+    },
+    {
+      "path": "/monitor/alarm/rules",
+      "titleKey": "index.all.all2330",
+      "titleZh": "报警规则",
+      "titleEn": "Alert Rules",
+      "auth": "M1/A5/B3",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "alarm-rule",
+        "alert-site-condition",
+        "alert-device-condition"
+      ]
+    },
+    {
+      "path": "/monitor/video",
+      "titleKey": "index.all.all2580",
+      "titleZh": "视频",
+      "titleEn": "Video",
+      "auth": "M1/A7",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/video/picture",
+      "titleKey": "index.all.all435",
+      "titleZh": "监控画面",
+      "titleEn": "Monitor Screen",
+      "auth": "M1/A7/B1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/video/camera",
+      "titleKey": "index.all.all436",
+      "titleZh": "摄像头管理",
+      "titleEn": "Camera",
+      "auth": "M1/A7/B2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/video/secretKey",
+      "titleKey": "index.all.all437",
+      "titleZh": "密钥管理",
+      "titleEn": "Key",
+      "auth": "M1/A7/B3",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/report",
+      "titleKey": "index.all.all249",
+      "titleZh": "报表",
+      "titleEn": "Report",
+      "auth": "M1/A8",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/report/common",
+      "titleKey": "index.all.all3523",
+      "titleZh": "常规报表",
+      "titleEn": "General Reports",
+      "auth": "M1/A8/B1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/report/common/list",
+      "titleKey": "index.all.all2254",
+      "titleZh": "报表模板",
+      "titleEn": "Report Template",
+      "auth": "",
+      "hidden": true,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "reports",
+        "report-manual-form"
+      ]
+    },
+    {
+      "path": "/monitor/report/common/template",
+      "titleKey": "index.all.all2254",
+      "titleZh": "报表模板",
+      "titleEn": "Report Template",
+      "auth": "",
+      "hidden": true,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "report-templates",
+        "report-template-form",
+        "report-template-editor"
+      ]
+    },
+    {
+      "path": "/monitor/report/common/task",
+      "titleKey": "index.all.all2322",
+      "titleZh": "自动化任务",
+      "titleEn": "Automated Tasks",
+      "auth": "",
+      "hidden": true,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "report-tasks",
+        "report-task-form"
+      ]
+    },
+    {
+      "path": "/monitor/report/proRun",
+      "titleKey": "index.all.all3524",
+      "titleZh": "生产运行报表",
+      "titleEn": "Operation Reports",
+      "auth": "M1/A8/B2",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "operation-report"
+      ]
+    },
+    {
+      "path": "/monitor/report/proRun/build",
+      "titleKey": "导出",
+      "titleZh": "导出",
+      "titleEn": "h(\"导出\")",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/report/meter",
+      "titleKey": "index.all.nengrui-web_46602",
+      "titleZh": "电表报表",
+      "titleEn": "Electric Meter Report",
+      "auth": "M1/A8/B3",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/analysis",
+      "titleKey": "index.all.all5752",
+      "titleZh": "AI智能分析",
+      "titleEn": "AI Intelligent Analysis",
+      "auth": "M1/A9",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/analysis/aiAnalysis",
+      "titleKey": "index.all.all5753",
+      "titleZh": "光伏AI健康诊断",
+      "titleEn": "Photovoltaic AI Health Diagnosis",
+      "auth": "M1/A9/B2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/analysis/aiAnalysisDetail/:id",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/analysis/contrast",
+      "titleKey": "index.all.all251",
+      "titleZh": "对比",
+      "titleEn": "Comparison",
+      "auth": "M1/A9/B1",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "comparison"
+      ]
+    },
+    {
+      "path": "/monitor/analysis/contrastDetail",
+      "titleKey": "index.all.all251",
+      "titleZh": "对比",
+      "titleEn": "Comparison",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/application",
+      "titleKey": "index.all.all1024",
+      "titleZh": "服务应用",
+      "titleEn": "Service Application",
+      "auth": "M1/A6",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/application/tag",
+      "titleKey": "index.all.all2777",
+      "titleZh": "场站标签",
+      "titleEn": "Site Tags",
+      "auth": "M1/A6/B2",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "tags"
+      ]
+    },
+    {
+      "path": "/monitor/application/priceTemplate",
+      "titleKey": "index.all.all3683",
+      "titleZh": "电价费率",
+      "titleEn": "Tariff Rates",
+      "auth": "M1/A6/B1",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "tariffs",
+        "tariff-pricing-draft"
+      ]
+    },
+    {
+      "path": "/monitor/application/planGeneration",
+      "titleKey": "index.all.all3332",
+      "titleZh": "项目计划发电量",
+      "titleEn": "Project Planned",
+      "auth": "M1/A6/B4",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/application/virtualWeatherStation",
+      "titleKey": "index.all.all3163",
+      "titleZh": "虚拟气象站",
+      "titleEn": "Virtual Weather Site",
+      "auth": "M1/A6/B3",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/application/createVirtualWeatherStation",
+      "titleKey": "index.all.all3167",
+      "titleZh": "开通虚拟气象站",
+      "titleEn": "Open Virtual Weather Site",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/application/detailVirtualWeatherStation/:id/:type",
+      "titleKey": "虚拟气象站明细",
+      "titleZh": "虚拟气象站明细",
+      "titleEn": "h(\"虚拟气象站明细\")",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/queue/report",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "M1",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/monitor/device-detail",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "M1",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/maintenance",
+      "titleKey": "index.all.all253",
+      "titleZh": "运维",
+      "titleEn": "O&M",
+      "auth": "M2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/maintenance/overview",
+      "titleKey": "index.all.all5284",
+      "titleZh": "运维看板",
+      "titleEn": "Operation and maintenance dashboard",
+      "auth": "M2/A9",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/maintenance/map",
+      "titleKey": "index.all.all3076",
+      "titleZh": "运维地图",
+      "titleEn": "Maintenance Map",
+      "auth": "M2/A3",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/maintenance/object",
+      "titleKey": "index.all.all2940",
+      "titleZh": "运维对象",
+      "titleEn": "O&M Target",
+      "auth": "M2/A4",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/maintenance/object/maintenancePlant",
+      "titleKey": "index.all.all2153",
+      "titleZh": "运维场站",
+      "titleEn": "O&M Sites",
+      "auth": "M2/A4/B1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/maintenance/object/maintenanceDevice",
+      "titleKey": "index.all.f48",
+      "titleZh": "设备信息",
+      "titleEn": "Device Info",
+      "auth": "M2/A4/B2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/maintenance/object/contract",
+      "titleKey": null,
+      "titleZh": "合约管理",
+      "titleEn": "合约管理",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/maintenance/alarm",
+      "titleKey": "index.all.nengrui-web_50007",
+      "titleZh": "AI报警",
+      "titleEn": "AI Alarm",
+      "auth": "M2/A14",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/maintenance/event",
+      "titleKey": "index.all.all5611",
+      "titleZh": "事件中心",
+      "titleEn": "Event center",
+      "auth": "M2/A16",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/maintenance/workOrderCenter",
+      "titleKey": "index.all.all2154",
+      "titleZh": "工单管理",
+      "titleEn": "Work Order",
+      "auth": "M2/A6",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/maintenance/costCenter",
+      "titleKey": "index.all.all5472",
+      "titleZh": "成本中心",
+      "titleEn": "Cost center",
+      "auth": "M2/A17",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/maintenance/workOrderTemplate",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/maintenance/materialManage",
+      "titleKey": "index.all.all5286",
+      "titleZh": "运维物料",
+      "titleEn": "Operation and maintenance materials",
+      "auth": "M2/A15",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/maintenance/materialManage/materialAccount",
+      "titleKey": "index.all.all5222",
+      "titleZh": "物料台账",
+      "titleEn": "Material ledger",
+      "auth": "M2/A15/B1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/maintenance/materialManage/materialIn",
+      "titleKey": "index.all.all5160",
+      "titleZh": "入库管理",
+      "titleEn": "Warehousing management",
+      "auth": "M2/A15/B2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/maintenance/materialManage/materialOut",
+      "titleKey": "index.all.all2548",
+      "titleZh": "出库管理",
+      "titleEn": "Outbound",
+      "auth": "M2/A15/B3",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/maintenance/materialManage/materialPersonal",
+      "titleKey": "index.all.all5366",
+      "titleZh": "个人台账",
+      "titleEn": "Personal ledger",
+      "auth": "M2/A15/B4",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/maintenance/faultKnowledge",
+      "titleKey": "index.all.all2132",
+      "titleZh": "故障知识",
+      "titleEn": "Failure knowledge",
+      "auth": "M2/A12",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/maintenance/queue/report",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "M2",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property",
+      "titleKey": "index.all.asset1",
+      "titleZh": "资产",
+      "titleEn": "Assets",
+      "auth": "NRZM1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/dashboard",
+      "titleKey": "index.all.asset2",
+      "titleZh": "资产看板",
+      "titleEn": "Asset Dashboard",
+      "auth": "NRZM1/A1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/assetManage",
+      "titleKey": "index.all.asset3",
+      "titleZh": "资产管理",
+      "titleEn": "Asset Management",
+      "auth": "NRZM1/A2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/assetManage/assetList",
+      "titleKey": "index.all.asset4",
+      "titleZh": "资产列表",
+      "titleEn": "Asset list",
+      "auth": "NRZM1/A2/B1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/assetManage/assetsManagementDetail/:stationId",
+      "titleKey": "index.all.asset375",
+      "titleZh": "资产管理详情",
+      "titleEn": "Asset management details",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/assetManage/assetPackageList",
+      "titleKey": "index.all.nengrui-web_55908",
+      "titleZh": "资产包列表",
+      "titleEn": "Asset Package List",
+      "auth": "NRZM1/A2/B2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/assetManage/assetPackageCreate",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/assetManage/assetPackageDetail/:id",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis",
+      "titleKey": "index.all.asset5",
+      "titleZh": "运营分析",
+      "titleEn": "Operational analysis",
+      "auth": "NRZM1/A3",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/returns",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "NRZM1/A3/B1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/returns/capital",
+      "titleKey": "index.all.all5416",
+      "titleZh": "资方投资收益",
+      "titleEn": "Investment income of the investor",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/ledger",
+      "titleKey": "index.all.asset561",
+      "titleZh": "收益台账",
+      "titleEn": "Revenue Account",
+      "auth": "NRZM1/A3/B4",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/ledger/planLedger",
+      "titleKey": "index.all.asset562",
+      "titleZh": "计划收益台账",
+      "titleEn": "Planned Revenue Ledger",
+      "auth": "NRZM1/A3/B4/C1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/ledger/estimateLedger",
+      "titleKey": "index.all.asset563",
+      "titleZh": "预估收益台账",
+      "titleEn": "Estimated Revenue Ledger",
+      "auth": "NRZM1/A3/B4/C2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/ledger/receivableLedger",
+      "titleKey": "index.all.asset564",
+      "titleZh": "应收台账",
+      "titleEn": "Receivable Ledger",
+      "auth": "NRZM1/A3/B4/C3",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/ledger/actualLedger",
+      "titleKey": "index.all.asset565",
+      "titleZh": "实收台账",
+      "titleEn": "Receivables Ledger",
+      "auth": "NRZM1/A3/B4/C4",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/cost",
+      "titleKey": "index.all.nengrui-web_50422",
+      "titleZh": "成本管理",
+      "titleEn": "Cost Management",
+      "auth": "NRZM1/A3/B5",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/cost/actualPaymentLedger",
+      "titleKey": "index.all.nengrui-web_56371",
+      "titleZh": "实付台账",
+      "titleEn": "Actual Payment Ledger",
+      "auth": "NRZM1/A3/B5/C3",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/cost/rentalSettlement",
+      "titleKey": "index.all.nengrui-web_50423",
+      "titleZh": "租金结算单",
+      "titleEn": "Rental Settlement",
+      "auth": "NRZM1/A3/B5/C1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/cost/rentAnomaly",
+      "titleKey": "index.all.nengrui-web_50424",
+      "titleZh": "租金异常管理",
+      "titleEn": "Rent Anomaly Management",
+      "auth": "NRZM1/A3/B5/C2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/pgsList",
+      "titleKey": "index.all.asset7",
+      "titleZh": "发电量统计",
+      "titleEn": "Power generation statistics",
+      "auth": "NRZM1/A3/B2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/electricManagement",
+      "titleKey": "index.all.asset780",
+      "titleZh": "结算管理",
+      "titleEn": "Settlement Management",
+      "auth": "NRZM1/A3/B3",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/risk",
+      "titleKey": "index.all.nengrui-web_53143",
+      "titleZh": "风险管理",
+      "titleEn": "Risk Management",
+      "auth": "NRZM1/A3/B6",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/risk/riskList",
+      "titleKey": "index.all.nengrui-web_50426",
+      "titleZh": "预警列表",
+      "titleEn": "Warning List",
+      "auth": "NRZM1/A3/B6/C1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/risk/eventList",
+      "titleKey": "index.all.all5548",
+      "titleZh": "事件列表",
+      "titleEn": "Event list",
+      "auth": "NRZM1/A3/B6/C2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/risk/earlyWarningRule",
+      "titleKey": "index.all.all3275",
+      "titleZh": "预警规则",
+      "titleEn": "Early warning rule",
+      "auth": "NRZM1/A3/B6/C3",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/valueCalculation",
+      "titleKey": "index.all.nengrui-web_56165",
+      "titleZh": "价值测算",
+      "titleEn": "Value Assessment",
+      "auth": "NRZM1/A3/B7",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/calculationCreate/:id",
+      "titleKey": null,
+      "titleZh": "新增测算",
+      "titleEn": "新增测算",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/calculationDetail/:id/:calcType",
+      "titleKey": null,
+      "titleZh": "测算详情",
+      "titleEn": "测算详情",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/electricManagement_detail/:billNo",
+      "titleKey": "index.all.asset376",
+      "titleZh": "电费管理详情",
+      "titleEn": "Electricity cost management details",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/electricManagement_adjust/:billNo",
+      "titleKey": "index.all.asset376",
+      "titleZh": "电费管理详情",
+      "titleEn": "Electricity cost management details",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/calculationDetail/historyRecords/:id/:calcType",
+      "titleKey": "index.all.nengrui-web_56380",
+      "titleZh": "历史版本",
+      "titleEn": "Historical Version",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/operationalAnalysis/agent",
+      "titleKey": "index.all.nengrui-web_67570",
+      "titleZh": "资管智能助手",
+      "titleEn": "Asset Management Intelligent Assistant",
+      "auth": "NRZM1/A3/B8",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/energyContract",
+      "titleKey": "index.all.asset545",
+      "titleZh": "合同管理",
+      "titleEn": "Contract Management",
+      "auth": "NRZM1/A4",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/energyContract/contractList",
+      "titleKey": "index.all.asset545",
+      "titleZh": "合同管理",
+      "titleEn": "Contract Management",
+      "auth": "NRZM1/A4/B1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/energyContract/assetsDetail/:stationId",
+      "titleKey": "index.all.asset375",
+      "titleZh": "资产管理详情",
+      "titleEn": "Asset management details",
+      "auth": "ZF1/A6",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/energyContract/contractDetail/:stationId",
+      "titleKey": "index.all.asset650",
+      "titleZh": "合同详情",
+      "titleEn": "Contract Details",
+      "auth": "ZF5/A5",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/property/queue/report",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "NRZM1",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/planners",
+      "titleKey": "index.all.survey_draw",
+      "titleZh": "测算",
+      "titleEn": "measure and calculate",
+      "auth": "M5",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/planners/workbench/home",
+      "titleKey": "index.all.all3075",
+      "titleZh": "工作台",
+      "titleEn": "Workbench",
+      "auth": "M5/A3",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/planners/workbench/projectSpace",
+      "titleKey": "index.all.project_space",
+      "titleZh": "项目空间",
+      "titleEn": "Project Space",
+      "auth": "M5/A1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/planners/workbench/utilityTool",
+      "titleKey": "index.all.utilities",
+      "titleZh": "实用工具",
+      "titleEn": "Utility Tools",
+      "auth": "M5/A2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/planners/tool/:projectId/projectinformation",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/planners/:path(.*)*",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/virtualPowerPlant",
+      "titleKey": "index.all.nengrui-web_50105",
+      "titleZh": "虚拟电厂",
+      "titleEn": "Virtual Power Plant",
+      "auth": "ET1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/virtualPowerPlant/demandResponse",
+      "titleKey": "index.all.nengrui-web_50039",
+      "titleZh": "需求响应",
+      "titleEn": "Demand Response",
+      "auth": "ET1/A1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/virtualPowerPlant/demandResponse/tradingFloor",
+      "titleKey": "index.all.nengrui-web_50106",
+      "titleZh": "交易大厅",
+      "titleEn": "Trading Hall",
+      "auth": "ET1/A1/B1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/virtualPowerPlant/demandResponse/profitManagement",
+      "titleKey": "index.all.nengrui-web_60165",
+      "titleZh": "收益管理",
+      "titleEn": "Revenue Management",
+      "auth": "ET1/A1/B3",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/virtualPowerPlant/demandResponse/plantDemandResConfig",
+      "titleKey": "index.all.nengrui-web_50107",
+      "titleZh": "场站需求响应配置",
+      "titleEn": "Site Demand Response Configuration",
+      "auth": "ET1/A1/B2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/virtualPowerPlant/groupControl",
+      "titleKey": "index.all.nengrui-web_56793",
+      "titleZh": "群调群控",
+      "titleEn": "Group Control",
+      "auth": "ET1/A2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/virtualPowerPlant/groupControl/controlCenter",
+      "titleKey": "index.all.nengrui-web_56794",
+      "titleZh": "调控中心",
+      "titleEn": "Control Center",
+      "auth": "ET1/A2/B1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/virtualPowerPlant/groupControl/substationControlConfig",
+      "titleKey": "index.all.nengrui-web_56795",
+      "titleZh": "线变站调控配置",
+      "titleEn": "Substation Control Configuration",
+      "auth": "ET1/A2/B2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/energyTrading",
+      "titleKey": "index.all.nengrui-web_50108",
+      "titleZh": "交易",
+      "titleEn": "Trade",
+      "auth": "M6",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/energyTrading/weather",
+      "titleKey": "气象分析",
+      "titleZh": "气象分析",
+      "titleEn": "h(\"气象分析\")",
+      "auth": "M6/A1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/energyTrading/market",
+      "titleKey": null,
+      "titleZh": "市场分析",
+      "titleEn": "市场分析",
+      "auth": "M6/A2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/energyTrading/market/spot-price",
+      "titleKey": null,
+      "titleZh": "省内现货价格分析",
+      "titleEn": "省内现货价格分析",
+      "auth": "M6/A2/B1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/energyTrading/market/spot-price/analysis",
+      "titleKey": null,
+      "titleZh": "现货电价分析",
+      "titleEn": "现货电价分析",
+      "auth": "M6/A2/B1/C1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/energyTrading/market/spot-price/spread/performance",
+      "titleKey": null,
+      "titleZh": "价差表现",
+      "titleEn": "价差表现",
+      "auth": "M6/A2/B1/C2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/energyTrading/market/spot-price/spread/trend",
+      "titleKey": null,
+      "titleZh": "价差趋势分析",
+      "titleEn": "价差趋势分析",
+      "auth": "M6/A2/B1/C3",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/energyTrading/market/supply-demand",
+      "titleKey": null,
+      "titleZh": "省内供需分析",
+      "titleEn": "省内供需分析",
+      "auth": "M6/A2/B2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/energyTrading/forecast",
+      "titleKey": null,
+      "titleZh": "价格预测",
+      "titleEn": "价格预测",
+      "auth": "M6/A3",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/energyTrading/forecast/predict",
+      "titleKey": null,
+      "titleZh": "省内价格预测",
+      "titleEn": "省内价格预测",
+      "auth": "M6/A3/B1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/energyTrading/forecast/predict/data",
+      "titleKey": null,
+      "titleZh": "省内预测数据",
+      "titleEn": "省内预测数据",
+      "auth": "M6/A3/B1/C1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/energyTrading/forecast/predict/daily-detail",
+      "titleKey": null,
+      "titleZh": "省内预测历史",
+      "titleEn": "省内预测历史",
+      "auth": "M6/A3/B1/C2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/energyTrading/forecast/predict/daily-stats",
+      "titleKey": null,
+      "titleZh": "省内预测统计",
+      "titleEn": "省内预测统计",
+      "auth": "M6/A3/B1/C3",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/screen",
+      "titleKey": "index.all.nengrui-web_67638",
+      "titleZh": "大屏",
+      "titleEn": "Large Screen",
+      "auth": "M7",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/screen/dataDisplay",
+      "titleKey": "index.all.nengrui-web_67620",
+      "titleZh": "系统默认大屏",
+      "titleEn": "System Default Dashboard",
+      "auth": "M7/A1",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "screen-dashboard",
+        "screen-settings-form"
+      ]
+    },
+    {
+      "path": "/openapi",
+      "titleKey": null,
+      "titleZh": "OpenAPI",
+      "titleEn": "OpenAPI",
+      "auth": "alwaysShow",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/openapi/index",
+      "titleKey": "index.all.nengrui-web_69112",
+      "titleZh": "初始化开通",
+      "titleEn": "Initialize Activation",
+      "auth": "alwaysShow",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/openapi/credentials",
+      "titleKey": "index.all.nengrui-web_69117",
+      "titleZh": "API凭证",
+      "titleEn": "API Credentials",
+      "auth": "alwaysShow",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/openapi/docs",
+      "titleKey": "index.all.nengrui-web_69116",
+      "titleZh": "API文档",
+      "titleEn": "API Documentation",
+      "auth": "alwaysShow",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/openapi/statistics",
+      "titleKey": "index.all.nengrui-web_69114",
+      "titleZh": "调用统计",
+      "titleEn": "Call Statistics",
+      "auth": "alwaysShow",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/openapi/topup-records",
+      "titleKey": "index.all.nengrui-web_69113",
+      "titleZh": "充值记录",
+      "titleEn": "Recharge Records",
+      "auth": "alwaysShow",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/openapi/packages",
+      "titleKey": "index.all.nengrui-web_69115",
+      "titleZh": "套餐中心",
+      "titleEn": "Package Center",
+      "auth": "alwaysShow",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/openapi/help",
+      "titleKey": "index.all.backend67",
+      "titleZh": "帮助中心",
+      "titleEn": "Help Center",
+      "auth": "alwaysShow",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/system",
+      "titleKey": "index.all.backend47",
+      "titleZh": "管理",
+      "titleEn": "Management",
+      "auth": "M4",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/system/info",
+      "titleKey": "index.all.all1047",
+      "titleZh": "企业信息管理",
+      "titleEn": "Enterprise Information",
+      "auth": "M4/A1",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "enterprise"
+      ]
+    },
+    {
+      "path": "/system/saas",
+      "titleKey": "index.all.all5813",
+      "titleZh": "SaaS管理",
+      "titleEn": "SaaS Management",
+      "auth": "M4/A6",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/system/saas/account",
+      "titleKey": "index.all.all5794",
+      "titleZh": "账户中心",
+      "titleEn": "Account Center",
+      "auth": "M4/A6/B1",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "account-center"
+      ]
+    },
+    {
+      "path": "/system/saas/valueAddedServices",
+      "titleKey": "index.all.all5795",
+      "titleZh": "场站服务管理",
+      "titleEn": "Station Service Management",
+      "auth": "M4/A6/B2",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "station-service"
+      ]
+    },
+    {
+      "path": "/system/editInfo",
+      "titleKey": "index.all.p4",
+      "titleZh": "编辑商家信息",
+      "titleEn": "Edit business information",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/system/group",
+      "titleKey": "index.all.all4858",
+      "titleZh": "内部组织管理",
+      "titleEn": "Internal Organization Management",
+      "auth": "M4/A2",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "organization"
+      ]
+    },
+    {
+      "path": "/system/opsManagement",
+      "titleKey": "index.all.nengrui-web_57754",
+      "titleZh": "运维管理",
+      "titleEn": "Operations and Maintenance",
+      "auth": "M4/A9",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/system/opsManagement/areaManagement",
+      "titleKey": "index.all.nengrui-web_57755",
+      "titleZh": "运维区域管理",
+      "titleEn": "Operations and Maintenance Area Management",
+      "auth": "M4/A9/B1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/system/opsManagement/create/:id",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/system/opsManagement/personnel",
+      "titleKey": "index.all.nengrui-web_57756",
+      "titleZh": "运维人员管理",
+      "titleEn": "Operations and Maintenance Personnel Management",
+      "auth": "M4/A9/B2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/system/externalEnterprise",
+      "titleKey": "index.all.all4859",
+      "titleZh": "外部合作企业",
+      "titleEn": "External Cooperative Enterprises",
+      "auth": "M4/A7",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/system/role",
+      "titleKey": "index.all.backend50",
+      "titleZh": "角色管理",
+      "titleEn": "Role Management",
+      "auth": "M4/A3",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "roles"
+      ]
+    },
+    {
+      "path": "/system/signingManage",
+      "titleKey": "index.all.all1049",
+      "titleZh": "签约管理",
+      "titleEn": "Contract Management",
+      "auth": "M4/A5",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/system/signingManage/signingList",
+      "titleKey": "index.all.all1050",
+      "titleZh": "签约",
+      "titleEn": "Contract",
+      "auth": "M4/A5/B1",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/system/signingManage/schemeList",
+      "titleKey": "index.all.all1051",
+      "titleZh": "签约方案",
+      "titleEn": "Contract Scheme",
+      "auth": "M4/A5/B2",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/system/log",
+      "titleKey": "index.all.all5607",
+      "titleZh": "平台日志",
+      "titleEn": "Platform log",
+      "auth": "M4/A8",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "platform-log"
+      ]
+    },
+    {
+      "path": "/incoming",
+      "titleKey": "进件",
+      "titleZh": "进件",
+      "titleEn": "h(\"进件\")",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/incoming/index",
+      "titleKey": "进件",
+      "titleZh": "进件",
+      "titleEn": "h(\"进件\")",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/forbidden",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/login",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/hzLandingPage",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/logged",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/transition",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/404",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/stopServing",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/personCenter",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/personCenter/info",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "personal-info"
+      ]
+    },
+    {
+      "path": "/personCenter/account",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "personal-security"
+      ]
+    },
+    {
+      "path": "/personCenter/preference",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "personal-preferences"
+      ]
+    },
+    {
+      "path": "/personCenter/cookieSetting",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "read-only-ui-and-public-source",
+      "uiEvidenceIds": [
+        "personal-cookie-settings",
+        "personal-cookie-declarations"
+      ]
+    },
+    {
+      "path": "/preview",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/preview/",
+      "titleKey": "index.all.all834",
+      "titleZh": "预览",
+      "titleEn": "Preview",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/knowledge",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/knowledge/",
+      "titleKey": "index.all.all827",
+      "titleZh": "知识库",
+      "titleEn": "Knowledge Base",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/reg",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/reg/start",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/reg/1",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/reg/2",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/reg/3",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/reg/4",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/cancel",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/cancel/1",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/cancel/2",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/cancel/3",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/findPassword",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": true,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/findPassword/1",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/findPassword/2",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/findPassword/3",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    },
+    {
+      "path": "/:path(.*)*",
+      "titleKey": null,
+      "titleZh": "",
+      "titleEn": "",
+      "auth": "",
+      "hidden": false,
+      "evidence": "public-source-only",
+      "uiEvidenceIds": []
+    }
+  ],
+  "evidenceIndex": [
+    {
+      "file": "account-center-loaded.txt",
+      "bytes": 18522,
+      "sha256": "19cb01d9a157cbea9ff67bafc044469e94c4aecbbd1c3b12693916e6c3d315da",
+      "private": true
+    },
+    {
+      "file": "account-center.txt",
+      "bytes": 14179,
+      "sha256": "aaa3a201871ea81b233d34f6b8b70620da8e7be6a3e9b54777f8a1f81a462e42",
+      "private": true
+    },
+    {
+      "file": "account-order-detail-loaded.txt",
+      "bytes": 21675,
+      "sha256": "8be4ebf516df60b1343635c78cd11618514cdeca2f002955beed6661580571cb",
+      "private": true
+    },
+    {
+      "file": "account-order-detail.txt",
+      "bytes": 21331,
+      "sha256": "8d9e9397976da22ecac104fcb250c907bba31a137058fd24505bcf98e1194fe5",
+      "private": true
+    },
+    {
+      "file": "ai-menu.txt",
+      "bytes": 2051,
+      "sha256": "0abc051203b109960f41557815fb9326b712878066d660f3f25efe6e11255d88",
+      "private": true
+    },
+    {
+      "file": "alert-condition-form.txt",
+      "bytes": 7786,
+      "sha256": "e132e4c2575b69c4114ea05bfee2656d33f36a3393a334224cb14347b9df652d",
+      "private": true
+    },
+    {
+      "file": "alert-device-condition-editor.txt",
+      "bytes": 7508,
+      "sha256": "e59f994e5ab8cbb1a3442fdfbe5e26061e9a45610f97b1aaa3aa10d69717158c",
+      "private": true
+    },
+    {
+      "file": "alert-device-indicator-options.txt",
+      "bytes": 8509,
+      "sha256": "825b29b69878ef245426f5cd2a346cf8f24b541f9cb9435d8900874b16844651",
+      "private": true
+    },
+    {
+      "file": "alert-device-object-draft.txt",
+      "bytes": 7711,
+      "sha256": "587fd5f6bea31779c10fe3e6249d1311dbcc7986b739265441f5daa7d123cf12",
+      "private": true
+    },
+    {
+      "file": "alert-device-status-condition-fields.txt",
+      "bytes": 8529,
+      "sha256": "8fe59ee22208a4f902e4f07c8a3ea484ff4a57e873161d3c1b17a3bc0be07a67",
+      "private": true
+    },
+    {
+      "file": "alert-device-status-enumerations.txt",
+      "bytes": 7622,
+      "sha256": "9769d077a9172629efd60d239afc85eb99ea5e05db855cf9f8e8f26227afe76a",
+      "private": true
+    },
+    {
+      "file": "alert-rule-form.txt",
+      "bytes": 6209,
+      "sha256": "172c8e9784d2be2f6d712f0aa0b8e1bdebd929e88eaec04002edc81b41d84408",
+      "private": true
+    },
+    {
+      "file": "alert-rule-new-conditions.txt",
+      "bytes": 5909,
+      "sha256": "b90b0b4d199e3844daed3e052a3d7430c304ad437654d0e58184d9d121c57756",
+      "private": true
+    },
+    {
+      "file": "alert-rule-object-type-options.txt",
+      "bytes": 6995,
+      "sha256": "b346105c4379f2dce053aa3e8a4c039877f35a2e6046ca2a993faebf0a76e211",
+      "private": true
+    },
+    {
+      "file": "alert-rules-list-loaded.txt",
+      "bytes": 4249,
+      "sha256": "a621fafb190cb7599a16e165d9a32fa31c6dafb2ad94ef5f6dc04ce87bf69c05",
+      "private": true
+    },
+    {
+      "file": "alert-rules.txt",
+      "bytes": 3169,
+      "sha256": "f83d9692e7adee68d80280f4ce96211dceba4226b780eb7d0ed46649b422c082",
+      "private": true
+    },
+    {
+      "file": "alert-site-algorithm-options.txt",
+      "bytes": 8136,
+      "sha256": "b4547acbeb2ee855808dafc8cbe3ef8352eb1024dcf45a6ac307da93dc1e9196",
+      "private": true
+    },
+    {
+      "file": "alert-site-condition-editor.txt",
+      "bytes": 7486,
+      "sha256": "1d5b287fcf43f6958602a4f8c995c40916474599da8e552fc304471d70141972",
+      "private": true
+    },
+    {
+      "file": "alert-site-indicator-options.txt",
+      "bytes": 7811,
+      "sha256": "3970eb990c57fe0ed2bae37cbe387888dfc9af278bd73f74584ed76e70c562e2",
+      "private": true
+    },
+    {
+      "file": "alert-site-mom-condition-fields.txt",
+      "bytes": 8490,
+      "sha256": "a159b4d4c07832a20e8a62b5a846c1af3ee8242b62c42de053c1de556cb42fdb",
+      "private": true
+    },
+    {
+      "file": "alert-site-range-condition-fields.txt",
+      "bytes": 8487,
+      "sha256": "488cf3434a00ef9d3fb91332d07fcb994515831977d9fc4fa499baf08ccd6503",
+      "private": true
+    },
+    {
+      "file": "alert-site-retrieval-cycle-options.txt",
+      "bytes": 8376,
+      "sha256": "36e6fcda62a001d08d8115328a5c36ec5cc53243e005ae10dfb1001d8347d926",
+      "private": true
+    },
+    {
+      "file": "alerts-history.txt",
+      "bytes": 3742,
+      "sha256": "1be13e3daddd15f8e6f13027265702e1384cf4de0c5c483237ba7b563abd3b87",
+      "private": true
+    },
+    {
+      "file": "alerts-opened-device.txt",
+      "bytes": 3597,
+      "sha256": "2a82a7244bb4dc509be585c61c88529547db4163d38af4ae51ee8b49d1b9d22f",
+      "private": true
+    },
+    {
+      "file": "alerts-opened.txt",
+      "bytes": 3740,
+      "sha256": "76ee31e177341c27ef0d5b0e59729d0eb1dd0ae473cb91fb55395f0d6d701fbe",
+      "private": true
+    },
+    {
+      "file": "comparison-object-selector.txt",
+      "bytes": 3481,
+      "sha256": "dab89e63b516740e62ba39415d1bbb8f506cefa635692ffe6a7e3602b5a6587d",
+      "private": true
+    },
+    {
+      "file": "comparison-type-form.txt",
+      "bytes": 2550,
+      "sha256": "3fa1383206486ff374fc4adcac9572fc4d2996302bdc205a99efa23aa09ba5a8",
+      "private": true
+    },
+    {
+      "file": "comparison-unsaved-editor.txt",
+      "bytes": 2855,
+      "sha256": "adfdb9bb6b2cb3421bc9461da0eb229333a7310d7d1595b7550d0171f84c5c26",
+      "private": true
+    },
+    {
+      "file": "comparison.txt",
+      "bytes": 2364,
+      "sha256": "f0c80a9f17f341f6de919e7e92854680364491c5fdec971c773c77d19f525cdf",
+      "private": true
+    },
+    {
+      "file": "create-site.txt",
+      "bytes": 15775,
+      "sha256": "e318f345ecd55358fd7218876c22c19c09c6a41cf558e9285aec853bc5c06bbe",
+      "private": true
+    },
+    {
+      "file": "device-air-conditioner-list-loaded.txt",
+      "bytes": 2765,
+      "sha256": "df27f20d9ad5582937b648eba67868d50a18a0ad0026edab2db3411ae498b620",
+      "private": true
+    },
+    {
+      "file": "device-battery-cluster-detail-loaded.txt",
+      "bytes": 24226,
+      "sha256": "71fbc85f2ee99b4286e9f80c9493bde3e5f2303ef6820115d57aaa74d60b0653",
+      "private": true
+    },
+    {
+      "file": "device-battery-cluster-list-loaded.txt",
+      "bytes": 13306,
+      "sha256": "47b392d385389f7700dbcd2b77814f00b8eb3ae1c958cb3aa530be356756baf4",
+      "private": true
+    },
+    {
+      "file": "device-cabinet-list-loaded.txt",
+      "bytes": 3998,
+      "sha256": "64a450a6e5f6b33c0f04659754ccd3c57599db16d75d08a73c1610fce3bfdac0",
+      "private": true
+    },
+    {
+      "file": "device-ems-list-loaded.txt",
+      "bytes": 2808,
+      "sha256": "63b0a3b2ea49e23ddd08c646f7af00e382e1f2ae62ca4674325b803f7edc4278",
+      "private": true
+    },
+    {
+      "file": "device-inverter-connections.txt",
+      "bytes": 14719,
+      "sha256": "8e5dfb3fbbb06471193f38422ccb2fccf5ca64716a778a51d05a32d0a5b0b598",
+      "private": true
+    },
+    {
+      "file": "device-inverter-detail.txt",
+      "bytes": 15907,
+      "sha256": "5fa5fc6f3b9425a6f24885310e27219342fa2ed8ba20db6e376a95f2314a4ad2",
+      "private": true
+    },
+    {
+      "file": "device-inverter-history.txt",
+      "bytes": 15087,
+      "sha256": "356b59b69644f5f7326f423bc8161a92aa8392d7a857dec1da474436c527a085",
+      "private": true
+    },
+    {
+      "file": "device-inverter-parameters.txt",
+      "bytes": 15096,
+      "sha256": "473ad5a0ec8e709f702327a8f7584ec8f23ed2493eb28691162a951ce1f30cb0",
+      "private": true
+    },
+    {
+      "file": "device-logger-control-logs-loaded.txt",
+      "bytes": 6752,
+      "sha256": "e3f84945d12cf54e93d8b47dd1f32e944acebbba52fd442fee9ba4862cd73032",
+      "private": true
+    },
+    {
+      "file": "device-logger-control-logs.txt",
+      "bytes": 6752,
+      "sha256": "e3f84945d12cf54e93d8b47dd1f32e944acebbba52fd442fee9ba4862cd73032",
+      "private": true
+    },
+    {
+      "file": "device-logger-detail-loaded.txt",
+      "bytes": 7310,
+      "sha256": "aca901371b5b0bb2565d71860ac172062e2dc83b88cf05cbb40ee3136324bf75",
+      "private": true
+    },
+    {
+      "file": "device-logger-list-loaded.txt",
+      "bytes": 6501,
+      "sha256": "2cc3f4a7cf22e015ea7921b4567146e132b3aa4ebf249760da96368afc4e3364",
+      "private": true
+    },
+    {
+      "file": "device-meter-configuration-form-loaded.txt",
+      "bytes": 33119,
+      "sha256": "582282f7650114fe108bdab10b8b40adf62db983064603442bbaa871b02071fc",
+      "private": true
+    },
+    {
+      "file": "device-meter-configuration-form.txt",
+      "bytes": 32234,
+      "sha256": "d50d940f4f882b4528e3737a94cfae8eaf4cad8dc059faf13b82c968a1a4561a",
+      "private": true
+    },
+    {
+      "file": "device-meter-detail-loaded.txt",
+      "bytes": 31644,
+      "sha256": "c147a142b4a3777cc9041a0d033baadb8ed288e1cfa32d094a00bd058eded42a",
+      "private": true
+    },
+    {
+      "file": "device-meter-list-loaded.txt",
+      "bytes": 17245,
+      "sha256": "ec101c8aae3786faa0836e24784d104c466d5d704c424ee2253a1396b74b15f6",
+      "private": true
+    },
+    {
+      "file": "device-pcs-alerts-loaded.txt",
+      "bytes": 9294,
+      "sha256": "c5f9c8cf5c323d1eed916d804b71a0145950f5c3017ce79b1a0418118592a89e",
+      "private": true
+    },
+    {
+      "file": "device-pcs-alerts.txt",
+      "bytes": 9440,
+      "sha256": "69c3022b1861fb7cb7e9e0fcfeaa561f6c8bf3207096c1f4d46144073a6bf733",
+      "private": true
+    },
+    {
+      "file": "device-pcs-detail-loaded.txt",
+      "bytes": 10817,
+      "sha256": "74dd1bc357455062be3d37ca070f68cbaa940d6e54e5d2a6b56a9456c016fd83",
+      "private": true
+    },
+    {
+      "file": "device-pcs-detail.txt",
+      "bytes": 8033,
+      "sha256": "8b91ba56442ab52a60b3a2abe9da53f4ae88e48bd8fedfad48d5b1a59b8884e0",
+      "private": true
+    },
+    {
+      "file": "device-pcs-history.txt",
+      "bytes": 8784,
+      "sha256": "3f2e905eaf15da32a360db15ca2223d248ae16f4e2e004633f964c0c54357d7d",
+      "private": true
+    },
+    {
+      "file": "device-pcs-list-loaded.txt",
+      "bytes": 8042,
+      "sha256": "1d7f96bf5ed09e72f5811c1279ccac5029c2522bf8239f786f5968d8bc351ad9",
+      "private": true
+    },
+    {
+      "file": "device-pcs-settings-loaded.txt",
+      "bytes": 8442,
+      "sha256": "d79dcbd621305d49f0bd9c33c560b39791d17c3777e1481457b01ba3d756195f",
+      "private": true
+    },
+    {
+      "file": "device-pcs-settings.txt",
+      "bytes": 8442,
+      "sha256": "d79dcbd621305d49f0bd9c33c560b39791d17c3777e1481457b01ba3d756195f",
+      "private": true
+    },
+    {
+      "file": "device-stack-detail-loaded.txt",
+      "bytes": 17961,
+      "sha256": "601cb91dad58036dc76463aa5ef33a2456cbc955c62ced267bd9c15e99119bd3",
+      "private": true
+    },
+    {
+      "file": "device-stack-list-loaded.txt",
+      "bytes": 14409,
+      "sha256": "aa33e5d8cda905a9e12404f0b7e4dcdcfb692b2f38663a0815ae43e1527eff10",
+      "private": true
+    },
+    {
+      "file": "devices-air-conditioner.txt",
+      "bytes": 7157,
+      "sha256": "a817e031681df695dec32aba933d41c5a95654d2737125b2042798f6fa054a7a",
+      "private": true
+    },
+    {
+      "file": "devices-battery-cluster.txt",
+      "bytes": 11904,
+      "sha256": "fb251933845173c1c87a49da786cf2af3224c6b7ca4bdd77247d5714ab697cfd",
+      "private": true
+    },
+    {
+      "file": "devices-battery-stack.txt",
+      "bytes": 15220,
+      "sha256": "356d4f46ec6be89f767bf921bcd19cf9c57e40a76b0ffd7c584f652df4fecae1",
+      "private": true
+    },
+    {
+      "file": "devices-ems.txt",
+      "bytes": 2532,
+      "sha256": "c4b24f875285887515e58be32e27d016572ac7f9725a4f4d51039eccc1a6e03d",
+      "private": true
+    },
+    {
+      "file": "devices-energy-storage-cabinet.txt",
+      "bytes": 3983,
+      "sha256": "e15b60a017cb12b3db18314eda877a8d9fab23b6a933b213ac379947152a1d21",
+      "private": true
+    },
+    {
+      "file": "devices-inverter.txt",
+      "bytes": 14197,
+      "sha256": "ce34a3236a62e5ce1c1da93d7c5f3f095a1474df9cdc81beb496de900696bb32",
+      "private": true
+    },
+    {
+      "file": "devices-logger.txt",
+      "bytes": 6027,
+      "sha256": "105ad9500bcdaba67a712b16266cce3cd30fcfb93aca74d89a430df78b4a0297",
+      "private": true
+    },
+    {
+      "file": "devices-pcs.txt",
+      "bytes": 3428,
+      "sha256": "6db6402de225c89e2f8197d943a85ae7df7fd95bfad5483b839b92a8e6a81352",
+      "private": true
+    },
+    {
+      "file": "devices-smart-meter.txt",
+      "bytes": 3180,
+      "sha256": "50c064e5e1a67d11fd2df95f0cf7c41e1911e3f1cfe71a1333acce9e4e38ffdd",
+      "private": true
+    },
+    {
+      "file": "devices.txt",
+      "bytes": 14814,
+      "sha256": "b04d272b35a071fc0c6bc9f6ad6208e1b7e245571b002a98f1e751a2ff07089d",
+      "private": true
+    },
+    {
+      "file": "enterprise-edit-form.txt",
+      "bytes": 5864,
+      "sha256": "81d2dbd52c00df5a291e0aed0d9b6d88f1bad6da311c0f4a32ca8fcc3ebfa3ab",
+      "private": true
+    },
+    {
+      "file": "general-reports.txt",
+      "bytes": 2500,
+      "sha256": "e8a553d8907334ad2fce3792db242c6faf9ca0a8aa7747122e4c4edf071957fa",
+      "private": true
+    },
+    {
+      "file": "internal-organization.txt",
+      "bytes": 7852,
+      "sha256": "ce1d60144ee3b1f60fda60561359f5672912809b54f8d3fa89d0525817f4e36f",
+      "private": true
+    },
+    {
+      "file": "operation-reports.txt",
+      "bytes": 2179,
+      "sha256": "bd50c6bb6db0031be33ccd1289ddb4dfcf42d6eaa2cf8066a7abaf875cd64019",
+      "private": true
+    },
+    {
+      "file": "organization-child-distribution.txt",
+      "bytes": 6562,
+      "sha256": "29a6e6d9ac83c62a0021b74d6f046bd5a8a4983496ef2947cbcb577a9a55dd1c",
+      "private": true
+    },
+    {
+      "file": "organization-create-employee-form.txt",
+      "bytes": 10184,
+      "sha256": "f847a0a5ce83c06cd6e4dc2941ddae560246d819c67fef14210a115640a54945",
+      "private": true
+    },
+    {
+      "file": "organization-create-group-form.txt",
+      "bytes": 9689,
+      "sha256": "b43da89b1d6936fd8952176e8206d3ca816055a87744b0b42c212ad8cacc0bb0",
+      "private": true
+    },
+    {
+      "file": "organization-site-distribution-filter.txt",
+      "bytes": 5687,
+      "sha256": "af546a1070aac68b282e3cbefcfc103e0e400856f73cf30ab756342cc48106c3",
+      "private": true
+    },
+    {
+      "file": "organization-site-distribution.txt",
+      "bytes": 3872,
+      "sha256": "136c9e75b948c8778569334d7910533824e85d57a45445fc462c15be2758074c",
+      "private": true
+    },
+    {
+      "file": "personal-cookie-declarations.txt",
+      "bytes": 40962,
+      "sha256": "bec964958d2198d8e1cb688f0d15f15e925e2174229655b03506fa6be6b5156f",
+      "private": true
+    },
+    {
+      "file": "personal-cookie-settings.txt",
+      "bytes": 2564,
+      "sha256": "e1636ea93cf6fc11b51335d148cc54c9d0fd02a097397656068ede99598a4209",
+      "private": true
+    },
+    {
+      "file": "personal-info.txt",
+      "bytes": 366,
+      "sha256": "e18d3a33c56dddf624a57b63b808b1a77e435b46f6f5f009fccfd5e1489f8c09",
+      "private": true
+    },
+    {
+      "file": "personal-preferences.txt",
+      "bytes": 496,
+      "sha256": "577057629b1dbc63c0090f53c63ca450c9b05413f29f4e0f49e27002ef039007",
+      "private": true
+    },
+    {
+      "file": "personal-security.txt",
+      "bytes": 490,
+      "sha256": "536e23300d8109d12dba912042b14d468042b04e0d7fb806bc1d2c1dfeb50352",
+      "private": true
+    },
+    {
+      "file": "platform-log.txt",
+      "bytes": 21185,
+      "sha256": "5f70cd86c2e7bc9d3258238328d2aa82972a176ac5673c0ae9bdb43faf30654d",
+      "private": true
+    },
+    {
+      "file": "platform-login-log-loaded.txt",
+      "bytes": 25069,
+      "sha256": "c2c02c512e17ab31bd81b1a90d5b36e5cc4db76377079c9d54a0960518614df9",
+      "private": true
+    },
+    {
+      "file": "platform-site-log-loaded.txt",
+      "bytes": 45031,
+      "sha256": "733e19a0950ff987878f5b03f4d5e7942f15c62897cb6132106283d65d5700fb",
+      "private": true
+    },
+    {
+      "file": "platform-site-log.txt",
+      "bytes": 6080,
+      "sha256": "5e050339ae709da8a6e07b184a28a1317106dfa706489c1f655e57af7ca7cc79",
+      "private": true
+    },
+    {
+      "file": "report-manual-export-languages.txt",
+      "bytes": 6657,
+      "sha256": "31d325883f0b1d3d5efd50c1cd73255675e0e0f69a0818ddcceaab72681fc039",
+      "private": true
+    },
+    {
+      "file": "report-manual-form-loaded.txt",
+      "bytes": 3890,
+      "sha256": "69a1c589aea3d62f5bec90389e627d002f6facac2fd7a8e04f7a9a3e3acb641b",
+      "private": true
+    },
+    {
+      "file": "report-manual-form.txt",
+      "bytes": 3764,
+      "sha256": "5698743384172f3e04f0ea1028444239985235f7f0ec8d5601a10461110facb0",
+      "private": true
+    },
+    {
+      "file": "report-manual-template-options.txt",
+      "bytes": 6646,
+      "sha256": "2dd3d737611227cb606f4ba0d7128890d2fb1c6ab8ba88bdfe05051457800d82",
+      "private": true
+    },
+    {
+      "file": "report-manual-template-parameters.txt",
+      "bytes": 7733,
+      "sha256": "6deac3b5ee500251be8fae5143e2a46e7e60d6723f5f12c4b96fd17c6e460927",
+      "private": true
+    },
+    {
+      "file": "report-manual-total-template-loaded.txt",
+      "bytes": 6418,
+      "sha256": "6f4f44cd2961db8296eda314887cffba5097b44d5bbcb7c4c0e3539e67bfe750",
+      "private": true
+    },
+    {
+      "file": "report-manual-total-template.txt",
+      "bytes": 7230,
+      "sha256": "70cf7af39c58309bb87370631ea8a6e334b979eedf324ef2286604be5546d0a3",
+      "private": true
+    },
+    {
+      "file": "report-menu.txt",
+      "bytes": 3308,
+      "sha256": "3d32dba7f9a1e9c22570f19e74dd6db994d0a10c343771a3642feee44518b4d1",
+      "private": true
+    },
+    {
+      "file": "report-navigation.txt",
+      "bytes": 4198,
+      "sha256": "65522f56da4274fdcdb6c2092b074387a2c734e05d062c70b86caaffa96f9a9f",
+      "private": true
+    },
+    {
+      "file": "report-task-daily-frequency-options.txt",
+      "bytes": 4582,
+      "sha256": "1d69022b9def1a76a6e9f1e32986e2c2d50da23efb5202a37cac6a5a1efae04f",
+      "private": true
+    },
+    {
+      "file": "report-task-daily-range-options.txt",
+      "bytes": 4578,
+      "sha256": "d7bcdff1c88ac81f037303df275a0f09f8cd95fb4ef18d7175e8fd176e3e8780",
+      "private": true
+    },
+    {
+      "file": "report-task-daily-template-options-loaded.txt",
+      "bytes": 4897,
+      "sha256": "65c3ad493b143a807b22076ef59bcbac81d2b550ab63386c4b230d6a11386047",
+      "private": true
+    },
+    {
+      "file": "report-task-daily-template-options.txt",
+      "bytes": 4897,
+      "sha256": "65c3ad493b143a807b22076ef59bcbac81d2b550ab63386c4b230d6a11386047",
+      "private": true
+    },
+    {
+      "file": "report-task-daily-time-options.txt",
+      "bytes": 4275,
+      "sha256": "5b611a1a3418abd7183b8c2e82c8f700229514977c448de648bb35178d62b4fd",
+      "private": true
+    },
+    {
+      "file": "report-task-form.txt",
+      "bytes": 4201,
+      "sha256": "70176299daae56162598da07fece42a9ed86f5603b0f971e51689e3f962a121c",
+      "private": true
+    },
+    {
+      "file": "report-task-frequency-transition.txt",
+      "bytes": 4149,
+      "sha256": "007c26a6573906311672c2cae9942b5ce531fbebab6aff79905f06b131cf4728",
+      "private": true
+    },
+    {
+      "file": "report-task-frequency.txt",
+      "bytes": 4859,
+      "sha256": "996531bed703b2a965cd41433e437dbf4e5423daabe04915d699eaae1727d5c6",
+      "private": true
+    },
+    {
+      "file": "report-task-monthly-frequency-options.txt",
+      "bytes": 4606,
+      "sha256": "b0455bdc64a0cf731e33ee6750dd0cc434312e7f55224c21f1533e25d0cc2af1",
+      "private": true
+    },
+    {
+      "file": "report-task-monthly-range-options.txt",
+      "bytes": 4529,
+      "sha256": "9d56ed9f6d607a78361644a1d97b018e80d1e3159803d9b1705102091bab1adc",
+      "private": true
+    },
+    {
+      "file": "report-task-monthly-template-options-loaded.txt",
+      "bytes": 4261,
+      "sha256": "e466df68c939b839f3fae4ab84f4e5a0537aca5ebfd5876544038bee87a4e8b4",
+      "private": true
+    },
+    {
+      "file": "report-task-monthly-template-options.txt",
+      "bytes": 4261,
+      "sha256": "e466df68c939b839f3fae4ab84f4e5a0537aca5ebfd5876544038bee87a4e8b4",
+      "private": true
+    },
+    {
+      "file": "report-task-monthly-time-options.txt",
+      "bytes": 4468,
+      "sha256": "eef157ea0323dc7dc083d138425368fd9531397c3ea94ebd0382969f80825e47",
+      "private": true
+    },
+    {
+      "file": "report-task-monthly-transition.txt",
+      "bytes": 4161,
+      "sha256": "d0c92f1aba3a75096bc59f3796d4ee63dcf28b43015c52e3556dfa8bca13bf79",
+      "private": true
+    },
+    {
+      "file": "report-task-range.txt",
+      "bytes": 4586,
+      "sha256": "8a53cd080ca54fe409405968d7521f7ee5e5875b2c8cdfea94af9382a8cb232a",
+      "private": true
+    },
+    {
+      "file": "report-task-specific-station-selector.txt",
+      "bytes": 4191,
+      "sha256": "cbf22f049fa641e527a040b65ee6fb2cfc51fb16d4d99486afe9427ac491a38d",
+      "private": true
+    },
+    {
+      "file": "report-task-station-conditions.txt",
+      "bytes": 5277,
+      "sha256": "32f1ca5154948b8362541c4974576f80b92dbf6f8a46c89fab73f2bbb81372a0",
+      "private": true
+    },
+    {
+      "file": "report-task-station-picker-loaded.txt",
+      "bytes": 6213,
+      "sha256": "a63538db3a1948b51c9c4f459d8a2581bbc55d965e1f37b74aade23625719a58",
+      "private": true
+    },
+    {
+      "file": "report-task-station-picker.txt",
+      "bytes": 5198,
+      "sha256": "d23d663c5d7f67f49d8e318eb560f31dc09bcc32b364b2b1f93d65eef6b97c71",
+      "private": true
+    },
+    {
+      "file": "report-task-time.txt",
+      "bytes": 4829,
+      "sha256": "5248c9b534046b6f1c6f4947bc2a7b2715dae9db24ba9b6cf5a788859769d8b1",
+      "private": true
+    },
+    {
+      "file": "report-task-type-form.txt",
+      "bytes": 4110,
+      "sha256": "82f512ce97f3dc26ffbf591686b0ed977d6bac8e98418858ffa8d6d75653e6f9",
+      "private": true
+    },
+    {
+      "file": "report-task-type-options.txt",
+      "bytes": 4327,
+      "sha256": "170b4fa995a3f2f15bd94f1b496cd7f6d85d5eb75a3d039e3cfb07da1b7bd775",
+      "private": true
+    },
+    {
+      "file": "report-tasks.txt",
+      "bytes": 2797,
+      "sha256": "750069f50c35bf523819f0f3da6aa5cc729d19e6f6fd21f16cedc6c451bbded2",
+      "private": true
+    },
+    {
+      "file": "report-template-daily-device-fields.txt",
+      "bytes": 6819,
+      "sha256": "317a06691de65647e718aa976f9f44132043f88a62304d509c2ff245a0f6fab4",
+      "private": true
+    },
+    {
+      "file": "report-template-editor-daily-loaded.txt",
+      "bytes": 4960,
+      "sha256": "3d714e3f54ced2d89de790adcef14e0a583e7439f14d47c962456eb17a19b100",
+      "private": true
+    },
+    {
+      "file": "report-template-editor-loaded.txt",
+      "bytes": 2967,
+      "sha256": "1ce771d05d9cae42824736d722d6c3a36c890f8ed1eb84b61eb0c2a8dad93a7c",
+      "private": true
+    },
+    {
+      "file": "report-template-editor-monthly-loaded.txt",
+      "bytes": 4850,
+      "sha256": "55704224ffb0f3bc9939eaa0e4b5caebda1a7a4d499f42cc6bf6076170cd466b",
+      "private": true
+    },
+    {
+      "file": "report-template-editor-monthly.txt",
+      "bytes": 3052,
+      "sha256": "7d8d723e9f72c07484781553ed0fc5e5f97771c875e882ba5c24ac8a6b4b2bd8",
+      "private": true
+    },
+    {
+      "file": "report-template-editor-total-loaded.txt",
+      "bytes": 4041,
+      "sha256": "50775c6dedd2a859a42ae8d5e87e3036c8247dbd1c5d82b4bac4fe66c8dd962f",
+      "private": true
+    },
+    {
+      "file": "report-template-editor-yearly-loaded.txt",
+      "bytes": 4846,
+      "sha256": "0828cad868c3c4b65b0ee0e695f00292febbb5dbd7a49837ea229b2d5d72d4b9",
+      "private": true
+    },
+    {
+      "file": "report-template-form.txt",
+      "bytes": 3183,
+      "sha256": "dc9e3342b6660bba40d655b6a0d468007cce0d7c0f9f719a308fae88395671bd",
+      "private": true
+    },
+    {
+      "file": "report-template-total-device-fields.txt",
+      "bytes": 4871,
+      "sha256": "469d799b049203801b51bddd48d616c64c1f4797310f4fee48b1987e11cb388d",
+      "private": true
+    },
+    {
+      "file": "report-templates.txt",
+      "bytes": 2297,
+      "sha256": "c742dd39e9be315b7adaa9d49d3910ad7bcc40d870c3bcdb7d07110a8cde66fe",
+      "private": true
+    },
+    {
+      "file": "role-edit-menu.txt",
+      "bytes": 6912,
+      "sha256": "a04e41b4306bd25bc2db663ae8ee66a0c649b2ef4c57e04a7d5572dc11c23838",
+      "private": true
+    },
+    {
+      "file": "role-edit-permissions.txt",
+      "bytes": 16738,
+      "sha256": "1496d868c6433656580985940b98aee51615623c7045d840b8511a0cec8c4a1d",
+      "private": true
+    },
+    {
+      "file": "role-management.txt",
+      "bytes": 4222,
+      "sha256": "c04275258d56d11ba593fff2aeafbde6623f811ad871a48b303067f48005ead7",
+      "private": true
+    },
+    {
+      "file": "saas-navigation.txt",
+      "bytes": 1379,
+      "sha256": "409570d4a2d17e5a1343813a5b6c9273c9aef9eabb728f2fae0b03ae2e19856b",
+      "private": true
+    },
+    {
+      "file": "screen-dashboard.txt",
+      "bytes": 2463,
+      "sha256": "41bbf5f290f121ac93934085c8afd79ec479c48d79b2d7118a8ef969748d49cd",
+      "private": true
+    },
+    {
+      "file": "screen-presentation.txt",
+      "bytes": 1550,
+      "sha256": "8df15be07803936c4f149806c7ae9fb242b8b893242975c1a2773140ebc1b360",
+      "private": true
+    },
+    {
+      "file": "screen-settings-form.txt",
+      "bytes": 3580,
+      "sha256": "928d1d6ccc7cdc38bc82c0578d7c96c2330af60f363a32321ce5f86f15bc7a78",
+      "private": true
+    },
+    {
+      "file": "service-menu.txt",
+      "bytes": 2183,
+      "sha256": "74e1bd029202d891543b911982c03c1e6b3fd6cc8c3e0f5e8e40851bc0faa27e",
+      "private": true
+    },
+    {
+      "file": "site-actual-demand-definition-readonly.txt",
+      "bytes": 2671,
+      "sha256": "020e97d1a94063643810c71752dec4bdcc7b28a255ebcf3bf74eb95c7185d9fa",
+      "private": true
+    },
+    {
+      "file": "site-actual-demand.txt",
+      "bytes": 2240,
+      "sha256": "939083060eef54850583dbecc8cbe8a78455e6ab198846ebd79f61e51f4ee4ef",
+      "private": true
+    },
+    {
+      "file": "site-alerts.txt",
+      "bytes": 3598,
+      "sha256": "87d5bfbde84e3349ceef69950a6407a24f4ea80ce1227fc7cf6902ddbfa0e7e3",
+      "private": true
+    },
+    {
+      "file": "site-authorizations.txt",
+      "bytes": 2526,
+      "sha256": "f4327e780fbefd3d72bf88b8dc0df925c562f4d4f5623a3fa1bba7f876196442",
+      "private": true
+    },
+    {
+      "file": "site-basic-tariff-actual-demand-fields.txt",
+      "bytes": 4321,
+      "sha256": "178fce95027bdafb757a47ab4a313cf724f26b0c4d09ea81a80e9ba1e154486a",
+      "private": true
+    },
+    {
+      "file": "site-basic-tariff-capacity-fields.txt",
+      "bytes": 4452,
+      "sha256": "c4acc1285f371b8f5a99b0b1c933a88767f267d75afad9bbae8a240af5ff705f",
+      "private": true
+    },
+    {
+      "file": "site-basic-tariff-contract-demand-fields.txt",
+      "bytes": 4440,
+      "sha256": "3eb463ca0b7ee547cca922535ec5f72417725c699aa3c5ee72d423c4b72eec80",
+      "private": true
+    },
+    {
+      "file": "site-basic-tariff-editor.txt",
+      "bytes": 3917,
+      "sha256": "db4d5e0bef508cc044aa527d0fa1386413665414d68a18159b2e2273ffd1921f",
+      "private": true
+    },
+    {
+      "file": "site-basic-tariff-readonly.txt",
+      "bytes": 3195,
+      "sha256": "2e5c47b4f8ef6de37e9c8f46926535dad18d4a6584962e66457832d524305993",
+      "private": true
+    },
+    {
+      "file": "site-basic-tariff-two-part-fields.txt",
+      "bytes": 4311,
+      "sha256": "ca3244e330cea351c376cdaea1d272347f00bdcf2f675c740efdb46c6f3bb7bf",
+      "private": true
+    },
+    {
+      "file": "site-basic-tariff.txt",
+      "bytes": 2764,
+      "sha256": "82a84f4f5c0d526ff16ca9f7f45a22dcbae22a25af62e60c981a8ad6ecd447de",
+      "private": true
+    },
+    {
+      "file": "site-data-source-consumption-metrics.txt",
+      "bytes": 5699,
+      "sha256": "0a745dc79903fa25cff63f309782db9cd768a6d7c53351dd4e4fefd27298cf67",
+      "private": true
+    },
+    {
+      "file": "site-data-source-custom-consumption-fields.txt",
+      "bytes": 12564,
+      "sha256": "4a536ae6109ebbb860f9689e29e866f574407b9f68484e30434a8a7c03317ed4",
+      "private": true
+    },
+    {
+      "file": "site-data-source-custom-draft.txt",
+      "bytes": 12544,
+      "sha256": "6ba68eb7b42364b90ac2dace09403f05ab0f733b98afcc83a973341d3ddb5871",
+      "private": true
+    },
+    {
+      "file": "site-data-source-custom-grid-fields.txt",
+      "bytes": 14669,
+      "sha256": "e39827e45b8e7fe0433b2ea50f9f95f76eca6afec0ad2288261b971e575707d6",
+      "private": true
+    },
+    {
+      "file": "site-data-source-custom-irradiation-options.txt",
+      "bytes": 12668,
+      "sha256": "66b7dc0ba7f41c1204a6e5639e4250700ec70356a4a2c3278e13a459f1024276",
+      "private": true
+    },
+    {
+      "file": "site-data-source-custom-solar-fields.txt",
+      "bytes": 12882,
+      "sha256": "9b002d0f162fad7fa013c5d891063557bfc6e2377bb1c986582257f018de8953",
+      "private": true
+    },
+    {
+      "file": "site-data-source-custom-solar-options.txt",
+      "bytes": 13231,
+      "sha256": "6c214350012033ce46dce9819f02e0b2d6bdcc298cc8a648cc4c9a068a5f5d42",
+      "private": true
+    },
+    {
+      "file": "site-data-source-custom-storage-fields.txt",
+      "bytes": 14823,
+      "sha256": "7f5aafd79e216725042f946ed6679351b12fc5dc70a08cc1cc4a05ba734a7451",
+      "private": true
+    },
+    {
+      "file": "site-data-source-definition-readonly.txt",
+      "bytes": 5296,
+      "sha256": "eba63a3de4288d562b830f514210ae76d5ca1c53037e35d140fbc978f116a26d",
+      "private": true
+    },
+    {
+      "file": "site-data-source-grid-metrics.txt",
+      "bytes": 11321,
+      "sha256": "3f141a15e39083cee310d46cc1a27e9dba694f1fd338a09c8c6d9928f029f4d5",
+      "private": true
+    },
+    {
+      "file": "site-data-source-solar-metrics.txt",
+      "bytes": 5838,
+      "sha256": "b806021af69e8880e86266aef77db7226c52fe7f2e8996b104b6601c06d472c1",
+      "private": true
+    },
+    {
+      "file": "site-data-source-storage-metrics.txt",
+      "bytes": 9963,
+      "sha256": "3c5734ddf4224a450d60cd92fff099e5e65a50200ff85e1904222adacfc307be",
+      "private": true
+    },
+    {
+      "file": "site-data-source.txt",
+      "bytes": 4865,
+      "sha256": "c23369043ddc9c7d55fa718aaa489588951d5d25ac216ee524b60bb809fc72b5",
+      "private": true
+    },
+    {
+      "file": "site-detail-dashboard.txt",
+      "bytes": 7167,
+      "sha256": "0a8b11f2944131de750acd1b825dd75c1da811cea3dd6ec3919f15785a3d78db",
+      "private": true
+    },
+    {
+      "file": "site-energy-algorithm-definition-readonly.txt",
+      "bytes": 3652,
+      "sha256": "71e71d87bc209d8e3018d6a49ddd2598d783ecbf4b7763086688c4d23a5da314",
+      "private": true
+    },
+    {
+      "file": "site-energy-algorithm.txt",
+      "bytes": 3221,
+      "sha256": "e359fd03e7e6964889795de7ebf44073d70bd5675abaa526401cbd179f1b47ab",
+      "private": true
+    },
+    {
+      "file": "site-energy-management-log-entry-loaded.txt",
+      "bytes": 5520,
+      "sha256": "50674a8a317c5aad420f5b16e99ba60600c792516a2f47d2a173be0d71149af1",
+      "private": true
+    },
+    {
+      "file": "site-energy-management-log-entry.txt",
+      "bytes": 5520,
+      "sha256": "50674a8a317c5aad420f5b16e99ba60600c792516a2f47d2a173be0d71149af1",
+      "private": true
+    },
+    {
+      "file": "site-energy-management-visible-entry.txt",
+      "bytes": 2995,
+      "sha256": "23fcd6e29753865f41a6c1867f8fb21336682742d13953d011cc264c95a507c3",
+      "private": true
+    },
+    {
+      "file": "site-energy-management.txt",
+      "bytes": 1802,
+      "sha256": "a1c3ed3c287395ebc1a134fc4c299937857dac9080cefc0d807fec901393f3d5",
+      "private": true
+    },
+    {
+      "file": "site-income-display-boundary-readonly.txt",
+      "bytes": 2761,
+      "sha256": "1dfee8f29960a5dd94c073abf9c1b5cb4d6c4aae3911e10d1c621a15adfc691e",
+      "private": true
+    },
+    {
+      "file": "site-income.txt",
+      "bytes": 2330,
+      "sha256": "9f2ff8e5259b5335596e5a05855a57daf45abd68e82d32b58c1cc5402b50d752",
+      "private": true
+    },
+    {
+      "file": "site-intelligent-analysis.txt",
+      "bytes": 2013,
+      "sha256": "bfd024f34d97081071bf13cd11976b63bb0564d34905f505b113546d26d9f963",
+      "private": true
+    },
+    {
+      "file": "site-layout.txt",
+      "bytes": 2172,
+      "sha256": "fda3194826e28357afbf6932fd9a847413f7681a8483f650baac5784cf484262",
+      "private": true
+    },
+    {
+      "file": "site-license.txt",
+      "bytes": 7055,
+      "sha256": "5695eaa5d9a2ae187ef7e227a196a032aae3971af29407e3091258c80b174298",
+      "private": true
+    },
+    {
+      "file": "site-logs.txt",
+      "bytes": 3352,
+      "sha256": "b7006ddb56a0c684d199d005beddd273b0be005c0eaf24a5ad44191c8d71ffb9",
+      "private": true
+    },
+    {
+      "file": "site-offset-cumulative-draft-fields.txt",
+      "bytes": 4378,
+      "sha256": "2edff1f0be6d1bb274393c35508bd9488a574c81922f03ce3141bd7265a5c190",
+      "private": true
+    },
+    {
+      "file": "site-offset-daily-draft-fields.txt",
+      "bytes": 5558,
+      "sha256": "0249446922808acd060354c7d4494310a2257265036c5abb9c19a3bd713ea9d5",
+      "private": true
+    },
+    {
+      "file": "site-offset-daily-history.txt",
+      "bytes": 4391,
+      "sha256": "809c7e2f3fe57a977450ccfa1c725e67810b256e23a89b9cb1474fac12ecb7e4",
+      "private": true
+    },
+    {
+      "file": "site-offset-dimensions-readonly.txt",
+      "bytes": 3583,
+      "sha256": "4fa47a822a5d10499f0bd859ed3fed8a7c718162e116b6f453c7ecc5801410ea",
+      "private": true
+    },
+    {
+      "file": "site-offset.txt",
+      "bytes": 3152,
+      "sha256": "adb56da1b133c892bb6ddbd61ed12f60cce5efa06c7a26c594407b57d03cb69b",
+      "private": true
+    },
+    {
+      "file": "site-planned-production.txt",
+      "bytes": 3349,
+      "sha256": "9fc812c5fa2cf45e2f9becafd7ad9913cd8e3ce94815da50d69da9e2e78a363a",
+      "private": true
+    },
+    {
+      "file": "site-power-factor-formula-loaded.txt",
+      "bytes": 2759,
+      "sha256": "6bf18c87fca5306d27ca4c69a037fea024232ed9d2aeae81dd70353db0f9acaf",
+      "private": true
+    },
+    {
+      "file": "site-power-factor-formula-readonly.txt",
+      "bytes": 2759,
+      "sha256": "5755a68a0540aacd4b4c010bd9509c10025fe0744b69b5df4b6e48d7fdd2a4c8",
+      "private": true
+    },
+    {
+      "file": "site-power-factor.txt",
+      "bytes": 2328,
+      "sha256": "99ad0d8f58acacc346b5d5712c8d3e895a206011f3410bd0edb86198e9e51d3e",
+      "private": true
+    },
+    {
+      "file": "site-production-plan-monthly-draft.txt",
+      "bytes": 5517,
+      "sha256": "fb9f03b64d7c81532b96fa153773d8c9c3fce36c22bd3c0987c8e01952f0fb9d",
+      "private": true
+    },
+    {
+      "file": "site-production-plan-structure-readonly.txt",
+      "bytes": 3780,
+      "sha256": "a322fa5bb205637ed3d2e408f3b7a0b071699a880b238d24fdd2f3f25bbd888e",
+      "private": true
+    },
+    {
+      "file": "site-settings-finance-entry.txt",
+      "bytes": 4366,
+      "sha256": "c3cf363fc287aa861ff3c69f6c1e622c09e8bd5211ca2b965bbef5aed7edc32d",
+      "private": true
+    },
+    {
+      "file": "site-settings.txt",
+      "bytes": 3935,
+      "sha256": "6d96e4f9f066631499b5c58991142153dcac76bcb0996b7d092c2fc96a2dc537",
+      "private": true
+    },
+    {
+      "file": "site-subsites.txt",
+      "bytes": 8064,
+      "sha256": "7c8ead0128240c959d11e6106a87b22a747bb58e4fca4a62798178a50a574f7f",
+      "private": true
+    },
+    {
+      "file": "site-tags.txt",
+      "bytes": 3219,
+      "sha256": "58e1ea578ff42dbf04e8a5093a78d7e6e95ae4f41e16c4d69539bff56a6d2af0",
+      "private": true
+    },
+    {
+      "file": "site-tariff-binding-automatic-fields.txt",
+      "bytes": 5863,
+      "sha256": "5bccb96f35f403c6b0151cf6ddaedb97784bc4ab74be26aa087db229bca24ce8",
+      "private": true
+    },
+    {
+      "file": "site-tariff-binding-automatic-state.txt",
+      "bytes": 5571,
+      "sha256": "91d6e1cfdda18ac471e9209308de12d6c8d4629b2dc3d7076ffd499eab89dabe",
+      "private": true
+    },
+    {
+      "file": "site-tariff-binding-picker-loaded.txt",
+      "bytes": 5571,
+      "sha256": "91d6e1cfdda18ac471e9209308de12d6c8d4629b2dc3d7076ffd499eab89dabe",
+      "private": true
+    },
+    {
+      "file": "site-tariff-binding-picker.txt",
+      "bytes": 5523,
+      "sha256": "144e143a1d6548e3de7b5da7f3f958d1d422ec4b4266fa501a0d689ecb0bab89",
+      "private": true
+    },
+    {
+      "file": "site-tariff-binding-readonly.txt",
+      "bytes": 4081,
+      "sha256": "63a813b37eed1209ff777e5f72cdd113a02c4d8268cc41ee4abcd51acf98d116",
+      "private": true
+    },
+    {
+      "file": "site-tariff-binding-type-options.txt",
+      "bytes": 5930,
+      "sha256": "8db8c7999abadcfbe9e145e22f83ac9b99ec3d73b7181b77c296975631e41d75",
+      "private": true
+    },
+    {
+      "file": "site-tariff-storage-binding-readonly.txt",
+      "bytes": 4090,
+      "sha256": "918e70ea6db404b175866fee0670d86e2b01bc31eccff4b818cebd5188676df8",
+      "private": true
+    },
+    {
+      "file": "site-tariffs.txt",
+      "bytes": 3650,
+      "sha256": "2e9254ac9a91890d671b3a507e1120124d7480cedc4a34fa0ac8a53f6daf4ff8",
+      "private": true
+    },
+    {
+      "file": "site-wiring.txt",
+      "bytes": 1958,
+      "sha256": "32729366cd1e3dc235f37e0c890d631e42c34ea76b9dcc15a6a879274f175052",
+      "private": true
+    },
+    {
+      "file": "sites-current.txt",
+      "bytes": 18438,
+      "sha256": "7f7669eda5d002cf11ce3167fb70236554076810d3e88757820312ebdb9d1ff2",
+      "private": true
+    },
+    {
+      "file": "sites-list-for-finance-scan.txt",
+      "bytes": 18894,
+      "sha256": "b4b75d9e6d6a1b44e58d476c7bde0b7a365b09eb578095fcf470bcd4f96682c0",
+      "private": true
+    },
+    {
+      "file": "sites.txt",
+      "bytes": 12833,
+      "sha256": "148208f898b47b3ac2a361b5e15efc10805a7d46b9f70411b7fb92f99871ede4",
+      "private": true
+    },
+    {
+      "file": "station-service-detail-loaded.txt",
+      "bytes": 15762,
+      "sha256": "64a95e761a2414acb62eee27f4b6a99a28423dd9f5a7a6a09fb4052daea65955",
+      "private": true
+    },
+    {
+      "file": "station-service-detail.txt",
+      "bytes": 12955,
+      "sha256": "55384d4c0eb00880368208c61fe97d8cf7fee95d97b3345dd054fbf6bfc58bfa",
+      "private": true
+    },
+    {
+      "file": "station-service-loaded.txt",
+      "bytes": 10821,
+      "sha256": "9813f3ef03af45d302b25b0deeb976c39b4ff75331802ed3aa7c4b97b6c10fd8",
+      "private": true
+    },
+    {
+      "file": "station-service.txt",
+      "bytes": 6736,
+      "sha256": "30d012357befd77b8e837fc8cf65494e93f2cd4edcc4457497f52f071b1b4714",
+      "private": true
+    },
+    {
+      "file": "system-module-visibility-review.txt",
+      "bytes": 4191,
+      "sha256": "cde64cac3f3c7653d9176b88889a530dc44a7f1c3b2f8b28e3c6e6b622cf81cb",
+      "private": true
+    },
+    {
+      "file": "system-navigation.txt",
+      "bytes": 1377,
+      "sha256": "1246ba863c5c90fbbe0d16288eb3c4fe95cbb1e2199e2d53b670468c85846e8d",
+      "private": true
+    },
+    {
+      "file": "tariff-automatic-library-loaded.txt",
+      "bytes": 5096,
+      "sha256": "549aabca98d1ebf17e4228546effc9429b2cb1a408b01c314268e546f540ceda",
+      "private": true
+    },
+    {
+      "file": "tariff-automatic-library.txt",
+      "bytes": 4469,
+      "sha256": "b4a928c7fc7c923ef41a196a86b5cb8353021797cddac0b5e3a3e4ca27402119",
+      "private": true
+    },
+    {
+      "file": "tariff-automatic-source-form.txt",
+      "bytes": 5185,
+      "sha256": "5156e0d06036fb88b2141c0e5719db8c7fb36cdba5ccd4e51218a39305cebb50",
+      "private": true
+    },
+    {
+      "file": "tariff-automatic-source-picker-loaded.txt",
+      "bytes": 7735,
+      "sha256": "5598b6da3d4e493ae33b7e98c15cbc4d8c135bdf03c6debbc48bd5d598c95229",
+      "private": true
+    },
+    {
+      "file": "tariff-automatic-source-picker.txt",
+      "bytes": 6770,
+      "sha256": "1b267331830f8152c5b492b4b70519f0a2f18bb63e12bb8bbe5194172875d01f",
+      "private": true
+    },
+    {
+      "file": "tariff-country-currency-linked.txt",
+      "bytes": 5416,
+      "sha256": "87e581c8b75c69d5bbc855788cfc07e9afe917318e3dc4877944c20fdee1c7df",
+      "private": true
+    },
+    {
+      "file": "tariff-create-form.txt",
+      "bytes": 4519,
+      "sha256": "13cb22962cbf5e93f0482599113dad1bcf9752e6ad56b4e3ef5ef08425f52bb1",
+      "private": true
+    },
+    {
+      "file": "tariff-fixed-pricing-form.txt",
+      "bytes": 5243,
+      "sha256": "3834250098f71c8ddfee9625062bf97c697b49c9915336aa17810bf2958e1272",
+      "private": true
+    },
+    {
+      "file": "tariff-period-editor.txt",
+      "bytes": 5813,
+      "sha256": "16b20369d90501d450f789aff718fa07417a317a2d1d00d9f2b4194fa4dff7f2",
+      "private": true
+    },
+    {
+      "file": "tariff-period-price-input-constraints.txt",
+      "bytes": 166,
+      "sha256": "120a4516ccafe2e9f9a4fb9f14024c08fb69de8e15d5d5999c5f91988726476c",
+      "private": true
+    },
+    {
+      "file": "tariff-period-type-options.txt",
+      "bytes": 6127,
+      "sha256": "5f88d10d407a75f5d98f0460860414aaaede2b2da80344e9218331b4251fcff2",
+      "private": true
+    },
+    {
+      "file": "tariff-pricing-method-options.txt",
+      "bytes": 5245,
+      "sha256": "beda85def6e4254065ab6aab03538cc7a6ae55c8664ec09d65c2ad66761d96df",
+      "private": true
+    },
+    {
+      "file": "tariff-rates.txt",
+      "bytes": 3204,
+      "sha256": "a4e1982c3c278552a156c0e41ed6461899ff2311b22b798b2b2495fdf053d380",
+      "private": true
+    },
+    {
+      "file": "tariff-real-type-options.txt",
+      "bytes": 5110,
+      "sha256": "6ea140581dded6ed21f7f21a317a11b87863c5913619f0a992a9b284d8f84235",
+      "private": true
+    },
+    {
+      "file": "tariff-self-use-pricing-options.txt",
+      "bytes": 5024,
+      "sha256": "d57b9fb3a6b5e3426dddf0e43b1791efac99469f1ad2ad2c2d52428fa0d06957",
+      "private": true
+    },
+    {
+      "file": "tariff-self-use-tou-form.txt",
+      "bytes": 4945,
+      "sha256": "b2a37e41961fce9da9a7d7b6069c4bc97b8868e3394bc0a3cbfd04db989daabf",
+      "private": true
+    },
+    {
+      "file": "tariff-self-use-tou-ready.txt",
+      "bytes": 4936,
+      "sha256": "c5c10f3a62873fc876d0118ba4cdaa7b46f619d30bf8e5fffeb2b32f56a57c71",
+      "private": true
+    },
+    {
+      "file": "tariff-self-use-tou-unit-options.txt",
+      "bytes": 5082,
+      "sha256": "673974c493ffc32398618c5fc88d187f58a3e13d6056d06e6ad4faaad43e8561",
+      "private": true
+    },
+    {
+      "file": "tariff-site-type-options.txt",
+      "bytes": 4721,
+      "sha256": "cc35f679a9b65596d0dbb03d9377d522b69f60537d469a07ce8eacbecae85e16",
+      "private": true
+    },
+    {
+      "file": "tariff-static-pricing-form.txt",
+      "bytes": 5270,
+      "sha256": "b2ed69a9adacf6944d05528eab55238887ec615f0eb9e08ebdd2d23fe3ca68be",
+      "private": true
+    },
+    {
+      "file": "tariff-type-options.txt",
+      "bytes": 4739,
+      "sha256": "a7cf654a6f9bbda0fceff5608b30353a3fe79cede6e3c4530cfa1a37c864e193",
+      "private": true
+    }
+  ],
+  "next": [
+    "Battery Stack已有堆级/下属簇局部详情；EMS/空调及储能柜当前账户筛选无可读记录，详情不作全局absence推断；剩余设备可写参数、分析handler及跨域控制日志仍未知",
+    "四类模板编辑器字段与Daily/Monthly任务本地条件矩阵已局部观察；完整公式/校验、可用模板scope、调度执行状态、产物和失败重试仍未知，未保存或导出",
+    "基本费单一/两部制容量/合同需量/实际需量分支及Solar/Storage Manual/Automatic查询picker已局部观察；真实绑定/解绑、动态来源版本、适用scope、计价结算及consumerNum资产关联仍未知",
+    "站点/设备告警指标、连续周期、百分比/kWh两端及状态枚举局部UI已补；完整算法矩阵、恢复/缺数/时间口径、调度与通知送达仍未知",
+    "资产、协作、测算等目前仅route-only的业务规格仍缺失；保留公开源码线索及未取得说明，不由路由推断能力",
+    "公开入口502或返回主壳fallback的模块明确保留unknown；未获得独立页面或服务能力不视为完成",
+    "未主动执行参考新增/保存/删除、授权、告警处理、通知发送或设备控制；能量管理SUCCESS轮询单条hidden可能发生且未核验，不声称业务零写。参考平台不再执行写流程，完整业务闭环仅本分支独立新库验收"
+  ]
+}

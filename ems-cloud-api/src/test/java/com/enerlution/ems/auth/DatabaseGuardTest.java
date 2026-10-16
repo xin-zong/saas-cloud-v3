@@ -11,6 +11,41 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 class DatabaseGuardTest {
   @Test
+  void branchDefaultsRejectProductionDatabase() {
+    var guard = new DatabaseGuard();
+    assertDoesNotThrow(
+        () ->
+            guard.postProcessAfterInitialization(
+                source("jdbc:postgresql://localhost:15435/ems_cloud_saas_toyingzhen"),
+                "dataSource"));
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            guard.postProcessAfterInitialization(
+                source("jdbc:postgresql://localhost:15435/ems_cloud_saas_v3"), "dataSource"));
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            guard.postProcessAfterInitialization(
+                source("jdbc:postgresql://localhost:15435/ems_cloud_v2_proto"), "dataSource"));
+  }
+
+  @Test
+  void toyingzhenDatabaseRequiresMatchingUrlAndRejectsProductionUrl() {
+    var guard = new DatabaseGuard("ems_cloud_saas_toyingzhen");
+    assertDoesNotThrow(
+        () ->
+            guard.postProcessAfterInitialization(
+                source("jdbc:postgresql://localhost:15434/ems_cloud_saas_toyingzhen"),
+                "dataSource"));
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            guard.postProcessAfterInitialization(
+                source("jdbc:postgresql://localhost:15434/ems_cloud_saas_v3"), "dataSource"));
+  }
+
+  @Test
   void cleanAcceptanceDatabaseRequiresExplicitMatchingConfiguration() {
     var clean = source("jdbc:postgresql://localhost:15434/ems_cloud_saas_final_test");
     assertDoesNotThrow(
@@ -45,11 +80,12 @@ class DatabaseGuardTest {
     HikariDataSource source = new HikariDataSource();
     source.setJdbcUrl(url);
     source.setSchema("public");
+    source.setUsername("ems_toyingzhen_owner");
     return source;
   }
 
   private void check(HikariDataSource source) {
-    new DatabaseGuard().postProcessAfterInitialization(source, "dataSource");
+    new DatabaseGuard("ems_cloud_v2_proto").postProcessAfterInitialization(source, "dataSource");
   }
 
   @Test
@@ -118,10 +154,11 @@ class DatabaseGuardTest {
             .withConfiguration(AutoConfigurations.of(DataSourceAutoConfiguration.class))
             .withUserConfiguration(DatabaseGuard.class)
             .withPropertyValues(
-                "spring.datasource.url=jdbc:postgresql://127.0.0.1:15432/ems_cloud_v2_proto",
-                "spring.datasource.username=unused",
+                "spring.datasource.url=jdbc:postgresql://127.0.0.1:15435/ems_cloud_saas_toyingzhen",
+                "spring.datasource.username=ems_toyingzhen_owner",
                 "spring.datasource.password=unused",
                 "spring.datasource.hikari.schema=public");
+    runner = runner.withPropertyValues("ems.database-name=ems_cloud_saas_toyingzhen");
     runner.run(context -> assertNull(context.getStartupFailure()));
     runner
         .withPropertyValues(
@@ -130,5 +167,20 @@ class DatabaseGuardTest {
     runner
         .withPropertyValues("spring.datasource.hikari.data-source-properties.currentSchema=legacy")
         .run(context -> assertNotNull(context.getStartupFailure()));
+  }
+
+  @Test
+  void runtimeDatabasePropertyCannotOptBranchBackIntoOriginalDatabases() {
+    for (String name : new String[]{"ems_cloud_saas_v3", "ems_cloud_v2_proto", "ems_cloud_saas_final_test"}) {
+      var environment = new org.springframework.mock.env.MockEnvironment().withProperty("ems.database-name", name);
+      assertThrows(IllegalStateException.class, () -> new DatabaseGuard(environment));
+    }
+  }
+
+  @Test
+  void isolatedDatabaseRejectsAnyOtherEffectiveDatasourceRole() {
+    var dataSource = source("jdbc:postgresql://127.0.0.1:15435/ems_cloud_saas_toyingzhen");
+    dataSource.setUsername("legacy_runtime");
+    assertThrows(IllegalStateException.class, () -> new DatabaseGuard().postProcessAfterInitialization(dataSource, "dataSource"));
   }
 }
