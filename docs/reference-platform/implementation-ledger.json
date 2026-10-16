@@ -95,15 +95,16 @@
     {
       "workflowId": "tariff",
       "title": "电价模板与费率",
-      "status": "pending-implementation",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "Task9手工fixed/tou购电子流程已验收：V31不可变价格版本/归档、同租户未来绑定/改期/解除与只读历史，8项规则和13项PG、前端18项、30次真实HTTP通过；旧GET消费者兼容，结算行数及内容指纹未变。只支持上海明天起的区间，其他定价/导入/已生效替换不冒充已完成。",
       "domainIds": [
         "station_metrics"
       ],
       "baselineAssessment": "partial-current-capability",
       "remainingScope": [
-        "缺独立可复用的手工/自动/外部模板生命周期、价格用途及容量/需量费用；当前创建电价不能代表这些模板已实现。"
+        "外部/自动/阶梯、独立售电、基本容量/需量费用、工作日、小时导入及未知实际计费算法待办。",
+        "真实结算目前没有费率FK/快照，后续核算来源须显式建模，不能猜测回填历史。"
       ],
       "acceptanceScenarios": [
         "手工模板保存后重读；外部来源不可用显示明确错误；购售方向和基本费独立核算。",
@@ -112,6 +113,11 @@
       "contractUnknowns": [
         "参考外部数据可用性及法定电价分类未确定。",
         "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ],
+      "resolvedProjectContracts": [
+        "手工价格以严格字符串保存6位，支持零及负价，不改变旧金额。",
+        "每次模板修改创建不可变版本；未来绑定修改留历史，归档/解除不硬删除。",
+        "所有读写复用当前tariff.manage与站点权限，旧费率不推断租户所有权。"
       ]
     },
     {
@@ -1203,15 +1209,15 @@
     {
       "workflowId": "pricing-template-mode-conditions",
       "title": "费率手工/外部/自动模板及定价方式真实可选条件",
-      "status": "pending-implementation",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "Task9手工fixed/tou购电子流程已验收：V31不可变价格版本/归档、同租户未来绑定/改期/解除与只读历史，8项规则和13项PG、前端18项、30次真实HTTP通过；旧GET消费者兼容，结算行数及内容指纹未变。只支持上海明天起的区间，其他定价/导入/已生效替换不冒充已完成。",
       "domainIds": [
         "station_metrics"
       ],
       "baselineAssessment": "partial-current-capability",
       "remainingScope": [
-        "缺国家/地区、用途、工作日、外部来源附加费与自动库条件；dynamic模式在当前UI不能发布。"
+        "国家/地区、用途/工作日、外部来源附加费、自动库、阶梯与独立售电未实现，待冻结服务端契约。"
       ],
       "acceptanceScenarios": [
         "外部picker确认仅改模板草稿；父保存才持久；不支持的用途/来源组合在API被拒绝。",
@@ -1220,20 +1226,25 @@
       "contractUnknowns": [
         "阶梯电价支持及外部动态来源真实契约未知。",
         "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ],
+      "resolvedProjectContracts": [
+        "手工价格以严格字符串保存6位，支持零及负价，不改变旧金额。",
+        "每次模板修改创建不可变版本；未来绑定修改留历史，归档/解除不硬删除。",
+        "所有读写复用当前tariff.manage与站点权限，旧费率不推断租户所有权。"
       ]
     },
     {
       "workflowId": "pricing-time-segments-import",
       "title": "峰谷时段编辑与小时分时电价文件本地预览/保存边界",
-      "status": "pending-implementation",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "Task9手工fixed/tou购电子流程已验收：V31不可变价格版本/归档、同租户未来绑定/改期/解除与只读历史，8项规则和13项PG、前端18项、30次真实HTTP通过；旧GET消费者兼容，结算行数及内容指纹未变。只支持上海明天起的区间，其他定价/导入/已生效替换不冒充已完成。",
       "domainIds": [
         "station_metrics"
       ],
       "baselineAssessment": "partial-current-capability",
       "remainingScope": [
-        "普通全天时段不覆盖按月每日24报价导入、日期完整性、重复小时与小数校验；不能把本地文件预览当已发布。"
+        "手工分钟时段已完整落库；按月逐日24小时文件导入、缺日/重复小时/跨月规则及特殊跨午夜行为仍待办。"
       ],
       "acceptanceScenarios": [
         "重复小时、缺日、跨月及无效小数拒绝；换月清预览；取消无上传；正确数据保存重读一致。",
@@ -1242,6 +1253,11 @@
       "contractUnknowns": [
         "参考特殊跨午夜边界行为未运行；本项目导入可见性按业务再确认。",
         "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ],
+      "resolvedProjectContracts": [
+        "手工价格以严格字符串保存6位，支持零及负价，不改变旧金额。",
+        "每次模板修改创建不可变版本；未来绑定修改留历史，归档/解除不硬删除。",
+        "所有读写复用当前tariff.manage与站点权限，旧费率不推断租户所有权。"
       ]
     },
     {
@@ -1291,15 +1307,16 @@
     {
       "workflowId": "pricing-station-template-binding",
       "title": "站点费率模板绑定、日期编辑与解除的读写边界",
-      "status": "pending-implementation",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "Task9手工fixed/tou购电子流程已验收：V31不可变价格版本/归档、同租户未来绑定/改期/解除与只读历史，8项规则和13项PG、前端18项、30次真实HTTP通过；旧GET消费者兼容，结算行数及内容指纹未变。只支持上海明天起的区间，其他定价/导入/已生效替换不冒充已完成。",
       "domainIds": [
         "station_metrics"
       ],
       "baselineAssessment": "partial-current-capability",
       "remainingScope": [
-        "缺已有手工/自动模板库的批量绑定、日期编辑及解绑；当前创建新电价不是引用已有模板。"
+        "已生效绑定的未来截断/替换及相关历史核算来源契约未明确，当前保持只读。",
+        "批量多站绑定、自动/外部模板库复用仍待办；本批为手工模板逐站绑定。"
       ],
       "acceptanceScenarios": [
         "打开picker/改日期不写；绑定后重读；并发重叠、跨租户模板拒绝；解绑保留历史核算来源。",
@@ -1308,6 +1325,11 @@
       "contractUnknowns": [
         "参考绑定日期含边界与当前排他结束日不能直接映射。",
         "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+      ],
+      "resolvedProjectContracts": [
+        "手工价格以严格字符串保存6位，支持零及负价，不改变旧金额。",
+        "每次模板修改创建不可变版本；未来绑定修改留历史，归档/解除不硬删除。",
+        "所有读写复用当前tariff.manage与站点权限，旧费率不推断租户所有权。"
       ]
     },
     {
@@ -2761,5 +2783,5 @@
   "comparisonBaselinePath": "docs/reference-platform/function-comparison.json",
   "comparisonBaselineMeaning": "实施前静态比较快照；当前实施结果以本台账和逐批验收证据为准，不反写历史静态结论。",
   "verificationPath": "docs/superpowers/verification/2026-10-16-known-reference-features.md",
-  "databaseMigrationVersion": 30
+  "databaseMigrationVersion": 31
 }

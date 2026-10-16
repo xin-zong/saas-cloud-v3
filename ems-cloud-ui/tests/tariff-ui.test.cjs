@@ -3,17 +3,53 @@ const assert=require('node:assert/strict')
 const fs=require('node:fs')
 const {chromium}=require('playwright')
 
-test('Figma tariff calendar, templates and actual server periods remain distinct',async t=>{
+// Task9 supersedes the old API assertions: original lines 16 (port18090),
+// 33 (API local calendar), 50/65 (local drafts), 67–81 (/tariffs publish and numeric price).
+// Calendar/selling/dynamic behavior below remains Demo-only. API support for those
+// capabilities is TODO; API mode must use persisted purchase snapshots instead.
+test('full App API tariff route persists templates, future bindings and immutable history',{timeout:180000},async t=>{
+ const browser=await chromium.launch({channel:'msedge',headless:true});t.after(()=>browser.close());const context=await browser.newContext({viewport:{width:1440,height:1000}});await context.addInitScript(()=>sessionStorage.setItem('enerlution-api-token','tariff-test'));const page=await context.newPage();page.setDefaultTimeout(30000);page.setDefaultNavigationTimeout(60000)
+ const user={id:'7',name:'电价管理员',account:'tariff@test',role:'integrator',organization:'测试',stationIds:['12'],permissions:['asset.read','tariff.manage'],stationPermissions:{12:['asset.read','tariff.manage']},organizationPermissions:{}}
+ const templates=[],bindings=[],histories={},writes=[],errors=[];page.on('pageerror',e=>errors.push(e.message));const clone=value=>structuredClone(value)
+ await page.route(/^http:\/\/(?:127\.0\.0\.1|localhost):\d+\/api\//,async route=>{
+  const request=route.request(),url=new URL(request.url()),p=url.pathname.slice(4),method=request.method(),body=request.postData()?request.postDataJSON():null
+  const reply=(data,status=200,msg='ok')=>route.fulfill({status,headers:{'access-control-allow-origin':'*'},json:{code:status,data,msg}})
+  if(method==='OPTIONS')return route.fulfill({status:204,headers:{'access-control-allow-origin':'*','access-control-allow-methods':'GET,POST,PUT,DELETE,OPTIONS','access-control-allow-headers':'content-type,authorization'}})
+  if(method!=='GET')writes.push({p,method,body})
+  if(p==='/auth/me')return reply(user)
+  if(p==='/monitor/templates')return reply({items:[],selectedId:null})
+  if(p==='/stations')return reply([{id:12,name:'电价站点',code:'T-12',rated_power_kw:100,capacity_kwh:200}])
+  if(p==='/tariff-templates'){if(method==='GET')return reply(templates);const item={...body,id:'t1',version:1};templates.push(item);return reply(item)}
+  if(p==='/tariff-templates/t1'){const item=templates[0];if(method==='PUT'){assert.equal(body.expectedVersion,item.version);Object.assign(item,body,{version:item.version+1});delete item.expectedVersion}if(method==='DELETE'){assert.equal(Number(url.searchParams.get('expectedVersion')),item.version);templates.length=0;return reply(null)}return reply(item)}
+  if(p==='/stations/12/tariff-bindings'){
+   if(method==='GET')return reply(bindings)
+   if(bindings.some(row=>row.active&&body.validFrom<row.validUntil&&body.validUntil>row.validFrom))return reply(null,409,'生效区间重叠')
+   const item={...clone(templates[0]),id:'b1',stationId:'12',templateId:'t1',templateVersion:templates[0].version,validFrom:body.validFrom,validUntil:body.validUntil,active:true,version:1,modifiable:true};assert.equal(body.expectedTemplateVersion,templates[0].version);bindings.push(item);histories.b1=[clone(item)];return reply(item)
+  }
+  if(p==='/stations/12/tariff-bindings/b1/history')return reply(histories.b1)
+  if(p==='/stations/12/tariff-bindings/b1'){const item=bindings[0];if(method==='PUT'){assert.deepEqual(Object.keys(body).sort(),['expectedVersion','validFrom','validUntil']);assert.equal(body.expectedVersion,item.version);Object.assign(item,{validFrom:body.validFrom,validUntil:body.validUntil,version:item.version+1})}else{assert.equal(Number(url.searchParams.get('expectedVersion')),item.version);Object.assign(item,{active:false,modifiable:false,version:item.version+1})}histories.b1.push(clone(item));return reply(item)}
+  return reply([])
+ })
+ const button=name=>page.getByRole('button',{name,exact:true}),notice=text=>page.getByRole('status').filter({hasText:text}).waitFor()
+ await page.goto(process.env.STATIONS_API_URL||process.env.API_PREVIEW_URL||process.env.PREVIEW_URL||'http://127.0.0.1:8444',{waitUntil:'domcontentloaded'});await page.getByRole('button',{name:/^(资产与站点|电站管理)$/}).click();await page.locator('.station-name-button').first().click();await button('电价设置').click();await page.getByRole('heading',{name:'购电费率配置',exact:true}).waitFor();assert.equal(writes.length,0);assert.equal(await button('创建生效期间').count(),0)
+ await button('新增购电模板').click();await page.getByLabel('购电模板名称',{exact:true}).fill('集成购电模板');await button('保存购电模板').click();await page.getByRole('alert').filter({hasText:'六位'}).waitFor();assert.equal(writes.length,0);await page.getByLabel('全天购电价格',{exact:true}).fill('-0.1');/* Modal backdrop blocks pointers; activate the real App navigation handler to verify its registered guard. */await button('站点列表').evaluate(element=>element.click());await button('继续编辑配置').click();assert.equal(await page.getByLabel('购电模板名称',{exact:true}).inputValue(),'集成购电模板');await button('保存购电模板').click();await notice('购电模板已保存');assert.equal(templates[0].periods[0].pricePerKwh,'-0.100000');assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(k=>k.startsWith('enerlution-tariff-workspace-v1:api:'))),false)
+ await button('新建未来生效区间').click();await page.getByLabel('绑定购电模板',{exact:true}).selectOption('t1');await page.getByLabel('购电生效日期',{exact:true}).fill('2099-01-01');await page.getByLabel('购电结束日期（不含）',{exact:true}).fill('2099-01-03');await button('保存购电绑定').click();await notice('未来购电绑定已保存');assert.deepEqual(writes[1].body,{templateId:'t1',expectedTemplateVersion:1,validFrom:'2099-01-01',validUntil:'2099-01-03'})
+ await button('新建未来生效区间').click();await page.getByLabel('绑定购电模板',{exact:true}).selectOption('t1');await page.getByLabel('购电生效日期',{exact:true}).fill('2099-01-01');await page.getByLabel('购电结束日期（不含）',{exact:true}).fill('2099-01-02');await button('保存购电绑定').click();await page.getByRole('alert').filter({hasText:'重叠'}).waitFor();await button('取消绑定编辑').click();await button('放弃配置修改').click()
+ await page.getByRole('tab',{name:'购电模板库',exact:true}).click();await button('编辑为新版本集成购电模板').click();await page.getByLabel('全天购电价格',{exact:true}).fill('8');await button('保存购电模板').click();await notice('购电模板已保存');assert.equal(bindings[0].periods[0].pricePerKwh,'-0.100000');await button('归档集成购电模板').click();await button('确认归档购电模板').click();await notice('购电模板已归档');await page.getByRole('tab',{name:'站点购电绑定',exact:true}).click();await button('改期集成购电模板').click();await page.getByLabel('购电结束日期（不含）',{exact:true}).fill('2099-01-04');await button('保存购电绑定').click();await notice('未来生效区间已修改');await button('解除集成购电模板').click();await button('确认解除未来绑定').click();await notice('未来绑定已解除');await button('查看历史集成购电模板').click();const history=page.getByRole('dialog',{name:'绑定历史 · 集成购电模板',exact:true});await history.waitFor();assert.equal(await history.getByRole('button',{name:/改期|解除/}).count(),0);assert.equal(histories.b1.length,3);assert.ok(histories.b1.every(row=>row.templateVersion===1&&row.periods[0].pricePerKwh==='-0.100000'));await button('关闭绑定历史').click();assert.equal(await button('改期集成购电模板').isDisabled(),true);await button('站点列表').click();await page.locator('.station-name-button').first().click();await button('电价设置').click();await button('查看历史集成购电模板').waitFor();assert.equal(await button('改期集成购电模板').isDisabled(),true)
+ for(const width of [1366,1920]){await page.setViewportSize({width,height:1000});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)}assert.equal(writes.some(w=>w.p==='/tariffs'),false);assert.deepEqual(errors,[])
+})
+
+test('demo tariff calendar and local templates preserve validation, navigation, selling and draft behavior',{timeout:180000},async t=>{
   const browser=await chromium.launch({channel:'msedge',headless:true})
   t.after(()=>browser.close())
   const context=await browser.newContext({viewport:{width:1440,height:1000}})
-  await context.addInitScript(()=>sessionStorage.setItem('enerlution-api-token','tariff-test'))
+  await context.addInitScript(()=>localStorage.setItem('enerlution-auth-session-v1',JSON.stringify({userId:'user-integrator-demo'})))
   const page=await context.newPage()
-  page.setDefaultTimeout(12000); page.setDefaultNavigationTimeout(60000)
+  page.setDefaultTimeout(30000); page.setDefaultNavigationTimeout(60000)
   const errors=[];page.on('pageerror',e=>errors.push(e.message))
   const user={id:'7',name:'电价管理员',account:'tariff@test',role:'integrator',organization:'测试',stationIds:['12'],permissions:['asset.read','tariff.manage'],stationPermissions:{12:['asset.read','tariff.manage']},organizationPermissions:{}}
   const versions=[];const posts=[]
-  await page.route('http://127.0.0.1:18090/api/**',async route=>{
+  await page.route(/^http:\/\/(?:127\.0\.0\.1|localhost):\d+\/api\//,async route=>{
     const request=route.request(),path=new URL(request.url()).pathname.slice(4)
     let data=[]
     if(path==='/auth/me')data=user
@@ -26,7 +62,7 @@ test('Figma tariff calendar, templates and actual server periods remain distinct
     }
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({code:0,data})})
   })
-  await page.goto(process.env.STATIONS_API_URL||process.env.API_PREVIEW_URL||process.env.PREVIEW_URL||'http://127.0.0.1:8451',{waitUntil:'domcontentloaded',timeout:45000})
+  await page.goto(process.env.TARIFF_DEMO_URL||'http://127.0.0.1:8446',{waitUntil:'domcontentloaded',timeout:45000})
   await page.getByRole('button',{name:'资产与站点',exact:true}).click()
   await page.locator('.station-name-button').first().click()
   await page.getByRole('button',{name:'电价设置',exact:true}).click()
@@ -64,19 +100,6 @@ test('Figma tariff calendar, templates and actual server periods remain distinct
   await page.getByRole('button',{name:'保存模板',exact:true}).click()
   await page.getByRole('status').filter({hasText:'本机'}).waitFor()
   assert.equal(posts.length,0)
-  await page.getByRole('button',{name:'创建生效期间',exact:true}).click()
-  const dialog=page.getByRole('dialog',{name:'创建服务器电价生效期间'})
-  await dialog.getByLabel('电价生效日期').fill('2030-01-01')
-  await dialog.getByLabel('电价结束日期').fill('2031-01-01')
-  await dialog.getByRole('button',{name:'创建新生效期间'}).click()
-  await page.getByRole('status').filter({hasText:'已由服务器创建'}).waitFor()
-  assert.equal(posts.length,1)
-  assert.deepEqual(posts[0].periods,[{startMinute:0,endMinute:1440,band:'flat',pricePerKwh:-0.1}])
-  await page.getByRole('button',{name:'创建生效期间',exact:true}).click()
-  await dialog.getByRole('button',{name:'创建新生效期间'}).click()
-  await dialog.getByRole('alert').filter({hasText:'重叠'}).waitFor()
-  assert.equal(posts.length,1)
-  await dialog.getByRole('button',{name:'取消',exact:true}).click()
   await page.getByRole('button',{name:'编辑测试工作日',exact:true}).click()
   await page.getByRole('button',{name:'分时',exact:true}).click()
   await page.getByLabel('时段1结束时间').fill('08:00')
@@ -99,7 +122,7 @@ test('Figma tariff calendar, templates and actual server periods remain distinct
   await assignment.selectOption({label:'测试工作日'})
   const assignedDate=await assignment.getAttribute('aria-label')
   await page.getByRole('button',{name:'保存设置',exact:true}).click()
-  assert.equal(posts.length,1)
+  assert.equal(posts.length,0)
   await assignment.selectOption('')
   await page.getByRole('button',{name:'日模板管理',exact:true}).click()
   const calendarPrompt=page.getByRole('dialog',{name:'未保存的日历分配'})
@@ -146,6 +169,6 @@ test('Figma tariff calendar, templates and actual server periods remain distinct
   await page.getByRole('button',{name:'删除测试工作日',exact:true}).click()
   await page.getByRole('dialog',{name:'删除日模板'}).getByRole('button',{name:'确认删除',exact:true}).click()
   assert.equal(await page.getByRole('button',{name:'编辑测试工作日',exact:true}).count(),0)
-  assert.equal(posts.length,1)
+  assert.equal(posts.length,0)
   assert.deepEqual(errors,[])
 })

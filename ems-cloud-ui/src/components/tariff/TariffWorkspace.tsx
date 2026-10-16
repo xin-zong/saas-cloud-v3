@@ -1,3 +1,4 @@
+import ServerTariffWorkspace from './ServerTariffWorkspace'
 import { useEffect, useState } from 'react'
 import type { Station } from '@/App'
 import { api, send, DEMO_MODE, type ApiRow } from '@/api/client'
@@ -17,7 +18,11 @@ function load(key: string): Workspace {
   } catch { /* Missing or obsolete local data opens an empty workspace. */ }
   return {templates:[],assignments:{}}
 }
-export default function TariffWorkspace({station,onOpenStrategy,registerLeaveGuard}: {station:Station;onOpenStrategy?:()=>void;registerLeaveGuard?:(guard:null|(()=>Promise<boolean>))=>void}) {
+type TariffWorkspaceProps = {station:Station;onOpenStrategy?:()=>void;registerLeaveGuard?:(guard:null|(()=>Promise<boolean>))=>void}
+export default function TariffWorkspace(props: TariffWorkspaceProps) {
+  return DEMO_MODE ? <DemoTariffWorkspace {...props}/> : <ServerTariffWorkspace {...props}/>
+}
+function DemoTariffWorkspace({station,onOpenStrategy,registerLeaveGuard}: TariffWorkspaceProps) {
   const {user}=useAuth()
   const canManage=DEMO_MODE || hasStationPermission(user,station.id,'tariff.manage')
   const canRead=canManage || hasStationPermission(user,station.id,'tariff.read')

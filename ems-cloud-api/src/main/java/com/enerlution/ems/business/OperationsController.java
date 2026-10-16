@@ -156,7 +156,7 @@ public class OperationsController {
     var rows =
         s.db.queryForList(
             "SELECT st.*,t.name,t.currency FROM station_tariff st JOIN tariff t ON"
-                + " t.id=st.tariff_id WHERE st.station_id=? ORDER BY st.valid_from DESC",
+                + " t.id=st.tariff_id WHERE st.station_id=? AND st.active ORDER BY st.valid_from DESC",
             id);
     for (var row : rows)
       row.put(

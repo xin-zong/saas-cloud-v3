@@ -49,6 +49,6 @@ API 绑定 `127.0.0.1:18091`。启动脚本校验库名、专用账号及连接�
 
 ## 新功能迁移与验收
 
-迁移工具为 `scripts/migrate-toyingzhen.py`，依赖见 `scripts/requirements-toyingzhen.txt`。默认预演，例如 `python scripts/migrate-toyingzhen.py --through 29`；在新库备份完成后才显式加 `--apply`。工具核验当前分支、私有环境配置和实时数据库/角色，逐版本事务执行，拒绝缺失或异常迁移记录，不执行历史生产授权脚本。
+迁移工具为 `scripts/migrate-toyingzhen.py`，依赖见 `scripts/requirements-toyingzhen.txt`。默认预演，例如 `python scripts/migrate-toyingzhen.py --through 31`；在新库备份完成后才显式加 `--apply`。工具核验当前分支、私有环境配置和实时数据库/角色，逐版本事务执行，拒绝缺失或异常迁移记录，不执行历史生产授权脚本。
 
-当前已验收迁移为V26—V29，涵盖站点标签、个人看板模板、年度月计划及站点空间/设备关联。详细测试和待办见 `docs/superpowers/verification/2026-10-16-known-reference-features.md` 与 `docs/reference-platform/implementation-ledger.json`。报表模板V30正在实施，尚未列为已验收。
+当前已验收迁移为V26—V31，涵盖站点标签、个人看板模板、年度月计划、站点空间/设备关联、报告模板与任务快照、手工购电模板版本和未来站点绑定。新库112张表。已生效费率绑定继续只读，改价不会改变历史绑定，既有结算不重算；外部/自动电价、售电和未明确模块保留待办。详细测试和具体范围见 `docs/superpowers/verification/2026-10-16-known-reference-features.md` 与 `docs/reference-platform/implementation-ledger.json`。
