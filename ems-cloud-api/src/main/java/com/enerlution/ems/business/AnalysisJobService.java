@@ -36,7 +36,14 @@ public class AnalysisJobService {
       String to,
       @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = StrictMinutes.class)
           Integer minutes,
-      List<String> pointIds) {}
+      List<String> pointIds,
+      String templateId,
+      @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = StationGenerationPlanService.StrictVersion.class)
+          Long expectedTemplateVersion) {
+    public JobRequest(String kind,String from,String to,Integer minutes,List<String> pointIds) {
+      this(kind,from,to,minutes,pointIds,null,null);
+    }
+  }
 
   public record Job(
       String id,
@@ -49,7 +56,14 @@ public class AnalysisJobService {
       String createdAt,
       String completedAt,
       String error,
-      List<String> pointIds) {}
+      List<String> pointIds,
+      @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+          ReportTemplateService.Snapshot templateSnapshot) {
+    public Job(String id,String stationId,String kind,String from,String to,Integer minutes,String status,
+        String createdAt,String completedAt,String error,List<String> pointIds) {
+      this(id,stationId,kind,from,to,minutes,status,createdAt,completedAt,error,pointIds,null);
+    }
+  }
 
   public record Summary(
       String label,
@@ -186,6 +200,14 @@ public class AnalysisJobService {
   Window validate(JobRequest request) {
     if (request == null || !KINDS.contains(Objects.toString(request.kind(), "")))
       throw invalid("未知任务类型");
+    if ((request.templateId()==null)!=(request.expectedTemplateVersion()==null))
+      throw invalid("模板ID与模板版本须同时填写或省略");
+    if (request.templateId()!=null) {
+      try { UUID.fromString(request.templateId()); } catch(Exception e) { throw invalid("模板ID无效"); }
+      if(request.expectedTemplateVersion()<1 || request.kind().equals("telemetry")
+          || (request.pointIds()!=null && !request.pointIds().isEmpty()))
+        throw invalid("模板请求须使用有效版本且不能包含额外测点");
+    }
     OffsetDateTime from, to;
     try {
       from = OffsetDateTime.parse(request.from());
@@ -262,15 +284,16 @@ public class AnalysisJobService {
         transaction()
             .executeWithoutResult(
                 unused -> {
-                  s.db.update(
-                      "INSERT INTO analysis_job(id,station_id,created_by,kind,from_at,to_at,minutes) VALUES(?,?,?,?,?,?,?)",
-                      id,
-                      station,
-                      actor,
-                      window.kind(),
-                      window.from(),
-                      window.to(),
-                      window.minutes());
+                  if(request.templateId()==null) {
+                    s.db.update(
+                        "INSERT INTO analysis_job(id,station_id,created_by,kind,from_at,to_at,minutes) VALUES(?,?,?,?,?,?,?)",
+                        id,station,actor,window.kind(),window.from(),window.to(),window.minutes());
+                  } else {
+                    var snapshot=new ReportTemplateService(s).snapshotForJob(request.templateId(),request.expectedTemplateVersion(),window.kind());
+                    s.db.update(
+                        "INSERT INTO analysis_job(id,station_id,created_by,kind,from_at,to_at,minutes,template_snapshot) VALUES(?,?,?,?,?,?,?,?::jsonb)",
+                        id,station,actor,window.kind(),window.from(),window.to(),window.minutes(),snapshotJson(snapshot));
+                  }
                   int position = 0;
                   for (long point : window.points())
                     s.db.update(
@@ -314,8 +337,11 @@ public class AnalysisJobService {
       Content content = generate(station, window);
       if (content.sections().stream().mapToLong(section -> section.rows().size()).sum() > MAX_ROWS)
         throw new BusinessException(413, "导出最多 20000 行，请缩小范围");
+      var snapshot=ReportTemplateService.readSnapshot(stored(id).get("template_snapshot"),json);
+      if(snapshot!=null)
+        content=ReportTemplateService.filter(snapshot,content,station,window.from().toInstant().toString(),window.to().toInstant().toString(),Instant.now().toString());
       authorize(station, window.kind(), !window.points().isEmpty());
-      byte[] body = boundedJson(content), csv = csv(content.sections());
+      byte[] body = boundedJson(content), csv = csv(snapshot==null?content.sections():ReportTemplateService.csvSections(content));
       if (body.length > MAX_FILE || csv.length > MAX_FILE)
         throw new BusinessException(413, "导出结果过大，请缩小范围");
       authorize(station, window.kind(), !window.points().isEmpty());
@@ -465,7 +491,13 @@ public class AnalysisJobService {
         iso(row.get("created_at")),
         iso(row.get("completed_at")),
         (String) row.get("error"),
-        points((UUID) row.get("id")).stream().map(Object::toString).toList());
+        points((UUID) row.get("id")).stream().map(Object::toString).toList(),
+        ReportTemplateService.readSnapshot(row.get("template_snapshot"),json));
+  }
+
+  private String snapshotJson(ReportTemplateService.Snapshot snapshot) {
+    try { return json.writeValueAsString(snapshot); }
+    catch(IOException e) { throw new IllegalStateException("Cannot serialize report template snapshot"); }
   }
 
   private static Instant instant(Object value) {

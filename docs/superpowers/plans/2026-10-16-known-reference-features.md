@@ -97,11 +97,33 @@ assertEquals("ems_toyingzhen_owner", db.queryForObject("select current_user", St
 
 本项目采用现有 AnalysisJobService 的真实报告字段目录，不能冒充参考平台未取得的后台动态字段；本批不实现新指标算法、自动调度或外部投递。模板功能必须接入真实报告任务，不能只做独立 CRUD。
 
-- [ ] 新增 V30、ReportTemplateService/Controller 与规则/受保护PG测试；只扩展现有 AnalysisJobService 的可选模板参数和不可变快照。模板仍不授予数据权限，生成/预览/下载逐次复用现有 report.export 和各报告类型站点权限；不启用当前不可用的 report.generate。
-- [ ] GET /api/report-templates?kind=&timeType= 返回 Template[]；GET /api/report-template-fields?kind= 返回 {schemaVersion:1,timeTypes:[{code,label}],fields:[{code,label,group,locked,linkRef:string[]}]}。kind 限 operations/revenue/health，项目周期 day/month/year/range 表示日期选择方式，保留既有报告时间范围上限，不声称实现未知累计聚合。
-- [ ] Template 为 {id:string,name,kind,timeType,origin:'system'|'custom',fields:string[],schemaVersion:1,version}。系统模板提供每种报告/周期的默认字段配置且不可修改；自定义按 actor+tenant 隔离、总数最多10、名称 trim1—50不分大小写唯一，新增/改名/另存均事务与审计。
-- [ ] POST /api/report-templates {name,kind,timeType,fields}；PUT /{id} {name,timeType,fields,expectedVersion}（kind 不变）；DELETE /{id}?expectedVersion=；POST /{id}/clone {name,expectedVersion}。克隆明确生成私人模板，不修改系统模板。
-- [ ] 字段目录仅覆盖已有报告真实 Summary、Section/Column 及必要的站点/时段/生成时间元信息；白名单、必选字段与 linkRef 依赖在服务器校验，UI 自动保留必选项并处理联动。未知参考字段继续待办，不用示例指标填充。
-- [ ] 既有 JobRequest 增加可选 templateId、expectedTemplateVersion；同时给出或同时省略。模板与 kind 匹配，版本变化409；本批模板请求不接受额外 pointIds，原无模板请求保持原行为。创建时将模板版本、字段、名称保存为 analysis_job 的不可变 JSON 快照；历史无快照任务保持原输出。生成正文、预览和CSV均使用同一快照过滤字段，删除/修改模板不破坏已有任务及重试。
-- [ ] ApiAnalyticsPage 报告中心接入模板选择与管理/另存，day/month/year/range 控件转换为现有 ISO 半开时间范围；历史记录与预览展示任务快照模板名。复用当前白绿组件；实施前读取 Figma4:7 中最新对应报告画板及截图，优先克制版本，记录选定节点。
-- [ ] 测试名称/容量/系统只读/另存/字段依赖/所有权/409/失败保留草稿；真实HTTP创建模板→生成报告→预览与CSV一致→删除模板后历史仍可读/下载；撤权后仍拒绝报告数据。所有数据只入新库。
+- [x] 新增 V30、ReportTemplateService/Controller 与规则/受保护PG测试；只扩展现有 AnalysisJobService 的可选模板参数和不可变快照。模板仍不授予数据权限，生成/预览/下载逐次复用现有 report.export 和各报告类型站点权限；不启用当前不可用的 report.generate。
+- [x] GET /api/report-templates?kind=&timeType= 返回 Template[]；GET /api/report-template-fields?kind= 返回 {schemaVersion:1,timeTypes:[{code,label}],fields:[{code,label,group,locked,linkRef:string[]}]}。kind 限 operations/revenue/health，项目周期 day/month/year/range 表示日期选择方式，保留既有报告时间范围上限，不声称实现未知累计聚合。
+- [x] Template 为 {id:string,name,kind,timeType,origin:'system'|'custom',fields:string[],schemaVersion:1,version}。系统模板提供每种报告/周期的默认字段配置且不可修改；自定义按 actor+tenant 隔离、总数最多10、名称 trim1—50不分大小写唯一，新增/改名/另存均事务与审计。
+- [x] POST /api/report-templates {name,kind,timeType,fields}；PUT /{id} {name,timeType,fields,expectedVersion}（kind 不变）；DELETE /{id}?expectedVersion=；POST /{id}/clone {name,expectedVersion}。克隆明确生成私人模板，不修改系统模板。
+- [x] 字段目录仅覆盖已有报告真实 Summary、Section/Column 及必要的站点/时段/生成时间元信息；白名单、必选字段与 linkRef 依赖在服务器校验，UI 自动保留必选项并处理联动。未知参考字段继续待办，不用示例指标填充。
+- [x] 既有 JobRequest 增加可选 templateId、expectedTemplateVersion；同时给出或同时省略。模板与 kind 匹配，版本变化409；本批模板请求不接受额外 pointIds，原无模板请求保持原行为。创建时将模板版本、字段、名称保存为 analysis_job 的不可变 JSON 快照；历史无快照任务保持原输出。生成正文、预览和CSV均使用同一快照过滤字段，删除/修改模板不破坏已有任务及重试。
+- [x] ApiAnalyticsPage 报告中心接入模板选择与管理/另存，day/month/year/range 控件转换为现有 ISO 半开时间范围；历史记录与预览展示任务快照模板名。复用当前白绿组件；实施前读取 Figma4:7 中最新对应报告画板及截图，优先克制版本，记录选定节点。
+- [x] 测试名称/容量/系统只读/另存/字段依赖/所有权/409/失败保留草稿；真实HTTP创建模板→生成报告→预览与CSV一致→删除模板后历史仍可读/下载；撤权后仍拒绝报告数据。所有数据只入新库。
+
+### Task 8: 自账户姓名编辑的现有功能闭环修复
+
+仅完善 shell-basic-info 已明确的姓名子流程，不将头像、联系方式或单位转换标为完成。姓名长度继续兼容当前项目1—120合同，不静默收紧历史资料；复用现有 GET/PUT /api/me/profile、审计与身份刷新，不增加账号或变更密码。
+
+- [x] 查看最新Figma设置1077:1794中账户资料实际画板context与截图，记录替代/选用节点；沿用现有克制风格。
+- [x] 初次读取完成前禁止编辑/提交，防止迟到读取覆盖输入；保存/失败保留正确草稿和错误状态，成功重读资料及全局身份，文案仅描述姓名。
+- [x] 将姓名dirty与保存中状态注册到设置页已有离开guard；关闭/导航明确保留或放弃，不自动写入。
+- [x] 浏览器验证刷新回读、空白验证、读取/写入失败保留草稿、导航保护及切换账户不继承草稿；后端既有姓名接口不变时不为UI改动新增无意义镜像测试。
+
+### Task 9: 手工购电模板版本与站点绑定闭环
+
+只实现 fixed/tou 单一购电配置。外部/自动/阶梯、独立售电、基本电费、工作日、按月小时导入仍TODO；不调用外部服务，不修改或重算任何结算金额。当前账单没有费率FK，不冒充已取得费率核算来源。现有策略概览从 GET stations/{id}/tariffs 读取，必须保持该消费者可见当前有效绑定。
+
+- [ ] 新增V31及TariffTemplate/Binding服务、控制器和规则/受保护PG测试。模板身份按actor tenant隔离，复用已实现tariff.manage（库管理requirePermission；绑定逐站requireStationPermission并检查站点与模板同tenant）；不启用tariff.read。
+- [ ] GET/POST /api/tariff-templates；GET/PUT/DELETE /{uuid}。DTO {id,name,currency,pricingMode:'fixed'|'tou',periods:[{startMinute,endMinute,band,pricePerKwh:string}],version}。POST无version；PUT全配置+expectedVersion；DELETE?expectedVersion为归档。name trim1—50、当前租户未归档名称大小写不敏感唯一；currency沿用[A-Z]{3}。每次更新创建新不可变价格版本（已有tariff/period作为载体），已绑定版本价格/名称不变；归档不解绑历史，不能再绑定。
+- [ ] 价格为严格JSON十进制字符串，绝对值≤99999999.999999、最多6位小数，允许0/负数（兼容当前负价规则），输出统一6位。时段整数分钟1—96组，排序后无缝覆盖[0,1440)，band沿用peak/flat/valley/superPeak；fixed须单个全天flat。拒绝未知字段/无效版本及输入，不将数值JSON静默舍入。
+- [ ] GET/POST /api/stations/{sid}/tariff-bindings，GET可includeInactive=true。Binding {id:string,stationId:string,templateId:string|null,templateVersion:number|null,name,currency,pricingMode:'fixed'|'tou'|null,periods,validFrom,validUntil,active:boolean,version}；遗留未归属模板的绑定保留null身份。POST {templateId,expectedTemplateVersion,validFrom,validUntil}。PUT /{bindingId} {validFrom,validUntil,expectedVersion}仅改日期；DELETE?expectedVersion明确解除（active=false，不删记录）。结束日不含，允许单日[D,D+1)，UI明确标注，不复制参考未知日期边界。
+- [ ] GET /stations/{sid}/tariff-bindings/{bindingId}/history 返回按version排序的Binding[]，冻结每次有效期和解除状态。为station_tariff增加active/version/可空模板版本关联，初始旧数据不猜tenant、不转入模板库。保留旧绑定初始历史；新建/日期编辑/解除都保留不可变历史。数据库约束模板版本载体及绑定身份不可变、同站active日期不重叠；更新旧GET只返回active，旧POST默认active仍受同一排斥约束。所有写与审计原子化，每站串行绑定写入。
+- [ ] 历史保护裁定：本批新建/改期validFrom须≥Asia/Shanghai明天；改期/解除还要求绑定原validFrom≥上海明天（包括legacy），已生效/过去的绑定只读并返回409。Binding额外返回modifiable:boolean给UI禁用，写入时服务器仍复核。已生效绑定的未来截断/替换语义尚未明确，独立TODO；不将此子集标为整个绑定流程完成。
+- [ ] 新API模式TariffWorkspace使用服务器模板/绑定管理（可独立新组件），替换把本机模板保存当主要功能的路径；demo原演示保留。支持模板新建/编辑/归档、绑定/日期编辑/解除、历史与服务器刷新。失败/409/撤权保留草稿并给恢复路径，跨站导航与保存中保护复用现有guard。外部/售电/日历草稿等未落库能力明确待办，不假发布。
+- [ ] 修改样式前读取Figma运营4:4中实际电价页面最新context+screenshot并记录节点，沿用克制白绿。规则/PG/HTTP/浏览器覆盖负价和六位精度、跨租户、重复/版本/重叠拒绝、改模板不改绑定、改期/解除历史可读、旧GET兼容及结算金额未动。

@@ -113,4 +113,3 @@ class MonitorTemplatePostgresTest {
     finally { manager.rollback(savepoint); }
   }
 }
-

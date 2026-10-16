@@ -19,12 +19,14 @@ test("API analytics renders sparse history and downloads only successful server 
   let reportCalls = 0
   let reportFails = false
   let job
-  await page.route("http://127.0.0.1:18090/api/**", async (route) => {
+  await page.route(/^http:\/\/127\.0\.0\.1:\d+\/api\//, async (route) => {
     const request = route.request()
     const url = new URL(request.url())
     const path = url.pathname.slice(4)
     let data = []
     if (path === "/auth/me") data = user
+    else if (path === "/monitor/templates") data = { items: [], selectedId: null }
+    else if (path === "/report-template-fields") data = { schemaVersion: 1, timeTypes: [{ code: 'range', label: '日期范围' }], fields: ['stationId','from','to','generatedAt'].map(code => ({ code: `meta.${code}`, label: code, group: '报告信息', locked: true, linkRef: [] })) }
     else {
       assert.equal(request.headers().authorization, "Bearer analytics-token")
       if (path === "/stations") data = [{ id: 12, name: "分析站点", code: "A-12", rated_power_kw: 100, capacity_kwh: 200 }]

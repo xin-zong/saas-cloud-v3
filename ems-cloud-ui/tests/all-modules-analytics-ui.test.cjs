@@ -14,10 +14,12 @@ async function setup(role = 'owner') {
   const user = { id: '7', name: '分析用户', account: 'analytics@test', role, organization: '测试', stationIds: ['12', '13'], permissions, stationPermissions: { 12: [...permissions], 13: ['asset.read', 'telemetry.read', 'report.export', 'alarm.read'] }, organizationPermissions: {} }
   const state = { user, calls: [], jobs: [], failPoints: false, failReport: false, delayReport: null, downloads: [], errors: [] }
   page.on('pageerror', e => state.errors.push(e.message)); page.on('download', d => state.downloads.push(d))
-  await page.route('http://127.0.0.1:18090/api/**', async route => {
+  await page.route(/^http:\/\/127\.0\.0\.1:\d+\/api\//, async route => {
     const url = new URL(route.request().url()), p = url.pathname.slice(4); state.calls.push(url)
     let data = []
     if (p === '/auth/me') data = user
+    else if (p === '/monitor/templates') data = { items: [], selectedId: null }
+    else if (p === '/report-template-fields') data = { schemaVersion: 1, timeTypes: [{ code: 'range', label: '日期范围' }], fields: ['stationId','from','to','generatedAt'].map(code => ({ code: `meta.${code}`, label: code, group: '报告信息', locked: true, linkRef: [] })) }
     else if (p === '/stations') data = [{ id: 12, name: '分析甲站', code: 'A12' }, { id: 13, name: '分析乙站', code: 'B13' }]
     else if (/\/stations\/\d+\/points/.test(p)) {
       if (state.failPoints) return route.fulfill({ status: 500, json: { msg: '测点读取失败' } })
@@ -58,8 +60,14 @@ async function setup(role = 'owner') {
     } else if (p === '/audit') data = state.audits ?? [{ id: 8, actor_id: 7, occurred_at: '2026-09-26T08:00:00Z', action: 'report.export', detail: 'station=12,kind=revenue' }]
     await route.fulfill({ json: { code: 0, data } })
   })
-  await page.goto(process.env.API_PREVIEW_URL || 'http://127.0.0.1:8461', { waitUntil: 'domcontentloaded' })
-  await page.getByRole('button', { name: '分析与报告', exact: true }).click()
+  try {
+    await page.goto(process.env.API_PREVIEW_URL || 'http://127.0.0.1:8461', { waitUntil: 'domcontentloaded' })
+    await page.getByRole('button', { name: '分析与报告', exact: true }).click()
+  } catch (error) {
+    await fs.writeFile(path.join(evidence, 'setup-failure.txt'), JSON.stringify({ body: await page.locator('body').innerText(), calls: state.calls.map(url => url.pathname), errors: state.errors }, null, 2))
+    await browser.close()
+    throw error
+  }
   return { browser, page, state }
 }
 test('current multi-signal analysis, searchable station picker and older trend/audit controls are reachable', async () => {
@@ -364,7 +372,7 @@ test('download validation and point failure retry preserve parameter choices wit
     await page.getByRole('tab', { name: '报告中心', exact: true }).click()
     await page.getByLabel('报告开始日期').fill('2024-01-01')
     await page.getByRole('button', { name: '生成报告', exact: true }).click()
-    await page.getByRole('alert').getByText('请选择 366 天内有效时间范围。').waitFor()
+    await page.getByRole('alert').getByText(/请选择 366 天内有效(?:报告)?时间范围。/).waitFor()
     assert.equal(state.downloads.length, 0)
   } finally { await browser.close() }
 })

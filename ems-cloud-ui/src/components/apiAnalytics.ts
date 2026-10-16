@@ -1,3 +1,4 @@
+import type { ReportTemplateSnapshot } from "@/api/reportTemplates"
 import { localized as __locale, calendarBounds } from '@/preferences/date'
 import { api, getToken, setToken, getSessionVersion, refreshAfterForbidden, ApiError } from "@/api/client"
 
@@ -73,8 +74,8 @@ export function historyCsv(point: MeasurementPoint, rows: HistoryBucket[]): stri
 
 export const exactValueText = (value: unknown): string => value == null ? "—" : typeof value === "object" ? JSON.stringify(value) : String(value)
 export type AnalysisJobKind = ReportKind | "telemetry"
-export type AnalysisJobRequest = { kind: AnalysisJobKind; from: string; to: string; minutes?: number; pointIds?: string[] }
-export type AnalysisJob = { id: string; stationId: string; kind: AnalysisJobKind; from: string; to: string; minutes: number | null; status: "pending" | "running" | "completed" | "failed"; createdAt: string; completedAt: string | null; error: string | null; pointIds: string[] }
+export type AnalysisJobRequest = { kind: AnalysisJobKind; from: string; to: string; minutes?: number; pointIds?: string[]; templateId?: string; expectedTemplateVersion?: number }
+export type AnalysisJob = { id: string; stationId: string; kind: AnalysisJobKind; from: string; to: string; minutes: number | null; status: "pending" | "running" | "completed" | "failed"; createdAt: string; completedAt: string | null; error: string | null; pointIds: string[]; templateSnapshot?: ReportTemplateSnapshot | null }
 export type AnalysisPreview = { job: AnalysisJob; summary: { label: string; value: string | null; unit?: string }[]; sections: { title: string; columns: { key: string; label: string }[]; rows: Record<string, unknown>[] }[] }
 export const jobStatusText = (status: AnalysisJob["status"]) => ({ pending: "等待生成", running: "生成中", completed: "可下载", failed: "生成失败" })[status]
 
@@ -86,6 +87,10 @@ export function reportDateRange(from: string, to: string): { from: string; to: s
 }
 
 export async function createAnalysisJob(stationId: string, request: AnalysisJobRequest, signal?: AbortSignal): Promise<AnalysisJob> {
+  const hasTemplate = request.templateId !== undefined, hasVersion = request.expectedTemplateVersion !== undefined
+  if (hasTemplate !== hasVersion) throw new Error("模板ID与版本须同时提供或同时省略。")
+  if (hasTemplate && (typeof request.templateId !== 'string' || !request.templateId.trim() || !Number.isSafeInteger(request.expectedTemplateVersion) || request.expectedTemplateVersion! < 1)) throw new Error("请选择有效模板及其版本。")
+  if (hasTemplate && (request.kind === 'telemetry' || (request.pointIds?.length ?? 0) > 0)) throw new Error("模板报告不接受额外测点参数。")
   if (![request.from, request.to].every(value => /(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value)))) throw new Error("任务时间必须包含有效时区。")
   const duration = Date.parse(request.to) - Date.parse(request.from), maxDays = request.kind === "telemetry" ? 31 : 366
   if (duration <= 0 || duration > maxDays * 86400000) throw new Error(`请选择 ${maxDays} 天内有效时间范围。`)

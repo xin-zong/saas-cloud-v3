@@ -33,7 +33,7 @@ export function useAnalysisJobs(stationId: string | undefined, kind: AnalysisJob
     return () => window.clearInterval(timer)
   }, [records, reload])
   async function run(operation: (signal: AbortSignal) => Promise<AnalysisJob | void>): Promise<AnalysisJob | undefined> {
-    action.current?.abort()
+    if (action.current && !action.current.signal.aborted) return
     const request = new AbortController(); action.current = request
     setBusy(true); setError("")
     try {
@@ -48,12 +48,12 @@ export function useAnalysisJobs(stationId: string | undefined, kind: AnalysisJob
       return result ?? undefined
     } catch (cause) {
       if (!request.signal.aborted) setError(cause instanceof Error ? cause.message : "任务操作失败，请重试")
-    } finally { if (!request.signal.aborted) setBusy(false) }
+    } finally { if (action.current === request) { action.current = null; if (!request.signal.aborted) setBusy(false) } }
   }
   return { records, offset, setOffset, loading, busy, error, setError, reload,
     generate: (request: AnalysisJobRequest) => stationId ? run(signal => createAnalysisJob(stationId, request, signal)) : Promise.resolve(undefined),
     retry: (row: AnalysisJob) => run(signal => retryAnalysisJob(row.id, signal)),
     download: (row: AnalysisJob) => run(signal => downloadAnalysisJob(row, signal)),
-    cancel: () => { action.current?.abort(); setBusy(false); reload() },
+    cancel: () => { action.current?.abort(); action.current = null; setBusy(false); reload() },
   }
 }

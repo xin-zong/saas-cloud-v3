@@ -332,8 +332,10 @@ function ScopeNote({
 function PersonalPreferences({
   settings,
   set,
+  registerProfileLeaveGuard,
 }: {
   settings: SettingsState
+  registerProfileLeaveGuard?: RegisterLeaveGuard
   set: <K extends keyof SettingsState>(
     key: K,
     value: SettingsState[K],
@@ -365,7 +367,7 @@ function PersonalPreferences({
         <p className="settings-card-note">
           账户身份和权限由平台管理维护，此处不提供角色名称或角色切换。
         </p>
-      </SettingsCard>:<PersonalCenterPage/>}
+      </SettingsCard>:<PersonalCenterPage registerLeaveGuard={registerProfileLeaveGuard}/>}
       <SettingsCard title="常用偏好">
         <div className="settings-preferences">
           <ChoiceRow
@@ -751,6 +753,8 @@ export default function SystemSettingsPage({
   const busyRef = useRef(false)
   const securityLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
   const registerSecurityLeaveGuard = useCallback<RegisterLeaveGuard>(guard => { securityLeaveGuard.current = guard }, [])
+  const profileLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
+  const registerProfileLeaveGuard = useCallback<RegisterLeaveGuard>(guard => { profileLeaveGuard.current = guard }, [])
   const alive = useRef(true)
   useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
   const dirty = JSON.stringify(settings) !== JSON.stringify(baseline)
@@ -758,6 +762,7 @@ export default function SystemSettingsPage({
   const { requestLeave: requestDraftLeave, settleLeave } = useEditorLeaveGuard({ dirty, onConfirm: () => setLeave(true), onCancel: () => setLeave(false) })
   const requestLeave = useCallback(async () => {
     if (busyRef.current) { setError("正在保存，请等待保存完成后再离开。"); return false }
+    if (profileLeaveGuard.current && !await profileLeaveGuard.current()) return false
     if (securityLeaveGuard.current && !await securityLeaveGuard.current()) return false
     return requestDraftLeave()
   }, [requestDraftLeave])
@@ -873,7 +878,7 @@ export default function SystemSettingsPage({
           <fieldset disabled={!serverReady || busy} style={{border: 0, padding: 0, margin: 0}}>
           <div className="settings-detail-content">
             {activeCategory === "personal" && (
-              <PersonalPreferences settings={settings} set={set} />
+              <PersonalPreferences settings={settings} set={set} registerProfileLeaveGuard={registerProfileLeaveGuard} />
             )}
             {activeCategory === "notifications" && (
               <NotificationSettings settings={settings} set={set} />

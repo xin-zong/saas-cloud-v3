@@ -1,3 +1,4 @@
+import type { RegisterLeaveGuard } from "./useEditorLeaveGuard"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Download, X } from "lucide-react"
 import type { Station } from "@/App"
@@ -799,18 +800,20 @@ function ReportPreviewDialog({
 }
 
 export default function AnalyticsAiPage({
+  registerLeaveGuard,
   stations,
   allowedTabs = ["数据分析", "数据下载", "报告中心"],
   allowedReportTypes = reportTypes,
   role = "owner",
 }: {
+  registerLeaveGuard?: RegisterLeaveGuard
   stations: Station[]
   onOpenStation: (id: string, subNav?: string) => void
   allowedTabs?: readonly AnalysisTab[]
   allowedReportTypes?: readonly ReportType[]
   role?: UserRole
 }) {
-  if (!DEMO_MODE) return <ApiAnalyticsPage stations={stations} allowedTabs={allowedTabs} allowedReportTypes={allowedReportTypes} role={role} />
+  if (!DEMO_MODE) return <ApiAnalyticsPage registerLeaveGuard={registerLeaveGuard} stations={stations} allowedTabs={allowedTabs} allowedReportTypes={allowedReportTypes} role={role} />
   return <DemoAnalyticsAiPage stations={stations} allowedTabs={allowedTabs} allowedReportTypes={allowedReportTypes} role={role} />
 }
 

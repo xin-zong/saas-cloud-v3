@@ -6,38 +6,39 @@
     {
       "workflowId": "report-template",
       "title": "常规报表模板",
-      "status": "in-progress-batch-4",
-      "completed": false,
-      "notes": "Task7实施中：个人模板、现有真实字段目录及报表任务不可变快照；尚未完成迁移/真实HTTP验收，不标完成。",
+      "status": "implemented-and-verified",
+      "completed": true,
+      "notes": "V30模板CRUD/另存、按人租户隔离、总数10及版本约束、12个系统配置和现有真实字段目录已接通报告任务快照。15项规则PG、30次真实HTTP、新4项client+10项浏览器、原19项契约及13项分析界面回归通过。参考未知字段与多站/语言/异步队列等独立范围仍待办。",
       "domainIds": [
         "reports"
       ],
       "baselineAssessment": "no-corresponding-implementation-established",
-      "remainingScope": [
-        "缺系统/自定义模板分区、模板名称及周期字段方案和模板CRUD。",
-        "最多10个自定义、系统模板另存的规则需本项目服务端明确，不能照搬参考文案当已实现限制。"
-      ],
+      "remainingScope": [],
       "acceptanceScenarios": [
         "仅隔离验收：新增/改名/删除自定义模板后刷新可复读；系统模板不能原地修改；容量与越权请求被服务端校验。"
       ],
       "contractUnknowns": [
         "参考SYS按钮实际走update，服务端是否克隆未知；本项目模板容量策略待确认。",
         "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
+      ],
+      "resolvedProjectContracts": [
+        "系统模板明确clone产生新私人ID，原记录只读；私人总数10由本项目服务端验证。",
+        "字段来自本项目既有真实报告，必选/关联字段两端校验；原参考动态字段目录仍未知。"
       ]
     },
     {
       "workflowId": "report-export",
       "title": "报表导出闭环",
-      "status": "pending-implementation",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "Task7已实现私人/系统模板选择、locked/linkRef编辑、day/month/year/range控件及不可变快照预览/CSV，真实PG/HTTP/浏览器验收通过；只覆盖现有报告字段与366天上限，不标完整参考输出范围。",
       "domainIds": [
         "reports"
       ],
       "baselineAssessment": "partial-current-capability",
       "remainingScope": [
-        "缺模板选择、全站/指定站/筛选站范围快照、报告名称与输出语言的创建契约。",
-        "现有持久任务不等于参考queue/report后台队列；不能因前端轮询推断异步执行。"
+        "多站点/筛选站范围快照、独立报告名称和输出语言仍待办。",
+        "后台异步大报告队列及参考最终文件格式契约未知，当前仍为既有持久同步任务。"
       ],
       "acceptanceScenarios": [
         "仅隔离验收：零站点拒绝；同一产物预览与CSV一致；建任务后撤权则下载拒绝；失败可显式重试。"
@@ -474,15 +475,15 @@
     {
       "workflowId": "shell-basic-info",
       "title": "个人资料姓名与头像",
-      "status": "pending-implementation",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "Task8姓名子流程闭环：复用既有/me/profile落库与身份刷新，初载/失败禁用、草稿和保存中导航保护、同页切账户及迟到响应隔离通过11项浏览器和15次真实HTTP，测试账号姓名已恢复。继续兼容本项目1—120字符合同。头像上传不在本批。",
       "domainIds": [
         "personal"
       ],
       "baselineAssessment": "partial-current-capability",
       "remainingScope": [
-        "参考头像上传及50字长度限制与当前name120不同；成功提示提及头像不证明上传实现。"
+        "头像上传的格式/尺寸、对象存储、引用与旧文件清理契约未知，保留待办；不将姓名保存提示当成头像实现。"
       ],
       "acceptanceScenarios": [
         "空白名失败",
@@ -492,6 +493,10 @@
       "contractUnknowns": [
         "头像存储服务、格式尺寸和孤立文件回收未知",
         "仅静态证据；参考服务端校验、实际权限及成功写入均未验证。"
+      ],
+      "resolvedProjectContracts": [
+        "姓名按当前账户更新，不接受其他用户ID；trim后非空并沿用120字符上限。",
+        "使用现有身份刷新和设置离开guard，不重置密码或修改其他账户。"
       ]
     },
     {
@@ -1112,16 +1117,15 @@
     {
       "workflowId": "report-template-editor-boundaries",
       "title": "报表内容编辑器保存前可达、字段联动与SYS另存边界",
-      "status": "pending-implementation",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "Task7已实现私人/系统模板选择、locked/linkRef编辑、day/month/year/range控件及不可变快照预览/CSV，真实PG/HTTP/浏览器验收通过；只覆盖现有报告字段与366天上限，不标完整参考输出范围。",
       "domainIds": [
         "reports"
       ],
       "baselineAssessment": "no-corresponding-implementation-established",
       "remainingScope": [
-        "缺保存前读取字段schema、锁定字段自动选中、deviceInfo与deviceData联动及类型切换清理。",
-        "参考保存即写模板，SYS另存实际update语义未知；当前无法承接这条编辑闭环。"
+        "参考实际动态字段全集及deviceInfo/deviceData特定联动未取得；当前只实现本项目真实字段目录和linkRef。"
       ],
       "acceptanceScenarios": [
         "仅隔离验收：关闭草稿无写入；移除设备信息同步清关联数据；锁定字段不可取消；系统模板另存产生新ID。"
@@ -1134,16 +1138,15 @@
     {
       "workflowId": "report-manual-all-types",
       "title": "手动报表Daily/Monthly/Yearly/Total的周期与字段变化",
-      "status": "pending-implementation",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "Task7已实现私人/系统模板选择、locked/linkRef编辑、day/month/year/range控件及不可变快照预览/CSV，真实PG/HTTP/浏览器验收通过；只覆盖现有报告字段与366天上限，不标完整参考输出范围。",
       "domainIds": [
         "reports"
       ],
       "baselineAssessment": "partial-current-capability",
       "remainingScope": [
-        "未按Daily/Monthly/Yearly/Total选择模板和参数组；当前业务kind与参考timeType不是同一维度。",
-        "缺各类型日/月/年控件、Total半年窗口、对应跨度上限及站点范围/名称/语言输入；现有366天限制不支持参考多年范围。"
+        "参考Total半年窗口、多年跨度及站点范围/独立名称/输出语言未实现；当前day/month/year/range均受既有366天限制。"
       ],
       "acceptanceScenarios": [
         "仅隔离验收：日/月/年/Total边界分别验证；起晚于止拒绝；无权限站点被剔除或拒绝且行为明确；空数据保留真实空态。"
@@ -2758,5 +2761,5 @@
   "comparisonBaselinePath": "docs/reference-platform/function-comparison.json",
   "comparisonBaselineMeaning": "实施前静态比较快照；当前实施结果以本台账和逐批验收证据为准，不反写历史静态结论。",
   "verificationPath": "docs/superpowers/verification/2026-10-16-known-reference-features.md",
-  "databaseMigrationVersion": 29
+  "databaseMigrationVersion": 30
 }

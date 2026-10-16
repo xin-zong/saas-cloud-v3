@@ -10,7 +10,7 @@ function setup() {
   if(cache.has(path)) return cache.get(path)
   const exports={};cache.set(path,exports)
   const code=ts.transpileModule(fs.readFileSync(`${__dirname}/../src/${path}.ts`,'utf8').replaceAll('import.meta.env','{}'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText
-  new Function('exports','require',code)(exports,name=>name==='react'?require('react'):load(name==='@/api/client'?'api/client':name.startsWith('./')?`components/${name.slice(2)}`:name.replace('@/','')))
+  new Function('exports','require',code)(exports,name=>name==='react'?require('react'):load(name==='@/api/client'?'api/client':name.startsWith('.')?require('node:path').posix.normalize(require('node:path').posix.join(require('node:path').posix.dirname(path),name)):name.replace('@/','')))
   return exports
  }
  return { ...load('components/apiAnalytics'), ...load('components/stationAnalysisData'), ...load('components/useAnalysisJobs'), client:load('api/client') }
@@ -108,7 +108,7 @@ test('report bounds and displayed dates stay on Shanghai business days in UTC an
    process.env.TZ=zone
    assert.deepEqual(service.reportDateRange('2026-09-29','2026-09-29'),{from:'2026-09-28T16:00:00.000Z',to:'2026-09-29T16:00:00.000Z'})
    assert.deepEqual(service.reportDateRange('2026-03-07','2026-03-08'),{from:'2026-03-06T16:00:00.000Z',to:'2026-03-08T16:00:00.000Z'})
-   assert.equal(service.reportBusinessDate('2026-09-28T16:00:00Z'),'2026/9/29')
+   assert.equal(service.reportBusinessDate('2026-09-28T16:00:00Z'),'2026/09/29')
   }
  } finally { if(previous===undefined) delete process.env.TZ;else process.env.TZ=previous }
 })

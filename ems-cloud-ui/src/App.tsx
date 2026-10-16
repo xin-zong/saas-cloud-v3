@@ -306,6 +306,8 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
   const registerOverviewLeaveGuard = useCallback((guard: null | (() => Promise<boolean>)) => { overviewLeaveGuard.current = guard }, [])
   const [logoutConfirm, setLogoutConfirm] = useState(false)
   const logoutPending = useRef(false)
+  const analyticsLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
+  const registerAnalyticsLeaveGuard = useCallback((guard: null | (() => Promise<boolean>)) => { analyticsLeaveGuard.current = guard }, [])
   const settingsLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
   const registerSettingsLeaveGuard = useCallback((guard: null | (() => Promise<boolean>)) => { settingsLeaveGuard.current = guard }, [])
   const platformLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
@@ -492,6 +494,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
     if (activeNav === "工单与审批") return workOrdersLeaveGuard.current?.() ?? Promise.resolve(true)
     if (["平台管理","企业管理","套餐权限管理"].includes(activeNav)) return platformLeaveGuard.current?.() ?? Promise.resolve(true)
     if (activeNav === "设置") return settingsLeaveGuard.current?.() ?? Promise.resolve(true)
+    if (activeNav === "分析与报告") return analyticsLeaveGuard.current?.() ?? Promise.resolve(true)
     return Promise.resolve(true)
   }
 
@@ -1032,6 +1035,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
         )}
         {activeNav === "分析与报告" && (
           <AnalyticsAiPage
+            registerLeaveGuard={registerAnalyticsLeaveGuard}
             stations={operationalStations}
             onOpenStation={handleOpenStation}
             allowedTabs={roleConfig.analysisTabs}

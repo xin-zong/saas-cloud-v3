@@ -6,7 +6,7 @@ function load(path, deps = { './apiAnalytics': {} }, extension = 'ts') {
   const source = fs.readFileSync(`${__dirname}/../src/${path}.${extension}`, 'utf8')
   const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React } }).outputText
   const exports = {}
-  new Function('exports', 'require', code)(exports, name => deps[name] ?? (() => { throw Error(name) })())
+  new Function('exports', 'require', code)(exports, name => { if(deps[name]!==undefined)return deps[name];if(name==='@/preferences/PreferencesProvider')return {};if(name.startsWith('@/preferences/'))return load(name.slice(2),{});if(path.startsWith('preferences/')&&name.startsWith('.'))return load(require('node:path').posix.normalize(require('node:path').posix.join(require('node:path').posix.dirname(path),name)),{});throw Error(name) })
   return exports
 }
 test('interval energy counts all buckets, never bridges missing values and separates signs', () => {

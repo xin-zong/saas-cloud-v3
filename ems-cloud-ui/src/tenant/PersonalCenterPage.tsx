@@ -1,54 +1,103 @@
-import { useEffect, useState, type FormEvent } from "react"
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 
-import { send } from "@/api/client"
+import { api, send } from "@/api/client"
 
 import { useAuth } from "@/auth/AuthContext"
 
 import { Button, Badge } from "@/components/ui/Workspace"
+import SettingsDialog from "@/components/SettingsDialog"
+import { useEditorLeaveGuard, type RegisterLeaveGuard } from "@/components/useEditorLeaveGuard"
 
 import { Field, QueryState, useTenantQuery } from "./shared"
 
 import type { Row } from "./types"
 
-export default function PersonalCenterPage() {
-  const { user } = useAuth(),
-    profile = useTenantQuery<Row>("/me/profile")
+const SAVING_PROFILE_NOTICE = "正在保存账户资料，请等待完成后再离开。"
 
-  const [name, setName] = useState(user?.name ?? ""),
-    [error, setError] = useState(""),
-    [busy, setBusy] = useState(false),
-    [notice, setNotice] = useState("")
+// Settings 1077:1794 → R7 personal preferences 1146:810 (latest context/screenshot).
+export default function PersonalCenterPage({ registerLeaveGuard }: { registerLeaveGuard?: RegisterLeaveGuard }) {
+  const { user } = useAuth()
+  return <PersonalProfileEditor key={user?.id ?? "anonymous"} registerLeaveGuard={registerLeaveGuard} />
+}
 
+function PersonalProfileEditor({ registerLeaveGuard }: { registerLeaveGuard?: RegisterLeaveGuard }) {
+  const { user } = useAuth()
+  const [profile, setProfile] = useState<Row | null>(null)
+  const [name, setName] = useState("")
+  const [baseline, setBaseline] = useState("")
+  const [error, setError] = useState("")
+  const [loadError, setLoadError] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState("")
+  const [loadVersion, setLoadVersion] = useState(0)
+  const [leaving, setLeaving] = useState(false)
+  const alive = useRef(false)
+  const busyRef = useRef(false)
+  const dirty = name !== baseline
+  const dirtyRef = useRef(dirty)
+  dirtyRef.current = dirty
+  useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
   useEffect(() => {
-    if (profile.data) setName(profile.data.display_name)
-  }, [profile.data])
-
+    const controller = new AbortController()
+    setLoading(true); setLoadError("")
+    api<Row>("/me/profile", { signal: controller.signal }).then(next => {
+      if (controller.signal.aborted) return
+      setProfile(next); setBaseline(next.display_name)
+      if (!dirtyRef.current) setName(next.display_name)
+    }).catch(error => { if (!controller.signal.aborted) setLoadError(error.message) })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false) })
+    return () => controller.abort()
+  }, [loadVersion])
+  const { requestLeave: requestDraftLeave, settleLeave } = useEditorLeaveGuard({
+    dirty, onConfirm: () => setLeaving(true), onCancel: () => setLeaving(false),
+  })
+  const requestLeave = useCallback(async () => {
+    if (busyRef.current) { setError(SAVING_PROFILE_NOTICE); return false }
+    return requestDraftLeave()
+  }, [requestDraftLeave])
+  useEffect(() => { registerLeaveGuard?.(requestLeave); return () => registerLeaveGuard?.(null) }, [registerLeaveGuard, requestLeave])
+  useEffect(() => {
+    if (!dirty && !busy) return
+    const prevent = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = "" }
+    window.addEventListener("beforeunload", prevent)
+    return () => window.removeEventListener("beforeunload", prevent)
+  }, [dirty, busy])
+  function decideLeave(allow: boolean) {
+    if (allow) { setName(baseline); setError(""); setNotice("") }
+    setLeaving(false); settleLeave(allow)
+  }
   async function save(e: FormEvent) {
     e.preventDefault()
-
-    setBusy(true)
-
-    setError("")
-
-    setNotice("")
-
+    if (busyRef.current || loading || !profile || loadError || !dirty) return
+    const nextName = name.trim()
+    if (!nextName || name.length > 120) { setError("显示名称须为 1–120 个字符，不能仅包含空白。"); return }
+    busyRef.current = true; setBusy(true); setError(""); setNotice("")
     try {
-      await send("/me/profile", "PUT", { name })
-
-      setNotice("显示名称已保存，头像和全局身份展示已刷新。")
-
-      profile.reload()
-    } catch (e) {
-      setError((e as Error).message)
+      await send("/me/profile", "PUT", { name: nextName })
+      if (!alive.current) return
+      setName(nextName); setBaseline(nextName)
+      try {
+        const next = await api<Row>("/me/profile")
+        if (!alive.current) return
+        setProfile(next); setName(next.display_name); setBaseline(next.display_name)
+        setLoadError(""); setNotice("显示名称已保存。")
+      } catch (error) {
+        if (alive.current) setLoadError(`姓名已写入，但资料回读失败，请重试读取。${error instanceof Error ? error.message : ""}`)
+      }
+    } catch (error) {
+      if (alive.current) setError(error instanceof Error ? error.message : "显示名称保存失败，请重试。")
     } finally {
-      setBusy(false)
+      busyRef.current = false
+      if (alive.current) { setBusy(false); setError(current => current === SAVING_PROFILE_NOTICE ? "" : current) }
     }
   }
 
   return (
     <section className="tenant-card">
       <h2>账户资料</h2>
-      <QueryState loading={profile.loading} error={profile.error} />
+      <QueryState loading={loading} error={loadError} />
+      {loadError && <Button disabled={busy || loading} onClick={() => setLoadVersion(version => version + 1)}>重试读取账户资料</Button>}
       <form onSubmit={save}>
         <div className="tenant-form-grid">
           <Field label="显示名称">
@@ -56,8 +105,8 @@ export default function PersonalCenterPage() {
               required
               maxLength={120}
               value={name}
-              disabled={busy}
-              onChange={(e) => setName(e.target.value)}
+              disabled={busy || loading || !profile || !!loadError}
+              onChange={(e) => { setName(e.target.value); setError(""); setNotice("") }}
             />
           </Field>
           <Field label="登录邮箱">
@@ -65,7 +114,7 @@ export default function PersonalCenterPage() {
           </Field>
         </div>
         <p className="tenant-muted">
-          {profile.data?.tenant_name} ·{" "}
+          {profile?.tenant_name} ·{" "}
           {user?.roleNames?.join("、") || "未分配角色"}{" "}
           {user?.tenant?.administrator && <Badge>受保护管理员</Badge>}
         </p>
@@ -82,11 +131,15 @@ export default function PersonalCenterPage() {
         <Button
           type="submit"
           variant="primary"
-          disabled={busy || name === user?.name}
+          disabled={busy || loading || !profile || !!loadError || !dirty}
         >
           {busy ? "正在保存…" : "保存账户资料"}
         </Button>
       </form>
+      {leaving && <SettingsDialog title="未保存的账户姓名" onClose={() => decideLeave(false)}>
+        <p>离开将放弃未保存的姓名修改，不会自动保存。</p>
+        <footer><Button onClick={() => decideLeave(false)}>继续编辑</Button><Button variant="primary" onClick={() => decideLeave(true)}>放弃修改</Button></footer>
+      </SettingsDialog>}
     </section>
   )
 }
