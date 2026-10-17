@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AlarmWorkspaceService {
   private final DomainSupport s;
   public AlarmWorkspaceService(DomainSupport s) { this.s=s; }
-  private static final String FROM=" FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN ems_alarm_business_origin o ON o.alarm_id=a.id JOIN station st ON st.id=COALESCE(o.station_id,d.station_id) ";
+  private static final String FROM=" FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN alarm_business_origin o ON o.alarm_id=a.id JOIN station st ON st.id=COALESCE(o.station_id,d.station_id) ";
   private static final String COLUMNS="a.id,a.device_id,a.code,a.title,a.severity,a.source,a.version,a.occurred_at,CASE WHEN a.recovered_at<=now() THEN a.recovered_at END AS recovered_at,a.acknowledged_by,a.acknowledged_at,a.sla_due_at,a.closed_by,a.closed_at,COALESCE(o.station_id,d.station_id) AS station_id,d.name AS device_name,st.name AS station_name,CASE WHEN a.recovered_at<=now() THEN a.recovered_at END AS effective_recovered_at,CASE WHEN a.closed_at IS NOT NULL THEN 'closed' WHEN a.recovered_at<=now() THEN 'recovered' ELSE 'active' END AS lifecycle";
   public Map<String,Object> list(Long stationId,String view,String source,String severity,Long deviceId,String readFlag,String query,OffsetDateTime start,OffsetDateTime end,int limit,int offset) {
     s.limit(limit);s.offset(offset);
@@ -47,8 +47,17 @@ public class AlarmWorkspaceService {
     var a=authorized(id,"alarm.read",false);
     a.put("read_flag",Boolean.TRUE.equals(s.db.queryForObject("SELECT EXISTS(SELECT 1 FROM alarm_read_receipt WHERE alarm_id=? AND user_id=?)",Boolean.class,id,s.access.userId())));
     a.put("notes",s.db.queryForList("SELECT n.id,n.body,n.created_at,u.display_name AS author_name FROM alarm_note n JOIN app_user u ON u.id=n.author_id WHERE n.alarm_id=? ORDER BY n.id",id));
-    a.put("events",s.db.queryForList("SELECT e.*,u.display_name AS actor_name FROM alarm_action_event e JOIN app_user u ON u.id=e.actor_id WHERE alarm_id=? ORDER BY e.id",id));
-    a.put("samples",List.of());a.put("sampleStatus","暂无已关联的告警前后测点采样；未生成模拟曲线");return a;
+    a.put("events",s.db.queryForList("SELECT e.*,CASE WHEN e.actor_type='engine' THEN '系统检测' ELSE u.display_name END AS actor_name FROM alarm_action_event e LEFT JOIN app_user u ON u.id=e.actor_id WHERE alarm_id=? ORDER BY e.id",id));
+    a.put("samples",List.of());a.put("sampleStatus","暂无已关联的告警前后测点采样；未生成模拟曲线");
+    var occurrences=s.db.queryForList("SELECT trigger_evidence,recovery_evidence FROM alarm_rule_occurrence WHERE alarm_id=?",id);
+    if(!occurrences.isEmpty()){
+      if(s.access.hasStationPermission(s.access.userId(),s.number(a,"station_id"),"telemetry.read")){
+        var facts=new ArrayList<Map<String,Object>>();var mapper=new com.fasterxml.jackson.databind.ObjectMapper();
+        try{for(var key:List.of("trigger_evidence","recovery_evidence")){Object raw=occurrences.getFirst().get(key);if(raw!=null){List<Map<String,Object>> values=mapper.readValue(raw.toString(),new com.fasterxml.jackson.core.type.TypeReference<>(){});for(var fact:values){fact.put("stage",key);facts.add(fact);}}}}catch(Exception ex){throw new IllegalStateException("Invalid stored alarm evidence",ex);}
+        a.put("samples",facts);a.put("sampleStatus","触发及恢复的真实采样证据已保存，系统处理记录可追溯");
+      }else a.put("sampleStatus","真实采样证据已保存；当前账号没有采样读取权限");
+    }
+    return a;
   }
   @Transactional public Map<String,Object> read(List<Long> ids) {
     if(ids==null||ids.isEmpty()||ids.size()>200||ids.stream().anyMatch(Objects::isNull))AlarmRules.bad("请选择1–200条告警");
@@ -69,6 +78,8 @@ public class AlarmWorkspaceService {
       case "delete"->s.db.update("UPDATE alarm SET deleted_by=?,deleted_at=now(),version=version+1 WHERE id=?",s.access.userId(),id);
       case "note"->s.db.update("UPDATE alarm SET version=version+1 WHERE id=?",id);
     }
+    if("close".equals(action)||"delete".equals(action))
+      s.db.update("UPDATE alarm_rule_occurrence SET ended_at=now() WHERE alarm_id=? AND ended_at IS NULL",id);
     s.db.update("INSERT INTO alarm_note(alarm_id,author_id,body) VALUES(?,?,?)",id,s.access.userId(),note.trim());
     s.db.update("INSERT INTO alarm_action_event(alarm_id,actor_id,action,note,version) VALUES(?,?,?,?,?)",id,s.access.userId(),action,note.trim(),version+1);
     s.auditStation("alarm."+action,s.number(a,"station_id"),Map.of("alarm",id,"version",version+1,"note",note.trim()));

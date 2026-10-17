@@ -24,6 +24,19 @@ const toMinute = (text: string) => {
   return h * 60 + m
 }
 const levels = { critical: "严重", warning: "重要", info: "一般" }
+const evaluationLabels: Record<string, string> = {
+  ready: "待检测",
+  disabled: "检测停用",
+  unsupported: "暂不支持",
+  waiting: "等待采样",
+  active: "告警中",
+  normal: "正常",
+  unknown: "无法判定",
+}
+const evaluationLabel = (status: string) =>
+  Object.prototype.hasOwnProperty.call(evaluationLabels, status) ? evaluationLabels[status] : "检测状态未知"
+const deliveryLabel = (status: string) =>
+  status === "not_connected" ? "通知未接通" : "通知状态未知"
 function draftOf(row: AlarmRuleRow): AlarmRuleDraft {
   return {
     stationId: row.station_id,
@@ -187,7 +200,7 @@ export default function AlarmRulesPage({
         <div>
           <h3>告警规则</h3>
           <p className="alarm-business-workspace-muted">
-            配置持久保存；检测引擎和外部通知尚未接通，启用配置不代表已触发或已送达。
+            检测状态与原因以服务端实际执行结果为准；启用配置不代表已触发，外部通知尚未接通。
           </p>
         </div>
         <button disabled={busy || !eligible.length} onClick={create}>
@@ -226,7 +239,7 @@ export default function AlarmRulesPage({
                 "规则名称",
                 "站点 / 对象",
                 "等级",
-                "有效时段",
+                "有效时段（UTC）",
                 "配置状态",
                 "版本",
                 "操作",
@@ -253,7 +266,9 @@ export default function AlarmRulesPage({
                 </td>
                 <td>
                   {r.enabled ? "已启用配置" : "已停用配置"}
-                  <small>检测未接通 / 未送达</small>
+                  <small>
+                    检测：{evaluationLabel(r.evaluationStatus)} · {r.evaluationReason || "暂无检测说明"} / {deliveryLabel(r.deliveryStatus)}
+                  </small>
                 </td>
                 <td>{r.version}</td>
                 <td>
@@ -340,18 +355,20 @@ export default function AlarmRulesPage({
             <h2>{detail.name}</h2>
             <button onClick={() => { historyRequest.current++; setDetail(null); setHistory([]) }}>关闭详情</button>
           </div>
-          <p>{detail.evaluationReason}</p>
+          <p>
+            <span>检测：{evaluationLabel(detail.evaluationStatus)}</span> · <span>{detail.evaluationReason || "暂无检测说明"}</span>
+          </p>
           <p>
             恢复持续时间 {detail.recovery_duration} 秒 ·{" "}
             {detail.notification.needed ? "已配置通知" : "未配置通知"} ·
-            尚无送达服务
+            {deliveryLabel(detail.deliveryStatus)}
           </p>
           <p>处置方案：{detail.solution || "未配置"}</p>
           <h3>条件</h3>
           {detail.conditions.map((c, i) => (
             <p key={i}>
               {c.fields.map((f) => f.code).join(" / ")} · {c.algorithm} · 连续{" "}
-              {c.period} 周期 · {conditionOperators[c.operator]} ·{" "}
+              {c.period} 个完整分钟 · {conditionOperators[c.operator]} ·{" "}
               {c.lower ?? "不限"}–{c.upper ?? "不限"} · {c.statusValue ?? ""} ·
               下界{c.includeLower ? "包含" : "不含"} / 上界
               {c.includeUpper ? "包含" : "不含"}
@@ -501,7 +518,7 @@ export default function AlarmRulesPage({
                 </select>
               </label>
               <label>
-                自动恢复持续时间（秒，配置项）
+                自动恢复持续时间（秒）
                 <input
                   type="number"
                   min="0"
@@ -516,7 +533,7 @@ export default function AlarmRulesPage({
               <div className="full">
                 <h3>条件配置</h3>
                 <p className="alarm-business-workspace-muted">
-                  指标代码、单位与周期按已接入协议填写；未建立参考字段完整目录，当前配置不会生成告警。
+                  当前仅执行设备即时单指标的直接数值比较或区间判断。填写本设备唯一测点代码或已映射的 EMS 协议 ID，单位须一致。按 UTC 完整 1 分钟采样桶检测，连续周期按连续完整分钟计，同一规则各条件连续周期须一致，多条件需同时满足（AND）。缺样、无效采样或映射不唯一会中断累计；生效时段按 UTC。自动恢复须连续正常采样达到所设秒数，缺样不会恢复；其他算法保留配置并显示暂不支持。
                 </p>
                 {draft.conditions.map((c, i) => (
                   <div key={i} className="alarm-business-workspace-condition">

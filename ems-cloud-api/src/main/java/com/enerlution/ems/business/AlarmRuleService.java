@@ -9,8 +9,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AlarmRuleService {
   private final DomainSupport s;
+  private final AlarmDetectionEngine engine;
   private final ObjectMapper json=new ObjectMapper();
-  public AlarmRuleService(DomainSupport s){this.s=s;}
+  public AlarmRuleService(DomainSupport s){this(s,null);}
+  @org.springframework.beans.factory.annotation.Autowired
+  public AlarmRuleService(DomainSupport s,AlarmDetectionEngine engine){this.s=s;this.engine=engine;}
   public record Notification(boolean needed,int maxCount,List<String> channels,List<Long> recipients,boolean recoveryNotice){}
   public record Draft(long stationId,String name,String objectType,Long deviceId,String severity,List<AlarmRules.Condition> conditions,int effectiveStart,int effectiveEnd,int recoveryDuration,String solution,Notification notification,long expectedVersion){}
   public static void validate(Draft d){
@@ -29,7 +32,9 @@ public class AlarmRuleService {
   private String encode(Object value){try{return json.writeValueAsString(value);}catch(Exception e){throw new IllegalStateException(e);}}
   private Map<String,Object> decode(Map<String,Object> row){
     try{row.put("conditions",json.readValue(row.get("conditions").toString(),new TypeReference<List<Object>>(){}));row.put("notification",json.readValue(row.get("notification").toString(),new TypeReference<Map<String,Object>>(){}));}catch(Exception e){throw new IllegalStateException(e);}
-    row.put("evaluationStatus","unavailable");row.put("evaluationReason","参考扫描未明确采样周期、双指标差异率及同比环比的完整执行契约；规则仅保存配置，未运行触发/恢复引擎");row.put("deliveryStatus","not_connected");return row;
+    if(engine!=null)engine.describe(row);
+    else {row.put("evaluationStatus","disabled");row.put("evaluationReason","隔离告警检测服务未启用");row.put("deliveryStatus","not_connected");}
+    return row;
   }
   public List<Map<String,Object>> list(Long stationId){
     if(stationId!=null)s.access.requireStationPermission(stationId,"alarm.read");
@@ -78,4 +83,11 @@ public class AlarmRuleService {
     s.db.update("UPDATE alarm_rule_config SET deleted_at=now(),version=version+1,updated_at=now(),updated_by=? WHERE id=?",s.access.userId(),id);revision(id,"delete",s.number(row,"station_id"));
   }
   public List<Map<String,Object>> history(long id){authorized(id,"alarm.read",false);return s.db.queryForList("SELECT id,actor_id,action,version,snapshot,occurred_at FROM alarm_rule_revision WHERE rule_id=? ORDER BY version",id);}
+  public List<Map<String,Object>> evaluations(long id,int limit,int offset){
+    var rule=authorized(id,"alarm.read",false);s.limit(limit);s.offset(offset);
+    boolean evidence=s.access.hasStationPermission(s.access.userId(),s.number(rule,"station_id"),"telemetry.read");
+    var rows=s.db.queryForList("SELECT * FROM alarm_detection_event WHERE rule_id=? ORDER BY id DESC LIMIT ? OFFSET ?",id,limit,offset);
+    for(var row:rows){try{row.put("evidence",evidence?json.readValue(row.get("evidence").toString(),List.class):List.of());}catch(Exception ex){throw new IllegalStateException(ex);}}
+    return rows;
+  }
 }

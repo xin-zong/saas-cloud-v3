@@ -1266,13 +1266,13 @@
       "title": "告警条件算法、运算符、触发与恢复阈值联动",
       "status": "partially-implemented",
       "completed": false,
-      "notes": "单/双指标条件、单位/周期一致性、算法与比较符、区间边界已完成两端校验并随规则持久化。V36修订记录和HTTP回读通过。",
+      "notes": "单/双指标配置校验与修订保留；V37已接通设备INSTANT/self数值比较/区间、同周期AND的真实EMS分钟桶检测、连续周期、真实源时间自动恢复、持久游标/去重与系统审计。其余算法明确unsupported。",
       "domainIds": [
         "alarms"
       ],
       "baselineAssessment": "no-corresponding-implementation-established",
       "remainingScope": [
-        "字段完整目录、同比环比计算口径、缺样/连续窗口和恢复判定引擎尚未接通；配置不产生虚构告警。"
+        "日/年聚合、同比环比、双指标差异率、站级汇总、通信状态、扩展条件及混合周期组合的执行口径仍待明确；不伪造触发。"
       ],
       "acceptanceScenarios": [
         "仅隔离验收：不同单位双指标拒绝；相等边界开闭区间准确；缺数/零分母输出未知；编辑条件未保存规则不触发评估。"
@@ -1280,21 +1280,21 @@
       "contractUnknowns": [
         "真实指标全集、同比基期和恢复引擎调度规则待确认。"
       ],
-      "verificationEvidence": "docs/reference-platform/verification-2026-10-17-monitor-device-alarm.md"
+      "verificationEvidence": "docs/reference-platform/verification-2026-10-17-alarm-engine.md"
     },
     {
       "workflowId": "alarm-rule-notification-write",
       "title": "告警规则时间段、通知/收件人、恢复时长及即时启停写边界",
       "status": "partially-implemented",
       "completed": false,
-      "notes": "规则CRUD、对象/等级/时段/恢复时长、独立启停、通知次数/渠道/收件人/恢复通知配置与修订历史已保存到V36。只读、收件人越权、版本冲突均校验。",
+      "notes": "规则CRUD/独立启停、时间段、恢复时长及通知偏好持续落库。V37设备即时数值检测与连续正常自动恢复已接通，真实执行状态/原因回读；外部通知独立保持未接通。",
       "domainIds": [
         "alarms"
       ],
       "baselineAssessment": "no-corresponding-implementation-established",
       "remainingScope": [
-        "检测引擎与外部站内/邮件/短信投递未接通，分别返回unavailable/not_connected。",
-        "参考AND/重复抑制、渠道资质和实际投递结果仍未知。"
+        "外部站内/邮件/短信投递、渠道资质和送达结果尚未接通。",
+        "参考同比/差异率/扩展条件等未知算法仍明确unsupported，实际检测采用已记录的本项目分钟桶契约。"
       ],
       "acceptanceScenarios": [
         "仅隔离验收：条件为空/跨午夜不支持时拒绝；启停有审计；超限抑制；撤权收件人不再投递；不发送真实外部通知。"
@@ -1302,7 +1302,7 @@
       "contractUnknowns": [
         "参考AND语义、限流退避、恢复任务和渠道可用资格未知；本项目邮件适配范围待定。"
       ],
-      "verificationEvidence": "docs/reference-platform/verification-2026-10-17-monitor-device-alarm.md"
+      "verificationEvidence": "docs/reference-platform/verification-2026-10-17-alarm-engine.md"
     },
     {
       "workflowId": "pricing-station-template-binding",
@@ -1796,7 +1796,7 @@
       "title": "全局/站内实时与历史告警、详情和处置",
       "status": "implemented-and-verified",
       "completed": true,
-      "notes": "全局/站内实时、历史、全部事件分页与高级过滤、纯读详情、个人读回执、确认/备注/人工关闭/终态软删除及处置审计已完成。V36落库，真实HTTP覆盖重登录、只读、跨站、版本冲突与旧接口兼容。人工关闭不填写自动恢复时间。",
+      "notes": "全局/站内实时、历史、全部事件分页与高级过滤、纯读详情、个人读回执、确认/备注/人工关闭/终态软删除及处置审计已完成。V36落库，真实HTTP覆盖重登录、只读、跨站、版本冲突与旧接口兼容。人工关闭不填写自动恢复时间。 V37补充真实采样规则触发、自动恢复与系统处置事件，保留原始站点、规则快照和采样证据；并发和重启不重复报警。",
       "domainIds": [
         "alarms"
       ],
@@ -1812,7 +1812,7 @@
         "沿用alarm.read/alarm.handle与站点范围权限；删除为终态软删除，保留审计。",
         "读取回执独立于业务确认；自动恢复保留源事件事实，不用人工关闭替代。"
       ],
-      "verificationEvidence": "docs/reference-platform/verification-2026-10-17-monitor-device-alarm.md"
+      "verificationEvidence": "docs/reference-platform/verification-2026-10-17-alarm-engine.md"
     },
     {
       "workflowId": "station-external-control-and-layout-wrappers",

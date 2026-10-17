@@ -28,9 +28,17 @@ export type AlarmRow = {
     action: string
     note: string
     occurred_at: string
-    actor_name: string
+    actor_name: string | null
   }[]
   sampleStatus?: string
+  samples?: {
+    pointId: number
+    bindingPeriodId: number
+    sourceTime: string
+    value: number
+    quality: string
+    sourceTimeKind: string
+  }[]
 }
 export type AlarmQuery = {
   stationId?: string
@@ -110,6 +118,10 @@ export type AlarmRuleRow = {
   version: number
   evaluationStatus: string
   evaluationReason: string
+  evaluationLastAt?: string | null
+  evaluationRuleVersion?: number | null
+  evaluationConsecutive?: number | null
+  evaluationActiveAlarmId?: number | null
   deliveryStatus: string
 }
 export const listAlarmRules = (stationId?: string) =>

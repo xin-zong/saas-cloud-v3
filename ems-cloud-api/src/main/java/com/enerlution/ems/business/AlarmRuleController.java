@@ -12,6 +12,7 @@ public class AlarmRuleController {
  @GetMapping public ApiResponse<?> list(@RequestParam(required=false) Long stationId){return ApiResponse.ok(service.list(stationId));}
  @GetMapping("/{id}") public ApiResponse<?> detail(@PathVariable long id){return ApiResponse.ok(service.detail(id));}
  @GetMapping("/{id}/history") public ApiResponse<?> history(@PathVariable long id){return ApiResponse.ok(service.history(id));}
+ @GetMapping("/{id}/evaluations") public ApiResponse<?> evaluations(@PathVariable long id,@RequestParam(defaultValue="20") int limit,@RequestParam(defaultValue="0") int offset){return ApiResponse.ok(service.evaluations(id,limit,offset));}
  @GetMapping("/options") public ApiResponse<?> options(@RequestParam long stationId){return ApiResponse.ok(service.options(stationId));}
  @PostMapping public ApiResponse<?> create(@RequestBody AlarmRuleService.Draft request){return ApiResponse.ok(service.create(request));}
  @PutMapping("/{id}") public ApiResponse<?> update(@PathVariable long id,@RequestBody AlarmRuleService.Draft request){return ApiResponse.ok(service.update(id,request));}

@@ -50,6 +50,8 @@ class ReportTemplatePostgresTest {
       CREATE TABLE ems_connection_read(ems_uuid uuid,last_fresh_heartbeat timestamptz,reachable boolean);
       CREATE TABLE alarm(id bigint PRIMARY KEY,code text,title text,severity text,occurred_at timestamptz,recovered_at timestamptz);
       CREATE TABLE ems_alarm_business_origin(alarm_id bigint REFERENCES alarm(id),station_id bigint REFERENCES station(id));
+      CREATE TABLE alarm_rule_occurrence(alarm_id bigint REFERENCES alarm(id),station_id bigint REFERENCES station(id));
+      CREATE VIEW alarm_business_origin AS SELECT alarm_id,station_id FROM ems_alarm_business_origin UNION ALL SELECT alarm_id,station_id FROM alarm_rule_occurrence;
       CREATE TABLE scoped_report_permission(user_id bigint,station_id bigint,permission_code text);
       INSERT INTO tenant VALUES(11),(22);INSERT INTO app_user VALUES(7,11),(8,11),(9,22);
       INSERT INTO station VALUES(101,11),(102,22);INSERT INTO device VALUES(19,101,'meter','Meter');

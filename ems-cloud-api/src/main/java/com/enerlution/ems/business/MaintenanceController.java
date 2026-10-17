@@ -29,7 +29,7 @@ public class MaintenanceController {
                 + " a.recovered_at<=now() THEN a.recovered_at ELSE NULL END AS"
                 + " recovered_at,a.acknowledged_by,a.acknowledged_at,a.sla_due_at,a.closed_at,a.version,a.source,d.name AS"
                 + " device_name FROM alarm a JOIN device d ON d.id=a.device_id"
-                + " LEFT JOIN ems_alarm_business_origin origin ON origin.alarm_id=a.id"
+                + " LEFT JOIN alarm_business_origin origin ON origin.alarm_id=a.id"
                 + " WHERE COALESCE(origin.station_id,d.station_id)=?"
                 + " AND a.deleted_at IS NULL AND a.occurred_at<=now() ORDER BY occurred_at DESC,a.id DESC LIMIT ? OFFSET ?",
             id,
@@ -63,7 +63,7 @@ public class MaintenanceController {
   public ApiResponse<?> alarmNotes(@PathVariable long id) {
     var a =
         s.one(
-            "SELECT COALESCE(o.station_id,d.station_id) AS station_id FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN ems_alarm_business_origin o ON o.alarm_id=a.id WHERE a.id=? AND a.deleted_at IS NULL AND a.occurred_at<=now()",
+            "SELECT COALESCE(o.station_id,d.station_id) AS station_id FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN alarm_business_origin o ON o.alarm_id=a.id WHERE a.id=? AND a.deleted_at IS NULL AND a.occurred_at<=now()",
             id);
     s.access.requireStationPermission(s.number(a, "station_id"), "alarm.read");
     return ApiResponse.ok(
@@ -116,7 +116,7 @@ public class MaintenanceController {
     if (n.alarmId() != null) {
       var alarm =
           s.one(
-              "SELECT COALESCE(o.station_id,d.station_id) AS station_id FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN ems_alarm_business_origin o ON o.alarm_id=a.id WHERE a.id=? AND a.deleted_at IS NULL AND a.occurred_at<=now()",
+              "SELECT COALESCE(o.station_id,d.station_id) AS station_id FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN alarm_business_origin o ON o.alarm_id=a.id WHERE a.id=? AND a.deleted_at IS NULL AND a.occurred_at<=now()",
               n.alarmId());
       if (s.number(alarm, "station_id") != n.stationId())
         throw new BusinessException(400, "告警不属于该站点");

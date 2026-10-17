@@ -102,7 +102,7 @@ class MonitorDeviceAlarmPostgresTest {
   var notification=new AlarmRuleService.Notification(false,1,List.of(),List.of(),false);
   var draft=new AlarmRuleService.Draft(station,"PG acceptance","DEVICE",device,"warning",List.of(condition),0,1440,60,"Inspect local data",notification,0);
   var created=service.create(draft);long id=((Number)created.get("id")).longValue();
-  assertEquals("unavailable",created.get("evaluationStatus"));
+  assertEquals("disabled",created.get("evaluationStatus"));
   assertEquals(1,((List<?>)new AlarmRuleService(s).detail(id).get("conditions")).size());
   var disabled=service.toggle(id,1,false);assertEquals(false,disabled.get("enabled"));
   failure(409,()->service.toggle(id,1,true));

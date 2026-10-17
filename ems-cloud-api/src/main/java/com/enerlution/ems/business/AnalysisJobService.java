@@ -967,7 +967,7 @@ public class AnalysisJobService {
         query(
             """
       SELECT a.id::text AS alarm_id,a.code,a.title,a.severity,a.occurred_at,a.recovered_at
-      FROM alarm a JOIN ems_alarm_business_origin o ON o.alarm_id=a.id
+      FROM alarm a JOIN alarm_business_origin o ON o.alarm_id=a.id
       WHERE o.station_id=? AND a.occurred_at>=? AND a.occurred_at<? AND a.occurred_at<=clock_timestamp()
       ORDER BY a.occurred_at,a.id LIMIT 20001
       """,
