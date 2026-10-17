@@ -1,6 +1,10 @@
 import { localized as __locale } from '@/preferences/date'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { DEMO_MODE } from "@/api/client"
+import {loadDeviceDetail,loadDeviceRealtime,loadDeviceHistory,loadDeviceCells,loadDeviceAlarms,saveDeviceConfiguration} from '@/api/deviceDetails'
+import {useAuth} from '@/auth/AuthContext'
+import {hasStationPermission} from '@/auth/apiPermissions'
+import {adaptHistoryBucket,type HistoryBucket} from './apiAnalytics'
 import "./station-devices-figma.css"
 import {
   ArrowRight,
@@ -35,6 +39,8 @@ import {
   type DevicePoint,
   type DeviceStatus,
   type StationDevice,
+  DEVICE_TYPES,DEVICE_SCHEMAS,deviceTypeFromSource,detailPoint,cellGroups,deviceHistoryChart,
+  type DeviceType,type DeviceDetail,type DeviceConfiguration,
 } from "@/data/stationDevices"
 
 type DeviceTab = "概况" | "参数" | "告警" | "版本" | "操作记录"
@@ -139,7 +145,7 @@ function PointsTable({ points }: { points: DevicePoint[] }) {
         </thead>
         <tbody>
           {points.map((point) => {
-            const valid = pointValue(point) !== null
+            const valid = point.quality === 'good'
 
             return (
               <tr key={point.id}>
@@ -457,6 +463,133 @@ function DeviceDetails({
   )
 }
 
+const THEORY_LABELS:Record<string,string>={ratedPowerKw:'额定功率 (kW)',capacityKwh:'额定容量 (kWh)',loopNum:'理论循环次数',theorySoh:'理论 SOH (%)'}
+function LiveDeviceDetails({device,station}:{device:StationDevice;station:Station}) {
+  const {user}=useAuth()
+  const [detail,setDetail]=useState<DeviceDetail|null>(null)
+  const [observations,setObservations]=useState<Record<string,unknown>[]>([])
+  const [cells,setCells]=useState<{known:boolean;unknownReason:string;values:Record<string,unknown>[]}|null>(null)
+  const [cellError,setCellError]=useState('')
+  const [error,setError]=useState(''),[telemetryError,setTelemetryError]=useState(''),[notice,setNotice]=useState('')
+  const [tab,setTab]=useState('概况'),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false)
+  const [configuration,setConfiguration]=useState<DeviceConfiguration>({version:0,selectedPointIds:[],theoryValues:{}})
+  const [from,setFrom]=useState(()=>new Date(Date.now()-86400000).toISOString().slice(0,16))
+  const [to,setTo]=useState(()=>new Date().toISOString().slice(0,16))
+  const [histories,setHistories]=useState<{point:DevicePoint;rows:HistoryBucket[]}[]>([])
+  const [historyBusy,setHistoryBusy]=useState(false),[historyError,setHistoryError]=useState('')
+  const [alarms,setAlarms]=useState<{items:Record<string,unknown>[];total:number}|null>(null)
+  const [alarmOffset,setAlarmOffset]=useState(0),[alarmError,setAlarmError]=useState(''),[alarmBusy,setAlarmBusy]=useState(false)
+  const [revision,setRevision]=useState(0)
+  const canTelemetry=hasStationPermission(user,station.id,'telemetry.read')
+  const canEdit=hasStationPermission(user,station.id,'asset.edit')
+  const canAlarm=hasStationPermission(user,station.id,'alarm.read')
+  const historyAbort=useRef<AbortController|null>(null)
+  useEffect(()=>{
+    const controller=new AbortController();setAlarms(null);setAlarmError('')
+    if(tab!=='告警'||!canAlarm)return ()=>controller.abort()
+    setAlarmBusy(true);loadDeviceAlarms(station.id,device.id,alarmOffset,controller.signal).then(value=>{if(!controller.signal.aborted)setAlarms(value)})
+      .catch(e=>{if(!controller.signal.aborted)setAlarmError(e.message)}).finally(()=>{if(!controller.signal.aborted)setAlarmBusy(false)})
+    return ()=>controller.abort()
+  },[station.id,device.id,tab,canAlarm,alarmOffset,user])
+  useEffect(()=>{
+    const controller=new AbortController();setCells(null);setCellError('')
+    if(!canTelemetry||!detail||!['battery-cluster','battery-stack'].includes(detail.type))return ()=>controller.abort()
+    loadDeviceCells(device.id,controller.signal).then(value=>{if(!controller.signal.aborted)setCells(value)})
+      .catch(e=>{if(!controller.signal.aborted)setCellError(e.message)})
+    return ()=>controller.abort()
+  },[device.id,canTelemetry,detail?.type,user])
+  useEffect(()=>{
+    const controller=new AbortController();setLoading(true);setDetail(null);setError('');setHistories([]);setHistoryError('')
+    loadDeviceDetail(station.id,device.id,controller.signal).then(value=>{if(controller.signal.aborted)return;setDetail(value);setConfiguration(value.configuration)})
+      .catch(e=>{if(!controller.signal.aborted)setError(e.message)}).finally(()=>{if(!controller.signal.aborted)setLoading(false)})
+    return ()=>{controller.abort();historyAbort.current?.abort()}
+  },[station.id,device.id,revision,user])
+  useEffect(()=>{
+    const controller=new AbortController();setObservations([]);setTelemetryError('')
+    if(!canTelemetry)return ()=>controller.abort()
+    let inFlight=false
+    const refresh=async()=>{if(inFlight)return;inFlight=true;try{const value=await loadDeviceRealtime(station.id,device.id,controller.signal);if(!controller.signal.aborted){setObservations(value.items);setTelemetryError('')}}catch(e){if(!controller.signal.aborted){setObservations([]);setTelemetryError(e instanceof Error?e.message:'实时查询失败')}}finally{inFlight=false}}
+    void refresh();const timer=window.setInterval(refresh,15000)
+    return ()=>{controller.abort();window.clearInterval(timer)}
+  },[station.id,device.id,canTelemetry,user])
+  async function save(){
+    if(saving)return;setSaving(true);setNotice('')
+    try{await saveDeviceConfiguration(station.id,device.id,configuration);const value=await loadDeviceDetail(station.id,device.id);setDetail(value);setConfiguration(value.configuration);setNotice('本地配置已保存并回读')}
+    catch(e){setNotice(e instanceof Error?e.message:'保存失败')}finally{setSaving(false)}
+  }
+  async function queryHistory(){
+    historyAbort.current?.abort();const controller=new AbortController();historyAbort.current=controller
+    setHistoryBusy(true);setHistoryError('');setHistories([])
+    try{const selected=points.filter(p=>configuration.selectedPointIds.includes(Number(p.id)));if(!selected.length)throw new Error('请先选择历史曲线参数')
+      if(new Set(selected.map(p=>p.unit).filter(Boolean)).size>4)throw new Error('历史参数最多包含4种单位')
+      const values=await Promise.all(selected.map(async point=>({point,rows:(await loadDeviceHistory(point.id,new Date(from+'Z'),new Date(to+'Z'),controller.signal)).map(adaptHistoryBucket)})))
+      if(!controller.signal.aborted)setHistories(values)
+    }catch(e){if(!controller.signal.aborted)setHistoryError(e instanceof Error?e.message:'历史查询失败')}finally{if(!controller.signal.aborted)setHistoryBusy(false)}
+  }
+  if(loading)return <section className="device-details"><div role="status" className="device-empty">正在读取设备档案…</div></section>
+  if(error||!detail)return <section className="device-details"><p role="alert">{error||'设备档案不可用'}</p><button className="device-action" onClick={()=>setRevision(v=>v+1)}>重试</button></section>
+  const schema=DEVICE_SCHEMAS[detail.type]??DEVICE_SCHEMAS.other
+  const points=detail.points.map(p=>detailPoint(p,observations.find(o=>String(o.pointId)===String(p.id))))
+  const archive=detail.archive
+  const archiveValue=(key:string)=>archive[key]==null||archive[key]===''?'—':String(archive[key])
+  const tabs=['概况',...(canTelemetry?['实时参数','历史曲线']:[]),'连接关系',...(canAlarm?['告警']:[]),'版本','操作记录','本地配置']
+  const selectedPoints=new Set(configuration.selectedPointIds)
+  const matched=new Set(schema.match.flatMap(regex=>points.filter(p=>regex.test(p.label)).map(p=>p.id)))
+  return <section className="device-details" aria-label="所选设备详情">
+    <header className="device-detail-heading"><h2>{device.name}</h2><StatusBadge status={device.status}/><span>{schema.label}</span></header>
+    <p className="device-sync">{archiveValue('manufacturer')} · {archiveValue('model')} · 最近采集 {dateText(String(archive.observed_at??''))}</p>
+    <div className="device-tabs" style={{overflowX:'auto',flexShrink:0}} role="tablist" aria-label="设备信息标签">{tabs.map(item=><button key={item} role="tab" aria-selected={tab===item} onClick={()=>setTab(item)}>{item}</button>)}</div>
+    <div className="device-tab-content" role="tabpanel" aria-label={tab}>
+      {tab==='概况'&&<>
+        <section className="device-info-band device-info-band--tinted"><h3>{schema.label}档案</h3><DeviceFields fields={[
+          {label:'生产厂家',value:archiveValue('manufacturer')},{label:'型号',value:archiveValue('model')},{label:'设备序列号',value:archiveValue('serial_number')},
+          {label:'设备编号',value:archiveValue('code')},{label:'来源类型',value:archiveValue('source_type')},{label:'当前固件',value:archiveValue('firmware_version')},
+        ]}/></section>
+        <section className="device-info-band device-info-band--tinted"><h3>厂家额定参数</h3><DeviceFields fields={[
+          {label:'额定功率',value:archive.rated_power_kw==null?'—':`${archive.rated_power_kw} kW`},{label:'额定容量',value:archive.capacity_kwh==null?'—':`${archive.capacity_kwh} kWh`},
+        ]}/></section>
+        <section className="device-info-band"><h3>分类数据范围</h3><p>{schema.sections.join(' · ')}</p><p className="device-sync">未接入的测点与采样保留空态。硬件控制、固件下发与完整电芯分析尚未接入。</p></section>
+      </>}
+      {tab==='实时参数'&&<>
+        {telemetryError&&<p role="alert">{telemetryError}</p>}
+        {schema.sections.map((section,index)=><section className="device-info-band" key={section}><h3>{section}</h3><PointsTable points={points.filter(p=>schema.match[index].test(p.label))}/>
+          {section==='下属电池簇'&&<DeviceFields fields={detail.connections.filter(c=>c.direction==='downstream').map(c=>({label:String(c.name),value:String(c.serial_number??'—')}))}/>}</section>)}
+        {['battery-cluster','battery-stack'].includes(detail.type)&&<section className="device-info-band"><h3>单体数组采样</h3>{cellError&&<p role="alert">{cellError}</p>}
+          {!cells?.known&&<div className="device-empty">暂无已确认布局与单体采样{cells?.unknownReason?` (${cells.unknownReason})`:''}</div>}
+          {cells?.values.map((row,index)=><div key={index}><h4>{String(row.kind)} · {String(row.quality)}{row.staleReason?' · 采样已过期':''}</h4>{cellGroups(row).map(group=><div key={group.slot}><p>BMU {group.slot}</p><div className="grid grid-cols-6 gap-2 my-2">{group.values.map((value,i)=><div key={i} className="border rounded p-2 text-xs"><span>{i+1}</span><strong className="block">{value}</strong></div>)}</div></div>)}</div>)}
+        </section>}
+        {points.some(p=>!matched.has(p.id))&&<section className="device-info-band"><h3>其他已登记参数</h3><PointsTable points={points.filter(p=>!matched.has(p.id))}/></section>}
+      </>}
+      {tab==='历史曲线'&&<section className="device-info-band"><h3>历史曲线参数</h3>
+        <p className="device-sync">选择最多12项、4种单位；保存后再次登录仍可使用。时间使用 UTC，范围最多31天；显示最后采样及数据质量。</p>
+        <div className="flex flex-wrap gap-3 my-3">{points.map(p=><label key={p.id} className="flex items-center gap-1"><input type="checkbox" checked={selectedPoints.has(Number(p.id))} onChange={e=>{setHistories([]);setConfiguration(c=>({...c,selectedPointIds:e.target.checked?[...c.selectedPointIds,Number(p.id)].slice(0,12):c.selectedPointIds.filter(id=>id!==Number(p.id))}))}}/>{p.label} ({p.unit||'无单位'})</label>)}</div>
+        {!points.length&&<div className="device-empty">暂无已登记测点，无法查询历史</div>}
+        <div className="flex flex-wrap gap-3 my-3"><label>起始时间 (UTC)<input aria-label="历史起始时间 UTC" type="datetime-local" value={from} onChange={e=>setFrom(e.target.value)}/></label><label>结束时间 (UTC)<input aria-label="历史结束时间 UTC" type="datetime-local" value={to} onChange={e=>setTo(e.target.value)}/></label>
+          <button className="device-action" disabled={historyBusy||!configuration.selectedPointIds.length} onClick={queryHistory}>{historyBusy?'查询中…':'查询历史'}</button>
+          {canEdit&&<button className="device-action" disabled={saving} onClick={save}>保存参数选择</button>}</div>
+        {historyError&&<p role="alert">{historyError}</p>}
+        {histories.map(({point,rows})=><section className="device-info-band" key={point.id}><h3>{point.label} ({point.unit||'无单位'})</h3>
+          {rows.some(r=>r.value!==null)&&<div style={{height:220}}><ResponsiveContainer width="100%" height="100%" minWidth={0}><LineChart data={deviceHistoryChart(rows)}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="timestamp" tickFormatter={v=>timeText(new Date(v).toISOString())}/><YAxis/><Tooltip labelFormatter={v=>dateText(new Date(Number(v)).toISOString())}/><Line dataKey="value" stroke="#267d68" dot={false} connectNulls={false} isAnimationActive={false}/></LineChart></ResponsiveContainer></div>}
+          {rows.length?<div className="device-table-scroll"><table className="device-record-table"><thead><tr><th>采样时间</th><th>原始值</th><th>质量</th></tr></thead><tbody>{rows.map((r,i)=><tr key={i}><td>{dateText(new Date(r.timestamp).toISOString())}</td><td>{String(r.exactValue??'—')}</td><td>{r.quality??'unknown'}</td></tr>)}</tbody></table></div>:<div className="device-empty">所选范围暂无历史采样</div>}
+        </section>)}
+      </section>}
+      {tab==='连接关系'&&<section className="device-info-band"><h3>已登记连接关系</h3>{detail.connections.length?<div className="device-table-scroll"><table className="device-record-table"><thead><tr><th>方向</th><th>设备</th><th>序列号</th><th>依据</th></tr></thead><tbody>{detail.connections.map((c,i)=><tr key={i}><td>{c.direction==='upstream'?'上级':'下级'}</td><td>{String(c.name)}</td><td>{String(c.serial_number??'—')}</td><td>{c.source==='imported_inventory'?'导入档案关系（非实时连接）':'站点连接档案'}</td></tr>)}</tbody></table></div>:<div className="device-empty">暂无已登记连接关系</div>}</section>}
+      {tab==='告警'&&<section className="device-info-band"><h3>关联告警</h3>{alarmBusy&&<p role="status">正在读取告警…</p>}{alarmError&&<p role="alert">{alarmError}</p>}
+        {!!alarms?.items.length&&<div className="device-table-scroll"><table className="device-record-table"><thead><tr><th>等级</th><th>告警内容</th><th>来源</th><th>发生时间</th><th>生命周期</th><th>确认</th></tr></thead><tbody>{alarms.items.map(a=><tr key={String(a.id)}><td>{a.severity==='critical'?'严重':a.severity==='warning'?'一般':'提示'}</td><td>{String(a.title)}</td><td>{a.source==='rule'?'规则':'设备'}</td><td>{dateText(String(a.occurred_at))}</td><td>{a.lifecycle==='closed'?'人工关闭':a.lifecycle==='recovered'?'已恢复':'活动'}</td><td>{a.acknowledged_at?'已确认':'未确认'}</td></tr>)}</tbody></table></div>}
+        {!alarmBusy&&!alarmError&&alarms&&!alarms.items.length&&<div className="device-empty">暂无关联告警</div>}
+        {alarms&&<div className="flex items-center gap-3 my-3"><span>共 {alarms.total} 条</span><button className="device-action" disabled={alarmBusy||alarmOffset===0} onClick={()=>setAlarmOffset(v=>Math.max(0,v-20))}>上一页</button><button className="device-action" disabled={alarmBusy||alarmOffset+20>=alarms.total} onClick={()=>setAlarmOffset(v=>v+20)}>下一页</button></div>}
+      </section>}
+      {tab==='版本'&&<section className="device-info-band"><h3>固件版本记录</h3><p>当前上报版本：{archiveValue('firmware_version')}</p>{detail.firmwareRecords.map(f=><p key={String(f.id)}>{String(f.target_version)} · {String(f.status)} · {dateText(String(f.updated_at))}</p>)}{!detail.firmwareRecords.length&&<div className="device-empty">暂无固件任务记录</div>}<p className="device-sync">固件下发能力尚未接入。</p></section>}
+      {tab==='操作记录'&&<section className="device-info-band"><h3>本地配置记录</h3>{detail.logs.length?<div className="device-table-scroll"><table className="device-record-table"><thead><tr><th>时间</th><th>操作</th><th>操作人 ID</th><th>版本</th><th>结果</th></tr></thead><tbody>{detail.logs.map(log=><tr key={String(log.id)}><td>{dateText(String(log.occurred_at))}</td><td>{String(log.action)}</td><td>{String(log.actor_id)}</td><td>{String(log.version)}</td><td>{String(log.result)}</td></tr>)}</tbody></table></div>:<div className="device-empty">暂无本地配置记录</div>}<p className="device-sync">真实设备控制日志尚未接入。</p></section>}
+      {tab==='本地配置'&&<section className="device-info-band"><h3>本地档案与分析参数</h3><p className="device-sync">仅保存平台本地配置；不会向设备下发，不改变设备实际参数。当前版本 {configuration.version}。</p>
+        {detail.theoryFields.map(key=><label key={key} className="flex items-center gap-3 my-3">{THEORY_LABELS[key]??key}<input aria-label={THEORY_LABELS[key]??key} type="number" disabled={!canEdit||saving} min={key==='loopNum'?1000:0} max={key==='loopNum'?20000:key==='theorySoh'?100:1000000000} step={key==='loopNum'?1:0.01} value={configuration.theoryValues[key]??''} onChange={e=>setConfiguration(c=>{const values={...c.theoryValues};if(e.target.value==='')delete values[key];else values[key]=Number(e.target.value);return {...c,theoryValues:values}})}/></label>)}
+        {!detail.theoryFields.length&&<p>该类型暂无已明确的可编辑本地档案参数，可在历史曲线选择测点。</p>}
+        {canEdit?<button className="device-action" disabled={saving} onClick={save}>{saving?'保存中…':'保存本地配置'}</button>:<p>当前账号仅可查看配置。</p>}
+      </section>}
+    </div><p role="status">{notice}</p>
+  </section>
+}
+
 function RealtimePoints({
   device,
   now,
@@ -622,6 +755,7 @@ export default function StationDevicesPage({
   const [search, setSearch] = useState("")
 
   const [selectedId, setSelectedId] = useState(initialDeviceId ?? "PCS-01")
+  const [deviceType,setDeviceType]=useState<DeviceType|'all'>('all')
   const [now, setNow] = useState(() => stationDataNow(station).getTime())
 
   const [notice, setNotice] = useState("")
@@ -644,6 +778,7 @@ export default function StationDevicesPage({
   const filtered = devices.filter(
     (device) =>
       (filter === "all" || device.status === filter) &&
+      (deviceType==='all'||deviceTypeFromSource(device.sourceType,device.group)===deviceType) &&
       `${device.name} ${device.code} ${device.serial}`
         .toLowerCase()
         .includes(search.trim().toLowerCase()),
@@ -652,7 +787,8 @@ export default function StationDevicesPage({
   const selected =
     filtered.find((device) => device.id === selectedId) ?? filtered[0] ?? null
 
-  const groups = [...new Set(filtered.map((device) => device.group))]
+  const directoryGroup=(device:StationDevice)=>isDemo?device.group:DEVICE_SCHEMAS[deviceTypeFromSource(device.sourceType,device.group)].label
+  const groups = [...new Set(filtered.map(directoryGroup))]
 
   const filters: { id: "all" | DeviceStatus; label: string }[] = [
     { id: "all", label: "全部" },
@@ -787,16 +923,17 @@ export default function StationDevicesPage({
             <h2>设备目录</h2>
             <span>按系统与设备层级</span>
           </header>
+          {!isDemo&&<label className="block mb-3 text-xs">设备类型<select aria-label="设备类型" className="block w-full mt-2 border rounded p-2" value={deviceType} onChange={e=>setDeviceType(e.target.value as DeviceType|'all')}><option value="all">全部类型 ({devices.length})</option>{[...DEVICE_TYPES,'other' as const].map(type=><option key={type} value={type}>{DEVICE_SCHEMAS[type].label} ({devices.filter(d=>deviceTypeFromSource(d.sourceType,d.group)===type).length})</option>)}</select></label>}
           {groups.map((group) => (
             <section key={group}>
               <h3>
                 {group}
                 <span>
-                  {filtered.filter((device) => device.group === group).length}
+                  {filtered.filter((device) => directoryGroup(device) === group).length}
                 </span>
               </h3>
               {filtered
-                .filter((device) => device.group === group)
+                .filter((device) => directoryGroup(device) === group)
                 .map((device) => (
                   <button
                     type="button"
@@ -820,12 +957,12 @@ export default function StationDevicesPage({
         </aside>
         {selected ? (
           <>
-            <DeviceDetails
+            {isDemo?<DeviceDetails
               key={selected.id}
               device={selected}
               station={station}
               isDemo={isDemo}
-            />
+            />:<LiveDeviceDetails key={`${station.id}-${selected.id}`} device={selected} station={station}/>}
             <RealtimePoints
               key={`points-${selected.id}`}
               device={selected}

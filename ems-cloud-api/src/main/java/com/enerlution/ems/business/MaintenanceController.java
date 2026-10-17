@@ -27,11 +27,11 @@ public class MaintenanceController {
         s.db.queryForList(
             "SELECT a.id,a.device_id,a.code,a.title,a.severity,a.occurred_at,CASE WHEN"
                 + " a.recovered_at<=now() THEN a.recovered_at ELSE NULL END AS"
-                + " recovered_at,a.acknowledged_by,a.acknowledged_at,a.sla_due_at,d.name AS"
+                + " recovered_at,a.acknowledged_by,a.acknowledged_at,a.sla_due_at,a.closed_at,a.version,a.source,d.name AS"
                 + " device_name FROM alarm a JOIN device d ON d.id=a.device_id"
                 + " LEFT JOIN ems_alarm_business_origin origin ON origin.alarm_id=a.id"
                 + " WHERE COALESCE(origin.station_id,d.station_id)=?"
-                + " AND a.occurred_at<=now() ORDER BY occurred_at DESC,a.id DESC LIMIT ? OFFSET ?",
+                + " AND a.deleted_at IS NULL AND a.occurred_at<=now() ORDER BY occurred_at DESC,a.id DESC LIMIT ? OFFSET ?",
             id,
             s.limit(limit),
             s.offset(offset)));
@@ -40,20 +40,11 @@ public class MaintenanceController {
   @PostMapping("/alarms/{id}/acknowledge")
   @Transactional
   public ApiResponse<?> acknowledge(@PathVariable long id) {
-    var a =
-        s.one(
-            "SELECT a.*,COALESCE(o.station_id,d.station_id) AS station_id FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN ems_alarm_business_origin o ON o.alarm_id=a.id WHERE a.id=?"
-                + " FOR UPDATE OF a",
-            id);
+    var workspace = new AlarmWorkspaceService(s);
+    var a = workspace.authorized(id, "alarm.handle", true);
     s.access.requireStationPermission(s.number(a, "station_id"), "alarm.handle");
-    if (a.get("acknowledged_at") == null) {
-      s.db.update(
-          "UPDATE alarm SET acknowledged_by=?,acknowledged_at=now() WHERE id=?",
-          s.access.userId(),
-          id);
-      s.auditStation("alarm.acknowledge", s.number(a, "station_id"), "alarm=" + id);
-    }
-    return ApiResponse.ok(Map.of("id", id));
+    if (a.get("acknowledged_at") != null) return ApiResponse.ok(Map.of("id", id));
+    return ApiResponse.ok(workspace.action(id, "acknowledge", s.number(a, "version"), "确认告警（兼容入口）"));
   }
 
   public record Note(@NotBlank @Size(max = 4000) String note) {}
@@ -61,17 +52,10 @@ public class MaintenanceController {
   @PostMapping("/alarms/{id}/notes")
   @Transactional
   public ApiResponse<?> alarmNote(@PathVariable long id, @Valid @RequestBody Note note) {
-    var a =
-        s.one(
-            "SELECT COALESCE(o.station_id,d.station_id) AS station_id FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN ems_alarm_business_origin o ON o.alarm_id=a.id WHERE a.id=?",
-            id);
+    var workspace = new AlarmWorkspaceService(s);
+    var a = workspace.authorized(id, "alarm.handle", true);
     s.access.requireStationPermission(s.number(a, "station_id"), "alarm.handle");
-    s.db.update(
-        "INSERT INTO alarm_note(alarm_id,author_id,body) VALUES(?,?,?)",
-        id,
-        s.access.userId(),
-        note.note());
-    s.auditStation("alarm.note", s.number(a, "station_id"), "alarm=" + id);
+    workspace.action(id, "note", s.number(a, "version"), note.note());
     return ApiResponse.ok(null);
   }
 
@@ -79,7 +63,7 @@ public class MaintenanceController {
   public ApiResponse<?> alarmNotes(@PathVariable long id) {
     var a =
         s.one(
-            "SELECT COALESCE(o.station_id,d.station_id) AS station_id FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN ems_alarm_business_origin o ON o.alarm_id=a.id WHERE a.id=?",
+            "SELECT COALESCE(o.station_id,d.station_id) AS station_id FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN ems_alarm_business_origin o ON o.alarm_id=a.id WHERE a.id=? AND a.deleted_at IS NULL AND a.occurred_at<=now()",
             id);
     s.access.requireStationPermission(s.number(a, "station_id"), "alarm.read");
     return ApiResponse.ok(
@@ -132,7 +116,7 @@ public class MaintenanceController {
     if (n.alarmId() != null) {
       var alarm =
           s.one(
-              "SELECT COALESCE(o.station_id,d.station_id) AS station_id FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN ems_alarm_business_origin o ON o.alarm_id=a.id WHERE a.id=?",
+              "SELECT COALESCE(o.station_id,d.station_id) AS station_id FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN ems_alarm_business_origin o ON o.alarm_id=a.id WHERE a.id=? AND a.deleted_at IS NULL AND a.occurred_at<=now()",
               n.alarmId());
       if (s.number(alarm, "station_id") != n.stationId())
         throw new BusinessException(400, "告警不属于该站点");

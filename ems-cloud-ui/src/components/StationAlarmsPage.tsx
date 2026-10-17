@@ -1,3 +1,4 @@
+import AlarmWorkspacePage from './AlarmWorkspacePage'
 import { localized as __locale, formatDate, calendarBounds } from '@/preferences/date'
 import { hasStationPermission } from "@/auth/apiPermissions"
 
@@ -60,7 +61,7 @@ type AlarmView = Omit<StationAlarm, "metric" | "severity" | "category"> & {
 
 const levelLabel = { critical: "严重", warning: "重要", info: "一般" }
 
-const statusLabel = { active: "活动", recovered: "已恢复" }
+const statusLabel = { active: "活动", recovered: "已恢复", closed: "人工关闭" }
 
 const timeFormat = { format: (value: Date) => formatDate(value, {
   hour: "2-digit",
@@ -333,7 +334,7 @@ type WorkOrderDraft = {
   note: string
 }
 
-export default function StationAlarmsPage({
+function DemoStationAlarmsPage({
   station,
 
   canCreateOrder = true,
@@ -1312,3 +1313,5 @@ export default function StationAlarmsPage({
     </div>
   )
 }
+
+export default function StationAlarmsPage(props: {station: Station;canCreateOrder?: boolean;onRefresh?:()=>void}) { return DEMO_MODE ? <DemoStationAlarmsPage {...props}/> : <AlarmWorkspacePage stationId={props.station.id} stations={[props.station]} onRefresh={props.onRefresh}/> }

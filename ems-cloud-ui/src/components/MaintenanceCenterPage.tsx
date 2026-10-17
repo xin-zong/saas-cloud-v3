@@ -1,3 +1,4 @@
+import AlarmWorkspacePage from './AlarmWorkspacePage'
 import { localized as __locale } from '@/preferences/date'
 import { hasStationPermission } from "@/auth/apiPermissions"
 import { DEMO_MODE, send, api, type ApiRow } from "@/api/client"
@@ -444,10 +445,11 @@ function deadline(value: number | null, now: number) {
 }
 
 function alarmDisplayStatus(alarm: {
-  status: "active" | "recovered"
+  status: "active" | "recovered" | "closed"
 
   acknowledged?: boolean
 }) {
+  if (alarm.status === "closed") return "人工关闭"
   if (alarm.status === "recovered") return "已恢复"
 
   return alarm.acknowledged ? "已看到" : "处理中"
@@ -812,7 +814,7 @@ function MaintenanceDetail({
 
         ["恢复时间", stamp(alarm.recoveredAt)],
 
-        ["告警状态", alarm.status === "active" ? "活动中" : "已恢复"],
+        ["告警状态", alarm.status === "active" ? "活动中" : alarm.status === "closed" ? "人工关闭" : "已恢复"],
 
         [
           "确认状态",
@@ -1531,7 +1533,7 @@ export default function MaintenanceCenterPage({
 
           MAINTENANCE_SEVERITY[alarm.severity].label,
 
-          alarm.status === "active" ? "活动中" : "已恢复",
+          alarm.status === "active" ? "活动中" : alarm.status === "closed" ? "人工关闭" : "已恢复",
 
           alarm.occurredAt ?? "",
 
@@ -1635,7 +1637,7 @@ export default function MaintenanceCenterPage({
   const statusOptions = ordersOnly
     ? WORK_ORDER_STATUS
     : tab === "告警事件"
-      ? { active: "活动中", recovered: "已恢复" }
+      ? { active: "活动中", recovered: "已恢复", closed: "人工关闭" }
       : FIRMWARE_STATUS
 
   const liveStatus = (
@@ -1769,7 +1771,7 @@ export default function MaintenanceCenterPage({
             )}
           </section>
         )}
-        {!ordersOnly && tab === "告警事件" && (
+        {!ordersOnly && DEMO_MODE && tab === "告警事件" && (
           <section
             className="maintenance-toolbar maintenance-toolbar--reference"
             aria-label="告警事件筛选"
@@ -2540,7 +2542,7 @@ export default function MaintenanceCenterPage({
             </section>
           </>
         )}
-        {!ordersOnly && tab === "告警事件" && (
+        {!ordersOnly && DEMO_MODE && tab === "告警事件" && (
           <div className="maintenance-alert-layout">
             <section className="maintenance-reference-panel">
               <div className="maintenance-panel-heading">
@@ -2625,7 +2627,7 @@ export default function MaintenanceCenterPage({
                             : "maintenance-amber"
                         }
                       >
-                        {alarm.status === "recovered"
+                        {alarm.status === "closed" ? "人工关闭" : alarm.status === "recovered"
                           ? "已恢复"
                           : dueAt === null
                             ? "--"
@@ -2808,6 +2810,7 @@ export default function MaintenanceCenterPage({
             </aside>
           </div>
         )}
+        {!ordersOnly && !DEMO_MODE && tab === "告警事件" && <AlarmWorkspacePage stations={stations}/>}
         {!ordersOnly &&
           tab === "设备健康" &&
           (selectedHealthDevice ? (

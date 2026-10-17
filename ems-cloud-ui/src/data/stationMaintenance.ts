@@ -7,8 +7,9 @@ export type MaintenanceAlarm = {
   device: string
   category?: string
   severity: "critical" | "warning" | "info"
-  status: "active" | "recovered"
+  status: "active" | "recovered" | "closed"
   occurredAt?: string
+  closedAt?: string
   recoveredAt?: string
   acknowledged?: boolean
   slaDueAt?: string
@@ -306,7 +307,7 @@ export function buildMaintenanceStation(station: Station, now = new Date()) {
     .filter(
       (alarm) =>
         ["critical", "warning", "info"].includes(alarm.severity) &&
-        ["active", "recovered"].includes(alarm.status) &&
+        ["active", "recovered", "closed"].includes(alarm.status) &&
         (alarm.occurredAt === undefined ||
           (maintenanceTime(alarm.occurredAt) !== null &&
             maintenanceTime(alarm.occurredAt)! <= now.getTime())),

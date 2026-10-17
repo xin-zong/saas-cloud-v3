@@ -10,7 +10,10 @@ import RightPanel from "./RightPanel"
 import BottomBar from "./BottomBar"
 import MapView from "./MapView"
 import { DEMO_MODE } from "@/api/client"
-import { dateKey } from "@/preferences/date"
+import { dateKey,calendarBounds } from "@/preferences/date"
+import {defaultMonitorLayout,type MonitorStation,type MonitorWidget} from '@/api/monitor'
+import {hasStationPermission} from '@/auth/apiPermissions'
+import MonitorAnalytics from './MonitorAnalytics'
 type Props = {
   stations: Station[]
   user: AuthUser
@@ -20,7 +23,9 @@ type Props = {
   registerLeaveGuard: (guard: null | (() => Promise<boolean>)) => void
   cards: string[]
   availableCards: string[]
-  onUpdateCards: (cards: string[], targetId: string | null) => void | Promise<void>
+  onUpdateCards: (cards: string[], targetId: string | null,widgets?:MonitorWidget[]) => void | Promise<void>
+  widgets:MonitorWidget[]
+  monitorStations:MonitorStation[]
   layoutTargetId: string | null
   region: string
   onRefreshTemplates: () => Promise<unknown>
@@ -38,7 +43,11 @@ export default function OverviewDashboard({
   layoutTargetId,
   region,
   onRefreshTemplates,
+  widgets,
+  monitorStations,
 }: Props) {
+  const [draftWidgets,setDraftWidgets]=useState<MonitorWidget[]>([])
+  const [appliedRange,setAppliedRange]=useState({start:dateKey(new Date()),end:dateKey(new Date())})
   const [editing, setEditing] = useState(false),
     [draft, setDraft] = useState(cards),
     [notice, setNotice] = useState(""),
@@ -53,7 +62,7 @@ export default function OverviewDashboard({
   const [saving, setSaving] = useState(false)
   const [editingTargetId,setEditingTargetId] = useState<string|null>(null)
   const pending = useRef<null | (() => void)>(null)
-  const dirty = editing && JSON.stringify(draft) !== JSON.stringify(cards)
+  const dirty = editing && (JSON.stringify(draft) !== JSON.stringify(cards)||JSON.stringify(draftWidgets)!==JSON.stringify(widgets.length?widgets:defaultMonitorLayout(cards)))
   const { settleLeave } = useEditorLeaveGuard({
     dirty,
     registerLeaveGuard,
@@ -70,6 +79,11 @@ export default function OverviewDashboard({
     }
   }, [availableCards.join('|')])
   const role = overviewPresentationRole(user)
+  const currentWidgets=(widgets.length?widgets:defaultMonitorLayout(cards)).filter(w=>cards.includes(w.card))
+  const today=dateKey(new Date()),startDate=new Date(today+'T00:00:00Z');startDate.setUTCDate(startDate.getUTCDate()-(period==='近7天'?6:period==='近30天'?29:0))
+  const historyFrom=calendarBounds(period==='自定义'?appliedRange.start:startDate.toISOString().slice(0,10),'D').start.toISOString(),historyTo=new Date(calendarBounds(period==='自定义'?appliedRange.end:today,'D').end.getTime()+1).toISOString()
+  const telemetryIds=stations.filter(s=>hasStationPermission(user,s.id,'telemetry.read')).map(s=>s.id)
+  const historyPanel=<MonitorAnalytics stationIds={telemetryIds} names={Object.fromEntries(stations.map(s=>[s.id,s.name]))} from={historyFrom} to={historyTo} onOpenStation={onOpenStation} canExport={telemetryIds.length>0&&telemetryIds.every(id=>hasStationPermission(user,id,'report.export'))}/>
   const viewStations = nav.includes("资产与站点")
     ? () => onNavigate("资产与站点")
     : undefined
@@ -130,11 +144,12 @@ export default function OverviewDashboard({
           </div>
           <Button onClick={exportData}>
             <img src="/figma/overview/dashboard/imgDownload.svg" alt="" />
-            数据导出
+            站点快照导出
           </Button>
           <Button
             onClick={() => {
               setDraft(cards)
+                  setDraftWidgets(widgets.length?widgets:defaultMonitorLayout(cards))
               setEditingTargetId(layoutTargetId)
               setEditing(true)
               setError("")
@@ -146,14 +161,15 @@ export default function OverviewDashboard({
         </div>
       </div>
       <p className="overview-dashboard-range">
-        当前授权站点快照 · 历史聚合未接通，所选日期不改变当前快照
+        资产与通信为当前快照；实测功率按所选日期读取，最长31天。
       </p>
+      {!DEMO_MODE&&<div className="overview-dashboard-actions" aria-label="授权范围统计"><span>站点 {monitorStations.length}</span><span>通信在线 {monitorStations.filter(s=>s.communication==='online').length}</span><span>通信离线 {monitorStations.filter(s=>s.communication==='offline').length}</span><span>未取得心跳 {monitorStations.filter(s=>s.communication==='unknown').length}</span><span>设备 {monitorStations.reduce((n,s)=>n+Number(s.device_count),0)}</span><span>额定功率 {monitorStations.reduce((n,s)=>n+Number(s.rated_power_kw),0).toFixed(1)} kW</span><span>储能容量 {monitorStations.filter(s=>s.scene==='BESS'||s.scene==='Hybrid').reduce((n,s)=>n+Number(s.capacity_kwh),0).toFixed(1)} kWh</span><span>光伏装机 {monitorStations.some(s=>s.solar_capacity_kw===null)?'—':monitorStations.reduce((n,s)=>n+Number(s.solar_capacity_kw),0).toFixed(1)} kWp</span></div>}
       {notice && (
         <p role="status" className="overview-notice">
           {notice}
         </p>
       )}
-      <div className="overview-shared-card-grid">
+      {!DEMO_MODE?<div style={{display:'grid',gridTemplateColumns:'repeat(12,minmax(0,1fr))',gridAutoRows:'minmax(68px,auto)',gap:16}} aria-label="个人看板布局">{currentWidgets.map(w=><div key={w.card} style={{gridColumn:`${w.x+1} / span ${w.w}`,gridRow:`${w.y+1} / span ${w.h}`,minWidth:0}} data-layout-card={w.card}>{w.card==='储能充放趋势'?historyPanel:['异常与告警实时监控','子系统可用性与出力'].includes(w.card)?<BottomBar stations={stations} role={role} visibleCards={[w.card]} onSelectStation={s=>onOpenStation(s.id)} onViewAll={alarms}/>:['在线运行容量','能源供应与构成','收益概览','运行健康','交付就绪度'].includes(w.card)?<RightPanel stations={stations} role={role} visibleCards={[w.card]}/>:<LeftPanel stations={stations} role={role} visibleCards={[w.card]} onViewStations={viewStations}/>}</div>)}</div>:<><div className="overview-shared-card-grid">
         <LeftPanel
           stations={stations}
           role={role}
@@ -162,7 +178,9 @@ export default function OverviewDashboard({
         />
         <RightPanel stations={stations} role={role} visibleCards={cards} />
       </div>
-      <div className="overview-shared-bottom">
+      </>}
+      {!DEMO_MODE&&!cards.includes('储能充放趋势')&&user.permissions.includes('telemetry.read')&&historyPanel}
+      {DEMO_MODE&&<div className="overview-shared-bottom">
         <BottomBar
           stations={stations}
           role={role}
@@ -170,7 +188,7 @@ export default function OverviewDashboard({
           onSelectStation={(s) => onOpenStation(s.id)}
           onViewAll={alarms}
         />
-      </div>
+      </div>}
       <article className="overview-region-context">
         <h2>核心站点区域分布</h2>
         <div
@@ -221,7 +239,7 @@ export default function OverviewDashboard({
                   setSaving(true)
                   setError("")
                   try {
-                    await onUpdateCards(draft,editingTargetId)
+                    await onUpdateCards(draft,editingTargetId,draftWidgets.filter(w=>draft.includes(w.card)))
                     setEditing(false)
                     setNotice(DEMO_MODE ? "演示布局已保存至本机，地图总览同步更新" : "布局已保存至服务器，地图总览同步更新")
                   } catch (e) {
@@ -235,24 +253,27 @@ export default function OverviewDashboard({
           }
         >
           <p>
-            {DEMO_MODE ? "演示模式：布局保存在当前浏览器。" : "两个视图展示相同卡片；显式保存到当前选中的私人模板。版本冲突时可刷新版本并保留卡片草稿，核对后再次保存。"}
+            {DEMO_MODE ? "演示模式：布局保存在当前浏览器。" : "保存当前私人模板或默认看板的12列布局；坐标从0开始，模块不能重叠。版本冲突时刷新版本后核对草稿。"}
           </p>
           {availableCards.map((s) => (
-            <label key={s} className="overview-checkbox">
+            <div key={s} className="overview-checkbox">
+              <label>
               <input
                 type="checkbox"
                 disabled={saving}
                 checked={draft.includes(s)}
-                onChange={(e) =>
+                onChange={(e) => {
                   setDraft(
                     e.target.checked
                       ? [...draft, s]
                       : draft.filter((x) => x !== s),
-                  )
-                }
+                  );if(e.target.checked&&!draftWidgets.some(w=>w.card===s))setDraftWidgets(previous=>[...previous,{card:s,x:0,y:Math.max(0,...previous.map(w=>w.y+w.h)),w:6,h:3}])
+                }}
               />
               {s}
-            </label>
+              </label>
+              {!DEMO_MODE&&draft.includes(s)&&(['x','y','w','h'] as const).map(key=><label key={key}>{({x:'列',y:'行',w:'宽',h:'高'})[key]}<input aria-label={`${s}-${key}`} type="number" min={key==='w'||key==='h'?1:0} max={key==='y'?100:12} value={draftWidgets.find(w=>w.card===s)?.[key]??0} onChange={e=>setDraftWidgets(previous=>previous.map(w=>w.card===s?{...w,[key]:Number(e.target.value)}:w))}/></label>)}
+            </div>
           ))}
           {error && <p role="alert">{error}</p>}
           {!DEMO_MODE && <Button disabled={saving} onClick={async () => { setSaving(true); try { await onRefreshTemplates(); setError("已刷新模板版本；卡片草稿已保留，请核对后保存") } catch(e) { setError((e as Error).message) } finally { setSaving(false) } }}>刷新版本（保留卡片草稿）</Button>}
@@ -265,10 +286,11 @@ export default function OverviewDashboard({
           actions={
             <Button
               onClick={() => {
-                if (range.start > range.end) {
-                  setError("结束日期不能早于开始日期")
+                if (!range.start||!range.end||range.start > range.end||Date.parse(range.end)-Date.parse(range.start)>30*86400000) {
+                  setError("请选择31天内有效日期范围")
                   return
                 }
+                setAppliedRange(range)
                 setCustom(false)
                 setError("")
               }}

@@ -5,8 +5,10 @@ const test = require("node:test")
 const ts = require("typescript")
 
 // Compile only the pure data modules; no browser or bundler is needed.
-function loadDataModule(name) {
-  const filename = path.resolve(__dirname, "../src/data", `${name}.ts`)
+function loadDataModule(name, parent = path.resolve(__dirname, "../src/data")) {
+  const filename = name.startsWith("@/")
+    ? path.resolve(__dirname, "../src", `${name.slice(2)}.ts`)
+    : path.resolve(parent, `${name}.ts`)
   const source = ts.transpileModule(fs.readFileSync(filename, "utf8"), {
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
@@ -15,7 +17,7 @@ function loadDataModule(name) {
   }).outputText
   const exports = {}
   new Function("exports", "require", source)(exports, (dependency) =>
-    loadDataModule(dependency.replace("./", "")),
+    loadDataModule(dependency, path.dirname(filename)),
   )
   return exports
 }

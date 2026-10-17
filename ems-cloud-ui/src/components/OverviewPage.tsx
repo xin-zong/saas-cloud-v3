@@ -3,7 +3,7 @@ import type { Station } from "@/App"
 import type { AuthUser, NavLabel } from "@/auth/roles"
 import MonitorTemplatesPanel from "./MonitorTemplatesPanel"
 import { Button } from "./ui/Workspace"
-import { loadMonitorTemplates, selectMonitorTemplate, updateMonitorTemplate, type MonitorConfiguration } from "@/api/monitorTemplates"
+import { loadMonitorTemplates, selectMonitorTemplate, type MonitorConfiguration } from "@/api/monitorTemplates"
 import { DEMO_MODE } from "@/api/client"
 import MapView from "./MapView"
 import { MAP_REGIONS,inMapRegion } from '@/maps/regions'
@@ -16,6 +16,7 @@ import OverviewDashboard from "./OverviewDashboard"
 import {overviewCardNames,overviewPresentationRole} from './overviewCards'
 import {useDisplayPreferences} from '@/preferences/PreferencesProvider'
 import {useInterfaceTranslation} from '@/i18n/useInterfaceTranslation'
+import {loadMonitorStations,loadMonitorLayout,saveMonitorLayout,defaultMonitorLayout,type MonitorStation,type MonitorLayout,type MonitorWidget} from '@/api/monitor'
 
 type Props = { stations: Station[]; user: AuthUser; nav: NavLabel[]; immersive: boolean; onExitImmersive: () => void; onOpenStation: (id: string, subNav?: string) => void; onNavigate: (nav: NavLabel) => void; registerLeaveGuard: (guard: null | (() => Promise<boolean>)) => void; requestLeave: () => Promise<boolean> }
 export default function OverviewPage({ stations, user, nav, immersive, onExitImmersive, onOpenStation, onNavigate, registerLeaveGuard, requestLeave }: Props) {
@@ -27,6 +28,8 @@ export default function OverviewPage({ stations, user, nav, immersive, onExitImm
   const [region, setRegion] = useState("global")
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [search,setSearch]=useState('')
+  const [scene,setScene]=useState('all'),[communication,setCommunication]=useState('all'),[monitorStations,setMonitorStations]=useState<MonitorStation[]>([]),[monitorError,setMonitorError]=useState(''),[monitorLoading,setMonitorLoading]=useState(false)
+  const [layout,setLayout]=useState<MonitorLayout>({widgets:[],version:0}),[layoutLoaded,setLayoutLoaded]=useState(false)
   const {language}=useDisplayPreferences(),translate=useInterfaceTranslation(stations.map(s=>s.name),language)
   const availableCards=overviewCardNames(user),role=overviewPresentationRole(user)
   const cardKey=`enerlution-overview-cards-v2:${DEMO_MODE?'demo':'api'}:${user.id}:${stations.map(s=>s.id).sort().join(',')}`
@@ -34,7 +37,9 @@ export default function OverviewPage({ stations, user, nav, immersive, onExitImm
   const [configuration,setConfiguration]=useState<MonitorConfiguration>({items:[],selectedId:null})
   const [templatesOpen,setTemplatesOpen]=useState(false),[configurationError,setConfigurationError]=useState(''),[configurationBusy,setConfigurationBusy]=useState(false),[configurationLoaded,setConfigurationLoaded]=useState(false)
   const activeTemplate=configuration.items.find(t=>t.id===configuration.selectedId)
-  const cards=(DEMO_MODE ? chosenCards??availableCards : activeTemplate?.cards??availableCards).filter(c=>availableCards.includes(c))
+  const cards=(DEMO_MODE ? chosenCards??availableCards : layoutLoaded&&layout.widgets.length?layout.widgets.map(w=>w.card):activeTemplate?.cards??availableCards).filter(c=>availableCards.includes(c))
+  useEffect(()=>{if(DEMO_MODE)return;const controller=new AbortController();setMonitorStations([]);setMonitorLoading(true);setMonitorError('');loadMonitorStations(scene,communication,search,controller.signal).then(value=>{if(!controller.signal.aborted)setMonitorStations(value)}).catch(e=>{if(!controller.signal.aborted)setMonitorError(e.message)}).finally(()=>{if(!controller.signal.aborted)setMonitorLoading(false)});return()=>controller.abort()},[scene,communication,search,user.id])
+  useEffect(()=>{if(DEMO_MODE)return;const controller=new AbortController();setLayoutLoaded(false);setLayout({widgets:[],version:0});if(!configurationLoaded)return;loadMonitorLayout(activeTemplate?.id??null,controller.signal).then(value=>{if(!controller.signal.aborted){setLayout(value);setLayoutLoaded(true)}}).catch(e=>{if(!controller.signal.aborted)setConfigurationError(e.message)});return()=>controller.abort()},[activeTemplate?.id,configurationLoaded,user.id])
   const reloadConfiguration=async()=>{const data=await loadMonitorTemplates();setConfiguration(data);setConfigurationLoaded(true);return data}
   useEffect(()=>{let current=true;setConfiguration({items:[],selectedId:null});setConfigurationLoaded(false);setConfigurationError('');
     if(DEMO_MODE){try{const value=JSON.parse(localStorage.getItem(cardKey)||'null');setChosenCards(Array.isArray(value)&&value.every(c=>typeof c==='string')?value:null)}catch{setChosenCards(null)};return}
@@ -42,16 +47,16 @@ export default function OverviewPage({ stations, user, nav, immersive, onExitImm
     return()=>{current=false}
   },[user.id,cardKey])
   const chooseTemplate=async(id:string|null)=>{await selectMonitorTemplate(id);await reloadConfiguration()}
-  const updateCards=async(value:string[],targetId:string|null)=>{
+  const updateCards=async(value:string[],targetId:string|null,widgets?:MonitorWidget[])=>{
     const permitted=value.filter(c=>availableCards.includes(c))
     if(DEMO_MODE){localStorage.setItem(cardKey,JSON.stringify(permitted));setChosenCards(permitted);return}
     if(!configurationLoaded)throw new Error('模板尚未读取，请刷新后重试')
     if(targetId!==configuration.selectedId)throw new Error('当前选中模板已变化，未保存任何卡片。草稿已保留，请取消后重新选择原模板再编辑')
-    if(!activeTemplate)throw new Error('请先在私人看板模板中新建并选择模板，再保存页面布局')
-    const updated=await updateMonitorTemplate({...activeTemplate,cards:permitted})
-    setConfiguration(previous=>({...previous,items:previous.items.map(t=>t.id===updated.id?updated:t)}))
+    if(!layoutLoaded)throw new Error('页面布局尚未读取，请刷新后重试')
+    const updated=await saveMonitorLayout(targetId,{widgets:widgets??defaultMonitorLayout(permitted),version:layout.version})
+    setLayout(updated)
   }
-  const visibleStations = useMemo(() => stations.filter(s => inMapRegion(s,region)&&`${s.name} ${translate(s.name)} ${s.code} ${s.region}`.toLowerCase().includes(search.trim().toLowerCase())), [stations, region,search,translate])
+  const visibleStations = useMemo(() => stations.filter(s => (DEMO_MODE||monitorStations.some(r=>r.id===s.id))&&inMapRegion(s,region)&&`${s.name} ${translate(s.name)} ${s.code} ${s.region}`.toLowerCase().includes(search.trim().toLowerCase())), [stations, region,search,translate,monitorStations])
   const selected = visibleStations.find(s => s.id === selectedId) ?? null
   const events = visibleStations.flatMap(s => s.alerts.map(alert => ({ ...alert, station: s }))).slice(0, 5)
   useEffect(() => {
@@ -72,6 +77,9 @@ export default function OverviewPage({ stations, user, nav, immersive, onExitImm
   return <section className="overview-workspace" data-overview-view={view} data-immersive={immersive}>
     <header className="overview-header">{immersive ? <div className="overview-fullscreen-title"><strong>站点实时总览</strong><span>{visibleStations.length} 个授权站点</span></div> : <div className="overview-view-switch" role="group" aria-label="总览视图"><button aria-pressed={view === "map"} onClick={async () => { if (await requestLeave()) setView("map") }}>地图总览</button><button aria-pressed={view === "dashboard"} onClick={() => setView("dashboard")}>经营看板</button></div>}{mapToolbar}{immersive && <button className="overview-exit" onClick={onExitImmersive}>← 退出全屏</button>}</header>
     {!DEMO_MODE && !immersive && <div className="configuration-toolbar">
+      <label>业务场景 <select aria-label="监控业务场景" value={scene} onChange={e=>setScene(e.target.value)}><option value="all">全部场景</option><option value="PV">光伏</option><option value="BESS">储能</option><option value="Hybrid">光储混合</option><option value="Wind">风电</option><option value="Diesel">柴油发电</option></select></label>
+      <label>通信状态 <select aria-label="监控通信状态" value={communication} onChange={e=>setCommunication(e.target.value)}><option value="all">全部通信状态</option><option value="online">在线</option><option value="offline">离线</option><option value="unknown">未取得心跳</option></select></label>
+      {monitorLoading&&<p role="status">正在读取授权监控范围…</p>}{monitorError&&<p role="alert">{monitorError}</p>}
       <label>看板模板 <select aria-label="看板模板" disabled={configurationBusy || !configurationLoaded} value={configuration.selectedId??''} onChange={async e=>{const id=e.target.value||null;if(!await requestLeave())return;setConfigurationBusy(true);setConfigurationError('');try{await chooseTemplate(id)}catch(error){setConfigurationError((error as Error).message)}finally{setConfigurationBusy(false)}}}><option value="">默认卡片</option>{configuration.items.map(t=><option key={t.id} value={t.id}>{t.pinned?'★ ':''}{t.name}</option>)}</select></label>
       <Button disabled={configurationBusy || !configurationLoaded} onClick={async()=>{if(await requestLeave())setTemplatesOpen(true)}}>私人看板模板</Button>
       <Button disabled={configurationBusy} onClick={async()=>{if(!await requestLeave())return;setConfigurationBusy(true);try{await reloadConfiguration();setConfigurationError('')}catch(e){setConfigurationError((e as Error).message)}finally{setConfigurationBusy(false)}}}>刷新看板模板</Button>
@@ -79,7 +87,7 @@ export default function OverviewPage({ stations, user, nav, immersive, onExitImm
     </div>}
     {templatesOpen && <MonitorTemplatesPanel registerLeaveGuard={registerTemplateGuard} configuration={configuration} cards={cards} reload={reloadConfiguration} select={chooseTemplate} onClose={()=>setTemplatesOpen(false)}/>}
     <div className="overview-content" key={view}>
-    {view === "dashboard" ? <OverviewDashboard layoutTargetId={activeTemplate?.id??null} onRefreshTemplates={reloadConfiguration} cards={cards} availableCards={availableCards} onUpdateCards={updateCards} region={region} stations={visibleStations} user={user} nav={nav} onNavigate={onNavigate} onOpenStation={onOpenStation} registerLeaveGuard={registerLayoutGuard} /> : <div className="overview-map">
+    {view === "dashboard" ? <OverviewDashboard widgets={layout.widgets} monitorStations={monitorStations.filter(r=>visibleStations.some(s=>s.id===r.id))} layoutTargetId={activeTemplate?.id??null} onRefreshTemplates={async()=>{await reloadConfiguration();const value=await loadMonitorLayout(activeTemplate?.id??null);setLayout(value);setLayoutLoaded(true)}} cards={cards} availableCards={availableCards} onUpdateCards={updateCards} region={region} stations={visibleStations} user={user} nav={nav} onNavigate={onNavigate} onOpenStation={onOpenStation} registerLeaveGuard={registerLayoutGuard} /> : <div className="overview-map">
       <MapView stations={visibleStations} selectedStation={selected} onSelectStation={s => setSelectedId(s.id)} region={region} />
       <div className="overview-ticker"><TickerBar stations={visibleStations} onSelectStation={s => setSelectedId(s.id)} role={role} /></div>
       <div className="overview-left"><LeftPanel visibleCards={cards} stations={visibleStations} role={role} onViewStations={nav.includes("资产与站点") ? () => { onExitImmersive(); onNavigate("资产与站点") } : undefined} />{immersive && livePanel}</div>

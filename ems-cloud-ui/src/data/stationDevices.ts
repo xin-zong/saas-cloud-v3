@@ -7,6 +7,7 @@ export type DevicePoint = {
   label: string;
   value: number | null;
   exactValue?: string;
+  textValue?: string;
   sourceId?: number;
   metric?: string;
   unit: string;
@@ -18,6 +19,7 @@ export type StationDevice = {
   name: string;
   code: string;
   group: string;
+  sourceType?: string;
   status: DeviceStatus;
   model: string;
   serial: string;
@@ -38,6 +40,47 @@ export type StationDevice = {
   logs: { at: string; action: string; operator: string; result: string }[];
 };
 
+export const DEVICE_TYPES = ['inverter','cabinet','pcs','battery-cluster','battery-stack','air-conditioner','meter','logger','ems'] as const;
+export type DeviceType = typeof DEVICE_TYPES[number] | 'other';
+export function deviceTypeFromSource(source?:string,category?:string):DeviceType {
+  const names:Record<string,DeviceType>={inverter:'inverter','1':'inverter',energystoragecabinet:'cabinet','66':'cabinet',pcs:'pcs','46':'pcs',batterycluster:'battery-cluster','31001':'battery-cluster',batterystack:'battery-stack','31002':'battery-stack',airconditioner:'air-conditioner','6':'air-conditioner',smartmeter:'meter',meter:'meter','5':'meter',logger:'logger','18':'logger','185000':'logger',ems:'ems','185001':'ems'};
+  return names[(source??'').toLowerCase().replace(/[ _-]/g,'')]??({PV:'inverter',BESS:'cabinet',PCS:'pcs',HVAC:'air-conditioner',MTR:'meter'} as Record<string,DeviceType>)[category??'']??'other';
+}
+export const DEVICE_SCHEMAS: Record<DeviceType, {label:string; sections:string[]; match:RegExp[]}> = {
+  inverter: {label:'逆变器',sections:['交流侧','直流与组串','发电量'],match:[/交流|AC|功率|频率|power|frequency/i,/直流|DC|组串|String|MPPT/i,/发电|电量|energy|production/i]},
+  cabinet: {label:'储能柜',sections:['储能运行','电池状态','温控与安全'],match:[/功率|充|放|power|charge/i,/SOC|SOH|电池|battery/i,/温|消防|绝缘|temperature|insulation/i]},
+  pcs: {label:'PCS',sections:['交流侧','直流侧','运行状态'],match:[/交流|AC|频率|frequency/i,/直流|DC/i,/状态|效率|功率|state|power|efficiency/i]},
+  'battery-cluster': {label:'电池簇',sections:['簇状态','单体电压','单体温度','铜排与BCMS'],match:[/SOC|SOH|功率|充|放|绝缘|power|charge|insulation/i,/单体.*电压|cell.*voltage|monomer.*voltage/i,/单体.*温|cell.*temp|monomer.*temp/i,/铜排|copper|BCMS/i]},
+  'battery-stack': {label:'电池堆',sections:['堆状态','下属电池簇','单体极值'],match:[/SOC|SOH|功率|充|放|power|charge/i,/簇|cluster/i,/最高|最低|极|均值|max|min|average|range/i]},
+  'air-conditioner': {label:'空调',sections:['温湿度','运行与供电'],match:[/温|湿|temp|humidity/i,/状态|功率|电压|电流|风|mode|state|power|voltage|current|fan/i]},
+  meter: {label:'智能电表',sections:['三相电气量','电能计量'],match:[/功率|电压|电流|频率|因数|power|voltage|current|frequency|factor/i,/电量|电能|energy|import|export/i]},
+  logger: {label:'采集器',sections:['通信与采集','系统状态'],match:[/通信|采集|在线|网络|延迟|communication|network|latency|collect/i,/状态|版本|时间|state|version|time/i]},
+  ems: {label:'EMS',sections:['能量管理','网关与系统'],match:[/功率|能量|策略|SOC|power|energy|strategy/i,/通信|网关|版本|状态|communication|gateway|version|state/i]},
+  other: {label:'其他设备',sections:['已登记测点'],match:[/.*/]},
+};
+export type DeviceConfiguration = {version:number;selectedPointIds:number[];theoryValues:Record<string,number>};
+export type DeviceDetail = {type:DeviceType;archive:Record<string,unknown>;points:Record<string,unknown>[];configuration:DeviceConfiguration;theoryFields:string[];connections:Record<string,unknown>[];logs:Record<string,unknown>[];firmwareRecords:Record<string,unknown>[]};
+export function detailPoint(point:Record<string,unknown>,observation?:Record<string,unknown>):DevicePoint {
+  const exact=observation?.value == null ? undefined : String(observation.value);
+  const value=observation?.valueType==='number' && observation.quality==='valid' && !observation.staleReason && exact!==undefined ? Number(exact) : null;
+  const typed=observation && observation.quality==='valid' && !observation.staleReason && observation.value!=null && ['text','boolean','u16_words'].includes(String(observation.valueType));
+  return {id:String(point.id),label:String(point.name??point.code??point.id),unit:String(point.unit??''),
+    value:value!==null && Number.isFinite(value)?value:null,
+    textValue:typed?(Array.isArray(observation.value)?JSON.stringify(observation.value):String(observation.value)):undefined,
+    exactValue:value!==null && Number.isFinite(value)?exact:undefined,quality:(typed||value!==null && Number.isFinite(value))?'good':'bad'};
+}
+export function cellGroups(row:Record<string,unknown>):{slot:string;values:string[]}[] {
+  if(row.quality!=='valid'||row.staleReason||!Array.isArray(row.value))return [];
+  const slots=Array.isArray(row.bmuSlots)?row.bmuSlots:[];
+  return row.value.flatMap((values,index)=>Array.isArray(values)?[{slot:String(slots[index]??index+1),values:values.map(v=>v==null?'—':String(v))}]:[]);
+}
+export function deviceHistoryChart(rows:{timestamp:number;value:number|null}[]):{timestamp:number;value:number|null}[] {
+  const ordered=rows.filter(r=>Number.isFinite(r.timestamp)).sort((a,b)=>a.timestamp-b.timestamp);
+  const result:{timestamp:number;value:number|null}[]=[];
+  for(const row of ordered){const previous=result.at(-1);if(previous)for(let t=previous.timestamp+900000;t<row.timestamp&&result.length<3000;t+=900000)result.push({timestamp:t,value:null});result.push({timestamp:row.timestamp,value:row.value});}
+  return result;
+}
+
 export const DEVICE_STATUS_LABEL: Record<DeviceStatus, string> = { online: "在线", warning: "告警", offline: "离线", unknown: "未知" };
 
 export function pointValue(point?: DevicePoint) {
@@ -45,6 +88,7 @@ export function pointValue(point?: DevicePoint) {
 }
 
 export function formatPoint(point?: DevicePoint) {
+  if(point?.quality==='good'&&point.textValue!==undefined)return point.textValue;
   const value = pointValue(point);
   if (point?.quality === 'good' && point.exactValue !== undefined) return `${point.exactValue} ${point.unit}`.trim();
   return value === null ? "--" : `${__locale(value, 'toLocaleString', "zh-CN", { maximumFractionDigits: point?.id === "powerFactor" ? 3 : 2 })} ${point?.unit ?? ""}`.trim();

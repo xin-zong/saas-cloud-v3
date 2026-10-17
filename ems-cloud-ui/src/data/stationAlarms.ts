@@ -2,13 +2,14 @@ import { dateKey, parseDateTimeInput } from '@/preferences/date'
 export type StationAlarm = {
   id: string;
   occurredAt: string;
+  closedAt?: string
   recoveredAt?: string;
   category: "安全" | "设备" | "环境" | "通信";
   title: string;
   device: string;
   location: string;
   severity: "critical" | "warning";
-  status: "active" | "recovered";
+  status: "active" | "recovered" | "closed";
   metric: { name: string; unit: string; threshold: number; holdSeconds?: number };
   samples: { offsetMinutes: number; value: number }[];
   events: { at: string; text: string }[];

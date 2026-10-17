@@ -112,6 +112,22 @@ public class TelemetryController {
       @RequestParam(defaultValue = "15") int minutes,
       @RequestParam(defaultValue = "legacy") String source,
       @RequestParam(defaultValue = "avg") String aggregation) {
+    return history(id, from, to, minutes, source, aggregation, null);
+  }
+
+  /** A monitor station scope is narrower than the actor's complete point history scope. */
+  ApiResponse<?> stationHistory(
+      long station, long point, OffsetDateTime from, OffsetDateTime to, int minutes,
+      String aggregation) {
+    if (station < 1) throw new BusinessException(400, "历史原站点无效");
+    s.access.requireStationPermission(station, "telemetry.read");
+    // Legacy samples have no verified original station; never include them in station exports.
+    return history(point, from, to, minutes, "ems", aggregation, station);
+  }
+
+  private ApiResponse<?> history(
+      long id, OffsetDateTime from, OffsetDateTime to, int minutes,
+      String source, String aggregation, Long originStation) {
     var point =
         s.one(
             "SELECT d.station_id FROM measurement_point p JOIN device d ON d.id=p.device_id WHERE"
@@ -127,6 +143,9 @@ public class TelemetryController {
         throw new BusinessException(400, "不支持的聚合方式");
       // A moved point is insufficient authority: filter saved fact periods by their original
       // station.
+      String stationFilter = originStation == null ? "" : " AND p.station_id=?";
+      var periodArgs = new ArrayList<Object>(List.of(s.access.userId(), id, to, from));
+      if (originStation != null) periodArgs.add(originStation);
       var periods =
           s.db.queryForList(
               """
@@ -136,14 +155,13 @@ public class TelemetryController {
           AND a.user_id=? AND a.permission_code='telemetry.read'
         WHERE pb.measurement_point_id=? AND pb.valid_from<? AND (pb.valid_to IS NULL OR pb.valid_to>?)
         """
-                  .formatted(s.access.stationPermissionTable()),
+                  .formatted(s.access.stationPermissionTable()) + stationFilter,
               Long.class,
-              s.access.userId(),
-              id,
-              to,
-              from);
+              periodArgs.toArray());
       if (periods.isEmpty()) {
-        s.access.requireStationPermission(s.number(point, "station_id"), "telemetry.read");
+        s.access.requireStationPermission(
+            originStation == null ? s.number(point, "station_id") : originStation,
+            "telemetry.read");
         return ApiResponse.ok(List.of());
       }
       String semanticScope =
@@ -176,9 +194,11 @@ public class TelemetryController {
                   + s.access.stationPermissionTable()
                   + " a ON a.station_id=p.station_id WHERE a.user_id=? AND a.permission_code='telemetry.read' AND p.id IN ("
                   + EmsTelemetryQueries.ids(periods)
-                  + ")",
+                  + ")" + stationFilter,
               Long.class,
-              s.access.userId());
+              originStation == null
+                  ? new Object[] {s.access.userId()}
+                  : new Object[] {s.access.userId(), originStation});
       if (!stillAllowed.containsAll(periods)) throw new BusinessException(403, "历史站点权限已变化");
       return ApiResponse.ok(result);
     }

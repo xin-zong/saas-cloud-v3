@@ -255,24 +255,25 @@
     {
       "workflowId": "device-detail",
       "title": "设备详情与类型差异",
-      "status": "pending-implementation",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "九类设备目录、分类档案/实时值、参数选择与历史、连接关系、设备告警、版本/操作日志、本地理论参数配置已接入。V35保存版本与事件；真实HTTP重登录回读、冲突/越权和前端交互通过。",
       "domainIds": [
         "devices"
       ],
       "baselineAssessment": "partial-current-capability",
       "remainingScope": [
-        "缺参考各设备族专属档案与配置字段、单体多分类曲线和不同权限的Settings；泛型详情不能覆盖全部设备类型。"
+        "完整电芯分析算法和硬件配置/固件下发协议仍未知，不伪造执行结果。",
+        "导入设备仅有已扫描档案，未接入遥测时显示真实空态。"
       ],
       "acceptanceScenarios": [
         "逆变器与电池显示不同合法字段；单体数据缺失保持空态；只读角色不能通过配置接口写入。",
         "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
       ],
       "contractUnknowns": [
-        "Full Cell Analysis准确处理器、参考设备类型编码及历史单体契约未确定。",
-        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
-      ]
+        "Full Cell Analysis准确处理器、参考设备类型编码及历史单体契约未确定。"
+      ],
+      "verificationEvidence": "docs/reference-platform/verification-2026-10-17-monitor-device-alarm.md"
     },
     {
       "workflowId": "system-group-role",
@@ -1263,46 +1264,45 @@
     {
       "workflowId": "alarm-condition-algorithm",
       "title": "告警条件算法、运算符、触发与恢复阈值联动",
-      "status": "pending-implementation",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "单/双指标条件、单位/周期一致性、算法与比较符、区间边界已完成两端校验并随规则持久化。V36修订记录和HTTP回读通过。",
       "domainIds": [
         "alarms"
       ],
       "baselineAssessment": "no-corresponding-implementation-established",
       "remainingScope": [
-        "缺单/双指标单位周期一致校验、self/dpc_rate、同比环比和区间端点组合矩阵。",
-        "缺连续周期窗口、缺数/零分母处理、条件本地提交与父规则保存分离；事件cleared不等于配置条件恢复运算。"
+        "字段完整目录、同比环比计算口径、缺样/连续窗口和恢复判定引擎尚未接通；配置不产生虚构告警。"
       ],
       "acceptanceScenarios": [
         "仅隔离验收：不同单位双指标拒绝；相等边界开闭区间准确；缺数/零分母输出未知；编辑条件未保存规则不触发评估。"
       ],
       "contractUnknowns": [
-        "真实指标全集、同比基期和恢复引擎调度规则待确认。",
-        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
-      ]
+        "真实指标全集、同比基期和恢复引擎调度规则待确认。"
+      ],
+      "verificationEvidence": "docs/reference-platform/verification-2026-10-17-monitor-device-alarm.md"
     },
     {
       "workflowId": "alarm-rule-notification-write",
       "title": "告警规则时间段、通知/收件人、恢复时长及即时启停写边界",
-      "status": "pending-implementation",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "规则CRUD、对象/等级/时段/恢复时长、独立启停、通知次数/渠道/收件人/恢复通知配置与修订历史已保存到V36。只读、收件人越权、版本冲突均校验。",
       "domainIds": [
         "alarms"
       ],
       "baselineAssessment": "no-corresponding-implementation-established",
       "remainingScope": [
-        "缺规则名称/对象/业务组/等级/条件、15分钟有效时段、恢复时长和独立即时启停命令。",
-        "缺规则通知次数上限、渠道资质/收件人验证与恢复通知调度；账号邮件模板不是告警送达服务。"
+        "检测引擎与外部站内/邮件/短信投递未接通，分别返回unavailable/not_connected。",
+        "参考AND/重复抑制、渠道资质和实际投递结果仍未知。"
       ],
       "acceptanceScenarios": [
         "仅隔离验收：条件为空/跨午夜不支持时拒绝；启停有审计；超限抑制；撤权收件人不再投递；不发送真实外部通知。"
       ],
       "contractUnknowns": [
-        "参考AND语义、限流退避、恢复任务和渠道可用资格未知；本项目邮件适配范围待定。",
-        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
-      ]
+        "参考AND语义、限流退避、恢复任务和渠道可用资格未知；本项目邮件适配范围待定。"
+      ],
+      "verificationEvidence": "docs/reference-platform/verification-2026-10-17-monitor-device-alarm.md"
     },
     {
       "workflowId": "pricing-station-template-binding",
@@ -1752,22 +1752,22 @@
       "title": "全局监控看板选择、配置和排序",
       "status": "partially-implemented",
       "completed": false,
-      "notes": "V27个人模板新建/重命名/置顶/选择/删除与现有白名单卡片显式保存已闭环，真实库回读及冲突/多标签页草稿保护通过。自定义指标、模板共享、参考卡片指标与查询筛选的其余差异继续保留待办。",
+      "notes": "已有私人模板CRUD/置顶/选择继续保留；新增V34按租户、用户、模板保存12列x/y/w/h布局，校验重叠/越界/重复与版本。页面保存及HTTP重登录回读通过。",
       "domainIds": [
         "monitor"
       ],
       "baselineAssessment": "partial-current-capability",
       "remainingScope": [
-        "缺服务端模板场景、名称、标签、置顶排序和删除；本地卡片列表不等同模板CRUD。"
+        "参考全部自定义指标、模板共享/系统覆盖策略和业务场景模板仍待办。"
       ],
       "acceptanceScenarios": [
         "模板新增/改名重登可读；置顶顺序持久；无权widget不可通过旧模板恢复；删除需确认。",
         "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
       ],
       "contractUnknowns": [
-        "服务端候选卡片、系统模板修改权限及业务场景规则待确认。",
-        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
-      ]
+        "服务端候选卡片、系统模板修改权限及业务场景规则待确认。"
+      ],
+      "verificationEvidence": "docs/reference-platform/verification-2026-10-17-monitor-device-alarm.md"
     },
     {
       "workflowId": "dashboard-station-status-and-automatic-hide",
@@ -1794,24 +1794,25 @@
     {
       "workflowId": "alarm-live-history-lifecycle",
       "title": "全局/站内实时与历史告警、详情和处置",
-      "status": "pending-implementation",
-      "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "status": "implemented-and-verified",
+      "completed": true,
+      "notes": "全局/站内实时、历史、全部事件分页与高级过滤、纯读详情、个人读回执、确认/备注/人工关闭/终态软删除及处置审计已完成。V36落库，真实HTTP覆盖重登录、只读、跨站、版本冲突与旧接口兼容。人工关闭不填写自动恢复时间。",
       "domainIds": [
         "alarms"
       ],
       "baselineAssessment": "partial-current-capability",
-      "remainingScope": [
-        "参考实时详情条件标读与本项目业务确认不同；当前acknowledge不能冒充readFlag读回执。",
-        "缺全局规则/设备告警统一高级查询、关闭/删除命令及其权限/审计语义；恢复时间来自事件不能当人工关闭。"
-      ],
+      "remainingScope": [],
       "acceptanceScenarios": [
         "仅隔离验收：历史详情无写入；标读不确认；确认不恢复；跨站告警建工单拒绝；删除/关闭需独立权限。"
       ],
       "contractUnknowns": [
-        "参考删除是否软删除、真实恢复/通知结果未知。",
-        "仅静态比较；当前实现未启动、未访问数据库、未运行前端/API，参考写流程未执行。"
-      ]
+        "参考删除是否软删除、真实恢复/通知结果未知。"
+      ],
+      "resolvedProjectContracts": [
+        "沿用alarm.read/alarm.handle与站点范围权限；删除为终态软删除，保留审计。",
+        "读取回执独立于业务确认；自动恢复保留源事件事实，不用人工关闭替代。"
+      ],
+      "verificationEvidence": "docs/reference-platform/verification-2026-10-17-monitor-device-alarm.md"
     },
     {
       "workflowId": "station-external-control-and-layout-wrappers",
@@ -2627,67 +2628,68 @@
       "title": "看板独立编辑器：候选交集、布局草稿和统一保存",
       "status": "partially-implemented",
       "completed": false,
-      "notes": "V27个人模板新建/重命名/置顶/选择/删除与现有白名单卡片显式保存已闭环，真实库回读及冲突/多标签页草稿保护通过。自定义指标、模板共享、参考卡片指标与查询筛选的其余差异继续保留待办。",
+      "notes": "候选卡片、显隐和x/y/w/h布局草稿统一保存至V34；取消不保存，冲突保留草稿，模板删除级联布局。实际页面保存已确认。",
       "domainIds": [
         "monitor"
       ],
       "baselineAssessment": "partial-current-capability",
       "remainingScope": [
-        "缺服务端候选交集、x/y/w/h布局、sort/isChecked完整保存及系统模板覆盖规则；关闭编辑器不能当保存成功。"
+        "参考全部自定义指标与系统模板覆盖权限契约未知，当前提供私人/默认布局。"
       ],
       "acceptanceScenarios": [
         "拖动后关闭丢弃或提示；保存后服务器重读一致；无权候选无法通过手工载荷加入；空布局规则明确。",
         "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
       ],
       "contractUnknowns": [
-        "参考空模板允许性和系统模板覆盖权限未证实。",
-        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
-      ]
+        "参考空模板允许性和系统模板覆盖权限未证实。"
+      ],
+      "verificationEvidence": "docs/reference-platform/verification-2026-10-17-monitor-device-alarm.md"
     },
     {
       "workflowId": "dashboard-operation-summary-and-map",
       "title": "经营概览与地图：场景、通信状态及授权站点跳转",
-      "status": "pending-implementation",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "全局/站内新增有权站点场景、通信、搜索筛选及容量/设备统计；地图与经营看板使用共同范围，缺坐标/心跳保留未知。站内/全局功率趋势和排名使用本项目测点历史。",
       "domainIds": [
         "monitor"
       ],
       "baselineAssessment": "partial-current-capability",
       "remainingScope": [
-        "缺业务组/标签、PV/储能/混合场景统计与组织时区经营汇总；当前快照不等于历史经营结果。"
+        "标签/组织与全业务场景深度经营汇总仍待办。",
+        "地图密钥未配置时保持现有空态；当前资产通信快照不冒充历史统计。"
       ],
       "acceptanceScenarios": [
         "无权站点不计总数；缺坐标不编造点位；总量缺样未知；切场景刷新统计与地图同一scope。",
         "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
       ],
       "contractUnknowns": [
-        "地图服务地区行为、统计时区和超10000站处理需明确。",
-        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
-      ]
+        "地图服务地区行为、统计时区和超10000站处理需明确。"
+      ],
+      "verificationEvidence": "docs/reference-platform/verification-2026-10-17-monitor-device-alarm.md"
     },
     {
       "workflowId": "dashboard-alarm-widgets-and-read-receipts",
       "title": "看板规则报警：分页、声音、阅读状态及处理状态统计",
-      "status": "pending-implementation",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "全局运维告警和站内告警已统一到分页工作区，设备/规则来源、实时/历史、个人阅读过滤可用。显式POST个人读回执独立于业务确认，GET详情无写入。",
       "domainIds": [
         "monitor",
         "alarms"
       ],
       "baselineAssessment": "partial-current-capability",
       "remainingScope": [
-        "缺规则报警分页/发生恢复统计、个人阅读回执及5分钟本地静音；不能用ack代替打开行已读。"
+        "专属看板告警卡片的5分钟节奏与全部统计展示仍待办。"
       ],
       "acceptanceScenarios": [
         "打开详情可按契约写阅读但绝不确认业务；批量阅读逐项鉴权；编辑模式禁动作；静音不改报警状态。",
         "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
       ],
       "contractUnknowns": [
-        "规则引擎、处理状态映射与声音需求待确定。",
-        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
-      ]
+        "规则引擎、处理状态映射与声音需求待确定。"
+      ],
+      "verificationEvidence": "docs/reference-platform/verification-2026-10-17-monitor-device-alarm.md"
     },
     {
       "workflowId": "dashboard-pv-full-hours-and-pr-ranking",
@@ -2758,24 +2760,24 @@
     {
       "workflowId": "dashboard-generation-and-charge-history-export",
       "title": "发电历史与整体充放电历史：参数筛选、单位和浏览器导出",
-      "status": "pending-implementation",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "新增PV/储能实测功率历史查询与CSV，按日期/采样粒度/站点筛选，服务端重新校验report.export；原始站点归属隔离、零/空值保留且请求预算超限明确413。",
       "domainIds": [
         "monitor"
       ],
       "baselineAssessment": "partial-current-capability",
       "remainingScope": [
-        "缺发电月/年/累计与充放月/年历史、参数单位种类限制、浏览器当前结果Excel导出及未结算逐字段null处理。"
+        "实测功率不代表发电量/充放电量；完整日/月/年/累计电量聚合和Excel输出仍待办。"
       ],
       "acceptanceScenarios": [
         "导出字段/时间与当前查询一致；超过允许单位种类提示；null保持空；电量两方向采用共同单位；隐藏日分支不算入口。",
         "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
       ],
       "contractUnknowns": [
-        "参数数量与单位种类上限、未结算字段清单需明确。",
-        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
-      ]
+        "参数数量与单位种类上限、未结算字段清单需明确。"
+      ],
+      "verificationEvidence": "docs/reference-platform/verification-2026-10-17-monitor-device-alarm.md"
     }
   ],
   "unavailableResourceRouteCount": 49,

@@ -28,6 +28,7 @@ import { hasIsolatedTelemetryValue } from "@/data/stationTelemetry"
 import "./station-overview-figma.css"
 import StationEnergy3D from "./StationEnergy3D"
 import type { DeviceType, EnergyMetrics } from "./EnergyFlow3D"
+import MonitorAnalytics from './MonitorAnalytics'
 
 const modelCategories: Record<DeviceType, string> = {
   tower: "电网", solar: "光伏", factory: "负荷", pcs: "PCS", battery: "电池",
@@ -494,6 +495,7 @@ export default function StationOverviewPage({
           )}
         </div>
       </section>
+      {!DEMO_MODE&&canRead&&range==='D'&&Number.isFinite(calendarBounds(date,'D').start.getTime())&&<MonitorAnalytics stationIds={[station.id]} names={{[station.id]:station.name}} from={calendarBounds(date,'D').start.toISOString()} to={new Date(calendarBounds(date,'D').end.getTime()+1).toISOString()} onOpenStation={()=>onSetSubNav('运行曲线')} canExport={hasStationPermission(user,station.id,'report.export')}/>}
     </main>
   )
 }
