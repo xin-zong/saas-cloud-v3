@@ -20,4 +20,3 @@ export function toggleSubstationSystem(d:SubstationDraft,system:string,checked:b
  const next={...d,systems};for(const [key,,required] of capacityFields)if(!systems.includes(required))next[key]=null
  return next
 }
-

@@ -90,4 +90,3 @@ test('station data distinguishes stored capture from continuous acquisition and 
  try{const {page}=await setup(browser);await page.route('**/api/stations/12/telemetry/snapshot',route=>route.fulfill({json:{code:0,data:{items:[{pointId:'p1',value:0,valueType:'number',quality:'valid',sourceTime:Date.now(),sourceType:'stored_device'}],serverTime:Date.now(),presence:null}}}));await assets(page);await page.getByRole('button',{name:'Alpha站',exact:true}).click();await page.getByRole('navigation',{name:'站点二级导航'}).getByRole('button',{name:'场站数据',exact:true}).click();await page.getByText('连续采集未接通：当前为已入库设备采样。',{exact:true}).waitFor();assert.match(await page.locator('[data-metric="storageSoc"]').innerText(),/0/);await page.getByLabel('采样开始日期',{exact:true}).fill('2026-10-01');await page.getByRole('heading',{name:'实测功率趋势与排行'}).waitFor();assert.equal(await page.getByRole('button',{name:'导出所选历史'}).count(),1)
  }finally{await browser.close()}
 })
-

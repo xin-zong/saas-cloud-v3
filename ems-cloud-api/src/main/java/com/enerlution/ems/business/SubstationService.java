@@ -133,5 +133,3 @@ public class SubstationService {
  private static String json(Object value){try{return JSON.writeValueAsString(value);}catch(java.io.IOException e){throw new IllegalStateException(e);}}
  private static BusinessException invalid(String message){return new BusinessException(400,message);}
 }
-
-

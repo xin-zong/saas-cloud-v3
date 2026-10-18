@@ -28,10 +28,3 @@ export default function StationSubstationsPage({station,onOpenDevice}:{station:S
  {mode==='detail'&&selected&&<div><h3>{selected.name}</h3><p>系统：{selected.systems.map(s=>systemNames[s]??s).join('、')} · {selected.deviceCount} 台设备 · {selected.state==='ready'?'已关联设备':'待关联设备'}</p><dl className="module-form-grid">{capacityFields.filter(([, ,system])=>selected.systems.includes(system)).map(([key,label])=><div key={key}><dt>{label}</dt><dd>{selected[key]??'未采集'}</dd></div>)}</dl><p>子场站独立指标尚未建立计量聚合规则；请进入关联设备查看实际采样，不将父场站指标复制为子场站指标。</p><h3>关联设备</h3>{(selected.deviceIds??[]).map(id=>devices.find(d=>d.deviceId===id)??{deviceId:id,name:'设备资料未返回',code:''}).map(device=><div className="module-device" key={device.deviceId}><span>{device.name} · {device.code}</span><button onClick={()=>onOpenDevice(device.deviceId)}>查看设备</button></div>)}{!selected.deviceCount&&<p>尚未关联设备</p>}{edit&&<button disabled={busy} onClick={()=>void open(selected,'bind')}>管理设备关联</button>}</div>}
  </section>
 }
-
-
-
-
-
-
-
