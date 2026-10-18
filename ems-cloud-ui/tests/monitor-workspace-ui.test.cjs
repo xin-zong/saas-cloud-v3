@@ -4,7 +4,7 @@ const preview=process.env.API_PREVIEW_URL||'http://127.0.0.1:8444'
 async function setup(browser){
  const context=await browser.newContext({viewport:{width:1366,height:900}})
  await context.addInitScript(()=>sessionStorage.setItem('enerlution-api-token','monitor-ui-test'))
- const page=await context.newPage();page.setDefaultTimeout(18000)
+ const page=await context.newPage();page.on("pageerror",e=>console.error(e.stack));page.setDefaultTimeout(18000)
  const permission=['asset.read','asset.edit','telemetry.read','alarm.read','report.export']
  const user={id:'7',name:'验收',account:'monitor@test',role:'owner',organization:'验收组织',stationIds:['12','13'],permissions:permission,stationPermissions:{12:permission,13:permission},organizationPermissions:{}}
  const state={preference:{settings:{},watchedStationIds:[],version:0},rejectNext:false,dashboard:false}
@@ -15,6 +15,8 @@ async function setup(browser){
   const req=route.request(),url=new URL(req.url()),p=url.pathname.slice(4),q=url.searchParams;let data=[]
   if(p==='/auth/me')data=user
   else if(p==='/stations')data=sites.map(r=>({id:Number(r.id),name:r.name,code:r.code,region:r.region,asset_type:r.scene}))
+  else if(p==='/alarms/workspace')data={items:[],total:0,limit:20,offset:0}
+  else if(p==='/monitor/history')data={items:[],ranking:[],stationResults:[],unavailable:[]}
   else if(p==='/monitor/templates')data={items:[],selectedId:null}
   else if(p==='/monitor/layout')data={widgets:[],version:0}
   else if(p==='/monitor/workspace/preferences'){
@@ -30,12 +32,14 @@ async function setup(browser){
    let filtered=sites.map(r=>({...r,watched:state.preference.watchedStationIds.includes(r.id)}))
    if(q.get('search'))filtered=filtered.filter(r=>r.name.includes(q.get('search')))
    if(q.get('watched')==='true')filtered=filtered.filter(r=>r.watched)
+   if(q.get('stationId'))filtered=filtered.filter(r=>r.id===q.get('stationId'))
    const facets=summary(filtered)
    if(q.get('communication')&&q.get('communication')!=='all')filtered=filtered.filter(r=>r.communication===q.get('communication'))
    if(q.get('scene')&&q.get('scene')!=='all')filtered=filtered.filter(r=>r.scene===q.get('scene'))
    data={items:filtered,total:filtered.length,limit:50,offset:0,summary:summary(filtered),facets,rules:{counts:[],recent:[]},preferences:state.preference,options:{regions:['华东'],siteTypes:['商业'],tags:[]},sourceMode:'capture',serverTime:'2026-10-18T00:00:00Z'}
    if(state.dashboard&&q.get('includeDashboard')==='true'&&q.get('scope')==='imported')data.dashboardCapture={summary:{...summary(filtered),totals:Object.fromEntries(Object.entries({pvTotal:912340,storageTotalCharged:78900,storageTotalDischarged:90100,storageEfficiency:100}).map(([key,value])=>[key,{value,covered:2,total:2,complete:true}])),storageCapacity:1160},cards:{pvPeak7:{verified:true,value:null,ranking:[{stationId:'12',value:21.35}]}},sourceUpdatedAt:'2026-10-18T03:13:44Z',capturedAt:'2026-10-18T04:00:00Z',sourceHost:'ess-cloud-login.qudeox.com'}
   }
+  else if(p.endsWith('/profile'))data={timezone:'Europe/Madrid',solarCapacityKw:100,gridConnectionDate:'2026-03-26',commissionedOn:null,country:'Spain',province:null,city:null,postcode:null}
   else if(p.endsWith('/space-devices'))data={items:[],total:0}
   if(data?.dashboardCapture)data.dashboardCapture.cards.pvPeak7.trend={start:'2026-10-11',end:'2026-10-17',granularity:'day',method:'ui-tooltip',observedAt:'2026-10-18T03:50:00Z',series:['metric'],points:[{date:'2026-10-11',values:{metric:0}},{date:'2026-10-12',values:{metric:null}},{date:'2026-10-13',values:{metric:3.79}}]}
   if(data?.dashboardCapture)data.dashboardCapture.cards.pvPeakMonth={verified:true,value:9,ranking:[],trend:{...data.dashboardCapture.cards.pvPeak7.trend,start:'2026-10-01',end:'2026-10-31'}}
@@ -148,3 +152,21 @@ test('map and business display stored curves, clear them on scope changes, and p
   assert.ok(!(await page.locator('[data-overview-card="储能充放趋势"]').innerText()).includes('7.24'))
  }finally{await browser.close()}
 })
+
+ test('station details show stored zeroes, missing metrics, profile and retain device navigation',{timeout:90000},async()=>{
+ const browser=await chromium.launch({channel:'msedge',headless:true})
+ try{
+  const {page}=await setup(browser);await assets(page)
+  await page.getByRole('button',{name:'Alpha站',exact:true}).click()
+  const panel=page.getByRole('region',{name:'站点已入库数据'})
+  await panel.getByText('Europe/Madrid',{exact:true}).waitFor()
+  assert.equal(await panel.locator('[data-metric="pvPower"] dd').innerText(),'0 kW')
+  assert.equal(await panel.locator('[data-metric="storageSoc"] dd').innerText(),'0 %')
+  assert.equal(await panel.locator('[data-metric="pvPr7"] dd').innerText(),'未采集')
+  assert.ok((await panel.innerText()).includes('2026-03-26'))
+  await panel.getByRole('button',{name:'查看告警信息',exact:true}).click()
+  await page.getByRole('region',{name:'站点已入库数据'}).waitFor({state:'detached'})
+  await page.getByRole('navigation',{name:'站点二级导航'}).getByRole('button',{name:'站点概览',exact:true}).click()
+  await panel.locator('[data-metric="storageSoc"]').waitFor()
+ }finally{await browser.close()}
+ })

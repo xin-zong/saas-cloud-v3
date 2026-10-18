@@ -29,6 +29,7 @@ import "./station-overview-figma.css"
 import StationEnergy3D from "./StationEnergy3D"
 import type { DeviceType, EnergyMetrics } from "./EnergyFlow3D"
 import MonitorAnalytics from './MonitorAnalytics'
+import StationStoredOverview from './StationStoredOverview'
 
 const modelCategories: Record<DeviceType, string> = {
   tower: "电网", solar: "光伏", factory: "负荷", pcs: "PCS", battery: "电池",
@@ -206,7 +207,7 @@ export default function StationOverviewPage({
     电池: station.soc,
   }
   return (
-    <main className="station-overview-figma">
+    <main className="station-overview-figma"><StationStoredOverview key={station.id} stationId={station.id} allowedSubNavs={allowedSubNavs} onNavigate={onSetSubNav} />
 
       <div className="station-overview-top">
         <section className="station-energy-card" aria-label="站点能流图">
