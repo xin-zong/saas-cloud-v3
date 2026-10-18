@@ -33,8 +33,8 @@ export default function MonitorDashboardTrend({trend,title,unit}:{trend?:Dashboa
    <Tooltip filterNull={false} formatter={(v,name)=>[`${metricText(v==null?null:Number(v))} ${info(name as DashboardSeries)[1]}`,info(name as DashboardSeries)[0]]}/><Legend formatter={v=>info(v as DashboardSeries)[0]} wrapperStyle={{fontSize:11}}/>
    {trend.series.filter(key=>key!=='metric').map(key=><Bar key={key} name={key} dataKey={key} yAxisId="secondary" fill={info(key)[2]} maxBarSize={18} isAnimationActive={false}/>)}
    {trend.series.includes('metric')&&<Line name="metric" dataKey="metric" yAxisId="metric" type="linear" stroke={info('metric')[2]} strokeWidth={2} dot={{r:2}} connectNulls={false} isAnimationActive={false}/>}
-  </ComposedChart></ResponsiveContainer></div>:<div className="monitor-trend-empty">来源该周期无有效趋势值</div>}
-  <small className="monitor-note">来源页面显示精度 · {trend.series.some(key=>key.endsWith('Energy'))&&'电量统一换算为 kWh · '}缺值留空，未插值 · {new Date(trend.observedAt).toLocaleString('zh-CN',{hour12:false})}</small>
+  </ComposedChart></ResponsiveContainer></div>:<div className="monitor-trend-empty">该周期无有效趋势值</div>}
+  <small className="monitor-note">按记录精度显示 · {trend.series.some(key=>key.endsWith('Energy'))&&'电量统一换算为 kWh · '}缺值留空，未插值 · {new Date(trend.observedAt).toLocaleString('zh-CN',{hour12:false})}</small>
   {table&&<div className="monitor-trend-table"><table aria-label={`${title}趋势数据明细`}><thead><tr><th>日期</th>{trend.series.map(key=><th key={key}>{info(key)[0]}（{info(key)[1]}）</th>)}</tr></thead><tbody>{data.map(point=><tr key={point.date}><td>{point.date}</td>{trend.series.map(key=><td key={key}>{metricText(typeof point[key]==='number'?point[key] as number:null)}</td>)}</tr>)}</tbody></table></div>}
  </div>
 }

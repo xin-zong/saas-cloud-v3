@@ -112,7 +112,7 @@ export default function LeftPanel({ stations, role, onViewStations,visibleCards,
 <div className="overview-status-total"><span style={label}>站点总数</span><strong data-metric="station-total">{stations.length}</strong></div>
 <div className="overview-status-bar">{statusItems.map(item => <span key={item.status} style={{ flex: DEMO_MODE ? item.count : 1, background: DEMO_MODE ? item.color : "#e6eee9" }} />)}</div>
 <div className="overview-status-counts">{DEMO_MODE?statusItems.map(item=><span key={item.status}>{item.label} <b>{item.count}</b></span>):liveStatus.map(([key,name])=><span key={key}>{name} <b data-metric={'station-status-'+key}>{live.loading||live.error?'—':live.items.filter(r=>r.communication===key).length}</b></span>)}</div>
-{!DEMO_MODE&&<small style={{fontSize:10,color:'#76857f'}}>{live.source==='capture'?'站点通信快照 · 非实时状态':'当前设备采样状态'}</small>}
+{!DEMO_MODE&&<small style={{fontSize:10,color:'#76857f'}}>{live.source==='capture'?'通信记录 · 以采样时间为准':'当前设备采样状态'}</small>}
 <div className="overview-status-total"><span style={label}>关联设备数</span><strong data-metric="device-total">{DEMO_MODE ? deviceSummary.total : live.items.reduce((sum, row) => sum + (row.device_count ?? 0), 0)}</strong></div>
 <div className="overview-status-bar"><span style={{ width: DEMO_MODE ? deviceSummary.onlinePct + "%" : "0%", background: "#2f875a" }} /></div>
 </div>

@@ -90,7 +90,7 @@ export default function RightPanel({ stations, role,visibleCards }: Props) {
           <span style={title}>
             {role === "integrator" ? "已接入容量" : "在线运行容量"}
           </span>
-          <span style={{ ...label, fontSize: 9 }}>{DEMO_MODE?"TODAY":live.source==='capture'?"采集快照":"当前采样"}</span>
+          <span style={{ ...label, fontSize: 9 }}>{DEMO_MODE?"TODAY":live.source==='capture'?"最近采样":"当前采样"}</span>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -155,7 +155,7 @@ export default function RightPanel({ stations, role,visibleCards }: Props) {
           <span style={title}>
             {role === "integrator" ? "站点能源构成" : "能源供应与构成"}
           </span>
-          <span style={{ ...label, fontSize: 9 }}>{DEMO_MODE?"TODAY":live.source==='capture'?"采集快照":"当前采样"}</span>
+          <span style={{ ...label, fontSize: 9 }}>{DEMO_MODE?"TODAY":live.source==='capture'?"最近采样":"当前采样"}</span>
         </div>
 
         <div className="flex items-center gap-3">

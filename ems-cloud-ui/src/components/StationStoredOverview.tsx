@@ -12,7 +12,7 @@ export default function StationStoredOverview({stationId, allowedSubNavs, onNavi
   const telemetryAllowed=hasStationPermission(user,stationId,'telemetry.read')
   const alarmAllowed=hasStationPermission(user,stationId,'alarm.read')
   const permissionKey=JSON.stringify([user?.id,user?.stationPermissions,user?.permissions])
-  const [source,setSource]=useState<'capture'|'current'>('capture')
+  const source='capture' as const
   const {data,busy,error,refresh}=useMonitorWorkspace(permissionKey,{stationId,sourceMode:source},allowed,0)
   const [profile,setProfile]=useState<StationProfile|null>(null)
   const [profileError,setProfileError]=useState('')
@@ -28,11 +28,11 @@ export default function StationStoredOverview({stationId, allowedSubNavs, onNavi
   const text=(value:unknown)=>value===null||value===undefined||value===''?'未采集':String(value)
   const groups=[['光伏指标','pv'],['储能指标','storage']]
   return <section className="station-stored-overview" aria-label="站点已入库数据">
-    <header><h2>站点数据</h2><div><label>数据来源 <select aria-label="站点数据来源" value={source} onChange={e=>setSource(e.target.value as typeof source)}><option value="capture">已导入快照</option><option value="current">当前运行数据</option></select></label><button onClick={refresh} disabled={busy}>刷新站点数据</button></div></header>
-    <p>快照按原采集时间展示；下方能流图和运行曲线使用实时采样。未采集的指标不按零计算。</p>
+    <header><h2>站点数据</h2><div><button onClick={refresh} disabled={busy}>刷新站点数据</button></div></header>
+    <p>指标按采样时间显示，未采集的指标不按零计算。</p>
     {error?<p role="alert">站点数据读取失败：{error}</p>:!row?<p role="status">{busy?'正在读取站点数据…':'暂无可查看的站点数据'}</p>:<>
-      <p>{row.source==='reference_capture'?'已导入快照':'当前运行数据'} · 源更新时间：{text(row.updatedAt)} · 快照采集时间：{text(row.capturedAt)}</p>
-      {source==='capture'&&row.source!=='reference_capture'&&<p>本站暂无导入快照，以下仅显示当前可用数据。</p>}
+      <p>数据更新时间：{text(row.updatedAt)} · 接收时间：{text(row.capturedAt)}</p>
+      {row.telemetryUnavailable&&<p role="status">采集服务暂不可用，运行指标暂无数据。</p>}
       <dl className="station-stored-grid">{[
         ['站点名称',row.name],['站点编号',row.code],['场景',row.scene],['地区',row.region],['地址',row.address],['站点类型',row.siteType],
         ['通信状态',telemetryAllowed?(communicationNames[row.communication]??'未知'):'无查看权限'],['设备数量',row.device_count],['当前系统告警数',alarmAllowed&&row.alarmAllowed?row.alarmCount:'无查看权限'],

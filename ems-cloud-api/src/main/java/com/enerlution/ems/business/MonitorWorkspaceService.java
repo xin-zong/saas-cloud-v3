@@ -105,7 +105,12 @@ public class MonitorWorkspaceService {
     var tags=new LinkedHashMap<String,Map<String,Object>>();for(var row:rows)for(Object rawTag:(List<?>)row.get("tags")){var tag=(Map<String,Object>)rawTag;tags.put(tag.get("id").toString(),tag);}options.put("tags",List.copyOf(tags.values()));
     var candidates=rows.stream().filter(row->matches(row,q)).toList();
     // Read the complete filtered set before ordering; paging must not hide the true highest/lowest value.
-    if(!q.get("sourceMode").equals("capture"))for(var row:candidates)live(row);
+    for(var row:candidates)if(MonitorWorkspaceRules.needsLive(q.get("sourceMode").toString(),row.get("source").toString())){
+      try{live(row);}catch(BusinessException ex){
+        if(ex.status()!=503)throw ex;
+        row.put("telemetryUnavailable",true);
+      }
+    }
     var filtered=candidates.stream().sorted(MonitorWorkspaceRules.comparator(q.get("sort").toString(),q.get("direction").toString())).toList();
     var facetQuery=new LinkedHashMap<>(q);facetQuery.put("communication","all");facetQuery.put("alarm","all");var facets=summary(rows.stream().filter(row->matches(row,facetQuery)).toList());
     int from=Math.min((int)q.get("offset"),filtered.size()),to=Math.min(from+(int)q.get("limit"),filtered.size());var page=new ArrayList<>(export?filtered:filtered.subList(from,to));

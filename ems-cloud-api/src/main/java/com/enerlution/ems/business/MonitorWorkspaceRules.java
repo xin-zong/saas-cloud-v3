@@ -6,6 +6,8 @@ import java.util.*;
 
 /** Shared validation and arithmetic; missing measurements are deliberately not zero. */
 final class MonitorWorkspaceRules {
+  static boolean needsLive(String mode,String source){return !"capture".equals(mode)||!"reference_capture".equals(source);}
+
   static final Set<String> METRICS=Set.of("pvCapacity","pvPower","pvNormalization","pvDaily","pvMonthly","pvTotal","pvPeak7","pvPeakMonth","pvPeakYear","pvPrYesterday","pvPr7","pvPrMonth","pvPrYear","pvCompletionMonthBasic","pvCompletionMonthSuperior","pvCompletionYearBasic","pvCompletionYearSuperior","storagePower","storageCapacity","storageSoc","storageDailyCharged","storageDailyDischarged","storageMonthlyCharged","storageMonthlyDischarged","storageTotalCharged","storageTotalDischarged","storageEfficiency","storageActivePower","storageSoh","storageEfficiency7","storageEfficiencyMonth","storageEfficiencyYear","storageUtilization7","storageUtilizationMonth","storageUtilizationYear");
   static final Set<String> SORTS;
   static {var keys=new HashSet<>(METRICS);keys.addAll(Set.of("name","updatedAt","communication","alarmCount"));SORTS=Set.copyOf(keys);}

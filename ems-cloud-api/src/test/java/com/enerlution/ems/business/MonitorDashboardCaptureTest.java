@@ -3,6 +3,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.*;
 import org.junit.jupiter.api.Test;
 class MonitorDashboardCaptureTest {
+ @Test void partialStatisticsRequireEveryCoveredStationPermission(){
+  var a=Map.<String,Object>of("id","12","telemetryAllowed",true);
+  var b=Map.<String,Object>of("id","13","telemetryAllowed",true);
+  assertTrue(MonitorDashboardCapture.covers(Set.of("12"),List.of(a,b)));
+  assertFalse(MonitorDashboardCapture.covers(Set.of("12","14"),List.of(a,b)));
+  assertFalse(MonitorDashboardCapture.covers(Set.of("12"),List.of(Map.of("id","12","telemetryAllowed",false),b)));
+ }
+
  @Test void globalTotalsRequireTheExactCompleteAuthorizedStationSet(){
   var a=Map.<String,Object>of("id","12","telemetryAllowed",true);
   var b=Map.<String,Object>of("id","13","telemetryAllowed",true);

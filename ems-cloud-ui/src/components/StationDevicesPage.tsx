@@ -469,6 +469,7 @@ function DeviceDetails({
 const THEORY_LABELS:Record<string,string>={ratedPowerKw:'额定功率 (kW)',capacityKwh:'额定容量 (kWh)',loopNum:'理论循环次数',theorySoh:'理论 SOH (%)'}
 function LiveDeviceDetails({device,station}:{device:StationDevice;station:Station}) {
   const {user}=useAuth()
+  const [referenceCount,setReferenceCount]=useState(0)
   const [detail,setDetail]=useState<DeviceDetail|null>(null)
   const [observations,setObservations]=useState<Record<string,unknown>[]>([])
   const [cells,setCells]=useState<{known:boolean;unknownReason:string;values:Record<string,unknown>[]}|null>(null)
@@ -502,7 +503,7 @@ function LiveDeviceDetails({device,station}:{device:StationDevice;station:Statio
     return ()=>controller.abort()
   },[device.id,canTelemetry,detail?.type,user])
   useEffect(()=>{
-    const controller=new AbortController();setLoading(true);setDetail(null);setError('');setHistories([]);setHistoryError('')
+    const controller=new AbortController();setLoading(true);setReferenceCount(0);setDetail(null);setError('');setHistories([]);setHistoryError('')
     loadDeviceDetail(station.id,device.id,controller.signal).then(value=>{if(controller.signal.aborted)return;setDetail(value);setConfiguration(value.configuration)})
       .catch(e=>{if(!controller.signal.aborted)setError(e.message)}).finally(()=>{if(!controller.signal.aborted)setLoading(false)})
     return ()=>{controller.abort();historyAbort.current?.abort()}
@@ -540,7 +541,7 @@ function LiveDeviceDetails({device,station}:{device:StationDevice;station:Statio
   const matched=new Set(schema.match.flatMap(regex=>points.filter(p=>regex.test(p.label)).map(p=>p.id)))
   return <section className="device-details" aria-label="所选设备详情">
     <header className="device-detail-heading"><h2>{device.name}</h2><StatusBadge status={device.status}/><span>{schema.label}</span></header>
-    <p className="device-sync">{archiveValue('manufacturer')} · {archiveValue('model')} · 本系统最近上报 {archive.observed_at?dateText(String(archive.observed_at)):'未接入'}；QUDEOX 导入值见实时参数和历史曲线。</p>
+    <p className="device-sync">{archiveValue('manufacturer')} · {archiveValue('model')} · 设备采样时间见实时参数和历史曲线。</p>
     <div className="device-tabs" style={{overflowX:'auto',flexShrink:0}} role="tablist" aria-label="设备信息标签">{tabs.map(item=><button key={item} role="tab" aria-selected={tab===item} onClick={()=>setTab(item)}>{item}</button>)}</div>
     <div className="device-tab-content" role="tabpanel" aria-label={tab}>
       {tab==='概况'&&<>
@@ -554,8 +555,9 @@ function LiveDeviceDetails({device,station}:{device:StationDevice;station:Statio
         <section className="device-info-band"><h3>分类数据范围</h3><p>{schema.sections.join(' · ')}</p><p className="device-sync">未接入的测点与采样保留空态。硬件控制、固件下发与完整电芯分析尚未接入。</p></section>
       </>}
       {tab==='实时参数'&&<>
-        {canTelemetry&&<ReferenceDeviceSamples key={`${station.id}/${device.id}`} station={station.id} device={device.id} battery={['battery-cluster','battery-stack'].includes(detail.type)}/>}
-        <h3>本系统实时采集</h3>
+        {canTelemetry&&<ReferenceDeviceSamples onCount={setReferenceCount} key={`${station.id}/${device.id}`} station={station.id} device={device.id} battery={['battery-cluster','battery-stack'].includes(detail.type)}/>}
+        {(points.length>0||referenceCount===0)&&<>
+        <h3>运行测点</h3>
         {telemetryError&&<p role="alert">{telemetryError}</p>}
         {schema.sections.map((section,index)=><section className="device-info-band" key={section}><h3>{section}</h3><PointsTable points={points.filter(p=>schema.match[index].test(p.label))}/>
           {section==='下属电池簇'&&<DeviceFields fields={detail.connections.filter(c=>c.direction==='downstream').map(c=>({label:String(c.name),value:String(c.serial_number??'—')}))}/>}</section>)}
@@ -564,10 +566,12 @@ function LiveDeviceDetails({device,station}:{device:StationDevice;station:Statio
           {cells?.values.map((row,index)=><div key={index}><h4>{String(row.kind)} · {String(row.quality)}{row.staleReason?' · 采样已过期':''}</h4>{cellGroups(row).map(group=><div key={group.slot}><p>BMU {group.slot}</p><div className="grid grid-cols-6 gap-2 my-2">{group.values.map((value,i)=><div key={i} className="border rounded p-2 text-xs"><span>{i+1}</span><strong className="block">{value}</strong></div>)}</div></div>)}</div>)}
         </section>}
         {points.some(p=>!matched.has(p.id))&&<section className="device-info-band"><h3>其他已登记参数</h3><PointsTable points={points.filter(p=>!matched.has(p.id))}/></section>}
+        </>}
       </>}
       {tab==='历史曲线'&&<section className="device-info-band">
         {canTelemetry&&<ReferenceDeviceSamples key={`${station.id}/${device.id}/history`} station={station.id} device={device.id} history/>}
-        <h3>本系统历史曲线参数</h3>
+        {(points.length>0||referenceCount===0)&&<>
+        <h3>运行测点历史</h3>
         <p className="device-sync">选择最多12项、4种单位；保存后再次登录仍可使用。时间使用 UTC，范围最多31天；显示最后采样及数据质量。</p>
         <div className="flex flex-wrap gap-3 my-3">{points.map(p=><label key={p.id} className="flex items-center gap-1"><input type="checkbox" checked={selectedPoints.has(Number(p.id))} onChange={e=>{setHistories([]);setConfiguration(c=>({...c,selectedPointIds:e.target.checked?[...c.selectedPointIds,Number(p.id)].slice(0,12):c.selectedPointIds.filter(id=>id!==Number(p.id))}))}}/>{p.label} ({p.unit||'无单位'})</label>)}</div>
         {!points.length&&<div className="device-empty">暂无已登记测点，无法查询历史</div>}
@@ -579,8 +583,9 @@ function LiveDeviceDetails({device,station}:{device:StationDevice;station:Statio
           {rows.some(r=>r.value!==null)&&<div style={{height:220}}><ResponsiveContainer width="100%" height="100%" minWidth={0}><LineChart data={deviceHistoryChart(rows)}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="timestamp" tickFormatter={v=>timeText(new Date(v).toISOString())}/><YAxis/><Tooltip labelFormatter={v=>dateText(new Date(Number(v)).toISOString())}/><Line dataKey="value" stroke="#267d68" dot={false} connectNulls={false} isAnimationActive={false}/></LineChart></ResponsiveContainer></div>}
           {rows.length?<div className="device-table-scroll"><table className="device-record-table"><thead><tr><th>采样时间</th><th>原始值</th><th>质量</th></tr></thead><tbody>{rows.map((r,i)=><tr key={i}><td>{dateText(new Date(r.timestamp).toISOString())}</td><td>{String(r.exactValue??'—')}</td><td>{r.quality??'unknown'}</td></tr>)}</tbody></table></div>:<div className="device-empty">所选范围暂无历史采样</div>}
         </section>)}
+        </>}
       </section>}
-      {tab==='连接关系'&&<section className="device-info-band"><h3>已登记连接关系</h3>{detail.connections.length?<div className="device-table-scroll"><table className="device-record-table"><thead><tr><th>方向</th><th>设备</th><th>序列号</th><th>依据</th></tr></thead><tbody>{detail.connections.map((c,i)=><tr key={i}><td>{c.direction==='upstream'?'上级':'下级'}</td><td>{String(c.name)}</td><td>{String(c.serial_number??'—')}</td><td>{c.source==='imported_inventory'?'导入档案关系（非实时连接）':'站点连接档案'}</td></tr>)}</tbody></table></div>:<div className="device-empty">暂无已登记连接关系</div>}</section>}
+      {tab==='连接关系'&&<section className="device-info-band"><h3>已登记连接关系</h3>{detail.connections.length?<div className="device-table-scroll"><table className="device-record-table"><thead><tr><th>方向</th><th>设备</th><th>序列号</th><th>依据</th></tr></thead><tbody>{detail.connections.map((c,i)=><tr key={i}><td>{c.direction==='upstream'?'上级':'下级'}</td><td>{String(c.name)}</td><td>{String(c.serial_number??'—')}</td><td>{'站点连接档案'}</td></tr>)}</tbody></table></div>:<div className="device-empty">暂无已登记连接关系</div>}</section>}
       {tab==='告警'&&<section className="device-info-band"><h3>关联告警</h3>{alarmBusy&&<p role="status">正在读取告警…</p>}{alarmError&&<p role="alert">{alarmError}</p>}
         {!!alarms?.items.length&&<div className="device-table-scroll"><table className="device-record-table"><thead><tr><th>等级</th><th>告警内容</th><th>来源</th><th>发生时间</th><th>生命周期</th><th>确认</th></tr></thead><tbody>{alarms.items.map(a=><tr key={String(a.id)}><td>{a.severity==='critical'?'严重':a.severity==='warning'?'一般':'提示'}</td><td>{String(a.title)}</td><td>{a.source==='rule'?'规则':'设备'}</td><td>{dateText(String(a.occurred_at))}</td><td>{a.lifecycle==='closed'?'人工关闭':a.lifecycle==='recovered'?'已恢复':'活动'}</td><td>{a.acknowledged_at?'已确认':'未确认'}</td></tr>)}</tbody></table></div>}
         {!alarmBusy&&!alarmError&&alarms&&!alarms.items.length&&<div className="device-empty">暂无关联告警</div>}

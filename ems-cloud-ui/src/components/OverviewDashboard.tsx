@@ -99,7 +99,7 @@ export default function OverviewDashboard({
         s.region,
         Number.isFinite(s.ratedPower) ? s.ratedPower : "",
         Number.isFinite(s.storageCapacity) ? s.storageCapacity : "",
-        "当前授权站点快照",
+        "当前授权站点数据",
       ]),
     ]
     const url = URL.createObjectURL(
@@ -110,10 +110,10 @@ export default function OverviewDashboard({
     )
     const a = document.createElement("a")
     a.href = url
-    a.download = "总览站点快照.csv"
+    a.download = "总览站点数据.csv"
     a.click()
     setTimeout(() => URL.revokeObjectURL(url), 1000)
-    setNotice("已导出当前授权站点快照")
+    setNotice("已导出当前授权站点数据")
   }
   return (
     <section className="overview-dashboard" aria-label="经营看板">
@@ -139,7 +139,7 @@ export default function OverviewDashboard({
           </div>
           <Button onClick={exportData}>
             <img src="/figma/overview/dashboard/imgDownload.svg" alt="" />
-            站点快照导出
+            站点数据导出
           </Button>
           <Button
             onClick={() => {
@@ -156,7 +156,7 @@ export default function OverviewDashboard({
         </div>
       </div>
       <p className="overview-dashboard-range">
-        周期选择作用于充放电曲线；资产与通信按标注快照，收益按近一年结算记录。
+        周期选择作用于充放电曲线；资产与通信按标注时间，收益按近一年结算记录。
       </p>
       {notice && (
         <p role="status" className="overview-notice">

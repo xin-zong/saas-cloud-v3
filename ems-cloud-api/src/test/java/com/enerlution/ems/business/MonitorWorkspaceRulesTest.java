@@ -7,6 +7,12 @@ import java.util.*;
 import org.junit.jupiter.api.Test;
 
 class MonitorWorkspaceRulesTest {
+  @Test void unifiedViewReadsNativeStationsWithoutDiscardingStoredMeasurements(){
+    assertTrue(MonitorWorkspaceRules.needsLive("capture","current"));
+    assertFalse(MonitorWorkspaceRules.needsLive("capture","reference_capture"));
+    assertTrue(MonitorWorkspaceRules.needsLive("current","reference_capture"));
+  }
+
   // A missing sample must never become a zero or inflate a complete fleet total.
   @Test void totalsExposeCoverageAndEfficiencyUsesTheSameStationsOnBothSides() {
     var a=new LinkedHashMap<String,Object>();a.put("pvTotal",BigDecimal.ZERO);a.put("storageTotalCharged",new BigDecimal("100"));a.put("storageTotalDischarged",new BigDecimal("80"));
