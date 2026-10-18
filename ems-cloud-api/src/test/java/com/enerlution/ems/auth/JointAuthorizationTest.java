@@ -12,9 +12,19 @@ import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 class JointAuthorizationTest {
+  private static void auditConnection(JdbcTemplate db) throws Exception {
+    var source=mock(javax.sql.DataSource.class);
+    var connection=mock(java.sql.Connection.class);
+    when(db.getDataSource()).thenReturn(source);
+    when(source.getConnection()).thenReturn(connection);
+    when(connection.getAutoCommit()).thenReturn(true);
+    when(db.queryForObject(startsWith("INSERT INTO audit_event"),eq(Long.class),any(Object[].class)))
+        .thenReturn(1L);
+  }
   @Test
-  void editorAtAReaderAtBMayEditOnlyA() {
+  void editorAtAReaderAtBMayEditOnlyA() throws Exception {
     JdbcTemplate db = mock(JdbcTemplate.class);
+    auditConnection(db);
     SessionTokens session = mock(SessionTokens.class);
     when(session.userId()).thenReturn(7L);
     when(db.queryForObject(
@@ -64,8 +74,9 @@ class JointAuthorizationTest {
   }
 
   @Test
-  void inspectionAssigneeDoesNotNeedUnrelatedWorkorderHandling() {
+  void inspectionAssigneeDoesNotNeedUnrelatedWorkorderHandling() throws Exception {
     JdbcTemplate db = mock(JdbcTemplate.class);
+    auditConnection(db);
     AccessControl access = mock(AccessControl.class);
     when(access.userId()).thenReturn(7L);
     when(db.queryForObject(

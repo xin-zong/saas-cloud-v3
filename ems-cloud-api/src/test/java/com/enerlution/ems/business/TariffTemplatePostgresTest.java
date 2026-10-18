@@ -45,6 +45,8 @@ class TariffTemplatePostgresTest {
       INSERT INTO settlement_record VALUES(1,101,12.34);
       """);
     db.update("INSERT INTO station_tariff(id,station_id,tariff_id,valid_from,valid_until) VALUES(601,104,501,?,?),(602,103,501,?,?),(603,101,501,?,?)",tomorrow.plusDays(30),tomorrow.plusDays(40),tomorrow.plusDays(30),tomorrow.plusDays(40),tomorrow.minusDays(40),tomorrow.minusDays(30));
+    db.execute("ALTER TABLE app_user ADD COLUMN display_name text");
+    db.execute(Files.readString(Path.of("src/main/resources/db/migration/V44__station_operation_logs.sql")));
     db.execute(Files.readString(Path.of("src/main/resources/db/migration/V31__tariff_templates_and_bindings.sql")));
     access=mock(AccessControl.class);actor(7,11);support=new DomainSupport(db,access);templates=new TariffTemplateService(support);bindings=new TariffBindingService(support,clock);
   }

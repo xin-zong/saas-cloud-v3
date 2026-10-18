@@ -38,7 +38,9 @@ class SubstationPostgresTest {
    INSERT INTO device VALUES(19,101,'Solar meter','s19'),(20,101,'Storage meter','s20'),(30,102,'Foreign','s30');
    INSERT INTO measurement_point VALUES(190,19),(191,19),(200,20),(300,30);
    """);
-  db.execute(Files.readString(Path.of("src/main/resources/db/migration/V43__substations.sql")));
+  db.execute("ALTER TABLE app_user ADD COLUMN display_name text");
+    db.execute(Files.readString(Path.of("src/main/resources/db/migration/V44__station_operation_logs.sql")));
+    db.execute(Files.readString(Path.of("src/main/resources/db/migration/V43__substations.sql")));
   access=mock(AccessControl.class);when(access.userId()).thenReturn(7L);when(access.context()).thenReturn(new TenantContext(7,11,"enterprise",false));
   telemetry=mock(StationTelemetryService.class);service=new SubstationService(new DomainSupport(db,access),telemetry);
  }

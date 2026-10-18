@@ -60,6 +60,8 @@ class StationSpaceConcurrencyPostgresTest {
       INSERT INTO station VALUES(101,11);
       INSERT INTO device VALUES(19,101,'Meter','meter-19');
       """);
+    db.execute("ALTER TABLE app_user ADD COLUMN display_name text");
+    db.execute(Files.readString(Path.of("src/main/resources/db/migration/V44__station_operation_logs.sql")));
     db.execute(Files.readString(Path.of("src/main/resources/db/migration/V29__station_spaces.sql")));
     var spaces=service(db);
     first=spaces.create(101,new StationSpaceService.CreateRequest(null,"A",10));

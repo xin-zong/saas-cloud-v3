@@ -41,6 +41,8 @@ class StationSpacePostgresTest {
       INSERT INTO station VALUES(101,11),(102,22);
       INSERT INTO device VALUES(19,101,'Solar meter','serial-19'),(20,101,'Storage meter','serial-20'),(30,102,'Foreign meter','foreign-30');
       """);
+    db.execute("ALTER TABLE app_user ADD COLUMN display_name text");
+    db.execute(Files.readString(Path.of("src/main/resources/db/migration/V44__station_operation_logs.sql")));
     db.execute(Files.readString(Path.of("src/main/resources/db/migration/V29__station_spaces.sql")));
     access=mock(AccessControl.class);when(access.userId()).thenReturn(7L);
     when(access.context()).thenReturn(new TenantContext(7,11,"enterprise",false));

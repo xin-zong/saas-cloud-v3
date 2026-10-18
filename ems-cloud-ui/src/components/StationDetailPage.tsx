@@ -7,6 +7,9 @@ import {stationRoleConfig} from '@/auth/apiPermissions'
 import OperationsCenterPage from './OperationsCenterPage'
 import MaintenanceCenterPage from './MaintenanceCenterPage'
 import type { StationSubNav, UserRole } from "@/auth/roles"
+import { StationOperationLogs } from './StationOperationLogs'
+import StationBasicElectricityPage from './StationBasicElectricityPage'
+import StationWiringDiagram from './StationWiringDiagram'
 import StationDataPage from './StationDataPage'
 import StationSubstationsPage from './StationSubstationsPage'
 import StationOverviewPage from "./StationOverviewPage"
@@ -30,6 +33,8 @@ const SUB_NAVS: readonly StationSubNav[] = [
   "一次接线图",
   "设备详情",
   "电价设置",
+  "基本电费",
+  "操作日志",
 ]
 const STATUS_COLOR: Record<string, string> = {
   online: "#299d7c",
@@ -80,6 +85,8 @@ export default function StationDetailPage({
     allowedSubNavs.includes(item),
   )
   const allowedKey = visibleSubNavs.join("|")
+  const [wiringView,setWiringView]=useState<'topology'|'diagram'>('topology')
+  useEffect(()=>setWiringView('topology'),[activeId])
   const [deviceId, setDeviceId] = useState<string>()
   const [overviewMode,setOverviewMode]=useState<'live'|'operations'>(initialSubNav==='运营管理'?'operations':'live')
   const [subNav, setSubNav] = useState<string>(
@@ -163,6 +170,8 @@ export default function StationDetailPage({
       </nav>
 
       {/* ── Content ── */}
+      {subNav === '操作日志' && <StationOperationLogs key={station.id} stationId={station.id}/>}
+      {subNav === '基本电费' && <StationBasicElectricityPage key={station.id} station={station} registerLeaveGuard={registerLeaveGuard}/>}
       {subNav === '场站数据' && <StationDataPage key={station.id} station={station} allowedSubNavs={visibleSubNavs} onNavigate={selectSubNav}/>}
       {subNav === '子场站' && <StationSubstationsPage key={station.id} station={station} onOpenDevice={id=>{setDeviceId(id);selectSubNav('设备详情')}}/>}
       {subNav==='站点概览'&&allowedSubNavs.includes('运营管理')&&<nav className="station-overview-classification" aria-label="站点概览分类"><button aria-pressed={overviewMode==='live'} onClick={()=>void(async()=>{if(overviewMode!=='live'&&requestLeave&&!(await requestLeave()))return;setOverviewMode('live')})()}>运行概览</button><button aria-pressed={overviewMode==='operations'} onClick={()=>setOverviewMode('operations')}>运营总览</button></nav>}
@@ -194,7 +203,9 @@ export default function StationDetailPage({
       {subNav === "运行曲线" && (
         <StationRunCurvePage key={station.id} station={station} />
       )}
-      {subNav === "一次接线图" && (
+      {subNav === "一次接线图" && <nav className="ui-tabs" aria-label="接线图视图"><button aria-pressed={wiringView==='topology'} onClick={()=>void(async()=>{if(wiringView!=='topology'&&requestLeave&&!(await requestLeave()))return;setWiringView('topology')})()}>已登记拓扑</button><button aria-pressed={wiringView==='diagram'} onClick={()=>setWiringView('diagram')}>接线图</button></nav>}
+      {subNav === "一次接线图" && wiringView==='diagram' && <StationWiringDiagram key={station.id} station={station} canEdit={hasStationPermission(user,station.id,'asset.edit')} canReadTelemetry={hasStationPermission(user,station.id,'telemetry.read')} registerLeaveGuard={registerLeaveGuard} onOpenDevices={id=>{setDeviceId(id);selectSubNav('设备详情')}}/>}
+      {subNav === "一次接线图" && wiringView==='topology' && (
         <StationSingleLinePage
           key={station.id}
           station={station}
@@ -220,7 +231,7 @@ export default function StationDetailPage({
           registerLeaveGuard={registerLeaveGuard}
         />
       )}
-      {subNav !== "场站数据" && subNav !== "子场站" && subNav !== "站点概览" &&
+      {subNav !== "操作日志" && subNav !== "基本电费" && subNav !== "场站数据" && subNav !== "子场站" && subNav !== "站点概览" &&
         subNav !== "运营管理" && subNav !== "运维管理" &&
         subNav !== "运营收益" &&
         subNav !== "运行策略" &&

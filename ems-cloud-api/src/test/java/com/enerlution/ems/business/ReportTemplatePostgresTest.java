@@ -60,6 +60,8 @@ class ReportTemplatePostgresTest {
       INSERT INTO settlement_line VALUES(1,'energy',12.34);
       INSERT INTO scoped_report_permission SELECT 7,101,code FROM unnest(ARRAY['report.export','strategy.read','revenue.read','asset.read','telemetry.read','alarm.read']) AS code;
       """);
+    db.execute("ALTER TABLE app_user ADD COLUMN display_name text");
+    db.execute(Files.readString(Path.of("src/main/resources/db/migration/V44__station_operation_logs.sql")));
     db.execute(Files.readString(Path.of("src/main/resources/db/migration/V17__analysis_jobs.sql")));
     db.execute(Files.readString(Path.of("src/main/resources/db/migration/V30__report_templates.sql")));
     access=mock(AccessControl.class);actor(7,11);when(access.stationPermissionTable()).thenReturn("scoped_report_permission");

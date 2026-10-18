@@ -44,24 +44,47 @@ public class DomainSupport {
   }
 
   public void auditStation(String action, long station, Object detail) {
+    atomicAudit(() -> {
     Long tenant =
         db.queryForObject("SELECT tenant_id FROM station WHERE id=?", Long.class, station);
     if (tenant == null) throw new BusinessException(404, "站点不存在");
-    auditTenant(action, tenant, detail);
+    long event = auditTenant(action, tenant, detail);
+    linkStation(event, station, false);
+    });
   }
 
   public void auditStations(String action, List<Long> stations, Object detail) {
-    Set<Long> tenants = new LinkedHashSet<>();
-    for (long station : stations) {
+    atomicAudit(() -> {
+    Map<Long,List<Long>> tenants = new LinkedHashMap<>();
+    Set<Long> unique = new LinkedHashSet<>(stations);
+    for (long station : unique) {
       Long tenant =
           db.queryForObject("SELECT tenant_id FROM station WHERE id=?", Long.class, station);
       if (tenant == null) throw new BusinessException(404, "站点不存在");
-      tenants.add(tenant);
+      tenants.computeIfAbsent(tenant, ignored -> new ArrayList<>()).add(station);
     }
-    for (long tenant : tenants) auditTenant(action, tenant, detail);
+    tenants.forEach((tenant, ids) -> {
+      long event = auditTenant(action, tenant, detail);
+      for (long station : ids) linkStation(event, station, unique.size()>1);
+    });
+    });
   }
 
-  private void auditTenant(String action, long tenant, Object detail) {
+  // Do not annotate this class: its public db/access fields are deliberately used
+  // by callers, so a class-based Spring proxy would expose uninitialized fields.
+  private void atomicAudit(Runnable work) {
+    new org.springframework.transaction.support.TransactionTemplate(
+        new org.springframework.jdbc.datasource.DataSourceTransactionManager(
+            Objects.requireNonNull(db.getDataSource())))
+        .executeWithoutResult(status -> work.run());
+  }
+
+  private void linkStation(long event, long station, boolean shared) {
+    db.update("INSERT INTO station_audit_event(event_id,station_id,shared_detail,channel,actor_name) SELECT ?,?,?,?,display_name FROM app_user WHERE id=?",
+        event, station, shared, "application", access.userId());
+  }
+
+  private long auditTenant(String action, long tenant, Object detail) {
     String text;
     try {
       text =
@@ -71,8 +94,9 @@ public class DomainSupport {
     } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
       throw new IllegalStateException("Cannot serialize audit event", e);
     }
-    db.update(
-        "INSERT INTO audit_event(actor_id,target_tenant_id,action,detail) VALUES(?,?,?,?)",
+    return db.queryForObject(
+        "INSERT INTO audit_event(actor_id,target_tenant_id,action,detail) VALUES(?,?,?,?) RETURNING id",
+        Long.class,
         access.userId(),
         tenant,
         action,

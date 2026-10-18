@@ -1188,15 +1188,16 @@
     {
       "workflowId": "pricing-basic-electricity",
       "title": "基本电费单一/两部制及容量/合同需量/实际需量联动",
-      "status": "pending-implementation",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "新增基本电费配置：单一/两部制、容量kVA/合同需量kW/实际需量及户号，版本保存与站点审计；零值保留。",
       "domainIds": [
         "station_metrics"
       ],
       "baselineAssessment": "no-corresponding-implementation-established",
       "remainingScope": [
-        "未建立单一/两部制及容量/合同需量/实际需量政策、变压器kVA与户号；storage capacityKwh不能用作变压器容量。"
+        "未取得参考站点真实基本电费配置，保持未配置。",
+        "实际账单计算和重算规则未知，仅保存配置，不启用计费。"
       ],
       "acceptanceScenarios": [
         "三种两部制切换仅改草稿；保存再读单位不漂移；实际需量型不提交无关容量；取消不写。",
@@ -1840,15 +1841,16 @@
     {
       "workflowId": "station-wiring-diagram-view-edit",
       "title": "接线图读取、设备参数绑定及画布保存",
-      "status": "pending-implementation",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "新增版本化画布元件、连线、文字样式、设备/测点绑定、保存重读与取消；原已登记拓扑查看保留。",
       "domainIds": [
         "stations"
       ],
       "baselineAssessment": "partial-current-capability",
       "remainingScope": [
-        "缺画布元件/连线/位置/旋转/文字保存与设备参数动态绑定；拓扑读取不是持久化接线图编辑。"
+        "参考硬件开关控制语义未验证，不实施设备控制。",
+        "参考完整动态元件库与导出截图流程未全部覆盖。"
       ],
       "acceptanceScenarios": [
         "拖动/绑定只改草稿；取消后服务器图不变；保存重读布局一致；越站参数绑定拒绝。",
@@ -1862,15 +1864,16 @@
     {
       "workflowId": "station-operation-log-query",
       "title": "站点操作日志分页、位置和全局跳转",
-      "status": "pending-implementation",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "已融合本站操作日志：明确站点关联、租户审计权限、内容/操作人/渠道/IP/时间筛选及分页。保留原个人审计。",
       "domainIds": [
         "stations"
       ],
       "baselineAssessment": "partial-current-capability",
       "remainingScope": [
-        "缺站点维度内容/人员组/通道/IP/时间筛选与位置查看；当前自有审计不代表授权站点全部操作日志可查。"
+        "旧记录无法证明站点归属的不回填；直接写入旧审计表但无站点关联的系统事件未纳入。",
+        "未采集的人员组/IP/位置留空；全局日志跳转保持既有设置入口。"
       ],
       "acceptanceScenarios": [
         "只读分页不写审计状态；无权站不可查；坐标缺失不绘图；导航不混同日志查询。",

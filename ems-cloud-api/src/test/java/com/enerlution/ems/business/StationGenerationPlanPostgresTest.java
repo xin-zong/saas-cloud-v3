@@ -41,6 +41,8 @@ class StationGenerationPlanPostgresTest {
       INSERT INTO app_user VALUES(7,11);
       INSERT INTO station VALUES(101,11),(102,22);
       """);
+    db.execute("ALTER TABLE app_user ADD COLUMN display_name text");
+    db.execute(Files.readString(Path.of("src/main/resources/db/migration/V44__station_operation_logs.sql")));
     db.execute(Files.readString(Path.of("src/main/resources/db/migration/V28__station_generation_plans.sql")));
     access = mock(AccessControl.class);
     when(access.userId()).thenReturn(7L);

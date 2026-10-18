@@ -7,7 +7,10 @@ export function hasStationPermission(user: AuthUser | null | undefined, stationI
 }
 
 export function stationRoleConfig(user: AuthUser, stationId: string): RoleConfig {
-  return apiRoleConfig({...user, permissions: user.stationPermissions?.[stationId] ?? []})
+  // Audit is tenant-scoped; station asset access remains mandatory.
+  const permissions = [...(user.stationPermissions?.[stationId] ?? [])]
+  if (user.permissions.includes('audit.read')) permissions.push('audit.read')
+  return apiRoleConfig({...user, permissions})
 }
 
 /** Server permissions define the API workspace; role labels only describe the user. */
@@ -31,6 +34,8 @@ export function apiRoleConfig(user: AuthUser): RoleConfig {
     showGlobalAi: false,
   }
   if (has("asset.read")) { config.nav.push("资产与站点"); config.stationSubNavs.push("场站数据", "子场站", "设备详情", "一次接线图") }
+  if (has("asset.read") && has("audit.read")) config.stationSubNavs.push("操作日志")
+  if (has("asset.read") && has("tariff.manage")) config.stationSubNavs.push("基本电费")
   if (has("alarm.read")) {
     config.stationSubNavs.push("告警信息")
     config.maintenanceTabs.push("运维总览", "告警事件")
