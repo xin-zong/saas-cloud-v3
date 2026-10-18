@@ -34,6 +34,9 @@ export function defaultAnalysisPoints(points: MeasurementPoint[], metric?: Analy
 }
 
 export function pointMatchesMetric(point: MeasurementPoint, metric: AnalysisMetric) {
+  if(point.namespace === "device") {
+    return metric === "soc" ? point.semanticKey === "soc" : metric === "energy" ? point.semanticKey === "batteryPower" : ["gridPower","loadPower","pvPower","pcsPower","batteryPower"].includes(point.semanticKey ?? "")
+  }
   if (point.source === "ems") {
     if (point.namespace !== "cabinet") return false
     if (metric === "soc") return point.sourceId === "20018"
@@ -105,7 +108,7 @@ export function mergeAnalysisSnapshot(current: AnalysisRow[], snapshot: { items:
     const row = rows.get(timestamp) ?? { timestamp, [EVIDENCE]: {} }
     const number = item.quality === "valid" && item.valueType === "number" && item.value != null && item.value !== "" && !item.staleReason ? Number(item.value) : NaN
     row[id] = Number.isFinite(number) ? number : null
-    row[EVIDENCE] = { ...row[EVIDENCE], [id]: { timestamp, value: row[id]!, samples: 1, exactValue: item.value ?? null, valueType: String(item.valueType ?? "unknown"), quality: String(item.quality ?? "unknown"), sourceTime: typeof item.sourceTime === "number" ? item.sourceTime : null, receivedAt: typeof item.receivedAt === "number" ? item.receivedAt : null, staleReason: item.staleReason, aggregation: "raw" } }
+    row[EVIDENCE] = { ...row[EVIDENCE], [id]: { timestamp, value: row[id]!, samples: 1, exactValue: item.value ?? null, valueType: String(item.valueType ?? "unknown"), quality: String(item.quality ?? "unknown"), sourceTime: typeof item.sourceTime === "number" ? item.sourceTime : null, receivedAt: typeof item.receivedAt === "number" ? item.receivedAt : null, staleReason: item.staleReason, sourceType:String(item.sourceType??""), aggregation: "raw" } }
     rows.set(timestamp, row)
   }
   for (const id of selected) {
@@ -115,7 +118,10 @@ export function mergeAnalysisSnapshot(current: AnalysisRow[], snapshot: { items:
     row[EVIDENCE] = { ...row[EVIDENCE], [id]: { timestamp: snapshot.serverTime, value: null, exactValue: null, samples: 0, valueType: "unknown", quality: "unknown", sourceTime: null, receivedAt: null, staleReason: "no_observation" } }
     rows.set(snapshot.serverTime, row)
   }
-  return [...rows.values()].filter(row => row.timestamp >= snapshot.serverTime - 3600000).sort((a, b) => a.timestamp - b.timestamp)
+  const retained=new Map<string,AnalysisRow>();
+  for(const row of [...rows.values()].sort((a,b)=>a.timestamp-b.timestamp))for(const [id,evidence] of Object.entries(row[EVIDENCE]??{}))if(evidence.sourceType==="stored_device")retained.set(id,row);
+  const retainedRows=new Set(retained.values());
+  return [...rows.values()].filter(row => row.timestamp >= snapshot.serverTime - 3600000 || retainedRows.has(row)).sort((a, b) => a.timestamp - b.timestamp)
 }
 
 export function latestChannelEvidence(rows: AnalysisRow[], id: string, preferReceipt = false): HistoryBucket | undefined {

@@ -1,3 +1,4 @@
+import { loadPoints, type MeasurementPoint } from "./apiAnalytics"
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { Station } from "@/App"
 import { useAuth } from "@/auth/AuthContext"
@@ -66,6 +67,8 @@ export default function AlarmRulesPage({
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
   const [draft, setDraft] = useState<AlarmRuleDraft | null>(null)
+  const [pointOptions,setPointOptions]=useState<MeasurementPoint[]>([])
+  const [pointError,setPointError]=useState("")
   const [editing, setEditing] = useState<number | undefined>()
   const [detail, setDetail] = useState<AlarmRuleRow | null>(null)
   const [history, setHistory] = useState<{
@@ -92,6 +95,13 @@ export default function AlarmRulesPage({
   const eligible = stations.filter((s) =>
     hasStationPermission(user, s.id, "alarm.handle"),
   )
+  useEffect(()=>{
+    const controller=new AbortController();setPointOptions([]);setPointError('')
+    if(draft?.stationId&&draft.objectType==='DEVICE'&&draft.deviceId&&hasStationPermission(user,draft.stationId,'telemetry.read')){
+      loadPoints(String(draft.stationId),controller.signal).then(points=>{if(!controller.signal.aborted)setPointOptions(points.filter(point=>point.device_id===String(draft.deviceId)&&point.code!==undefined))}).catch(e=>{if(!controller.signal.aborted)setPointError(e instanceof Error?e.message:'测点加载失败')})
+    }
+    return ()=>controller.abort()
+  },[draft?.stationId,draft?.deviceId,draft?.objectType,user])
   const load = useCallback(async () => {
     const seq = ++listRequest.current
     setError("")
@@ -535,11 +545,13 @@ export default function AlarmRulesPage({
                 <p className="alarm-business-workspace-muted">
                   当前仅执行设备即时单指标的直接数值比较或区间判断。填写本设备唯一测点代码或已映射的 EMS 协议 ID，单位须一致。按 UTC 完整 1 分钟采样桶检测，连续周期按连续完整分钟计，同一规则各条件连续周期须一致，多条件需同时满足（AND）。缺样、无效采样或映射不唯一会中断累计；生效时段按 UTC。自动恢复须连续正常采样达到所设秒数，缺样不会恢复；其他算法保留配置并显示暂不支持。
                 </p>
+                {pointError&&<p role="alert">{pointError}</p>}
                 {draft.conditions.map((c, i) => (
                   <div key={i} className="alarm-business-workspace-condition">
                     {c.fields.map((f, j) => (
                       <label key={j}>
                         指标 {j + 1}
+                        {!!pointOptions.length&&<select aria-label={`条件${i+1}指标${j+1}已登记测点`} value={pointOptions.some(point=>point.code===f.code)?f.code:""} onChange={e=>{const point=pointOptions.find(point=>point.code===e.target.value);if(point)condition(i,{fields:c.fields.map((field,k)=>k===j?{...field,code:point.code!,unit:point.unit,cycleType:"INSTANT"}:field),operator:"eq",lower:null,upper:null,statusValue:null})}}><option value="">选择已登记测点 / 自定义代码</option>{pointOptions.map(point=><option key={point.id} value={point.code}>{point.name} · {point.unit||"无单位"} · {point.code}</option>)}</select>}
                         <input
                           required
                           maxLength={120}

@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api")
 public class AssetController {
+  @org.springframework.beans.factory.annotation.Autowired
+  StoredDeviceTelemetryService stored;
   private final DomainSupport s;
 
   public AssetController(DomainSupport s) {
@@ -129,7 +131,7 @@ public class AssetController {
     s.access.requireStationPermission(id, "asset.read");
     return ApiResponse.ok(
         s.db.queryForList(
-            "SELECT d.*,COALESCE(m.name,rp.model) AS model_name,"
+            "SELECT d.*,(SELECT parent.id FROM device_reference_import ri JOIN device parent ON parent.serial_number=ri.provenance->'device'->'raw'->>'parentSerialNumber' WHERE ri.device_id=d.id AND parent.station_id=d.station_id AND parent.id<>d.id) AS parent_device_id,COALESCE(m.name,rp.model) AS model_name,"
                 + "COALESCE(m.category,rp.category,'OTHER') AS category,rp.source_type,"
                 + "COALESCE(m.manufacturer,rp.manufacturer) AS manufacturer,"
                 + "rp.rated_power_kw,rp.capacity_kwh,o.observed_at,CASE WHEN o.observed_at>now()"
@@ -162,6 +164,7 @@ public class AssetController {
         AND greatest(p.valid_from,d.valid_from,pb.valid_from)<=clock_timestamp()
       """,
             id);
+    var storedPoints=stored==null?List.<Map<String,Object>>of():stored.directory(id,List.of());
     for (var point : points) {
       var matches =
           definitions.stream()
@@ -183,6 +186,10 @@ public class AssetController {
         point.put("mappingStatus", matches.isEmpty() ? "unmapped" : "ambiguous");
       }
     }
+    for(var point:points)for(var mapped:storedPoints)if(point.get("id").toString().equals(mapped.get("pointId"))){
+      point.putAll(mapped);point.put("mappingStatus","mapped");break;
+    }
+    s.access.requireStationPermission(id,"telemetry.read");
     return ApiResponse.ok(points);
   }
 

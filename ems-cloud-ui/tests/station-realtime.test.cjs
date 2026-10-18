@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),ts=require('typescript')
 function setup(){
  const cache={};const client={getToken:()=> 'test-session',getSessionVersion:()=>1,ApiError:class extends Error{constructor(message,status){super(message);this.status=status}},setToken(){},refreshAfterForbidden:async()=>{}}
- const load=name=>{if(name==='client')return client;if(cache[name])return cache[name];const m={exports:{}};cache[name]=m.exports;const source=fs.readFileSync(path.join(__dirname,'../src/api',`${name}.ts`),'utf8').replace(/import\.meta\.env/g,'({})');const js=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','exports','module',js)(p=>load(p.replace('./','')),m.exports,m);return m.exports};return load('stationRealtime')
+ const load=name=>{if(name==='@/preferences/date')return {localized:(value,method,...args)=>value[method](...args)};if(name==='client')return client;if(cache[name])return cache[name];const m={exports:{}};cache[name]=m.exports;const source=fs.readFileSync(path.join(__dirname,'../src/api',`${name}.ts`),'utf8').replace(/import\.meta\.env/g,'({})');const js=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','exports','module',js)(p=>load(p.replace('./','')),m.exports,m);return m.exports};return load('stationRealtime')
 }
 test('SSE frames preserve chunk remainder and multi-line JSON',()=>{
  const {readSseFrames}=setup();let parsed=readSseFrames('event: snapshot\r\ndata: {"a":\r\ndata: 1}\r\n\r\nevent: snap');assert.deepEqual(parsed.events,[{event:'snapshot',data:'{"a":\n1}'}]);assert.equal(parsed.rest,'event: snap');parsed=readSseFrames(parsed.rest+'shot\ndata: {}\n\n');assert.equal(parsed.events[0].event,'snapshot')
@@ -17,3 +17,11 @@ test('SSE uses Authorization header and cancellation stops delivery',async()=>{
  const original=global.fetch;global.fetch=async(url,options)=>{request={url,options};return{ok:true,headers:new Headers({'content-type':'text/event-stream'}),body:new ReadableStream({start(c){c.enqueue(new TextEncoder().encode('event: snapshot\ndata: {"items":[],"serverTime":1,"presence":null}\n\n'))},cancel(){cancelled=true}})}};
  try{await subscribeStationTelemetry('4',['19'],{onSnapshot(){seen++;abort.abort()}},abort.signal);assert.equal(seen,1);assert.equal(request.options.headers.Authorization,'Bearer test-session');assert.ok(!request.url.includes('test-session'));assert.ok(cancelled)}finally{global.fetch=original}
 })
+
+test('stored snapshots retain exact last known evidence and clear it when absent',()=>{
+ const {mergeStationSnapshot}=setup();const station={id:'4',ratedPower:100,deviceInventory:[{id:'5',points:[{id:'19',unit:'kW',value:null,quality:'bad'}]}]};
+ const row={pointId:'19',deviceId:'5',namespace:'device',sourceType:'stored_device',semanticKey:'pcsPower',value:'0',valueType:'number',quality:'valid',sourceTime:1000,receivedAt:2000,staleReason:'source_older_than_90_seconds'};
+ const result=mergeStationSnapshot(station,{items:[row],serverTime:100000,presence:null});const point=result.deviceInventory[0].points[0];
+ assert.equal(point.lastKnownValue,'0');assert.equal(point.value,null);assert.equal(point.semanticKey,'pcsPower');assert.equal(point.sourceId,undefined);assert.ok(Number.isNaN(result.activePower));
+ const missing=mergeStationSnapshot(result,{items:[],serverTime:200000,presence:null});assert.equal(missing.deviceInventory[0].points[0].lastKnownValue,undefined);
+});

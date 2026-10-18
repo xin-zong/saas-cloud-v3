@@ -59,9 +59,9 @@ const metrics:Record<number,string>={20018:'soc',20019:'soh',20021:'dcVoltage',2
 export function mergeStationSnapshot(station:Station,snapshot:StationSnapshot):Station{
   const fresh=snapshot.items.filter(row=>!row.staleReason&&row.quality==='valid'&&row.valueType==='number'&&Number.isFinite(Number(row.value))&&row.value!==null)
   const rows=new Map(snapshot.items.map(row=>[row.pointId,row]))
-  const cleared=(station.deviceInventory??[]).map(device=>({...device,points:device.points.map(point=>({...point,value:null,exactValue:undefined,quality:'bad' as const}))}))
+  const cleared=(station.deviceInventory??[]).map(device=>({...device,points:device.points.map(point=>({...point,value:null,exactValue:undefined,lastKnownValue:undefined,textValue:undefined,sourceTime:null,staleReason:undefined,quality:'bad' as const}))}))
   const deviceInventory=mergeDeviceObservations(cleared,snapshot.items).map(device=>({...device,points:device.points.map(point=>{
-    const row=rows.get(point.id);return row?{...point,sourceId:Number(row.sourceId),metric:row.namespace==='cabinet'?metrics[Number(row.sourceId)]:undefined}:point
+    const row=rows.get(point.id);return row?{...point,sourceId:row.sourceId==null?undefined:Number(row.sourceId),metric:row.namespace==='cabinet'?metrics[Number(row.sourceId)]:undefined}:point
   })}))
   const socs=fresh.filter(row=>row.namespace==='cabinet'&&Number(row.sourceId)===20018)
   // Device capacity is not currently configured; mean is explicitly indicated, not invented weighting.

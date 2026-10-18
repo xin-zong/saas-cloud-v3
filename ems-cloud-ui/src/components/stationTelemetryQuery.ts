@@ -49,7 +49,14 @@ export async function queryStationTelemetry(
     )
     // A historical summary point must not make an explicit protocol mapping ambiguous.
     // Multiple EMS mappings still require a defined station aggregation before use.
-    const candidates = emsCandidates.length ? emsCandidates : points.filter(
+    const semanticKeys:Partial<Record<SignalId,string>>={soc:'soc',storage:'batteryPower',pcs:'pcsPower',pv:'pvPower',grid:'gridPower',load:'loadPower',temperature:'temperature',dcVoltage:'voltage'}
+    let storedCandidates=points.filter(point=>point.namespace==='device'&&point.semanticKey===semanticKeys[item.id]&&semanticKeys[item.id]!==undefined&&point.unit.replace('℃','°C')===item.unit)
+    if(storedCandidates.length>1&&['soc','storage'].includes(item.id)){
+      const inventory=station.deviceInventory??[];
+      const stacks=storedCandidates.filter(point=>['31002','batterystack'].includes((inventory.find(device=>device.id===point.device_id)?.sourceType??'').toLowerCase().replace(/[ _-]/g,'')));
+      if(stacks.length===1&&storedCandidates.every(point=>point.id===stacks[0].id||inventory.find(device=>device.id===point.device_id)?.parentDeviceId===stacks[0].device_id))storedCandidates=stacks;
+    }
+    const candidates = storedCandidates.length ? storedCandidates : emsCandidates.length ? emsCandidates : points.filter(
       point => point.source !== 'ems' && names.includes(normalize(point.name)) &&
         point.unit.replace('℃', '°C') === item.unit,
     )

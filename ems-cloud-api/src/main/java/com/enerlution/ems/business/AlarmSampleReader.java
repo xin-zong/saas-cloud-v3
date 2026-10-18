@@ -11,6 +11,8 @@ import org.springframework.stereotype.Component;
 /** Read-only EMS evidence. Called inside the rule transaction, never accepts request sample values. */
 @Component
 public class AlarmSampleReader {
+  @org.springframework.beans.factory.annotation.Autowired
+  StoredDeviceTelemetryService stored;
   private final JdbcTemplate db;
   private final EmsTelemetryQueries telemetry;
   public AlarmSampleReader(JdbcTemplate db,EmsTelemetryQueries telemetry){this.db=db;this.telemetry=telemetry;}
@@ -44,21 +46,37 @@ public class AlarmSampleReader {
           OffsetDateTime.ofInstant(Instant.ofEpochMilli(bucket+60_000),ZoneOffset.UTC),
           OffsetDateTime.ofInstant(Instant.ofEpochMilli(bucket+60_000),ZoneOffset.UTC),
           OffsetDateTime.ofInstant(Instant.ofEpochMilli(bucket+60_000),ZoneOffset.UTC));
-      if(bindings.size()!=1)return unknown("测点没有唯一的本站设备EMS绑定："+field.code());
+      boolean fromStored=false;
+      if(bindings.isEmpty()&&stored!=null){
+        bindings=db.queryForList("""
+          SELECT mp.id AS point_id,b.reference_point_id AS binding_id,b.reference_point_id AS definition_id,
+                 'stored:'||b.reference_point_id AS period_id,k.unit,
+                 CASE WHEN EXISTS(SELECT 1 FROM reference_device_sample a WHERE a.point_id=b.reference_point_id AND a.quality='text') THEN 'text' ELSE 'number' END AS value_type
+          FROM stored_device_point_binding b JOIN measurement_point mp ON mp.id=b.measurement_point_id
+          JOIN measurement_kind k ON k.code=mp.kind_code JOIN device d ON d.id=mp.device_id
+          WHERE b.station_id=? AND d.station_id=b.station_id AND mp.device_id=? AND mp.code=?
+          LIMIT 2 FOR SHARE OF b,mp,k,d
+          """,rule.get("station_id"),rule.get("device_id"),field.code());
+        fromStored=!bindings.isEmpty();
+      }
+      if(bindings.size()!=1)return unknown("测点没有唯一的本站设备绑定："+field.code());
       var binding=bindings.getFirst();
       if(!field.unit().equals(binding.get("unit")) || !"number".equals(binding.get("value_type")))
         return unknown("测点单位或数值类型与规则不一致："+field.code());
-      long point=((Number)binding.get("point_id")).longValue(),period=((Number)binding.get("period_id")).longValue();
-      keys.add(binding.get("binding_id")+":"+point+":"+period+":"+binding.get("definition_id"));
-      JsonNode rows=telemetry.history(point,List.of(period),bucket,bucket+60_000);
+      long point=((Number)binding.get("point_id")).longValue();
+      String period=binding.get("period_id").toString();
+      // Native keys are persisted on active occurrences; preserve their existing identity.
+      keys.add((fromStored?"stored:":"")+binding.get("binding_id")+":"+point+":"+period+":"+binding.get("definition_id"));
+      JsonNode rows=fromStored?stored.historyRows(point,bucket,bucket+60_000):telemetry.history(point,List.of(Long.parseLong(period)),bucket,bucket+60_000);
       var source=JsonNodeFactory.instance.arrayNode();
       for(var row:rows){
         // Receipt/archive time is never a substitute for verified source time. Any future evidence
         // invalidates the bucket rather than making an older value appear current.
         if(!row.path("source_time_kind").asText().equals("source"))continue;
-        if(!Set.of("ems","cabinet_30s","cabinet_60s").contains(row.path("source_type").asText())
+        if(!(fromStored?"stored_device".equals(row.path("source_type").asText()):Set.of("ems","cabinet_30s","cabinet_60s").contains(row.path("source_type").asText()))
+            || fromStored&&row.path("original_station_id").asLong(-1)!=((Number)rule.get("station_id")).longValue()
             || !row.path("point_id").asText().equals(Long.toString(point))
-            || !row.path("binding_period_id").asText().equals(Long.toString(period))
+            || !row.path("binding_period_id").asText().equals(period)
             || !row.path("source_at_ms").isNumber() || !row.path("received_at_ms").isNumber()
             || row.path("received_at_ms").asLong()>now.toEpochMilli()
             || now.toEpochMilli()-row.path("received_at_ms").asLong()>180_000
@@ -80,7 +98,7 @@ public class AlarmSampleReader {
         if(value.precision()>256||Math.abs((long)value.scale())>1024)return unknown("采样精度超出范围");
         values.add(value);
       }catch(NumberFormatException ex){return unknown("采样不是有限十进制数值");}
-      var fact=EmsTelemetryQueries.observation(last);fact.put("fieldCode",field.code());fact.put("unit",field.unit());evidence.add(fact);
+      var fact=EmsTelemetryQueries.observation(last);fact.put("originalStationId",rule.get("station_id"));fact.put("fieldCode",field.code());fact.put("unit",field.unit());evidence.add(fact);
     }
     return new Frame(List.copyOf(values),List.copyOf(evidence),String.join("|",keys),null);
   }

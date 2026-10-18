@@ -89,6 +89,7 @@ export async function loadStations(user: AuthUser, signal?: AbortSignal) {
             model: text(row.model_name) || "—",
             serial: text(row.serial_number) || "—",
             sourceType: text(row.source_type),
+            parentDeviceId: row.parent_device_id == null ? undefined : text(row.parent_device_id),
             manufacturer: text(row.manufacturer),
             ratedPowerKw: row.rated_power_kw == null ? null : Number(row.rated_power_kw),
             capacityKwh: row.capacity_kwh == null ? null : Number(row.capacity_kwh),

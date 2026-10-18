@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class StationTelemetryService {
+  @org.springframework.beans.factory.annotation.Autowired
+  StoredDeviceTelemetryService stored;
  private final DomainSupport s;
  private final EmsTelemetryQueries telemetry;
  private final AssetPresence presence;
@@ -33,7 +35,11 @@ public class StationTelemetryService {
    if(mappings.size()>2000)throw new BusinessException(413,"实时测点超过2000，请缩小站点设备范围");
    var periods=mappings.stream().map(m->((Number)m.get("binding_period_id")).longValue()).distinct().toList();
    var points=mappings.stream().map(m->((Number)m.get("measurement_point_id")).longValue()).distinct().toList();
-   var values=telemetry.latest(periods,points);
+   var saved=stored==null?List.<Map<String,Object>>of():stored.latest(station,selected);
+   var values=new ArrayList<Map<String,Object>>();boolean nativeUnavailable=false;
+   try{values.addAll(telemetry.latest(periods,points));}catch(BusinessException ex){
+     if(ex.status()!=503||saved.isEmpty())throw ex;nativeUnavailable=true;
+   }
    long now=Instant.now().toEpochMilli();
    for(var value:values) {
      var matching=mappings.stream().filter(m->m.get("measurement_point_id").toString().equals(value.get("pointId"))).toList();
@@ -47,7 +53,8 @@ public class StationTelemetryService {
        value.put("staleReason","outside_current_binding");
      else value.put("staleReason",staleReason(value,Boolean.TRUE.equals(m.get("reachable")),now));
    }
-   var result=new LinkedHashMap<String,Object>();result.put("items",values);result.put("serverTime",now);
+   values.addAll(saved);
+   var result=new LinkedHashMap<String,Object>();result.put("nativeTelemetryUnavailable",nativeUnavailable);result.put("items",values);result.put("serverTime",now);
    // Count bindings even when a point has never produced a sample. A single returned value
    // does not imply that its cabinet is the only mapped cabinet at this station.
    var counts=new LinkedHashMap<String,Long>();

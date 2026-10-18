@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api")
 public class TelemetryController {
+  @org.springframework.beans.factory.annotation.Autowired
+  StoredDeviceTelemetryService stored;
   private final DomainSupport s;
   private final String database;
   private final EmsTelemetryQueries typed;
@@ -32,6 +34,15 @@ public class TelemetryController {
         s.one(
             "SELECT d.station_id FROM measurement_point p JOIN device d ON d.id=p.device_id WHERE p.id=?",
             id);
+    if(stored!=null&&stored.owns(id)){
+      long original=authorizeStored(id,s.number(point,"station_id"),null);
+      long end=Math.min(to.toInstant().toEpochMilli(),Instant.now().toEpochMilli());
+      if(end<=from.toInstant().toEpochMilli())return ApiResponse.ok(Map.of("items",List.of(),"hasMore",false));
+      var rows=stored.historyRows(id,from.toInstant().toEpochMilli(),end);var values=new ArrayList<Map<String,Object>>();
+      for(int i=offset;i<Math.min(offset+limit,rows.size());i++)values.add(EmsTelemetryQueries.observation(rows.get(i)));
+      authorizeStored(id,s.number(point,"station_id"),null);
+      return ApiResponse.ok(Map.of("items",values,"hasMore",rows.size()>offset+limit));
+    }
     long user = s.access.userId();
     var periods =
         s.db.queryForList(
@@ -104,6 +115,15 @@ public class TelemetryController {
       throw new IllegalArgumentException("Only new telemetry database is permitted");
   }
 
+  private long authorizeStored(long point,long current,Long requested){
+    Long original=stored.originalStation(point);
+    if(original==null)throw new BusinessException(409,"测点归属已变化");
+    s.access.requireStationPermission(original,"telemetry.read");
+    s.access.requireStationPermission(current,"telemetry.read");
+    if(original!=current||(requested!=null&&!original.equals(requested)))throw new BusinessException(403,"测点不属于所选历史站点");
+    return original;
+  }
+
   @GetMapping("/points/{id}/history")
   public ApiResponse<?> history(
       @PathVariable long id,
@@ -138,6 +158,18 @@ public class TelemetryController {
         || Duration.between(from, to).compareTo(Duration.ofDays(31)) > 0)
       throw new BusinessException(400, "查询应为 31 天内有效时段，粒度为 1/5/15/30/60 分钟");
     long until = Math.min(to.toInstant().toEpochMilli(), Instant.now().toEpochMilli());
+    if(stored!=null&&stored.owns(id)){
+      if(!Set.of("ems","legacy").contains(source)||!EmsTelemetryQueries.OPERATIONS.contains(aggregation))throw new BusinessException(400,"不支持的历史查询方式");
+      long original=authorizeStored(id,s.number(point,"station_id"),originStation);
+      var metadata=stored.directory(original,List.of(id));
+      if(metadata.size()!=1)throw new BusinessException(409,"测点归属已变化");
+      if(!((List<?>)metadata.getFirst().get("supportedAggregations")).contains(aggregation))throw new BusinessException(400,"该测点不支持所选聚合方式，请使用 last");
+      if(until<=from.toInstant().toEpochMilli())return ApiResponse.ok(List.of());
+      var result=EmsTelemetryQueries.aggregate(stored.historyRows(id,from.toInstant().toEpochMilli(),until),aggregation,minutes);
+      for(var row:result){row.put("source","stored_device");row.put("sourceType","stored_device");}
+      authorizeStored(id,s.number(point,"station_id"),originStation);
+      return ApiResponse.ok(result);
+    }
     if (source.equals("ems")) {
       if (!EmsTelemetryQueries.OPERATIONS.contains(aggregation))
         throw new BusinessException(400, "不支持的聚合方式");

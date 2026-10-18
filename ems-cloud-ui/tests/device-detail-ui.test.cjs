@@ -9,6 +9,8 @@ test('device types, persistent local configuration, bounded EMS history and true
   let configuration={version:0,selectedPointIds:[],theoryValues:{}},failSave=false
   const permissions=['asset.read','asset.edit','telemetry.read','alarm.read']
   const user={id:'7',name:'设备验收用户',account:'device@test',role:'operator',organization:'验收组织',stationIds:['12'],permissions,stationPermissions:{'12':permissions},organizationPermissions:{}}
+  const canonicalPoints=[{id:31,device_id:4,name:'SOC',unit:'%'},{id:501,device_id:4,name:'验收真实零值',unit:'kW'},{id:502,device_id:4,name:'验收缺失参数',unit:'V'},{id:503,device_id:4,name:'验收文本状态',unit:''},...Array.from({length:110},(_,i)=>({id:600+i,device_id:4,name:'分页参数'+i,unit:'V'}))].map(point=>({...point,source:'ems',sourceType:'stored_device',namespace:'device',code:'stored_device_'+point.id}));
+  const observation=(pointId,value,valueType='number')=>({pointId:String(pointId),deviceId:'4',source:'stored_device',sourceType:'stored_device',namespace:'device',value,valueType,quality:value===null?'invalid':'valid',sourceTime:Date.parse('2026-10-18T08:00:00Z'),receivedAt:Date.parse('2026-10-18T09:00:00Z'),staleReason:'source_older_than_90_seconds'});
   const sources=['Inverter','Energy Storage Cabinet','PCS','Battery Cluster','Battery Stack','Air Conditioner','Smart Meter','Logger','EMS']
   const devices=sources.map((source_type,i)=>({id:i+1,name:`验收${source_type}`,code:`DEVICE-${i+1}`,serial_number:`SYNTHETIC-${i+1}`,source_type,category:'OTHER',rated_power_kw:0,capacity_kwh:100}))
   await page.addInitScript(()=>sessionStorage.setItem('enerlution-api-token','device-test'))
@@ -23,15 +25,14 @@ test('device types, persistent local configuration, bounded EMS history and true
    else if(p.endsWith('/telemetry/snapshot'))data={items:[],presence:null,serverTime:Date.now()}
    else if(p==='/stations')data=[{id:12,name:'设备验收站',code:'SITE-12'}]
    else if(p==='/stations/12/devices')data=devices
-   else if(p==='/stations/12/points')data=[{id:31,device_id:4,name:'SOC',unit:'%'}]
+   else if(p==='/stations/12/points')data=canonicalPoints
    else if(p.endsWith('/space-devices'))data={items:[],total:0}
-   else if(p.endsWith('/detail')){const id=Number(p.split('/')[4]);data={type:['inverter','cabinet','pcs','battery-cluster','battery-stack','air-conditioner','meter','logger','ems'][id-1],archive:devices[id-1],points:id===4?[{id:31,name:'SOC',unit:'%'}]:[],configuration,theoryFields:id===4?['loopNum','theorySoh']:[],connections:[],logs:configuration.version?[{id:1,actor_id:7,version:configuration.version,action:'本地设备配置保存',result:'已保存',occurred_at:'2026-10-17T00:00:00Z'}]:[],firmwareRecords:[]}}
-   else if(p.endsWith('/reference-samples/history'))data={items:[{source_at:'2026-10-18T08:00:00Z',captured_at:'2026-10-18T09:00:00Z',value:'0',raw_value:'0W',quality:'observed'}]}
-   else if(p.endsWith('/reference-samples'))data={items:[{id:501,name:'验收真实零值',unit:'kW',source_at:'2026-10-18T08:00:00Z',captured_at:'2026-10-18T09:00:00Z',value:'0',raw_value:'0W',quality:'observed'},{id:502,name:'验收缺失参数',unit:'V',source_at:'2026-10-18T08:00:00Z',captured_at:'2026-10-18T09:00:00Z',value:null,raw_value:'--',quality:'missing'}]}
-   else if(p.endsWith('/realtime'))data={items:[]}
+   else if(p.endsWith('/detail')){const id=Number(p.split('/')[4]);data={type:['inverter','cabinet','pcs','battery-cluster','battery-stack','air-conditioner','meter','logger','ems'][id-1],archive:devices[id-1],points:id===4?canonicalPoints:[],configuration,theoryFields:id===4?['loopNum','theorySoh']:[],connections:[],logs:configuration.version?[{id:1,actor_id:7,version:configuration.version,action:'本地设备配置保存',result:'已保存',occurred_at:'2026-10-17T00:00:00Z'}]:[],firmwareRecords:[]}}
+   else if(p.endsWith('/realtime'))data={items:[observation(501,'0'),observation(502,null),observation(503,'停机','text')]}
    else if(p.endsWith('/cells'))data={known:false,unknownReason:'no_accepted_layout_or_mapping',values:[]}
    else if(p.endsWith('/configuration')){writes.push(req.postDataJSON());if(failSave)return route.fulfill({status:409,json:{code:409,msg:'配置已更新，请刷新后重试'}});configuration={...req.postDataJSON(),version:configuration.version+1};data=configuration}
    else if(p==='/points/31/history')data=[]
+   else if(p==='/points/501/history')data=[{timestamp:Date.parse('2026-10-18T08:00:00Z'),value:'0',quality:'valid',samples:1,aggregation:'last',evidence:[{...observation(501,'0'),sourceTime:Date.parse('2026-10-18T08:06:31Z')}]}]
    await route.fulfill({json:{code:0,data}})
   })
   async function open(){await page.goto(process.env.API_PREVIEW_URL||'http://127.0.0.1:8444',{waitUntil:'domcontentloaded'});try {await page.getByRole('navigation',{name:'一级导航'}).getByRole('button',{name:'电站管理',exact:true}).click();await page.getByRole('button',{name:'列表查询',exact:true}).click();await page.locator('.station-name-button').first().click();await page.getByRole('button',{name:'设备详情',exact:true}).click();await page.getByLabel('设备类型').waitFor()} catch(e){console.log('UI diagnostics:',await page.locator('body').innerText(),errors,requests.slice(-10));throw e}}
@@ -47,24 +48,32 @@ test('device types, persistent local configuration, bounded EMS history and true
   assert.equal(await page.getByLabel('设备类型').locator('option').count(),11)
   await page.getByLabel('设备类型').selectOption('battery-cluster');await page.getByRole('heading',{name:'电池簇档案',exact:true}).waitFor()
   await page.getByRole('tab',{name:'实时参数',exact:true}).click()
-  await page.locator('[data-reference-point="501"]').waitFor()
-  assert.equal(await page.getByRole('heading',{name:'设备参数',exact:true}).count(),1)
-  assert.equal(await page.getByText(/QUDEOX 最近导入参数/).count(),0)
-  assert.equal(await page.locator('[data-reference-point="501"] td').nth(1).innerText(),'0')
-  assert.equal(await page.locator('[data-reference-point="502"] td').nth(1).innerText(),'未采集')
-  await page.getByRole('tab',{name:'历史曲线',exact:true}).click()
-  await page.getByText('1 条实际采样，1 条数值采样',{exact:true}).waitFor()
-  assert.ok(requests.some(u=>u.includes('/reference-samples/history?')&&u.includes('pointId=501')))
+  await page.getByRole('heading',{name:'运行测点',exact:true}).waitFor()
+  const zeroRow=page.getByRole('row').filter({has:page.getByRole('cell',{name:'验收真实零值',exact:true})});
+  assert.match(await zeroRow.innerText(),/0 kW/);assert.match(await zeroRow.innerText(),/最后采样/);assert.match(await zeroRow.innerText(),/2026-10-18T08:00:00.000Z/);
+  assert.match(await page.getByRole('row').filter({has:page.getByRole('cell',{name:'验收缺失参数',exact:true})}).innerText(),/--/);
+  assert.match(await page.getByRole('row').filter({has:page.getByRole('cell',{name:'验收文本状态',exact:true})}).innerText(),/停机/);
+  const search=page.getByRole('textbox',{name:'搜索测点'});await search.fill('分页参数109');await page.getByRole('cell',{name:'分页参数109',exact:true}).waitFor();await search.fill('');
+  await page.getByRole('button',{name:'下一页',exact:true}).click();await page.getByRole('cell',{name:'分页参数50',exact:true}).waitFor();
+  await page.getByRole('tab',{name:'历史曲线',exact:true}).click();await page.getByRole('checkbox',{name:'验收真实零值',exact:true}).check();
+  await page.getByRole('button',{name:'查询历史',exact:true}).click();await page.getByRole('heading',{name:'验收真实零值 (kW)',exact:true}).waitFor();
+  const historyTable=page.locator('.device-record-table').filter({has:page.getByRole('columnheader',{name:'聚合区间起点',exact:true})});
+  await historyTable.getByRole('columnheader',{name:'源采样时间',exact:true}).waitFor();
+  assert.match(await historyTable.locator('tbody tr').first().locator('td').nth(0).innerText(),/:00:00/);
+  assert.match(await historyTable.locator('tbody tr').first().locator('td').nth(1).innerText(),/:06:31/);
+  assert.ok(requests.some(u=>u.includes('/points/501/history?')&&u.includes('source=ems')&&u.includes('aggregation=last')));
+  assert.equal(requests.some(u=>u.includes('/reference-samples')),false);
+  await page.getByRole('checkbox',{name:'验收真实零值',exact:true}).uncheck();
   await page.getByRole('tab',{name:'本地配置',exact:true}).click()
   await page.getByLabel('理论循环次数',{exact:true}).fill('6000');await page.getByLabel('理论 SOH (%)',{exact:true}).fill('80.50')
   await page.getByRole('button',{name:'保存本地配置',exact:true}).click();await page.getByText('本地配置已保存并回读',{exact:true}).waitFor()
-  await page.getByRole('tab',{name:'历史曲线',exact:true}).click();await page.getByRole('checkbox',{name:'SOC (%)',exact:true}).check();await page.getByRole('button',{name:'保存参数选择',exact:true}).click()
+  await page.getByRole('tab',{name:'历史曲线',exact:true}).click();await page.getByRole('checkbox',{name:'SOC',exact:true}).check();await page.getByRole('button',{name:'保存参数选择',exact:true}).click()
   await page.getByRole('button',{name:'查询历史',exact:true}).click();await page.getByText('所选范围暂无历史采样',{exact:true}).waitFor()
   assert.ok(requests.some(u=>u.includes('/points/31/history?')&&u.includes('source=ems')&&u.includes('aggregation=last')))
   await open();await page.getByLabel('设备类型').selectOption('battery-cluster');await page.getByRole('heading',{name:'电池簇档案',exact:true}).waitFor();await page.getByRole('tab',{name:'本地配置',exact:true}).click()
   assert.equal(await page.getByLabel('理论循环次数',{exact:true}).inputValue(),'6000')
   failSave=true;await page.getByLabel('理论循环次数',{exact:true}).fill('7000');await page.getByRole('button',{name:'保存本地配置',exact:true}).click();await page.getByText('配置已更新，请刷新后重试',{exact:true}).waitFor();assert.equal(await page.getByLabel('理论循环次数',{exact:true}).inputValue(),'7000')
-  await page.getByRole('tab',{name:'实时参数',exact:true}).click();await page.getByRole('heading',{name:'单体电压',exact:true}).waitFor();assert.ok(await page.getByText('暂无测点数据',{exact:true}).count()>0)
+  await page.getByRole('tab',{name:'实时参数',exact:true}).click();await page.getByRole('heading',{name:'单体电压',exact:true}).waitFor();assert.ok(await page.getByText('暂无匹配测点数据',{exact:true}).count()>0)
   await page.getByRole('tab',{name:'告警',exact:true}).click();await page.getByText('验收设备采样告警',{exact:true}).waitFor();assert.equal(await page.getByRole('cell',{name:'已恢复',exact:true}).count(),1)
   assert.ok(requests.some(u=>u.includes('/alarms/workspace?')&&u.includes('stationId=12')&&u.includes('deviceId=4')));assert.equal(requests.some(u=>u.includes('/workspace/read')),false)
   await page.getByRole('tab',{name:'实时参数',exact:true}).click()

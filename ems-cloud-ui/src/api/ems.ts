@@ -21,7 +21,7 @@ export function mergeDeviceObservations(devices: StationDevice[], rows: Observat
       if (!row) return point
       const value = row.staleReason ? null : chartNumber(row)
       const valid = !row.staleReason && row.quality === 'valid' && row.value != null && (value !== null || row.valueType === 'text' || row.valueType === 'u16_words')
-      return { ...point, value, quality: valid ? 'good' as const : 'bad' as const,
+      return { ...point, value, valueType:row.valueType,sourceType:String(row.sourceType??''),semanticKey:String(row.semanticKey??''),sourceTime:row.sourceTime,staleReason:row.staleReason?String(row.staleReason):undefined,lastKnownValue:row.sourceType==='stored_device'&&row.quality==='valid'&&row.value!=null?(Array.isArray(row.value)?JSON.stringify(row.value):String(row.value)):undefined, quality: valid ? 'good' as const : 'bad' as const,
         exactValue: valid ? (Array.isArray(row.value) ? JSON.stringify(row.value) : String(row.value)) : undefined }
     })
     const received = matching.map(row => row.receivedAt).filter((at): at is number => typeof at === 'number' && Number.isFinite(at))

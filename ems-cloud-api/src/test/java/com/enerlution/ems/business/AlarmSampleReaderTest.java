@@ -26,7 +26,7 @@ class AlarmSampleReaderTest {
   when(telemetry.history(eq(29L),eq(List.of(3L)),eq(bucket),eq(bucket+60000))).thenReturn(rows("valid","source","12.34567890123456789"));
   var result=reader().read(rule,List.of(condition()),bucket,now);
   assertNull(result.reason());assertEquals(new BigDecimal("12.34567890123456789"),result.values().getFirst());
-  assertEquals("29",result.evidence().getFirst().get("pointId"));assertFalse(result.mappingKey().isBlank());
+  assertEquals("29",result.evidence().getFirst().get("pointId"));assertEquals("4:29:3:5",result.mappingKey(),"Existing persisted alarm mapping keys must remain compatible");
   verify(db).queryForList(argThat(s->s.contains("p.station_id=?")&&s.contains("mp.device_id=?")&&s.contains("FOR SHARE")),any(Object[].class));
  }
  @Test void absentOrAmbiguousMappingNeverReadsTelemetry(){

@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 /** Monitoring reads retain asset and telemetry capability boundaries, including original fact ownership. */
 @Service
 public class MonitorQueryService {
+ @org.springframework.beans.factory.annotation.Autowired
+ StoredDeviceTelemetryService stored;
  private static final long MAX_BUCKETS=50000,MAX_RESULT_BYTES=8L*1024*1024;
  private final DomainSupport s;
  private final TelemetryController telemetry;
@@ -51,8 +53,8 @@ public class MonitorQueryService {
   long start=from.toInstant().toEpochMilli();
   var series=new ArrayList<Map<String,Object>>();var rank=new ArrayList<Map<String,Object>>();long estimatedBytes=4096;
   for(long station:stations) {
-   // Only an unambiguous protocol identity with the exact unit supplies a station series.
-   var points=s.db.queryForList("""
+   // A station series requires one explicit source, never a sum of overlapping devices.
+   var points=new ArrayList<>(s.db.queryForList("""
     SELECT DISTINCT mp.id FROM measurement_point mp JOIN device a ON a.id=mp.device_id
      JOIN measurement_kind k ON k.code=mp.kind_code JOIN point_binding pb ON pb.measurement_point_id=mp.id
      JOIN point_definition d ON d.id=pb.definition_id JOIN device_binding b ON b.id=pb.device_binding_id
@@ -60,7 +62,8 @@ public class MonitorQueryService {
     WHERE a.station_id=? AND p.station_id=? AND p.valid_to IS NULL AND b.valid_to IS NULL AND pb.valid_to IS NULL
      AND greatest(p.valid_from,b.valid_from,pb.valid_from)<=clock_timestamp()
      AND d.namespace='cabinet' AND d.source_id=? AND d.value_type='number' AND k.unit='kW'
-    """,Long.class,station,station,metric.equals("pvPower")?20107L:20024L);
+    """,Long.class,station,station,metric.equals("pvPower")?20107L:20024L));
+   if(stored!=null)points.addAll(storedPowerPoints(station,metric));
    List<?> samples=List.of();
    if(points.size()==1&&end>start) samples=(List<?>)telemetry.stationHistory(station,points.getFirst(),from,Instant.ofEpochMilli(end).atOffset(ZoneOffset.UTC),minutes,"last").data();
    BigDecimal total=BigDecimal.ZERO;int count=0;
@@ -71,6 +74,7 @@ public class MonitorQueryService {
     estimatedBytes+=512L+(value==null?0:value.toString().length());
     if(series.size()>=MAX_BUCKETS||estimatedBytes>MAX_RESULT_BYTES)throw new BusinessException(413,"监控结果超过8MiB，请缩小查询范围；未返回截断数据");
     var out=new LinkedHashMap<String,Object>();out.put("stationId",Long.toString(station));out.put("timestamp",row.get("timestamp"));out.put("value",value);out.put("unit","kW");out.put("samples",row.get("samples"));series.add(out);
+    for(String field:List.of("source","sourceType","sourceTime","receivedAt","quality","conflict","staleReason"))out.put(field,row.get(field));
     if(value!=null){total=total.add(value);count++;}
    }
    var item=new LinkedHashMap<String,Object>();item.put("stationId",Long.toString(station));
@@ -80,9 +84,35 @@ public class MonitorQueryService {
   // Recheck after the bounded telemetry reads; a moved fact retains TelemetryController's original scope checks.
   for(long station:stations){s.access.requireStationPermission(station,"asset.read");s.access.requireStationPermission(station,"telemetry.read");if(export)s.access.requireStationPermission(station,"report.export");}
   var result=new LinkedHashMap<String,Object>();result.put("metric",metric);result.put("unit","kW");result.put("from",from);result.put("to",to);result.put("minutes",minutes);result.put("items",series);result.put("ranking",rank(rank,"DESC"));result.put("stationResults",rank);
-  result.put("provenance","EMS cabinet protocol; last observation per bucket, invalid quality stays null; ranking is arithmetic mean of available power buckets, never energy");
+  result.put("provenance","Canonical protocol or reviewed stored device point; last observation per bucket, invalid quality stays null; one verified parent battery stack may represent its child clusters; ambiguous sources are not summed; ranking is arithmetic mean of available power buckets, never energy");
   result.put("unavailable",List.of("PR: irradiation and weighting undefined","fullPowerHours: metering boundary undefined","generationCompletion: actual generation unavailable","storageEfficiency: charge/discharge energy unavailable","utilization: operating-duration algorithm undefined"));
   return result;
+ }
+ private List<Long> storedPowerPoints(long station,String metric) {
+  var candidates=s.db.queryForList("""
+   SELECT mp.id,mp.device_id,profile.source_type,
+    (SELECT parent.id FROM device_reference_import ri
+      JOIN device parent ON parent.serial_number=ri.provenance->'device'->'raw'->>'parentSerialNumber'
+      WHERE ri.device_id=d.id AND parent.station_id=d.station_id AND parent.id<>d.id) AS parent_device_id
+   FROM stored_device_point_binding b JOIN measurement_point mp ON mp.id=b.measurement_point_id
+    JOIN reference_device_point rp ON rp.id=b.reference_point_id AND rp.device_id=mp.device_id
+    JOIN device d ON d.id=mp.device_id AND d.station_id=b.station_id
+    JOIN measurement_kind k ON k.code=mp.kind_code
+    JOIN device_reference_profile profile ON profile.device_id=d.id
+   WHERE b.station_id=? AND b.semantic_key=? AND k.unit='kW' AND rp.unit='kW'
+   ORDER BY mp.id LIMIT 2001
+   """,station,metric.equals("pvPower")?"pvPower":"batteryPower");
+  if(candidates.size()>2000)throw new BusinessException(413,"站点功率映射超过2000，请缩小范围");
+  if(metric.equals("storagePower")&&candidates.size()>1) {
+   var stacks=candidates.stream().filter(r->"Battery Stack".equals(r.get("source_type"))).toList();
+   if(stacks.size()==1) {
+    var stack=stacks.getFirst();
+    if(candidates.stream().allMatch(r->Objects.equals(r.get("id"),stack.get("id"))
+        ||"Battery Cluster".equals(r.get("source_type"))&&Objects.equals(r.get("parent_device_id"),stack.get("device_id"))))
+      return List.of(((Number)stack.get("id")).longValue());
+   }
+  }
+  return candidates.stream().map(r->((Number)r.get("id")).longValue()).toList();
  }
  static BigDecimal decimal(Object value){try{return value==null?null:new BigDecimal(value.toString());}catch(NumberFormatException ex){return null;}}
  static List<Map<String,Object>> rank(List<Map<String,Object>> rows,String order) {

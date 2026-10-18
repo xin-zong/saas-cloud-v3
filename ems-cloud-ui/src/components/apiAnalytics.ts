@@ -2,8 +2,8 @@ import type { ReportTemplateSnapshot } from "@/api/reportTemplates"
 import { localized as __locale, calendarBounds } from '@/preferences/date'
 import { api, getToken, setToken, getSessionVersion, refreshAfterForbidden, ApiError } from "@/api/client"
 
-export type MeasurementPoint = { id: string; name: string; unit: string; device_id: string; device_name?: string; source?: "ems" | "legacy"; sourceId?: string; namespace?: string; valueType?: string; aggregation?: string[] }
-export type HistoryBucket = { timestamp: number; value: number | null; samples: number; exactValue?: unknown; valueType?: string; quality?: string; sourceTime?: number | null; receivedAt?: number | null; aggregation?: string; evidence?: Record<string, unknown>[]; staleReason?: unknown }
+export type MeasurementPoint = { id: string; code?: string; name: string; unit: string; device_id: string; device_name?: string; source?: "ems" | "legacy"; sourceId?: string; namespace?: string; sourceType?: string; semanticKey?: string; valueType?: string; aggregation?: string[] }
+export type HistoryBucket = { timestamp: number; value: number | null; samples: number; exactValue?: unknown; valueType?: string; quality?: string; sourceTime?: number | null; receivedAt?: number | null; aggregation?: string; evidence?: Record<string, unknown>[]; staleReason?: unknown; sourceType?: string }
 export type ReportKind = "operations" | "revenue" | "health"
 export const REPORT_CAPABILITIES: Record<ReportKind, readonly string[]> = {
   operations: ["report.export", "strategy.read", "telemetry.read"],
@@ -19,12 +19,15 @@ export async function loadPoints(stationId: string, signal?: AbortSignal): Promi
   const rows = await api<Array<Record<string, unknown>>>(`/stations/${encodeURIComponent(stationId)}/points`, { signal })
   return rows.map((row) => ({
     id: String(row.id),
+    ...(row.code == null ? {} : {code:String(row.code)}),
     name: String(row.name ?? row.code ?? row.id),
     unit: String(row.unit ?? ""),
     device_id: String(row.device_id ?? ""),
     ...(row.device_name == null ? {} : { device_name: String(row.device_name) }),
     ...(row.source == null ? {} : { source: row.source === "ems" ? "ems" as const : "legacy" as const }),
     ...(row.sourceId == null ? {} : { sourceId: String(row.sourceId) }),
+    ...(row.sourceType == null ? {} : {sourceType:String(row.sourceType)}),
+    ...(row.semanticKey == null ? {} : {semanticKey:String(row.semanticKey)}),
     ...(row.namespace == null ? {} : { namespace: String(row.namespace) }),
     ...(row.valueType == null ? {} : { valueType: String(row.valueType) }),
     ...(row.supportedAggregations == null && row.aggregation == null ? {} : { aggregation: Array.isArray(row.supportedAggregations ?? row.aggregation) ? (row.supportedAggregations ?? row.aggregation) as string[] : [String(row.aggregation)] }),

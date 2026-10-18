@@ -168,8 +168,8 @@ public class EmsTelemetryQueries {
       String selectedKind=unique.values().stream().anyMatch(r->r.path("source_time_kind").asText().equals("source"))?"source":
           unique.values().stream().anyMatch(r->r.path("source_time_kind").asText().equals("archive"))?"archive":"unknown";
       var selected=unique.values().stream().filter(r->r.path("source_time_kind").asText("unknown").equals(selectedKind)).toList();
-      boolean evidenceConflict=sourceValues.values().stream().anyMatch(values->values.size()>1);
-      boolean conflict=sourceValues.entrySet().stream().anyMatch(e->e.getKey().timeKind().equals(selectedKind)&&e.getValue().size()>1);
+      boolean evidenceConflict=sourceValues.values().stream().anyMatch(values->values.size()>1)||unique.values().stream().anyMatch(r->r.path("conflict").asBoolean());
+      boolean conflict=sourceValues.entrySet().stream().anyMatch(e->e.getKey().timeKind().equals(selectedKind)&&e.getValue().size()>1)||selected.stream().anyMatch(r->r.path("conflict").asBoolean());
       var ordered=selected.stream().sorted(Comparator.comparingLong((JsonNode r)->r.path("source_at_ms").asLong())
           .thenComparingLong(r->r.path("received_at_ms").asLong())).toList();
       var samples=selected.stream().filter(r->r.path("quality").asText().equals("valid")&&!r.path("value_kind").asText().equals("null"))

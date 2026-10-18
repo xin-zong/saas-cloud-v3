@@ -2785,5 +2785,33 @@
   "comparisonBaselinePath": "docs/reference-platform/function-comparison.json",
   "comparisonBaselineMeaning": "实施前静态比较快照；当前实施结果以本台账和逐批验收证据为准，不反写历史静态结论。",
   "verificationPath": "docs/superpowers/verification/2026-10-16-known-reference-features.md",
-  "databaseMigrationVersion": 31
+  "databaseMigrationVersion": 42,
+  "unifiedDeviceTelemetry": {
+    "date": "2026-10-18",
+    "status": "implemented-with-data-gaps",
+    "stations": 7,
+    "devices": 48,
+    "canonicalPoints": 3333,
+    "storedObservations": 3683,
+    "implemented": [
+      "canonical point directory",
+      "device latest and history",
+      "energy flow and station trends",
+      "analysis and raw/aggregate export",
+      "monitor power history/ranking",
+      "existing alarm engine trigger/recovery and persisted events"
+    ],
+    "verification": [
+      "3333 latest values and source/receipt timestamps compared to PostgreSQL",
+      "21 numeric/text/missing history cases",
+      "raw and aggregate export jobs contain real values",
+      "alarm trigger/recovery/idempotence verified inside rolled-back PostgreSQL tests"
+    ],
+    "remaining": [
+      "continuous collection and complete historical coverage",
+      "unverified grid/load metering semantics",
+      "hardware command receipts"
+    ],
+    "evidence": "docs/toyingzhen-development.md"
+  }
 }

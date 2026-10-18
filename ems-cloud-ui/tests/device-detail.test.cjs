@@ -35,3 +35,33 @@ test('device alarm read is filtered by station and device and never marks a rece
  new Function('exports','require',code)(exports,()=>({api:async path=>{calls.push(path);return {items:[],total:0}},send:()=>{throw new Error('unexpected mutation')}}));
  assert.deepEqual(await exports.loadDeviceAlarms('12','4',20),{items:[],total:0});const url=new URL(calls[0],'http://local');assert.equal(url.pathname,'/alarms/workspace');assert.equal(url.searchParams.get('stationId'),'12');assert.equal(url.searchParams.get('deviceId'),'4');assert.equal(url.searchParams.get('offset'),'20')
 })
+
+test('stored stale samples retain last-known zero and text with source time without becoming live',()=>{
+ const d=load(),p={id:1,name:'功率',unit:'kW'},row={sourceType:'stored_device',value:'0',valueType:'number',quality:'valid',sourceTime:1000,staleReason:'source_older_than_90_seconds'};
+ const value=d.detailPoint(p,row);assert.equal(value.value,null);assert.equal(value.lastKnownValue,'0');assert.equal(value.sourceTime,1000);assert.match(d.formatPoint(value),/0 kW/);
+ assert.equal(d.detailPoint(p,{...row,value:'停机',valueType:'text'}).lastKnownValue,'停机');assert.equal(d.detailPoint(p,{...row,value:null}).lastKnownValue,undefined);
+})
+
+test('energy roles require a unique physical measurement and never sum stack plus cluster',()=>{
+ const d=load(),p={id:'1',label:'power',unit:'kW',value:null,quality:'bad',sourceType:'stored_device',semanticKey:'batteryPower',lastKnownValue:'0',sourceTime:1000,staleReason:'expired'};
+ assert.equal(d.lastKnownNumber(d.semanticPoint([{points:[p]}],'batteryPower')),0);
+ assert.equal(d.semanticPoint([{points:[p]},{points:[{...p,id:'2'}]}],'batteryPower'),undefined);
+ assert.equal(d.lastKnownNumber({...p,lastKnownValue:'fault'}),null);
+})
+
+test('verified parent stack supplies aggregate role only when every cluster belongs to it',()=>{
+ const d=load(),p={id:'1',semanticKey:'soc'},stack={id:'stack',sourceType:'31002',points:[p]},cluster={id:'cluster',sourceType:'31001',parentDeviceId:'stack',points:[{...p,id:'2'}]};
+ assert.equal(d.semanticPoint([stack,cluster],'soc'),p);
+ assert.equal(d.semanticPoint([stack,{...cluster,parentDeviceId:undefined}],'soc'),undefined);
+ assert.equal(d.semanticPoint([stack,{...cluster,parentDeviceId:'other'}],'soc'),undefined);
+})
+
+test('overview resolves canonical battery voltage/current while retaining native metrics and rejecting ambiguity',()=>{
+ const d=load(),voltage={id:'900',semanticKey:'voltage',label:'总电压',unit:'V',value:null,quality:'bad',sourceType:'stored_device',valueType:'number',lastKnownValue:'767.2',staleReason:'source_older_than_90_seconds'},current={...voltage,id:'901',semanticKey:'current',label:'总电流',unit:'A',lastKnownValue:'0'};
+ const battery={sourceType:'Battery Cluster',points:[voltage,current]};
+ assert.equal(d.deviceMetricPoint(battery,'dcVoltage'),voltage);assert.equal(d.deviceMetricPoint(battery,'dcCurrent'),current);
+ assert.match(d.formatPoint(d.deviceMetricPoint(battery,'dcVoltage')),/767.2 V/);assert.match(d.formatPoint(d.deviceMetricPoint(battery,'dcCurrent')),/0 A/);
+ const native={id:'20',metric:'dcVoltage',unit:'V',value:800,quality:'good'};assert.equal(d.deviceMetricPoint({points:[native]},'dcVoltage'),native);
+ assert.equal(d.deviceMetricPoint({...battery,points:[voltage,{...voltage,id:'902'}]},'dcVoltage'),undefined);
+ assert.equal(d.deviceMetricPoint({sourceType:'Smart Meter',points:[voltage]},'dcVoltage'),undefined);
+})

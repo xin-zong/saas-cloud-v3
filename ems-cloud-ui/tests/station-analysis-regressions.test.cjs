@@ -67,3 +67,12 @@ test('registered channels retain duplicate SOC and arbitrary point IDs and selec
   assert.equal(rows[0][channels[2].id], 27)
   assert.equal(rows.find(row => row.timestamp === 300000)[channels[0].id], null)
 })
+
+test('canonical history uses verified stack relation without summing child energy',async()=>{
+ const calls=[],telemetry=load('data/stationTelemetry');
+ const points=[{id:'stack-soc',device_id:'stack',source:'ems',namespace:'device',semanticKey:'soc',unit:'%',name:'SOC'},{id:'cluster-soc',device_id:'cluster',source:'ems',namespace:'device',semanticKey:'soc',unit:'%',name:'SOC'}];
+ const service=load('components/stationTelemetryQuery',{'@/data/stationTelemetry':telemetry,'./apiAnalytics':{loadPoints:async()=>points,loadHistory:async point=>{calls.push(point.id);return [{timestamp:0,value:50}]}}});
+ const station={id:'1',deviceInventory:[{id:'stack',sourceType:'31002'},{id:'cluster',sourceType:'31001',parentDeviceId:'stack'}]};
+ await service.queryStationTelemetry(station,new Date(0),new Date(60000),1,new AbortController().signal);assert.deepEqual(calls,['stack-soc']);calls.length=0;
+ await service.queryStationTelemetry({...station,deviceInventory:[]},new Date(0),new Date(60000),1,new AbortController().signal);assert.deepEqual(calls,[]);
+})

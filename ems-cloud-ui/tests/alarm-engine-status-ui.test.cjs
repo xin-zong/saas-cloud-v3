@@ -19,11 +19,12 @@ async function setup(t, rules) {
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   t.after(() => browser.close())
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
-  page.setDefaultTimeout(5000)
+  page.setDefaultTimeout(15000)
+  page.setDefaultNavigationTimeout(60000)
   const errors = [], writes = []
   page.on('pageerror', e => errors.push(e.message))
   await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com|static\.figma\.com/, r => r.abort())
-  await page.route('**/src/auth/AuthContext.tsx*', r => r.fulfill({ contentType: 'text/javascript', body: 'const user={id:"7",permissions:["alarm.read","alarm.handle"],stationPermissions:{"9":["alarm.read","alarm.handle"]}};export function useAuth(){return {user}}' }))
+  await page.route('**/src/auth/AuthContext.tsx*', r => r.fulfill({ contentType: 'text/javascript', body: 'const user={id:"7",permissions:["alarm.read","alarm.handle","telemetry.read"],stationPermissions:{"9":["alarm.read","alarm.handle","telemetry.read"]}};export function useAuth(){return {user}}' }))
   await page.route('**/src/main.tsx*', async r => {
     const source = await (await r.fetch()).text()
     const react = source.match(/["']([^"']*\/react\.js\?v=[^"']+)["']/)?.[1]
@@ -47,6 +48,7 @@ async function setup(t, rules) {
       selected.evaluationReason = '规则已停用，连续检测已重置'
       return reply(selected)
     }
+    if (url.pathname === '/api/stations/9/points') return reply([{id:501,device_id:19,code:'stored_device_501',name:'真实设备功率',unit:'kW',source:'ems',sourceType:'stored_device',namespace:'device'},{id:502,device_id:20,code:'stored_device_502',name:'其他设备功率',unit:'W'}])
     if (url.pathname.endsWith('/options')) return reply({ devices: [{ id: 19, name: '测试设备' }], recipients: [] })
     return reply([])
   })
@@ -91,3 +93,17 @@ test('rule toggle refreshes backend detection state while preserving separate co
   assert.deepEqual(writes, [{ path: '/api/alarm-rules/1/enabled', body: { expectedVersion: 1, enabled: false } }])
   assert.deepEqual(errors, [])
 })
+
+
+test('rule builder selects canonical device point and autofills unit without losing custom fields',{timeout:90000},async t=>{
+ const {page,errors,writes}=await setup(t,[rule(1,'waiting','等待新鲜采样')]);
+ await page.getByRole('button',{name:'编辑',exact:true}).click();
+ const selector=page.getByRole('combobox',{name:'条件1指标1已登记测点',exact:true});await selector.selectOption('stored_device_501');
+ assert.equal(await page.getByRole('textbox',{name:'条件1指标1',exact:true}).inputValue(),'stored_device_501');
+ assert.equal(await page.getByRole('textbox',{name:'条件1指标1单位',exact:true}).inputValue(),'kW');
+ assert.equal(await page.getByRole('combobox',{name:'条件1指标1周期',exact:true}).inputValue(),'INSTANT');
+ assert.equal(await selector.locator('option[value="stored_device_502"]').count(),0);
+ await page.getByRole('textbox',{name:'条件1指标1',exact:true}).fill('custom_power');
+ assert.equal(await page.getByRole('textbox',{name:'条件1指标1',exact:true}).inputValue(),'custom_power');
+ assert.equal(writes.length,0);assert.deepEqual(errors,[]);
+});

@@ -421,12 +421,12 @@ export default function StationAnalysisPage({
 
   const last = rows[rows.length - 1]
   const currentEvidence = (id: string) => {
-    const evidence = latestChannelEvidence(rows, id, view === "live")
+    const evidence = latestChannelEvidence(view === "live" ? samples : rows, id, view === "live")
     return view === "live" && !DEMO_MODE ? liveChannelEvidence(evidence, now) : evidence
   }
   const currentValueText = (id: string) => {
     const detail = currentEvidence(id)
-    return detail?.staleReason ? "—" : exactValueText(detail?.exactValue)
+    return detail?.staleReason && detail.sourceType !== "stored_device" ? "—" : exactValueText(detail?.exactValue)
   }
 
   const activeSignals = SIGNALS.filter((signal) => selected.includes(signal.id))
@@ -1334,14 +1334,14 @@ export default function StationAnalysisPage({
                     <td title={detail ? `${exactValueText(detail.exactValue)} · ${detail.valueType} · ${detail.quality}${detail.staleReason ? ` · ${detail.staleReason}` : ""}` : undefined}>{DEMO_MODE ? valueText(last?.[signal.id]) : currentValueText(signal.id)}</td>
                     <td>{signal.unit}</td>
                     <td className={good ? "analysis-good" : "analysis-bad"}>
-                      {DEMO_MODE ? good ? "有效" : "无效 / 缺失" : detail ? `${detail.staleReason === "source_time_expired" || detail.staleReason === "received_time_expired" ? "过期 · " : view === "live" && !running ? "暂停快照 · " : ""}${({valid:"有效",invalid:"无效",unknown:"未知"})[detail.quality as "valid" | "invalid" | "unknown"] ?? detail.quality}${detail.staleReason ? ` / ${detail.staleReason}` : ""} · ${detail.valueType}` : "未采样"}
+                      {DEMO_MODE ? good ? "有效" : "无效 / 缺失" : detail ? `${detail.sourceType === "stored_device" && detail.staleReason ? "最后采样 · 已过期 · " : detail.staleReason === "source_time_expired" || detail.staleReason === "received_time_expired" ? "过期 · " : view === "live" && !running ? "暂停快照 · " : ""}${({valid:"有效",invalid:"无效",unknown:"未知"})[detail.quality as "valid" | "invalid" | "unknown"] ?? detail.quality}${detail.staleReason ? ` / ${detail.staleReason}` : ""} · ${detail.valueType}` : "未采样"}
                     </td>
                     <td>
                       {(DEMO_MODE ? latestValid?.timestamp : detail?.receivedAt) != null
                         ? `${Math.max(0, ((view === "live" ? now : historyEnd) - (DEMO_MODE ? latestValid!.timestamp : detail!.receivedAt!)) / 1000).toFixed(1)} s`
                         : "--"}
                     </td>
-                    <td>{DEMO_MODE ? last ? clockTime(last.timestamp) : "--" : detail?.sourceTime != null ? clockTime(detail.sourceTime) : "--"}</td>
+                    <td>{DEMO_MODE ? last ? clockTime(last.timestamp) : "--" : detail?.sourceTime != null ? detail.sourceType === "stored_device" ? new Date(detail.sourceTime).toISOString() : clockTime(detail.sourceTime) : "--"}</td>
                     <td>{__locale(validRows.length, 'toLocaleString')}</td>
                     <td>
                       {!DEMO_MODE ? view === "history" ? `${minutes} min` : detail?.receivedAt != null ? clockTime(detail.receivedAt) : "--" : sampleInterval

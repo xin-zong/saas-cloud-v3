@@ -8,6 +8,12 @@ export type DevicePoint = {
   value: number | null;
   exactValue?: string;
   textValue?: string;
+  lastKnownValue?: string;
+  valueType?: string;
+  sourceTime?: number | null;
+  staleReason?: string;
+  semanticKey?: string;
+  sourceType?: string;
   sourceId?: number;
   metric?: string;
   unit: string;
@@ -20,6 +26,7 @@ export type StationDevice = {
   code: string;
   group: string;
   sourceType?: string;
+  parentDeviceId?: string;
   manufacturer?: string;
   ratedPowerKw?: number | null;
   capacityKwh?: number | null;
@@ -68,6 +75,11 @@ export function detailPoint(point:Record<string,unknown>,observation?:Record<str
   const value=observation?.valueType==='number' && observation.quality==='valid' && !observation.staleReason && exact!==undefined ? Number(exact) : null;
   const typed=observation && observation.quality==='valid' && !observation.staleReason && observation.value!=null && ['text','boolean','u16_words'].includes(String(observation.valueType));
   return {id:String(point.id),label:String(point.name??point.code??point.id),unit:String(point.unit??''),
+    valueType:String(observation?.valueType??''),
+    lastKnownValue:observation?.sourceType==='stored_device' && observation.quality==='valid' ? exact : undefined,
+    sourceTime:typeof observation?.sourceTime==='number'?observation.sourceTime:null,
+    staleReason:observation?.staleReason?String(observation.staleReason):undefined,
+    semanticKey:String(observation?.semanticKey??point.semanticKey??''),sourceType:String(observation?.sourceType??point.sourceType??''),
     value:value!==null && Number.isFinite(value)?value:null,
     textValue:typed?(Array.isArray(observation.value)?JSON.stringify(observation.value):String(observation.value)):undefined,
     exactValue:value!==null && Number.isFinite(value)?exact:undefined,quality:(typed||value!==null && Number.isFinite(value))?'good':'bad'};
@@ -91,6 +103,7 @@ export function pointValue(point?: DevicePoint) {
 }
 
 export function formatPoint(point?: DevicePoint) {
+  if(point?.lastKnownValue!==undefined && point.staleReason)return [point.lastKnownValue, point.unit].filter(Boolean).join(' ')+'（最后采样 · 已过期）';
   if(point?.quality==='good'&&point.textValue!==undefined)return point.textValue;
   const value = pointValue(point);
   if (point?.quality === 'good' && point.exactValue !== undefined) return `${point.exactValue} ${point.unit}`.trim();
@@ -167,4 +180,33 @@ export function demoStationDevices(station: Station, now: number): StationDevice
       logs: [{ at: "2026-08-26T10:30:00+08:00", action: "固件升级", operator: station.manager || "系统管理员", result: "成功" }, { at: "2026-08-25T15:12:00+08:00", action: "同步设备参数", operator: "采集服务", result: "成功" }, { at: "2026-03-16T08:00:00+08:00", action: "设备投运", operator: station.manager || "系统管理员", result: "成功" }],
     };
   });
+}
+
+/** Only an unambiguous explicit role may supply stored energy-flow values. */
+export function semanticPoint(devices: StationDevice[], semanticKey: string): DevicePoint | undefined {
+  const matches=devices.flatMap(device=>device.points.filter(point=>point.semanticKey===semanticKey).map(point=>({device,point})));
+  if(matches.length===1)return matches[0].point;
+  if(['soc','soh','batteryPower'].includes(semanticKey)){
+    const stacks=matches.filter(({device})=>deviceTypeFromSource(device.sourceType)==='battery-stack');
+    if(stacks.length===1&&matches.every(({device})=>device.id===stacks[0].device.id||deviceTypeFromSource(device.sourceType)==='battery-cluster'&&device.parentDeviceId===stacks[0].device.id))return stacks[0].point;
+  }
+  return undefined;
+}
+export function lastKnownNumber(point?: DevicePoint): number | null {
+  const fresh=pointValue(point);
+  if(fresh!==null)return fresh;
+  if(point?.valueType && point.valueType!=='number')return null;
+  if(point?.sourceType!=='stored_device'||point.lastKnownValue===undefined||point.lastKnownValue.trim()==='')return null;
+  const value=Number(point.lastKnownValue);return Number.isFinite(value)?value:null;
+}
+
+/** Resolve overview fields within the selected physical device, never by a label guess. */
+export function deviceMetricPoint(device: StationDevice | undefined, metric: string): DevicePoint | undefined {
+  if(!device)return undefined;
+  const native=device.points.find(point=>point.metric===metric||point.id===metric);
+  if(native)return native;
+  const dcDevice=['battery-cluster','battery-stack','pcs','cabinet'].includes(deviceTypeFromSource(device.sourceType));
+  const key=dcDevice?({dcVoltage:'voltage',dcCurrent:'current'} as Record<string,string>)[metric]??metric:metric;
+  const matches=device.points.filter(point=>point.semanticKey===key||metric==='power'&&['pcsPower','batteryPower','gridPower','loadPower','pvPower'].includes(point.semanticKey??''));
+  return matches.length===1?matches[0]:undefined;
 }

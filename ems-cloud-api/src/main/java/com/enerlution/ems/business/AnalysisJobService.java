@@ -22,6 +22,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @Service
 public class AnalysisJobService {
+  @org.springframework.beans.factory.annotation.Autowired
+  StoredDeviceTelemetryService stored;
   private static final Set<String> KINDS = Set.of("operations", "revenue", "health", "telemetry");
   private static final int MAX_ROWS = 20000, MAX_FILE = 16 * 1024 * 1024;
   private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Shanghai");
@@ -712,17 +714,28 @@ public class AnalysisJobService {
       authorize(station, window.kind(), true);
       if (System.nanoTime() > deadline) throw new BusinessException(413, "导出耗时超限，请缩小范围或减少测点");
       var metadata = pointMetadata(station, point, window);
-      var periods = periods(station, point, window);
+      boolean storedPoint=stored!=null&&stored.owns(point);
+      var storedMetadata=storedPoint?authorizeStoredExport(station,point,metadata,window):Map.<String,Object>of();
+      var periods = storedPoint?List.<Long>of():periods(station, point, window);
       var samples = new ArrayList<Map<String, Object>>();
-      if (until > start && !periods.isEmpty()) {
-        var raw = telemetry.history(point, periods, start, until);
+      if (until > start && (storedPoint||!periods.isEmpty())) {
+        var raw = storedPoint?stored.historyRows(point,start,until):telemetry.history(point, periods, start, until);
         if (window.minutes() == 0)
-          raw.forEach(r -> samples.add(EmsTelemetryQueries.observation(r)));
+          raw.forEach(r -> samples.add(storedPoint?storedExportObservation(r):EmsTelemetryQueries.observation(r)));
         else {
           var aggregated = EmsTelemetryQueries.aggregate(raw, "last", window.minutes());
+          var storedEvidence=new HashMap<Long,List<Map<String,Object>>>();
+          if(storedPoint) {
+            long interval=window.minutes()*60000L;
+            raw.forEach(r->storedEvidence.computeIfAbsent(Math.floorDiv(r.path("source_at_ms").asLong(),interval)*interval,k->new ArrayList<>()).add(storedExportObservation(r)));
+          }
           for (var item : aggregated) {
             var dto = new LinkedHashMap<>(item);
             dto.put("pointId", Long.toString(point));
+            if(storedPoint) {
+              dto.put("evidence",storedEvidence.get(((Number)dto.get("timestamp")).longValue()));
+              dto.put("sourceType","stored_device");dto.put("originalStationId",station);
+            }
             var evidence = (List<?>) dto.get("evidence");
             if (evidence != null && !evidence.isEmpty()) {
               Map<?, ?> last = (Map<?, ?>) evidence.getLast();
@@ -737,11 +750,13 @@ public class AnalysisJobService {
               dto.put("valueType", last.get("valueType"));
               dto.put("source", last.get("source"));
               dto.put("sourceTimeKind", dto.get("selectedSourceTimeKind"));
+              if(storedPoint)dto.put("staleReason",last.get("staleReason"));
             }
             samples.add(dto);
           }
         }
       }
+      if(storedPoint)authorizeStoredExport(station,point,pointMetadata(station,point,window),window);
       // Legacy observations have no immutable station origin; never export them under current
       // ownership.
       if (rows.size() + samples.size() > MAX_ROWS)
@@ -750,6 +765,7 @@ public class AnalysisJobService {
         item.put("deviceName", metadata.get("device_name"));
         item.put("pointName", metadata.get("point_name"));
         item.put("unit", metadata.get("unit"));
+        if(storedPoint){item.put("semanticKey",storedMetadata.get("semanticKey"));item.put("supportedAggregations",storedMetadata.get("supportedAggregations"));}
         budget.retain(item);
         rows.add(item);
       }
@@ -780,6 +796,16 @@ public class AnalysisJobService {
             "时间来源",
             "source",
             "数据来源",
+            "sourceType",
+            "来源类型",
+            "originalStationId",
+            "原始站点ID",
+            "rawValue",
+            "源原始值",
+            "staleReason",
+            "时效说明",
+            "supportedAggregations",
+            "支持聚合方式",
             "bindingPeriodId",
             "原始绑定",
             "aggregation",
@@ -792,7 +818,30 @@ public class AnalysisJobService {
         List.of(
             new Summary("选中测点", Integer.toString(window.points().size()), null),
             new Summary("导出记录", Integer.toString(rows.size()), null)),
-        List.of(new Section("EMS 遥测数据（无原始站点依据的旧数据不纳入导出）", columns, rows)));
+        List.of(new Section("设备遥测数据（无原始站点依据的旧数据不纳入导出）", columns, rows)));
+  }
+
+  private Map<String,Object> authorizeStoredExport(long station,long point,Map<String,Object> current,Window window) {
+    Long original=stored.originalStation(point);
+    if(original==null)throw new BusinessException(409,"测点原始归属已变化");
+    long currentStation=s.number(current,"station_id");
+    s.access.requireStationPermission(original,"telemetry.read");
+    s.access.requireStationPermission(currentStation,"telemetry.read");
+    if(original!=station||currentStation!=station)throw new BusinessException(403,"测点不属于所选历史站点");
+    var metadata=stored.directory(station,List.of(point));
+    if(metadata.size()!=1)throw new BusinessException(409,"测点原始归属已变化");
+    if(window.minutes()!=0&&(!(metadata.getFirst().get("supportedAggregations") instanceof List<?> operations)||!operations.contains("last")))
+      throw new BusinessException(400,"该测点不支持 last 聚合导出");
+    return metadata.getFirst();
+  }
+
+  private Map<String,Object> storedExportObservation(com.fasterxml.jackson.databind.JsonNode raw) {
+    var row=EmsTelemetryQueries.observation(raw);
+    row.put("sourceType","stored_device");row.put("originalStationId",raw.path("original_station_id").longValue());
+    row.put("rawValue",raw.path("raw_value").isNull()?null:raw.path("raw_value").asText());
+    row.put("conflict",raw.path("conflict").asBoolean());
+    row.put("staleReason",raw.path("conflict").asBoolean()?"conflicting_source_values":StationTelemetryService.staleReason(row,true,Instant.now().toEpochMilli()));
+    return row;
   }
 
   private Content operationsReport(long station, Window window) {

@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api")
 public class EmsController {
+  @org.springframework.beans.factory.annotation.Autowired
+  StoredDeviceTelemetryService stored;
   private final DomainSupport s;
   private final ObjectMapper json;
   private final EmsTelemetryQueries telemetry;
@@ -594,6 +596,8 @@ public class EmsController {
     return ApiResponse.ok(rows);
   }
 
+  @org.springframework.beans.factory.annotation.Autowired
+  StationTelemetryService stationTelemetry;
   @GetMapping("/stations/{id}/telemetry/latest")
   public ApiResponse<?> latest(
       @PathVariable long id,
@@ -602,6 +606,13 @@ public class EmsController {
     s.access.requireStationPermission(id, "telemetry.read");
     s.limit(limit);
     s.offset(offset);
+    if(stored!=null&&!stored.directory(id,List.of()).isEmpty()){
+      var snapshot=stationTelemetry.snapshot(id,List.of(),false);
+      var all=(List<Map<String,Object>>)snapshot.get("items");
+      int start=Math.min(offset,all.size()),end=Math.min(start+limit,all.size());
+      s.access.requireStationPermission(id,"telemetry.read");
+      return ApiResponse.ok(Map.of("items",all.subList(start,end),"total",all.size(),"limit",limit,"offset",offset,"hasMore",end<all.size()));
+    }
     var periods =
         s.db.queryForList(
             "SELECT id FROM ems_binding_period WHERE station_id=? AND valid_from<=clock_timestamp() AND valid_to IS NULL ORDER BY id LIMIT 2001",

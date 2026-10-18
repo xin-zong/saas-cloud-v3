@@ -138,3 +138,15 @@ test('persisted records only display the currently authorized station and select
  assert.deepEqual(service.scopedAnalysisJobs(rows,'4','health'),[rows[2]])
  assert.deepEqual(service.scopedAnalysisJobs(rows,'6','health'),[])
 })
+
+test('stored analysis retains old source evidence without drawing a live value',()=>{
+ const s=setup(),items=[{pointId:'88',sourceType:'stored_device',sourceTime:1000,receivedAt:2000,value:'0',valueType:'number',quality:'valid',staleReason:'source_older_than_90_seconds'}];
+ const rows=s.mergeAnalysisSnapshot([],{items,serverTime:10000000},['point:88']);
+ assert.equal(s.latestChannelEvidence(rows,'point:88').exactValue,'0');assert.equal(rows[0]['point:88'],null);
+ assert.equal(s.pointMatchesMetric({...point,namespace:'device',semanticKey:'soc'},'soc'),true);
+})
+
+test('canonical point directory preserves alarm code, semantic and source metadata',async()=>{
+ const s=setup();global.fetch=async()=>({ok:true,status:200,json:async()=>({code:0,data:[{id:88,code:'stored_device_88',name:'SOC',unit:'%',device_id:9,source:'ems',sourceType:'stored_device',namespace:'device',semanticKey:'soc'}]})});
+ const [point]=await s.loadPoints('4');assert.equal(point.code,'stored_device_88');assert.equal(point.device_id,'9');assert.equal(point.semanticKey,'soc');assert.equal(point.sourceType,'stored_device');assert.equal(point.source,'ems');
+})

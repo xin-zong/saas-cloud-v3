@@ -20,7 +20,7 @@ import {
   demoStationDevices,
   DEVICE_STATUS_LABEL,
   formatPoint,
-  pointValue,
+  pointValue, semanticPoint, lastKnownNumber, deviceMetricPoint,
 } from "@/data/stationDevices"
 import { stationDataNow, stationTrendDate } from "@/data/dataClock"
 import { buildCurveData } from "./StationRunCurvePage"
@@ -145,6 +145,7 @@ export default function StationOverviewPage({
     [station],
   )
   const matches = devices.filter((device) =>
+    device.points.some(point=>point.semanticKey===({PCS:"pcsPower",电池:"soc",电网:"gridPower",负荷:"loadPower",光伏:"pvPower"} as Record<string,string>)[category]) || (
     category === "PCS"
       ? /PCS/i.test(device.group)
       : category === "电池"
@@ -153,11 +154,11 @@ export default function StationOverviewPage({
           ? /并网|电网/.test(device.name)
           : category === "负荷"
             ? /负荷/.test(device.name)
-            : /光伏|PV/i.test(device.group + device.name),
+            : /光伏|PV/i.test(device.group + device.name)),
   )
   const device = matches.find((item) => item.id === deviceId) ?? matches[0]
-  const point = (id: string) => device?.points.find((item) => item.metric === id || item.id === id)
-  const soc = pointValue(point("soc"))
+  const point = (id: string) => deviceMetricPoint(device,id)
+  const soc = lastKnownNumber(point("soc"))
   const {timezone,language}=useDisplayPreferences()
   useEffect(() => {
     if (DEMO_MODE) return
@@ -191,6 +192,9 @@ export default function StationOverviewPage({
       ),
     [station, date, range, samples, canRead, timezone, language],
   )
+  const roles:Record<string,string>={电网:'gridPower',光伏:'pvPower',负荷:'loadPower',PCS:'pcsPower',电池:'soc'}
+  const rolePoints=Object.fromEntries(Object.entries(roles).map(([name,key])=>[name,semanticPoint(devices,key)]))
+  const hasStored=devices.some(device=>device.points.some(point=>point.sourceType==='stored_device'))
   const metrics: Record<string, number | undefined | null> = {
     电网: pointValue(
       devices
@@ -206,11 +210,13 @@ export default function StationOverviewPage({
     PCS: station.activePower,
     电池: station.soc,
   }
+  if(hasStored)for(const name of Object.keys(roles))metrics[name]=lastKnownNumber(rolePoints[name])
   return (
     <main className="station-overview-figma"><StationStoredOverview key={station.id} stationId={station.id} allowedSubNavs={allowedSubNavs} onNavigate={onSetSubNav} />
 
       <div className="station-overview-top">
         <section className="station-energy-card" aria-label="站点能流图">
+          {hasStored&&<p className="device-sync">最后采样（非实时） · {Object.entries(rolePoints).map(([name,point])=>name+': '+(point?.sourceTime==null?'--':new Date(point.sourceTime).toISOString())+(point?.staleReason?' 已过期':'')).join(' · ')}</p>}
           <div className="station-energy-view-switch" role="group" aria-label="设备图显示方式">
             <button aria-pressed={energyView === "diagram"} onClick={() => setEnergyView("diagram")}>设备图</button>
             <button aria-pressed={energyView === "3d"} onClick={() => setEnergyView("3d")}>3D</button>
@@ -320,7 +326,7 @@ export default function StationOverviewPage({
           <div className="station-device-main">
             <small>{category === "电池" ? "SOC" : "有功功率"}</small>
             <strong>
-              {numeric(category === "电池" ? soc : pointValue(point("power")))}{" "}
+              {numeric(category === "电池" ? soc : lastKnownNumber(point("power")))}{" "}
               <small>{category === "电池" ? "%" : "kW"}</small>
             </strong>
           </div>
