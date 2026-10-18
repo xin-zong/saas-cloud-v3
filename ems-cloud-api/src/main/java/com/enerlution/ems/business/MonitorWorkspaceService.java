@@ -29,10 +29,11 @@ public class MonitorWorkspaceService {
     if(body==null||body.expectedVersion()==null||body.expectedVersion()<0||body.settings()==null||body.watchedStationIds()==null||body.watchedStationIds().size()>2000)throw new BusinessException(400,"缺少有效配置、站点或版本");
     var settings=new LinkedHashMap<String,Object>();
     for(var e:body.settings().entrySet()){
-      if(!Set.of("sourceMode","fieldView","dashboardField","refreshMinutes","solarColumns","storageColumns").contains(e.getKey()))throw new BusinessException(400,"不支持的监控配置");
+      if(!Set.of("sourceMode","fieldView","dashboardField","refreshMinutes","solarColumns","storageColumns","deviceColumns").contains(e.getKey()))throw new BusinessException(400,"不支持的监控配置");
       Object v=e.getValue();
       if(Set.of("sourceMode","fieldView","dashboardField").contains(e.getKey())){var allowed=e.getKey().equals("sourceMode")?Set.of("capture","current"):Set.of("solar","storage");if(!(v instanceof String)||!allowed.contains(v))throw new BusinessException(400,"监控显示选项无效");}
       else if(e.getKey().equals("refreshMinutes")){if(!(v instanceof Number n)||!Set.of("0","1","3","5","10","30").contains(n.toString()))throw new BusinessException(400,"刷新周期无效");}
+      else if(e.getKey().equals("deviceColumns")){ReferenceDeviceListService.validateColumns(v);}
       else {if(!(v instanceof List<?> values)||values.size()>30||new HashSet<>(values).size()!=values.size()||values.stream().anyMatch(k->!(k instanceof String)||!(MonitorWorkspaceRules.METRICS.contains(k)||Set.of("pvTrend","chargeStatus").contains(k))))throw new BusinessException(400,"列表列配置无效");}
       settings.put(e.getKey(),v);
     }

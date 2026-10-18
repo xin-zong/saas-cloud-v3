@@ -1,6 +1,6 @@
 import {api,send} from './client'
 export type WorkspaceQuery=Record<string,string|number|undefined>
-export type WorkspaceSettings={sourceMode?:'capture'|'current';fieldView?:'solar'|'storage';dashboardField?:'solar'|'storage';refreshMinutes?:number;solarColumns?:string[];storageColumns?:string[]}
+export type WorkspaceSettings={deviceColumns?:Record<string,string[]>;sourceMode?:'capture'|'current';fieldView?:'solar'|'storage';dashboardField?:'solar'|'storage';refreshMinutes?:number;solarColumns?:string[];storageColumns?:string[]}
 export type WorkspacePreference={settings:WorkspaceSettings;watchedStationIds:string[];version:number}
 export type WorkspaceSite={id:string;name:string;code:string;scene:string;region:string|null;address:string|null;country:string|null;timezone:string|null;imported:boolean;device_count:number;metrics:Record<string,number|null>;telemetryUnavailable?:boolean;telemetryAllowed:boolean;alarmAllowed:boolean;communication:string;currentCommunication:string;alarmCount:number|null;capturedAt:string|null;updatedAt:string|null;source:'reference_capture'|'current';siteType:string;productionStatus:string;chargeStatus:string;watched:boolean;tags:{id:string;name:string}[]}
 export type Aggregate={value:number|null;covered:number|null;total:number;complete:boolean|null;reason?:string;reported?:boolean}

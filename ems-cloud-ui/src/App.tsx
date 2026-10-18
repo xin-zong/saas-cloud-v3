@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import Sidebar from "@/components/Sidebar"
 import ReferenceWorkspace from '@/components/ReferenceWorkspace'
+import {ReferenceDevicesPage} from '@/components/ReferenceDevicesPage'
 import MonitorOverviewPage from '@/components/MonitorOverviewPage'
 import {referencePages,canOpenReferencePage} from '@/navigation/referenceNavigation'
 import StationGlobalHeader from "@/components/StationGlobalHeader"
@@ -307,6 +308,8 @@ export default function App() {
 
 function AuthenticatedApp({ user }: { user: AuthUser }) {
   const { logout } = useAuth()
+  const devicesLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
+  const registerDevicesLeaveGuard = useCallback((guard: null | (() => Promise<boolean>)) => { devicesLeaveGuard.current = guard }, [])
   const overviewLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
   const registerOverviewLeaveGuard = useCallback((guard: null | (() => Promise<boolean>)) => { overviewLeaveGuard.current = guard }, [])
   const [logoutConfirm, setLogoutConfirm] = useState(false)
@@ -497,6 +500,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
   function requestActiveEditorLeave() {
     if (!DEMO_MODE) {
       if(referencePage==='sites') return activeDetailId ? requestStationLeave() : assetsLeaveGuard.current?.() ?? Promise.resolve(true)
+      if(referencePage==='devices') return devicesLeaveGuard.current?.() ?? Promise.resolve(true)
       if(referencePage==='dashboard') return overviewLeaveGuard.current?.() ?? Promise.resolve(true)
       return Promise.resolve(true)
     }
@@ -909,7 +913,8 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
     return <ReferenceWorkspace user={user} page={referencePage} onNavigate={navigateReference} onLogout={requestLogout}>
       {logoutConfirm && <SettingsDialog title="退出登录？" logout onClose={() => setLogoutConfirm(false)}><p>确认退出当前账户？</p><footer><button onClick={() => setLogoutConfirm(false)}>取消</button><button className="settings-confirm-logout" onClick={() => {void confirmLogout()}}>退出登录</button></footer></SettingsDialog>}
       {!permitted ? <section className="reference-placeholder"><h2>当前账户无访问权限</h2><p>请联系管理员分配菜单和业务权限。</p></section> : referencePage==='dashboard' ?
-        <MonitorOverviewPage user={user} registerLeaveGuard={registerOverviewLeaveGuard} onOpenStation={handleOpenStation} onOpenSites={async filters=>{if(await requestActiveEditorLeave()){setMonitorSiteFilter(filters);await navigateReference('sites')}}}/>
+        <MonitorOverviewPage user={user} registerLeaveGuard={registerOverviewLeaveGuard} onOpenAlarms={()=>void navigateReference('alarm-live')} onOpenStation={handleOpenStation} onOpenSites={async filters=>{if(await requestActiveEditorLeave()){setMonitorSiteFilter(filters);await navigateReference('sites')}}}/>
+      : referencePage==='devices' ? <ReferenceDevicesPage user={user} registerLeaveGuard={registerDevicesLeaveGuard} onOpenStation={id=>handleOpenStation(id)} onOpenDevice={(stationId,deviceId)=>handleOpenStation(stationId,'设备详情',deviceId)}/>
       : referencePage==='sites' ? activeDetailId!==null ? (
           <StationDetailPage
             onRefresh={refreshApi}

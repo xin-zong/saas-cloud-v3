@@ -27,6 +27,6 @@ export default function ReferenceWorkspace({user,page,onNavigate,onLogout,childr
         </div>})}</nav>
       </div>
     </aside>
-    <main className="reference-main">{page!=='dashboard'&&<header className="reference-page-title"><h1>{selected?.label??'数据看板'}</h1><span>页面逐项复刻中</span></header>}<div className="reference-page-body">{children}</div></main>
+    <main className="reference-main">{!['dashboard','sites','devices'].includes(page)&&<header className="reference-page-title"><h1>{selected?.label??'数据看板'}</h1><span>页面逐项复刻中</span></header>}<div className="reference-page-body">{children}</div></main>
   </div>
 }
