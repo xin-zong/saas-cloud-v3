@@ -37,6 +37,9 @@ async function setup(browser){
    if(state.dashboard&&q.get('includeDashboard')==='true'&&q.get('scope')==='imported')data.dashboardCapture={summary:{...summary(filtered),totals:Object.fromEntries(Object.entries({pvTotal:912340,storageTotalCharged:78900,storageTotalDischarged:90100,storageEfficiency:100}).map(([key,value])=>[key,{value,covered:2,total:2,complete:true}])),storageCapacity:1160},cards:{pvPeak7:{verified:true,value:null,ranking:[{stationId:'12',value:21.35}]}},sourceUpdatedAt:'2026-10-18T03:13:44Z',capturedAt:'2026-10-18T04:00:00Z',sourceHost:'ess-cloud-login.qudeox.com'}
   }
   else if(p.endsWith('/space-devices'))data={items:[],total:0}
+  if(data?.dashboardCapture)data.dashboardCapture.cards.pvPeak7.trend={start:'2026-10-11',end:'2026-10-17',granularity:'day',method:'ui-tooltip',observedAt:'2026-10-18T03:50:00Z',series:['metric'],points:[{date:'2026-10-11',values:{metric:0}},{date:'2026-10-12',values:{metric:null}},{date:'2026-10-13',values:{metric:3.79}}]}
+  if(data?.dashboardCapture)data.dashboardCapture.cards.pvPeakMonth={verified:true,value:9,ranking:[],trend:{...data.dashboardCapture.cards.pvPeak7.trend,start:'2026-10-01',end:'2026-10-31'}}
+  if(data?.dashboardCapture)data.dashboardCapture.cards.pvPeak7.trend.points.splice(1,1) // a missing date must remain a visible gap, not a cross-date line
   await route.fulfill({json:{code:0,data}})
  })
  await page.goto(preview,{waitUntil:'domcontentloaded'})
@@ -71,6 +74,14 @@ test('overview uses persisted source dashboard totals and restores prototype car
   for(const value of ['912.34','78.9','90.1','100'])assert.ok(totals.includes(value),value)
   assert.ok(totals.includes('来源看板原值'));assert.ok(!/2\s*\/\s*2/.test(totals),'source fleet totals do not prove per-station coverage')
   assert.ok((await page.locator('.monitor-ranking').first().innerText()).includes('21.35'))
+  await page.getByLabel('满发小时真实趋势',{exact:true}).getByRole('button',{name:'查看数据明细',exact:true}).click()
+  const table=page.getByRole('table',{name:'满发小时趋势数据明细',exact:true})
+  await table.waitFor();assert.match(await table.innerText(),/2026-10-11\s+0/);assert.match(await table.innerText(),/2026-10-12\s+—/);assert.match(await table.innerText(),/3\.79/)
+  const card=page.locator('.monitor-metric-card').first()
+  await card.getByRole('button',{name:'本月',exact:true}).click();assert.equal(await card.getByLabel('满发小时统计月份').inputValue(),'2026-10')
+  await card.getByRole('button',{name:'满发小时上一周期',exact:true}).click();await card.getByText(/所选周期尚未采集/).waitFor();assert.equal(await card.locator('.monitor-trend-chart').count(),0)
+  await card.getByRole('button',{name:'返回已采集周期',exact:true}).click();await card.locator('.monitor-trend-chart').waitFor()
+  await card.getByRole('button',{name:'本年',exact:true}).click();await card.getByText('该周期趋势尚未采集',{exact:true}).waitFor()
   await page.getByRole('button',{name:'经营看板',exact:true}).click()
   await page.locator('.overview-shared-card-grid').waitFor()
   assert.equal(await page.getByRole('region',{name:'个人看板布局',exact:true}).count(),0)

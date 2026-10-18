@@ -28,6 +28,40 @@ def timestamp(value):
   if result.tzinfo is None:raise ValueError()
   return result
  except (ValueError,TypeError,AttributeError):raise ImportError('Invalid timestamp.') from None
+
+def observed_trend(raw,card,captured):
+ if not isinstance(raw,dict) or set(raw)!={'start','end','granularity','observedAt','method','series','points'}:raise ImportError('Invalid trend observation.')
+ if raw['method']!='ui-tooltip' or timestamp(raw['observedAt'])>captured:raise ImportError('Invalid trend provenance.')
+ granularity=raw['granularity']
+ if granularity not in {'day','month','year'}:raise ImportError('Invalid trend granularity.')
+ def period(value):
+  try:
+   if not isinstance(value,str):raise ValueError()
+   fmt={'day':'%Y-%m-%d','month':'%Y-%m','year':'%Y'}[granularity]
+   parsed=datetime.strptime(value,fmt)
+   if parsed.strftime(fmt)!=value:raise ValueError()
+   return parsed.date()
+  except (ValueError,TypeError):raise ImportError('Invalid trend date.') from None
+ start,end=period(raw['start']),period(raw['end'])
+ if start>end:raise ImportError('Invalid trend interval.')
+ span=(end-start).days if granularity=='day' else (end.year-start.year)*12+end.month-start.month if granularity=='month' else end.year-start.year
+ if span>365:raise ImportError('Trend interval exceeds supported axis size.')
+ allowed={'metric'}
+ if card.startswith('storageEfficiency'):allowed|={'chargeEnergy','dischargeEnergy'}
+ if card.startswith('storageUtilization'):allowed|={'chargeHours','dischargeHours'}
+ if card.startswith('pvCompletion'):allowed|={'plannedEnergy','actualEnergy'}
+ series=raw['series'];points=raw['points']
+ if not isinstance(series,list) or not series or len(set(series))!=len(series) or not set(series)<=allowed:raise ImportError('Invalid trend series.')
+ if not isinstance(points,list) or len(points)>366:raise ImportError('Invalid trend point count.')
+ normalized=[];previous=None
+ for point in points:
+  if not isinstance(point,dict) or set(point)!={'date','values'} or not isinstance(point['values'],dict) or set(point['values'])!=set(series):raise ImportError('Invalid trend point.')
+  when=period(point['date'])
+  if not start<=when<=end or previous is not None and when<=previous:raise ImportError('Duplicate, unordered or out-of-range trend date.')
+  values={k:number(v) for k,v in point['values'].items()}
+  if when>timestamp(raw['observedAt']).date() and any(v is not None for v in values.values()):raise ImportError('Future trend value is not an observation.')
+  normalized.append(dict(date=point['date'],values=values));previous=when
+ return {**raw,'points':normalized}
 def normalize(document):
  if not isinstance(document,dict) or set(document)!={'capturedAt','sourceUpdatedAt','sourceIds','summary','totals','cards'}:raise ImportError('Invalid dashboard document.')
  captured,updated=timestamp(document['capturedAt']),timestamp(document['sourceUpdatedAt'])
@@ -46,7 +80,7 @@ def normalize(document):
  if not isinstance(cards,dict) or set(cards)-CARDS:raise ImportError('Invalid card keys.')
  output={}
  for key,record in cards.items():
-  if not isinstance(record,dict) or set(record)-{'verified','value','ranking','plannedEnergy','actualEnergy','chargeEnergy','dischargeEnergy'} or record.get('verified') is not True:raise ImportError('Unverified card.')
+  if not isinstance(record,dict) or set(record)-{'verified','value','ranking','plannedEnergy','actualEnergy','chargeEnergy','dischargeEnergy','trend'} or record.get('verified') is not True:raise ImportError('Unverified card.')
   ranks=record.get('ranking')
   if not isinstance(ranks,list) or len(ranks)>len(ids):raise ImportError('Invalid ranking.')
   ranked=set();normalized=[]
@@ -56,6 +90,7 @@ def normalize(document):
   output[key]=dict(verified=True,value=number(record.get('value')),ranking=normalized)
   for extra in ['plannedEnergy','actualEnergy','chargeEnergy','dischargeEnergy']:
    if extra in record:output[key][extra]=number(record[extra])
+  if 'trend' in record:output[key]['trend']=observed_trend(record['trend'],key,captured)
  payload=dict(summary=values,cards=output)
  fingerprint=hashlib.sha256((encode(document)+'\n'+encode(payload)).encode('utf8')).hexdigest()
  return dict(capturedAt=captured,sourceUpdatedAt=updated,sourceIds=ids,payload=payload,fingerprint=fingerprint)

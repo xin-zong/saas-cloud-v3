@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-18",
+  "branch": "develop-toyingzhen",
+  "database": "ems_cloud_saas_toyingzhen",
+  "scope": "总览真实趋势、已核验周期交互与接口耗时优化",
+  "delivered": [
+    "满发小时、PR、储能充放电效率和利用率的近七日、月度、年度观察",
+    "计划发电量完成率的年度和累计、基础和卓越口径观察",
+    "16个周期记录、306个真实日期点，含来源明确缺值；原有汇总不由曲线或排行均值重算",
+    "曲线、双轴电量或时长、悬浮提示和日期明细；保留来源显示精度，电量单位明确换算",
+    "月份与年份、上一周期和下一周期；未采集历史清空曲线、统计和排行，可返回已采集周期",
+    "来源异常数值照原值保留；PR无有效值显示来源空态，不伪造曲线",
+    "缺失日期补空占位且不跨缺口连线；0与null保持不同语义"
+  ],
+  "persistence": {
+    "table": "monitor_dashboard_capture",
+    "storage": "已有V40观察JSON，追加一条带曲线和采集时间的完整观察；保留此前记录",
+    "schemaMigrationRequired": false,
+    "idempotenceVerified": true,
+    "all306PointsMatchImportedObservation": true
+  },
+  "performance": {
+    "endpoint": "/api/monitor/workspace?scope=imported&includeDashboard=true&limit=200",
+    "beforeSeconds": [14.124, 13.994],
+    "afterSeconds": [2.425, 2.728, 2.287],
+    "cause": "三个相关权限子查询重复展开视图，生成6213个JIT函数，编译约11.2秒",
+    "fix": "以MATERIALIZED CTE一次聚合当前用户的站点权限，沿用原视图和读取前后新鲜权限检查，不缓存允许结果",
+    "coreSqlExecutionMillisecondsBefore": 11316.177,
+    "coreSqlExecutionMillisecondsAfter": 12.258,
+    "measurement": "同一本机API、云端新库与账号；完整接口包含网络和权限检查，不将SQL耗时冒充接口耗时"
+  },
+  "verification": {
+    "workspacePostgresTests": 7,
+    "workspaceRuleTests": 6,
+    "captureUnitTests": 2,
+    "capturePostgresTests": 1,
+    "importerTests": 3,
+    "monitorAndConfigurationBrowserFlows": 11,
+    "legacyOverviewBrowserFlows": 4,
+    "gapRegression": "遗漏日期用例先失败，再补空轴占位后通过",
+    "httpPermissionScopeCases": 4,
+    "existingTargetBusinessTableHashesUnchanged": 8,
+    "typescript": "passed",
+    "productionBuild": "passed; existing chunk-size warning",
+    "visual": "1366桌面与760窄屏，曲线和控件无横向溢出；临时视口已恢复",
+    "independentReview": "遗漏日期跨线问题已修复，复审无其他重要问题"
+  },
+  "limits": [
+    "采集自来源页面悬浮提示，精度以页面显示为准；不是底层原始遥测精度",
+    "目前为已核验时间段快照，不是持续同步；其他历史周期明确保留未采集状态",
+    "排行继续仅展示已稳定映射且有权限的站点，不给未映射站点编造身份",
+    "地图和经营看板保留原型布局，本次未改这两个视图"
+  ],
+  "isolation": {
+    "sourcePlatform": "只读期间筛选和曲线提示，无业务提交",
+    "originalDatabaseWrites": 0,
+    "originalWorkspaceWrites": 0,
+    "originalApiProcessUnchanged": true,
+    "originalApiPid": 4896,
+    "localPage": "http://127.0.0.1:8444/"
+  }
+}

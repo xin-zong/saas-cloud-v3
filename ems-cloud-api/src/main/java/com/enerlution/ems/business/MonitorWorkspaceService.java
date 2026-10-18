@@ -48,24 +48,30 @@ public class MonitorWorkspaceService {
   public Map<String,Object> workspace(Map<String,String> parameters,boolean export){
     var q=MonitorWorkspaceRules.query(parameters);var preference=preferences();long user=s.access.userId();String client=s.access.client();
     var assetScope=new HashSet<>(s.access.stationIds("asset.read"));var telemetryScope=new HashSet<>(s.access.stationIds("telemetry.read"));var alarmScope=new HashSet<>(s.access.stationIds("alarm.read"));
+    // Expand the effective permission view once, rather than generating thousands
+    // of JIT expressions for three correlated copies. Fresh scope checks remain below.
     var raw=s.db.queryForList("""
+      WITH permitted AS MATERIALIZED (
+       SELECT station_id,bool_or(permission_code='asset.read') AS asset,
+        bool_or(permission_code='telemetry.read') AS telemetry,bool_or(permission_code='alarm.read') AS alarm
+       FROM saas_effective_station_permission WHERE user_id=? AND client=? GROUP BY station_id
+      )
       SELECT st.id::text,st.name,st.code,st.asset_type AS scene,st.region,st.address,st.rated_power_kw,st.capacity_kwh,
        sp.solar_capacity_kw,sp.country,sp.province,sp.city,sp.timezone,sp.commissioned_on,sp.grid_connection_date,
        coalesce(sp.details->>'siteType','unknown') AS site_type,coalesce(sp.details->'systems','[]'::jsonb)::text AS reference_systems,
        EXISTS(SELECT 1 FROM station_reference_import i WHERE i.station_id=st.id) AS imported,
        cap.captured_at,cap.source_updated_at,cap.communication AS captured_communication,cap.charge_status,cap.metrics::text AS captured_metrics,
        (SELECT count(*) FROM device d WHERE d.station_id=st.id) AS device_count,
-       EXISTS(SELECT 1 FROM saas_effective_station_permission p WHERE p.user_id=? AND p.client=? AND p.station_id=st.id AND p.permission_code='telemetry.read') AS telemetry_allowed,
-       EXISTS(SELECT 1 FROM saas_effective_station_permission p WHERE p.user_id=? AND p.client=? AND p.station_id=st.id AND p.permission_code='alarm.read') AS alarm_allowed,
+       permitted.telemetry AS telemetry_allowed,permitted.alarm AS alarm_allowed,
        coalesce((SELECT jsonb_agg(jsonb_build_object('id',t.id,'name',t.name)) FROM station_tag_link l JOIN station_tag t ON t.id=l.tag_id AND t.tenant_id=l.tenant_id WHERE l.station_id=st.id AND l.tenant_id=st.tenant_id),'[]'::jsonb)::text AS tags,
        (SELECT count(*) FROM ems_binding_period b WHERE b.station_id=st.id AND b.valid_to IS NULL AND b.valid_from<=now()) AS connections,
        (SELECT count(*) FROM ems_binding_period b JOIN ems_connection_read c USING(ems_uuid) WHERE b.station_id=st.id AND b.valid_to IS NULL AND b.valid_from<=now() AND c.reachable AND c.last_fresh_heartbeat BETWEEN now()-interval '90 seconds' AND now()) AS connected,
        (SELECT count(*) FROM ems_binding_period b JOIN ems_connection_read c USING(ems_uuid) WHERE b.station_id=st.id AND b.valid_to IS NULL AND b.valid_from<=now() AND c.last_fresh_heartbeat<=now()) AS known_connections,
        (SELECT count(*) FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN alarm_business_origin o ON o.alarm_id=a.id WHERE coalesce(o.station_id,d.station_id)=st.id AND a.deleted_at IS NULL AND a.closed_at IS NULL AND a.occurred_at<=now() AND (a.recovered_at IS NULL OR a.recovered_at>now())) AS alarm_count
-      FROM station st LEFT JOIN station_profile sp ON sp.station_id=st.id
+      FROM station st JOIN permitted ON permitted.station_id=st.id LEFT JOIN station_profile sp ON sp.station_id=st.id
       LEFT JOIN LATERAL(SELECT * FROM monitor_station_capture c WHERE c.station_id=st.id ORDER BY c.captured_at DESC,c.id DESC LIMIT 1) cap ON true
-      WHERE EXISTS(SELECT 1 FROM saas_effective_station_permission p WHERE p.user_id=? AND p.client=? AND p.station_id=st.id AND p.permission_code='asset.read') ORDER BY st.id LIMIT 2001
-      """,user,client,user,client,user,client);
+      WHERE permitted.asset ORDER BY st.id LIMIT 2001
+      """,user,client);
     if(raw.size()>2000)throw new BusinessException(413,"授权站点超过2000；请先缩小站点授权范围");
     var rows=new ArrayList<Map<String,Object>>();
     for(var r:raw){

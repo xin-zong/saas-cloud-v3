@@ -19,4 +19,19 @@ class DashboardImportTest(unittest.TestCase):
    if change=='count':document['summary']['total']=3
    if change=='duplicate':document['sourceIds']=['a','a']
    with self.assertRaises(module.ImportError):module.normalize(document)
+ def test_observed_curve_keeps_null_gaps_zero_and_reported_values(self):
+  document=self.document()
+  document['cards']={'storageEfficiency7':dict(verified=True,value=100,ranking=[],trend=dict(start='2026-10-11',end='2026-10-17',granularity='day',observedAt='2026-10-18T03:50:00Z',method='ui-tooltip',series=['metric','chargeEnergy','dischargeEnergy'],points=[dict(date='2026-10-11',values=dict(metric=100,chargeEnergy=0,dischargeEnergy=None)),dict(date='2026-10-12',values=dict(metric=None,chargeEnergy=None,dischargeEnergy=None))]))}
+  curve=module.normalize(document)['payload']['cards']['storageEfficiency7']['trend']
+  self.assertEqual(curve['points'][0]['values']['chargeEnergy'],0)
+  self.assertIsNone(curve['points'][0]['values']['dischargeEnergy'])
+  for change in ['duplicate','outside','future','unit','nonfinite']:
+   import copy
+   invalid=copy.deepcopy(document);trend=invalid['cards']['storageEfficiency7']['trend']
+   if change=='duplicate':trend['points'].append(trend['points'][0])
+   if change=='outside':trend['points'][0]['date']='2026-09-30'
+   if change=='future':trend['observedAt']='2099-01-01T00:00:00Z'
+   if change=='unit':trend['series']=['arbitrary']
+   if change=='nonfinite':trend['points'][0]['values']['metric']='NaN'
+   with self.assertRaises(module.ImportError):module.normalize(invalid)
 if __name__=='__main__':unittest.main()

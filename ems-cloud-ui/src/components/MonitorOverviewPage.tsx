@@ -4,24 +4,29 @@ import {metricText,type WorkspaceQuery,type WorkspaceSite,type DashboardCard} fr
 import {useMonitorPreferences,useMonitorWorkspace} from './useMonitorWorkspace'
 import MonitorWorkspaceSettings from './MonitorWorkspaceSettings'
 import type {RegisterLeaveGuard} from './useEditorLeaveGuard'
-import {RefreshCw,Settings,ChevronRight,Wifi,WifiOff,TriangleAlert,Bell,ChartNoAxesCombined} from 'lucide-react'
+import {RefreshCw,Settings,ChevronRight,Wifi,WifiOff,TriangleAlert,Bell} from 'lucide-react'
+import MonitorDashboardTrend from './MonitorDashboardTrend'
 import './monitor-workspace.css'
 
 type Props={user:AuthUser;onOpenStation:(id:string,tab?:string)=>void;onOpenSites:(filters:WorkspaceQuery)=>void;registerLeaveGuard?:RegisterLeaveGuard}
 const date=(value:string|null|undefined)=>value?new Date(value).toLocaleString('zh-CN',{hour12:false}):'未取得数据'
 type CardProps={title:string;keys:string[];unit:string;rows:WorkspaceSite[];onOpen:(id:string)=>void;source:string;superiorKeys?:string[];cards?:Record<string,DashboardCard>}
 function MetricCard({title,keys,unit,rows,onOpen,source,superiorKeys,cards}:CardProps){
- const [period,setPeriod]=useState(0),[descending,setDescending]=useState(true),[more,setMore]=useState(false),[explain,setExplain]=useState(false),[superior,setSuperior]=useState(false)
- const record=cards?.[(superior&&superiorKeys?superiorKeys:keys)[period]]
+ const [period,setPeriod]=useState(0),[descending,setDescending]=useState(true),[more,setMore]=useState(false),[explain,setExplain]=useState(false),[superior,setSuperior]=useState(false),[requestedPeriod,setRequestedPeriod]=useState('')
+ const observed=cards?.[(superior&&superiorKeys?superiorKeys:keys)[period]],monthPicker=keys.length===3&&period===1,yearPicker=keys.length===3&&period===2||keys.length===2&&period===0
+ const observedPeriod=observed?.trend?.start.slice(0,monthPicker?7:4)??'',selectedPeriod=requestedPeriod||observedPeriod
+ const record=requestedPeriod&&requestedPeriod!==observedPeriod?undefined:observed
+ const movePeriod=(direction:number)=>{if(!selectedPeriod)return;const [year,month]=selectedPeriod.split('-').map(Number);if(monthPicker){const date=new Date(Date.UTC(year,month-1+direction,1));setRequestedPeriod(`${date.getUTCFullYear()}-${String(date.getUTCMonth()+1).padStart(2,'0')}`)}else setRequestedPeriod(String(year+direction))}
  const candidates=cards?(record?.ranking??[]).flatMap(rank=>{const r=rows.find(row=>row.id===rank.stationId);return r?[{r,v:rank.value}]:[]}):rows.map(r=>({r,v:r.metrics[(superior&&superiorKeys?superiorKeys:keys)[period]]}))
  const values=candidates.filter(({v})=>typeof v==='number'&&Number.isFinite(v)).sort((a,b)=>(a.v!-b.v!)*(descending?-1:1))
  const average=values.length?values.reduce((n,v)=>n+v.v!,0)/values.length:null
  return <article className="monitor-metric-card">
-  <header><h3>{title}</h3>{superiorKeys&&<div className="monitor-segments"><button aria-pressed={!superior} onClick={()=>setSuperior(false)}>基础</button><button aria-pressed={superior} onClick={()=>setSuperior(true)}>卓越</button></div>}<button className="monitor-help" aria-label={`${title}口径说明`} onClick={()=>setExplain(!explain)}>?</button></header>
+  <header><h3>{title}</h3>{superiorKeys&&<div className="monitor-segments"><button aria-pressed={!superior} onClick={()=>{setSuperior(false);setRequestedPeriod('')}}>基础</button><button aria-pressed={superior} onClick={()=>{setSuperior(true);setRequestedPeriod('')}}>卓越</button></div>}<button className="monitor-help" aria-label={`${title}口径说明`} onClick={()=>setExplain(!explain)}>?</button></header>
   {explain&&<p className="monitor-note">{cards?'展示源数据看板已核验的原始统计和排行；不以站点计数器或排行均值重算。':source==='capture'?'展示站点快照的有值项均值，不能代替源看板汇总。':'没有接入的统计保持空态。'}</p>}
-  <div className="monitor-segments">{keys.map((key,i)=><button key={key} aria-pressed={period===i} onClick={()=>setPeriod(i)}>{keys.length===1?'累计':keys.length===2?['年','总'][i]:['近7日','本月','本年'][i]}</button>)}</div>
+  <div className="monitor-segments">{keys.map((key,i)=><button key={key} aria-pressed={period===i} onClick={()=>{setPeriod(i);setRequestedPeriod('')}}>{keys.length===1?'累计':keys.length===2?['年','总'][i]:['近7日','本月','本年'][i]}</button>)}{observed?.trend&&(monthPicker||yearPicker)&&<><button aria-label={`${title}上一周期`} onClick={()=>movePeriod(-1)}>‹</button><input type={monthPicker?'month':'number'} min={monthPicker?'1900-01':'1900'} max={monthPicker?'2100-12':'2100'} aria-label={`${title}统计${monthPicker?'月份':'年份'}`} value={selectedPeriod} onChange={e=>setRequestedPeriod(e.target.value)}/><button aria-label={`${title}下一周期`} onClick={()=>movePeriod(1)}>›</button></>}</div>
+  {requestedPeriod&&requestedPeriod!==observedPeriod&&<p className="monitor-note">所选周期尚未采集。已采集周期：{observedPeriod}。<button onClick={()=>setRequestedPeriod('')}>返回已采集周期</button></p>}
   {record&&<p className="monitor-note">{record.actualEnergy!==undefined&&<>合计计划发电量：{metricText(record.plannedEnergy==null?null:record.plannedEnergy/1000)} MWh · 合计发电量：{metricText(record.actualEnergy==null?null:record.actualEnergy/1000)} MWh</>}{record.chargeEnergy!==undefined&&<>合计充电量：{metricText(record.chargeEnergy==null?null:record.chargeEnergy/1000)} MWh · 合计放电量：{metricText(record.dischargeEnergy==null?null:record.dischargeEnergy/1000)} MWh</>}</p>}
-  <div className="monitor-metric-body"><div className="monitor-metric-trend"><ChartNoAxesCombined size={30}/><p>趋势数据尚未采集</p><small>不从周期值生成日曲线</small></div>
+  <div className="monitor-metric-body"><MonitorDashboardTrend key={`${period}-${superior}-${selectedPeriod}`} trend={record?.trend} title={title} unit={unit}/>
    <div className="monitor-gauge"><strong>{metricText(cards?record?.value:average)}<small>{unit}</small></strong><span>{cards?'源看板统计':'有值站点均值'}</span><small>{cards?(record?.verified?'该周期已核验':'该周期尚未核验'):`${values.length}/${rows.length} 站有数据`}</small></div>
    <div className="monitor-ranking"><header><b>站点排名</b><button onClick={()=>setDescending(!descending)}>{descending?'降序':'升序'}</button><button onClick={()=>setMore(!more)}>{more?'收起':'更多'}</button></header><ol>{values.slice(0,more?100:5).map(({r,v})=><li key={r.id}><button onClick={()=>onOpen(r.id)} title={r.name}>{r.name}</button><span>{metricText(v)} {unit}</span></li>)}</ol>{!values.length&&<p>{cards&&!record?'该周期尚未核验':'暂无有效数据'}</p>}</div>
   </div>
