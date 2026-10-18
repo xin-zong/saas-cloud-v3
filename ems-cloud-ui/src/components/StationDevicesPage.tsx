@@ -1,4 +1,5 @@
 import { localized as __locale } from '@/preferences/date'
+import {ReferenceDeviceSamples} from './ReferenceDeviceSamples'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { DEMO_MODE } from "@/api/client"
 import {loadDeviceDetail,loadDeviceRealtime,loadDeviceHistory,loadDeviceCells,loadDeviceAlarms,saveDeviceConfiguration} from '@/api/deviceDetails'
@@ -539,7 +540,7 @@ function LiveDeviceDetails({device,station}:{device:StationDevice;station:Statio
   const matched=new Set(schema.match.flatMap(regex=>points.filter(p=>regex.test(p.label)).map(p=>p.id)))
   return <section className="device-details" aria-label="所选设备详情">
     <header className="device-detail-heading"><h2>{device.name}</h2><StatusBadge status={device.status}/><span>{schema.label}</span></header>
-    <p className="device-sync">{archiveValue('manufacturer')} · {archiveValue('model')} · 最近采集 {archive.observed_at?dateText(String(archive.observed_at)):'未采集'}</p>
+    <p className="device-sync">{archiveValue('manufacturer')} · {archiveValue('model')} · 本系统最近上报 {archive.observed_at?dateText(String(archive.observed_at)):'未接入'}；QUDEOX 导入值见实时参数和历史曲线。</p>
     <div className="device-tabs" style={{overflowX:'auto',flexShrink:0}} role="tablist" aria-label="设备信息标签">{tabs.map(item=><button key={item} role="tab" aria-selected={tab===item} onClick={()=>setTab(item)}>{item}</button>)}</div>
     <div className="device-tab-content" role="tabpanel" aria-label={tab}>
       {tab==='概况'&&<>
@@ -553,6 +554,8 @@ function LiveDeviceDetails({device,station}:{device:StationDevice;station:Statio
         <section className="device-info-band"><h3>分类数据范围</h3><p>{schema.sections.join(' · ')}</p><p className="device-sync">未接入的测点与采样保留空态。硬件控制、固件下发与完整电芯分析尚未接入。</p></section>
       </>}
       {tab==='实时参数'&&<>
+        {canTelemetry&&<ReferenceDeviceSamples key={`${station.id}/${device.id}`} station={station.id} device={device.id} battery={['battery-cluster','battery-stack'].includes(detail.type)}/>}
+        <h3>本系统实时采集</h3>
         {telemetryError&&<p role="alert">{telemetryError}</p>}
         {schema.sections.map((section,index)=><section className="device-info-band" key={section}><h3>{section}</h3><PointsTable points={points.filter(p=>schema.match[index].test(p.label))}/>
           {section==='下属电池簇'&&<DeviceFields fields={detail.connections.filter(c=>c.direction==='downstream').map(c=>({label:String(c.name),value:String(c.serial_number??'—')}))}/>}</section>)}
@@ -562,7 +565,9 @@ function LiveDeviceDetails({device,station}:{device:StationDevice;station:Statio
         </section>}
         {points.some(p=>!matched.has(p.id))&&<section className="device-info-band"><h3>其他已登记参数</h3><PointsTable points={points.filter(p=>!matched.has(p.id))}/></section>}
       </>}
-      {tab==='历史曲线'&&<section className="device-info-band"><h3>历史曲线参数</h3>
+      {tab==='历史曲线'&&<section className="device-info-band">
+        {canTelemetry&&<ReferenceDeviceSamples key={`${station.id}/${device.id}/history`} station={station.id} device={device.id} history/>}
+        <h3>本系统历史曲线参数</h3>
         <p className="device-sync">选择最多12项、4种单位；保存后再次登录仍可使用。时间使用 UTC，范围最多31天；显示最后采样及数据质量。</p>
         <div className="flex flex-wrap gap-3 my-3">{points.map(p=><label key={p.id} className="flex items-center gap-1"><input type="checkbox" checked={selectedPoints.has(Number(p.id))} onChange={e=>{setHistories([]);setConfiguration(c=>({...c,selectedPointIds:e.target.checked?[...c.selectedPointIds,Number(p.id)].slice(0,12):c.selectedPointIds.filter(id=>id!==Number(p.id))}))}}/>{p.label} ({p.unit||'无单位'})</label>)}</div>
         {!points.length&&<div className="device-empty">暂无已登记测点，无法查询历史</div>}

@@ -26,6 +26,8 @@ test('device types, persistent local configuration, bounded EMS history and true
    else if(p==='/stations/12/points')data=[{id:31,device_id:4,name:'SOC',unit:'%'}]
    else if(p.endsWith('/space-devices'))data={items:[],total:0}
    else if(p.endsWith('/detail')){const id=Number(p.split('/')[4]);data={type:['inverter','cabinet','pcs','battery-cluster','battery-stack','air-conditioner','meter','logger','ems'][id-1],archive:devices[id-1],points:id===4?[{id:31,name:'SOC',unit:'%'}]:[],configuration,theoryFields:id===4?['loopNum','theorySoh']:[],connections:[],logs:configuration.version?[{id:1,actor_id:7,version:configuration.version,action:'本地设备配置保存',result:'已保存',occurred_at:'2026-10-17T00:00:00Z'}]:[],firmwareRecords:[]}}
+   else if(p.endsWith('/reference-samples/history'))data={items:[{source_at:'2026-10-18T08:00:00Z',captured_at:'2026-10-18T09:00:00Z',value:'0',raw_value:'0W',quality:'observed'}]}
+   else if(p.endsWith('/reference-samples'))data={items:[{id:501,name:'验收真实零值',unit:'kW',source_at:'2026-10-18T08:00:00Z',captured_at:'2026-10-18T09:00:00Z',value:'0',raw_value:'0W',quality:'observed'},{id:502,name:'验收缺失参数',unit:'V',source_at:'2026-10-18T08:00:00Z',captured_at:'2026-10-18T09:00:00Z',value:null,raw_value:'--',quality:'missing'}]}
    else if(p.endsWith('/realtime'))data={items:[]}
    else if(p.endsWith('/cells'))data={known:false,unknownReason:'no_accepted_layout_or_mapping',values:[]}
    else if(p.endsWith('/configuration')){writes.push(req.postDataJSON());if(failSave)return route.fulfill({status:409,json:{code:409,msg:'配置已更新，请刷新后重试'}});configuration={...req.postDataJSON(),version:configuration.version+1};data=configuration}
@@ -44,6 +46,13 @@ test('device types, persistent local configuration, bounded EMS history and true
   await page.getByRole('heading',{name:'电池簇档案',exact:true}).waitFor()
   assert.equal(await page.getByLabel('设备类型').locator('option').count(),11)
   await page.getByLabel('设备类型').selectOption('battery-cluster');await page.getByRole('heading',{name:'电池簇档案',exact:true}).waitFor()
+  await page.getByRole('tab',{name:'实时参数',exact:true}).click()
+  await page.locator('[data-reference-point="501"]').waitFor()
+  assert.equal(await page.locator('[data-reference-point="501"] td').nth(1).innerText(),'0')
+  assert.equal(await page.locator('[data-reference-point="502"] td').nth(1).innerText(),'未采集（来源为空）')
+  await page.getByRole('tab',{name:'历史曲线',exact:true}).click()
+  await page.getByText('1 条实际采样，1 条数值采样',{exact:true}).waitFor()
+  assert.ok(requests.some(u=>u.includes('/reference-samples/history?')&&u.includes('pointId=501')))
   await page.getByRole('tab',{name:'本地配置',exact:true}).click()
   await page.getByLabel('理论循环次数',{exact:true}).fill('6000');await page.getByLabel('理论 SOH (%)',{exact:true}).fill('80.50')
   await page.getByRole('button',{name:'保存本地配置',exact:true}).click();await page.getByText('本地配置已保存并回读',{exact:true}).waitFor()
