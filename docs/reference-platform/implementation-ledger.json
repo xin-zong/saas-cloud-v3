@@ -1359,16 +1359,16 @@
     },
     {
       "workflowId": "station-metric-source-strategy",
-      "title": "计量数据源策略与指标/设备选择",
-      "status": "pending-implementation",
+      "title": "指标数据源配置",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "新增自动/指定真实测点来源、显式None、版本及审计；当前支持已审定PV/负荷功率、SOC/SOH语义，自动歧义不猜选。来源最新值和时间来自新库真实采样。",
       "domainIds": [
         "station_metrics"
       ],
       "baselineAssessment": "partial-current-capability",
       "remainingScope": [
-        "缺每指标DYNAMIC自动选源/STATIC设备类型和天气站选择；STATIC不是数值常量输入，固定遥测映射不等于可配置选源。"
+        "其他设备类型聚合、天气、守恒及功率判状态公式未核验；原生EMS数据源尚未接入本计算器，既有遥测保持可用。"
       ],
       "acceptanceScenarios": [
         "不可用设备类型不可选；None保留未知；切自动有独立写审计；取消STATIC不改来源。",
@@ -1377,20 +1377,22 @@
       "contractUnknowns": [
         "能量守恒、累计算法优先级及天气刷新时效需冻结契约。",
         "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
-      ]
+      ],
+      "verification": "23项后端测试、4项前端测试、TypeScript与生产构建通过；28次真实HTTP检查通过。31日重算217项结果耗时26.156秒；缺少完整采样的原值/修正值均为空。3683条原始采样数量与全行指纹不变。"
     },
     {
       "workflowId": "station-energy-offset-calibration",
-      "title": "累计/日能源偏移校准与日期替换",
-      "status": "pending-implementation",
+      "title": "电量偏移与重算",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "新增累计/日偏移账本、理由/版本、替换撤销；保留原始值，按站点时区（含夏令时）保守积分，日/月/年结果与重算记录落库。缺采样/歧义/质量无效保留空值。",
       "domainIds": [
         "station_metrics"
       ],
       "baselineAssessment": "no-corresponding-implementation-established",
       "remainingScope": [
-        "缺正负累计校准、按日期替换日偏移、删除及重算传播；原始积分不应被直接覆盖伪装校准。"
+        "参考后端累计/日叠加与历史账单传播未验证；本项目只在完整自然月/年合计加累计偏移一次，不修改历史账单。",
+        "真实历史尚不足完整自然日；存在原始电量参数，但计量边界或历史覆盖未审定时不替代功率积分。"
       ],
       "acceptanceScenarios": [
         "0和负偏移合法；日编辑不能偷改日期；撤销后月年统计可追踪重算；权限撤销拒写。",
@@ -1399,7 +1401,8 @@
       "contractUnknowns": [
         "生效延迟、累计与日偏移叠加顺序、历史账单重算边界待定。",
         "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
-      ]
+      ],
+      "verification": "23项后端测试、4项前端测试、TypeScript与生产构建通过；28次真实HTTP检查通过。31日重算217项结果耗时26.156秒；缺少完整采样的原值/修正值均为空。3683条原始采样数量与全行指纹不变。"
     },
     {
       "workflowId": "station-generation-monthly-plans",

@@ -8,6 +8,7 @@ import OperationsCenterPage from './OperationsCenterPage'
 import MaintenanceCenterPage from './MaintenanceCenterPage'
 import type { StationSubNav, UserRole } from "@/auth/roles"
 import { StationOperationLogs } from './StationOperationLogs'
+import StationMetricEnergyPage from './StationMetricEnergyPage'
 import StationBasicElectricityPage from './StationBasicElectricityPage'
 import StationWiringDiagram from './StationWiringDiagram'
 import StationDataPage from './StationDataPage'
@@ -34,6 +35,7 @@ const SUB_NAVS: readonly StationSubNav[] = [
   "设备详情",
   "电价设置",
   "基本电费",
+  "指标与电量",
   "操作日志",
 ]
 const STATUS_COLOR: Record<string, string> = {
@@ -171,6 +173,7 @@ export default function StationDetailPage({
 
       {/* ── Content ── */}
       {subNav === '操作日志' && <StationOperationLogs key={station.id} stationId={station.id}/>}
+      {subNav === '指标与电量' && <StationMetricEnergyPage key={station.id} station={station} canEdit={hasStationPermission(user,station.id,'asset.edit')} canReadTelemetry={hasStationPermission(user,station.id,'telemetry.read')} registerLeaveGuard={registerLeaveGuard}/>}
       {subNav === '基本电费' && <StationBasicElectricityPage key={station.id} station={station} registerLeaveGuard={registerLeaveGuard}/>}
       {subNav === '场站数据' && <StationDataPage key={station.id} station={station} allowedSubNavs={visibleSubNavs} onNavigate={selectSubNav}/>}
       {subNav === '子场站' && <StationSubstationsPage key={station.id} station={station} onOpenDevice={id=>{setDeviceId(id);selectSubNav('设备详情')}}/>}
@@ -231,7 +234,7 @@ export default function StationDetailPage({
           registerLeaveGuard={registerLeaveGuard}
         />
       )}
-      {subNav !== "操作日志" && subNav !== "基本电费" && subNav !== "场站数据" && subNav !== "子场站" && subNav !== "站点概览" &&
+      {subNav !== "指标与电量" && subNav !== "操作日志" && subNav !== "基本电费" && subNav !== "场站数据" && subNav !== "子场站" && subNav !== "站点概览" &&
         subNav !== "运营管理" && subNav !== "运维管理" &&
         subNav !== "运营收益" &&
         subNav !== "运行策略" &&

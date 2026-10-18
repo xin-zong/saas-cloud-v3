@@ -4,6 +4,7 @@ import { loadStationOperationLogs, type OperationLogFilters, type StationOperati
 import './station-operation-logs.css'
 
 const actionNames: Record<string,string> = {
+ 'station-metric-source.save':'保存指标数据源','station-energy-offset.save':'保存电量偏移','station-energy-offset.revoke':'撤销电量偏移','station-metric.recalculate':'重算场站电量',
  'station.edit':'编辑场站资料','station-wiring-diagram.save':'保存接线图','station-basic-electricity.save':'保存基本电费配置',
  'substation.create':'创建子场站','substation.update':'编辑子场站','substation.devices-replace':'调整子场站设备关联',
  'station-space.create':'创建空间','station-space.rename':'重命名空间','station-space.move':'移动空间','station-space.delete':'删除空间','station-space.bind':'关联空间设备','station-space.unbind':'解除空间设备关联',

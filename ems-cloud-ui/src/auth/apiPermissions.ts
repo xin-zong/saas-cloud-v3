@@ -33,7 +33,7 @@ export function apiRoleConfig(user: AuthUser): RoleConfig {
     canCreateAlarmOrder: has("workorder.create"),
     showGlobalAi: false,
   }
-  if (has("asset.read")) { config.nav.push("资产与站点"); config.stationSubNavs.push("场站数据", "子场站", "设备详情", "一次接线图") }
+  if (has("asset.read")) { config.nav.push("资产与站点"); config.stationSubNavs.push("指标与电量", "场站数据", "子场站", "设备详情", "一次接线图") }
   if (has("asset.read") && has("audit.read")) config.stationSubNavs.push("操作日志")
   if (has("asset.read") && has("tariff.manage")) config.stationSubNavs.push("基本电费")
   if (has("alarm.read")) {
