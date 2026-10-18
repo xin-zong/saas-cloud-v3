@@ -16,6 +16,8 @@ export type StationSubNav =
   | "运营管理"
   | "运维管理"
   | "站点概览"
+  | "场站数据"
+  | "子场站"
   | "运营收益"
   | "运行策略"
   | "告警信息"
@@ -50,7 +52,7 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
     description: "查看资产运营、收益表现与安全状态",
     defaultNav: "总览",
     nav: ["总览", "资产与站点", "运营中心", "分析与报告", "设置"],
-    stationSubNavs: ["站点概览", "运营收益", "告警信息", "运行曲线", "一次接线图", "设备详情"],
+    stationSubNavs: ["站点概览", "场站数据", "子场站", "运营收益", "告警信息", "运行曲线", "一次接线图", "设备详情"],
     operationsTabs: ["运营总览", "收益结算"],
     maintenanceTabs: [],
     workOrderViews: [],
@@ -68,7 +70,7 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
     description: "处理告警、设备异常、巡检任务与运维工单",
     defaultNav: "运维中心",
     nav: ["总览", "资产与站点", "运维中心", "工单与审批", "分析与报告", "设置"],
-    stationSubNavs: ["站点概览", "运行策略", "告警信息", "运行曲线", "一次接线图", "设备详情"],
+    stationSubNavs: ["站点概览", "场站数据", "子场站", "运行策略", "告警信息", "运行曲线", "一次接线图", "设备详情"],
     operationsTabs: [],
     maintenanceTabs: ["运维总览", "告警事件", "设备健康", "固件升级"],
     workOrderViews: ["工单中心", "我的待办"],
@@ -86,7 +88,7 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
     description: "负责建站、设备接入、调试、升级与账号交付",
     defaultNav: "资产与站点",
     nav: ["总览", "资产与站点", "运维中心", "工单与审批", "平台管理", "设置"],
-    stationSubNavs: ["站点概览", "运行策略", "告警信息", "运行曲线", "一次接线图", "设备详情", "电价设置"],
+    stationSubNavs: ["站点概览", "场站数据", "子场站", "运行策略", "告警信息", "运行曲线", "一次接线图", "设备详情", "电价设置"],
     operationsTabs: [],
     maintenanceTabs: ["告警事件", "设备健康", "固件升级"],
     workOrderViews: ["工单中心", "我的待办"],

@@ -25,6 +25,6 @@ export default function MonitorAnalytics({stationIds,names,from,to,onOpenStation
   <div className="overview-dashboard-actions"><h3>平均实测功率排行 (kW)</h3><Button onClick={()=>setDescending(v=>!v)}>{descending?'降序':'升序'}</Button><Button onClick={()=>setMore(v=>!v)}>{more?'收起':'更多（最多100站）'}</Button></div>
   <ol>{ranking.slice(0,more?100:5).map(row=><li key={row.stationId}><button onClick={()=>onOpenStation(row.stationId)}>{names[row.stationId]??row.stationId} · {Number(row.value).toFixed(2)} kW · {row.samples} 桶</button></li>)}</ol>
   {!ranking.length&&<p>暂无可排行采样</p>}
-  <p>此处仅展示实测功率；PR、满发小时、计划完成率、效率和利用率的指标值请查看站点数据快照。</p>
+  <p>此处仅展示实测功率；PR、满发小时、计划完成率、效率和利用率的指标值请查看场站数据。</p>
  </article>
 }

@@ -7,6 +7,8 @@ import {stationRoleConfig} from '@/auth/apiPermissions'
 import OperationsCenterPage from './OperationsCenterPage'
 import MaintenanceCenterPage from './MaintenanceCenterPage'
 import type { StationSubNav, UserRole } from "@/auth/roles"
+import StationDataPage from './StationDataPage'
+import StationSubstationsPage from './StationSubstationsPage'
 import StationOverviewPage from "./StationOverviewPage"
 import StationRevenuePage from "./StationRevenuePage"
 import StationStrategyPage from "./StationStrategyPage"
@@ -18,6 +20,8 @@ import StationPriceSettingsPage from "./StationPriceSettingsPage"
 
 const SUB_NAVS: readonly StationSubNav[] = [
   "站点概览",
+  "场站数据",
+  "子场站",
   "运维管理",
   "运营收益",
   "运行策略",
@@ -159,6 +163,8 @@ export default function StationDetailPage({
       </nav>
 
       {/* ── Content ── */}
+      {subNav === '场站数据' && <StationDataPage key={station.id} station={station} allowedSubNavs={visibleSubNavs} onNavigate={selectSubNav}/>}
+      {subNav === '子场站' && <StationSubstationsPage key={station.id} station={station} onOpenDevice={id=>{setDeviceId(id);selectSubNav('设备详情')}}/>}
       {subNav==='站点概览'&&allowedSubNavs.includes('运营管理')&&<nav className="station-overview-classification" aria-label="站点概览分类"><button aria-pressed={overviewMode==='live'} onClick={()=>void(async()=>{if(overviewMode!=='live'&&requestLeave&&!(await requestLeave()))return;setOverviewMode('live')})()}>运行概览</button><button aria-pressed={overviewMode==='operations'} onClick={()=>setOverviewMode('operations')}>运营总览</button></nav>}
       {subNav==='站点概览'&&overviewMode==='operations'&&allowedSubNavs.includes('运营管理')&&<OperationsCenterPage stations={[station]} allowedTabs={user?stationRoleConfig(user,station.id).operationsTabs:[]} registerLeaveGuard={registerLeaveGuard} requestLeave={requestLeave} onOpenStation={(_id,next)=>selectSubNav(next??'站点概览')}/>}
       {subNav==='运维管理'&&<MaintenanceCenterPage stations={[station]} allowedTabs={user?stationRoleConfig(user,station.id).maintenanceTabs:[]} registerLeaveGuard={registerLeaveGuard} onServerChange={onRefresh} onOpenOrders={onOpenOrders} onOpenStation={(_id,next)=>selectSubNav(next??'站点概览')} onOpenDevice={(_stationId,id)=>{setDeviceId(id);selectSubNav('设备详情')}}/>}
@@ -198,6 +204,7 @@ export default function StationDetailPage({
           }}
         />
       )}
+      {subNav === "设备详情" && allowedSubNavs.includes("子场站") && <button className="station-list-return" onClick={()=>selectSubNav("子场站")}>返回本站子场站</button>}
       {subNav === "设备详情" && (
         <StationDevicesPage
           key={station.id}
@@ -213,7 +220,7 @@ export default function StationDetailPage({
           registerLeaveGuard={registerLeaveGuard}
         />
       )}
-      {subNav !== "站点概览" &&
+      {subNav !== "场站数据" && subNav !== "子场站" && subNav !== "站点概览" &&
         subNav !== "运营管理" && subNav !== "运维管理" &&
         subNav !== "运营收益" &&
         subNav !== "运行策略" &&

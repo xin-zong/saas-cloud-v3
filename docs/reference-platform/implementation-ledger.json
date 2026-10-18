@@ -1577,23 +1577,23 @@
     {
       "workflowId": "child-station-create-capacity-device-link",
       "title": "子站草稿、父容量约束与创建后设备关联",
-      "status": "pending-implementation",
+      "status": "partially-implemented",
       "completed": false,
-      "notes": "按已取得规格实施；个别未知协议/算法逐项保留待办，不将局部源码当外部执行证明。",
+      "notes": "V43 已接通独立子场站创建/编辑/筛选/详情/设备关联与解除、父权限继承、容量和版本约束及审计。新库真实 HTTP 21 次检查通过；关联设备真实遥测 23 项可读。未取得参考子场站记录，不造数。",
       "domainIds": [
         "stations"
       ],
       "baselineAssessment": "no-corresponding-implementation-established",
       "remainingScope": [
-        "缺父站能力约束的子系统创建、首步即持久创建后再绑设备、容量和授权继承；本地向导下一步不是创建成功。"
+        "父能力未知的充电/MPPT 暂不可用。",
+        "父子计量去重及聚合口径未确认，暂不展示子场站聚合电量。"
       ],
       "acceptanceScenarios": [
         "子容量超过父拒绝；首步成功后取消第二步保留待绑定子站；重复设备归属拒绝；父权限变化即时生效。",
         "同租户有权正常路径及无权/撤权路径分别验证；无数据保持真实空态，刷新后只显示服务器已持久化事实。"
       ],
       "contractUnknowns": [
-        "容量总和约束、父子计量去重及继承规则尚未取得。",
-        "本次仅静态源码核查；数据库现状、接口运行结果、参考后端行为及完整页面导航均未验证。"
+        "参考平台写入流程未执行，容量总和与父子聚合规则未取得。"
       ]
     },
     {
