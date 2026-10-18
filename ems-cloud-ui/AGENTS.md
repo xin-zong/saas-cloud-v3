@@ -1,6 +1,6 @@
 # figma-make-app
 
-本分支以根 AGENTS.md 的 2026-10-18 用户最新指令为准：只参考 QUDEOX 网站和核实清单，不再读取或参考 Figma。下方 Figma 规则保留为历史说明，不适用于本分支后续页面改造。
+本分支以根 AGENTS.md 的 2026-10-18 用户最新指令为准：业务参考 QUDEOX 网站和核实清单，视觉以 Tabler（preview.tabler.io）和 shadcn blocks（ui.shadcn.com/blocks）为基础，不再照搬 QUDEOX UI，也不读取或参考 Figma。下方 Figma 规则保留为历史说明，不适用于本分支后续页面改造。
 
 ## Figma Design Source
 

@@ -41,6 +41,7 @@ class SubstationPostgresTest {
   db.execute("ALTER TABLE device ADD COLUMN archived_at timestamptz"); db.execute("ALTER TABLE app_user ADD COLUMN display_name text");
     db.execute(Files.readString(Path.of("src/main/resources/db/migration/V44__station_operation_logs.sql")));
     db.execute(Files.readString(Path.of("src/main/resources/db/migration/V43__substations.sql")));
+  db.execute(Files.readString(Path.of("src/main/resources/db/migration/V50__substation_archive.sql")));
   access=mock(AccessControl.class);when(access.userId()).thenReturn(7L);when(access.context()).thenReturn(new TenantContext(7,11,"enterprise",false));
   telemetry=mock(StationTelemetryService.class);service=new SubstationService(new DomainSupport(db,access),telemetry);
  }
@@ -104,6 +105,35 @@ class SubstationPostgresTest {
   service.replaceDevices(101,id(a),new SubstationService.BindRequest(List.of("19"),1L));
   when(telemetry.snapshot(101,List.of(190L,191L),false)).thenAnswer(inv->{doThrow(new BusinessException(403,"revoked")).when(access).requireStationPermission(101,"telemetry.read");return Map.of("items",List.of());});
   assertEquals(403,assertThrows(BusinessException.class,()->service.telemetry(101,id(a))).status());
+ }
+ @Test void archivePreservesHistoryReleasesDevicesAndRejectsStaleOrForeignRequests(){
+  var child=service.create(101,request("Archive","10",null));
+  service.replaceDevices(101,id(child),new SubstationService.BindRequest(List.of("19"),1L));
+  failure(409,()->service.archive(101,id(child),new SubstationService.DeleteRequest(1L)));
+  failure(404,()->service.archive(102,id(child),new SubstationService.DeleteRequest(2L)));
+  doThrow(new BusinessException(403,"denied")).when(access).requireStationPermission(101,"asset.edit");
+  failure(403,()->service.archive(101,id(child),new SubstationService.DeleteRequest(2L)));
+  doNothing().when(access).requireStationPermission(101,"asset.edit");
+  service.archive(101,id(child),new SubstationService.DeleteRequest(2L));
+  assertTrue(service.list(101).isEmpty());
+  failure(404,()->service.detail(101,id(child)));
+  failure(404,()->service.replaceDevices(101,id(child),new SubstationService.BindRequest(List.of("20"),3L)));
+  assertEquals(List.of(19L),db.queryForList("SELECT device_id FROM substation_device_history WHERE substation_id=?",Long.class,id(child)));
+  assertEquals(0,db.queryForObject("SELECT count(*) FROM substation_device",Integer.class));
+  assertEquals(2,db.queryForObject("SELECT count(*) FROM measurement_point WHERE device_id=19",Integer.class));
+  var replacement=service.create(101,request("Archive","10",null));
+  service.replaceDevices(101,id(replacement),new SubstationService.BindRequest(List.of("19"),1L));
+  assertEquals(1,db.queryForObject("SELECT count(*) FROM audit_event WHERE action='substation.archive'",Integer.class));
+ }
+ @Test void archiveAuditFailureRollsBackArchiveAndMembership(){
+  var child=service.create(101,request("Rollback","10",null));
+  service.replaceDevices(101,id(child),new SubstationService.BindRequest(List.of("19"),1L));
+  db.execute("ALTER TABLE audit_event ADD CONSTRAINT reject_archive CHECK(action <> 'substation.archive') NOT VALID");
+  var nested=manager.getTransaction(new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_NESTED));
+  try{assertThrows(DataIntegrityViolationException.class,()->service.archive(101,id(child),new SubstationService.DeleteRequest(2L)));}finally{manager.rollback(nested);}
+  assertEquals(2L,service.detail(101,id(child)).get("version"));
+  assertEquals(List.of("19"),service.detail(101,id(child)).get("deviceIds"));
+  assertEquals(0,db.queryForObject("SELECT count(*) FROM substation_device_history",Integer.class));
  }
  @Test void archivedDevicesAreNotCandidatesOrNewBindingsAndExistingLinksSurviveReplacement(){
   var child=service.create(101,request("Archived boundary","10",null));

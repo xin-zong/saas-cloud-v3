@@ -20,3 +20,24 @@ export function toggleSubstationSystem(d:SubstationDraft,system:string,checked:b
  const next={...d,systems};for(const [key,,required] of capacityFields)if(!systems.includes(required))next[key]=null
  return next
 }
+
+// Reference list columns verified in monitor--index-DvfM7jaW.js. Missing aggregates remain unknown.
+export const substationColumns = {
+ pv: [['solarCapacityKw','光伏装机容量 (kWp)'],['generationPower','光伏发电功率 (kW)'],['generationCapacity','功率归一化 (%)'],['powerGenerationTrend','光伏发电趋势'],['generationValue','当日光伏发电量 (kWh)'],['fullPowerHoursDay','当日满发小时 (h)'],['prYesterday','昨日 PR (%)'],['generationValueMonth','当月光伏发电量 (kWh)'],['generationValueTotalActual','总光伏发电量 (kWh)'],['weeklyFullPowerHours','本周满发小时 (h)'],['monthlyFullPowerHours','本月满发小时 (h)'],['yearlyFullPowerHours','本年满发小时 (h)'],['weeklyAvgPr','本周 PR (%)'],['monthlyAvgPr','本月 PR (%)'],['yearlyAvgPr','本年 PR (%)']],
+ storage: [['batterySoc','SOC (%)'],['batterySoh','SOH (%)'],['weeklyChargeDischargeEfficiency','本周充放电效率 (%)'],['monthlyChargeDischargeEfficiency','本月充放电效率 (%)'],['yearlyChargeDischargeEfficiency','本年充放电效率 (%)'],['weeklyChargeDischargeUtilizationRatio','本周充放电利用率 (%)'],['monthlyChargeDischargeUtilizationRatio','本月充放电利用率 (%)'],['yearlyChargeDischargeUtilizationRatio','本年充放电利用率 (%)'],['storagePowerKw','储能额定功率 (kW)'],['storageCapacityKwh','储能额定容量 (kWh)'],['batteryPower','储能功率 (kW)'],['batteryStatus','充放电状态'],['chargeValue','当日充电量 (kWh)'],['dischargeValue','当日放电量 (kWh)'],['chargeUploadTotal','累计充电量 (kWh)'],['dischargeUploadTotal','累计放电量 (kWh)']],
+} as const
+export function selectSubstations(rows:Substation[],search:string,type:string,sort:string,descending:boolean){
+ return rows.filter(r=>r.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())&&(!type||(type==='hybrid'?r.systems.includes('pv')&&r.systems.includes('storage'):r.systems.includes(type)&&!r.systems.includes(type==='pv'?'storage':'pv')))).sort((a,b)=>{
+ const av=a[sort as keyof Substation],bv=b[sort as keyof Substation];if(av==null&&bv==null)return a.id.localeCompare(b.id);if(av==null)return 1;if(bv==null)return -1;
+ const c=typeof av==='number'&&typeof bv==='number'?av-bv:String(av).localeCompare(String(bv),'zh-CN');return (descending?-c:c)||a.id.localeCompare(b.id)
+ })
+}
+
+export function substationCsv(rows:unknown[][]){const cell=(value:unknown)=>'"'+String(value??'').replace(/^[=+@\-\t\r\n]/,"'$&").replace(/"/g,'""')+'"';return '\ufeff'+rows.map(row=>row.map(cell).join(',')).join('\r\n')}
+
+export function substationSelectionChanged(selected:string[],initial:string[]){return selected.length!==initial.length||selected.some(id=>!initial.includes(id))}
+export function substationDraftChanged(draft:SubstationDraft|null,initial?:SubstationDraft){
+ if(!draft)return false;if(!initial)return true;
+ const fields=['name','solarCapacityKw','storagePowerKw','storageCapacityKwh','chargePowerKw','mpptCapacityKw','azimuth','tilt','voltageKv','roofType','pavedArea'] as const;
+ return substationSelectionChanged(draft.systems,initial.systems)||fields.some(key=>(draft[key]??'')!==(initial[key]??''))
+}

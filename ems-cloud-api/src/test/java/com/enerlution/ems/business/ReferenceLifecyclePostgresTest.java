@@ -28,6 +28,13 @@ class ReferenceLifecyclePostgresTest {
  }
  @AfterEach void cleanup(){if(outer!=null)manager.rollback(outer);}
  Map<String,Object> station(){return new LinkedHashMap<>(Map.of("name","Lifecycle test","address","Test address","region","Test","timezone","Asia/Shanghai","longitude",120,"latitude",30,"systems",List.of("PV"),"siteType","commercial"));}
+ @Test void profileAliasesPreserveZeroAndExplicitClears(){
+  long id=Long.parseLong(service.createStation(station()).get("id").toString());
+  db.update("UPDATE station_profile SET details=?::jsonb WHERE station_id=?","{\"moduleTiltDegrees\":0,\"moduleAzimuthDegrees\":180,\"solarConsumptionMethod\":\"Self-used\"}",id);
+  var result=service.station(id);assertEquals(0,result.get("moduleTilt"));assertEquals(180,result.get("moduleAzimuth"));assertEquals("Self-used",result.get("solarConsumptionMode"));
+  db.update("UPDATE station_profile SET details=details||'{\"moduleTilt\":null,\"moduleAzimuth\":90}'::jsonb WHERE station_id=?",id);
+  result=service.station(id);assertNull(result.get("moduleTilt"));assertEquals(90,result.get("moduleAzimuth"));
+ }
  @Test void persistenceVersionsArchiveAndNoFakeImport(){
   var created=service.createStation(station());long id=Long.parseLong(created.get("id").toString());assertEquals(0L,created.get("version"));assertNull(created.get("ratedPowerKw"));
   assertEquals(0,db.queryForObject("SELECT count(*) FROM station_reference_import WHERE station_id=?",Integer.class,id));

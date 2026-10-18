@@ -22,12 +22,15 @@ public class DeviceDetailController {
   }
   private Map<String,Object> device(long station,long device) {
     return s.one("""
-      SELECT d.id,d.station_id,d.code,d.name,d.serial_number,
+      SELECT d.id,d.station_id,d.code,d.name,d.serial_number,st.name AS station_name,child.name AS child_station_name,
         coalesce(m.name,r.model) AS model,coalesce(m.manufacturer,r.manufacturer) AS manufacturer,
         coalesce(m.category,r.category,'OTHER') AS category,r.source_type,r.rated_power_kw,r.capacity_kwh,
         o.firmware_version,o.observed_at,
         CASE WHEN o.observed_at>now() THEN NULL WHEN o.observed_at<now()-interval '15 minutes' THEN 'offline' ELSE o.communication_status END AS communication_status
-      FROM device d LEFT JOIN device_model m ON m.id=d.model_id
+      FROM device d JOIN station st ON st.id=d.station_id
+      LEFT JOIN substation_device membership ON membership.device_id=d.id AND membership.station_id=d.station_id
+      LEFT JOIN substation child ON child.id=membership.substation_id AND child.station_id=d.station_id AND child.archived_at IS NULL
+      LEFT JOIN device_model m ON m.id=d.model_id
       LEFT JOIN device_reference_profile r ON r.device_id=d.id LEFT JOIN device_observation o ON o.device_id=d.id
       WHERE d.station_id=? AND d.id=?
       """,station,device);

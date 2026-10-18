@@ -1,0 +1,145 @@
+/* Station workspace visual language, 2026-10-18.
+ * References: https://preview.tabler.io/ (dashboard/card/table hierarchy)
+ * https://ui.shadcn.com/blocks (quiet surfaces, inset navigation and controls).
+ * Original scoped CSS; no vendor assets, fonts, runtime or example data copied.
+ */
+.station-workspace-theme{
+ --sw-bg:#f6f8f7;--sw-surface:#fff;--sw-border:#e3e9e6;--sw-text:#25362e;
+ --sw-muted:#748078;--sw-accent:#278460;--sw-accent-hover:#1d6c4d;--sw-tint:#eaf5ef;
+ --sw-radius:10px;--sw-shadow:0 1px 3px #203a2c06,0 4px 14px #203a2c03;
+ height:100%;min-height:0;min-width:0;color:var(--sw-text);font-family:Inter,"Segoe UI","Microsoft YaHei",sans-serif;font-size:13px;line-height:1.5;
+}
+.station-workspace-theme :is(.rs-page,.rq-settings,.reference-devices){font-family:inherit;color:var(--sw-text);font-size:13px;background:var(--sw-bg)}
+.station-workspace-theme :is(button,input,select,textarea){font-family:inherit;transition:background-color .14s,border-color .14s,box-shadow .14s}
+.station-workspace-theme :is(button,input,select,textarea):focus-visible{outline:2px solid var(--sw-accent);outline-offset:3px}
+.station-workspace-theme :is(.rs-page,.rq-settings,.rq-modal,.ref-lifecycle-modal) button{border-radius:7px;min-height:34px;font-size:12px;font-weight:500;border-color:var(--sw-border);box-shadow:0 1px 2px #122c1d04}
+.station-workspace-theme :is(.rs-page,.rq-settings,.rq-modal) button:hover:not(:disabled){color:var(--sw-accent);background:#f4f8f5;border-color:#b7d4c4}
+.station-workspace-theme :is(button:disabled,input:disabled,select:disabled){opacity:.55;cursor:not-allowed}
+.station-workspace-theme :is(.rs-page,.rq-settings,.rq-modal) :is(input:not([type=checkbox]):not([type=radio]),select,textarea){border:1px solid var(--sw-border);border-radius:7px;min-height:36px;background:#fff;padding:8px 11px;color:var(--sw-text);box-shadow:0 1px 2px #122c1d03}
+.station-workspace-theme :is(input[type=checkbox],input[type=radio]){accent-color:var(--sw-accent)}
+.station-workspace-theme :is(.primary,.rq-primary){background:var(--sw-accent)!important;border-color:var(--sw-accent)!important;color:#fff!important}
+.station-workspace-theme :is(.primary,.rq-primary):hover:not(:disabled){background:var(--sw-accent-hover)!important}
+.station-workspace-theme :is(.rs-note,.rq-note,.rs-muted){color:var(--sw-muted);font-size:12px;line-height:1.7}
+.station-workspace-theme :is(.rs-error,.rq-error,.rd-error){border:1px solid #f2d5d2;border-radius:8px;background:#fff5f4;color:#a13f37;margin:10px 0;padding:12px 16px}
+.station-workspace-theme :is(.rs-message,.rq-notice){border:1px solid #cde6d7;border-radius:8px;background:#eff8f2;color:#276c48;padding:12px 16px}
+/* A quieter breadcrumb strip and a generous station heading. */
+.station-workspace-theme .rs-workspace-tabs{height:40px;padding:0 24px;gap:8px;background:var(--sw-bg);border-bottom:1px solid var(--sw-border);font-size:12px}
+.station-workspace-theme .rs-workspace-tabs>button{border:0;background:transparent;box-shadow:none;color:var(--sw-muted)}
+.station-workspace-theme .rs-workspace-tabs>span{height:32px;border-radius:6px 6px 0 0;color:var(--sw-text);padding:0 10px;background:#fff}
+.station-workspace-theme .rs-workspace-tabs span button{min-height:24px;background:transparent;box-shadow:none;margin-left:12px}
+.station-workspace-theme .rs-station-header{min-height:86px;height:auto;padding:20px 26px;gap:14px;flex-wrap:wrap;background:#fff}
+.station-workspace-theme .rs-station-header>strong{font-size:23px;letter-spacing:-.5px;font-weight:650;color:#20392d}
+.station-workspace-theme .rs-header-tags{gap:6px}
+.station-workspace-theme .rs-tag{background:var(--sw-tint);color:var(--sw-accent);font-size:11px;font-weight:500;border:1px solid #dceee3;padding:3px 9px;border-radius:5px}
+.station-workspace-theme .rs-header-tags .rs-tag-edit{font-size:11px;color:var(--sw-muted);box-shadow:none;padding:0 4px}
+.station-workspace-theme .rs-refresh-controls{border-color:var(--sw-border);border-radius:7px;overflow:hidden;min-height:34px}
+.station-workspace-theme .rs-refresh-controls select{min-height:32px;font-size:12px;box-shadow:none}
+.station-workspace-theme .rs-header-actions{gap:8px}
+.station-workspace-theme .rs-tabs{gap:6px;padding:0 24px 12px;background:#fff;border-bottom:1px solid var(--sw-border)}
+.station-workspace-theme .rs-tabs button{padding:8px 13px;border:0;border-radius:6px;min-height:34px;box-shadow:none;color:#708078;font-weight:500;font-size:12px}
+.station-workspace-theme .rs-tabs button[aria-selected=true]{background:var(--sw-tint);color:var(--sw-accent);font-weight:600;border:0}
+.station-workspace-theme .rs-body{padding:22px 24px;min-height:calc(100vh - 230px)}
+/* Surface and table hierarchy inspired by Tabler, with shadcn-style borders. */
+.station-workspace-theme :is(.rs-panel,.rq-sheet){border:1px solid var(--sw-border);border-radius:var(--sw-radius);box-shadow:var(--sw-shadow);padding:20px;margin-bottom:18px;background:var(--sw-surface)}
+.station-workspace-theme :is(.rs-panel,.rq-title) h3{font-size:15px;font-weight:600;letter-spacing:-.2px;color:var(--sw-text)}
+.station-workspace-theme .rs-toolbar{gap:10px;min-height:38px;margin-bottom:18px}
+.station-workspace-theme :is(.rs-page,.rq-settings,.rq-modal) table{font-size:12px}
+.station-workspace-theme :is(.rs-page,.rq-settings,.rq-modal) th{background:#f5f8f6;color:#718078;font-size:11px;font-weight:600;height:43px;padding:12px 16px;border-color:var(--sw-border)}
+.station-workspace-theme :is(.rs-page,.rq-settings,.rq-modal) td{padding:14px 16px;border-color:#edf1ee;color:#46564c}
+.station-workspace-theme :is(.rs-page,.rq-settings) tbody tr:hover td{background:#f8fbf9}
+.station-workspace-theme :is(.rs-page,.rq-settings) td button{color:var(--sw-accent);box-shadow:none;min-height:28px}
+.station-workspace-theme .rs-table-scroll{border:1px solid var(--sw-border);border-radius:8px}
+.station-workspace-theme :is(.rs-pagination,.rq-count){font-size:12px;color:var(--sw-muted);padding:14px 0}
+.station-workspace-theme :is(.rs-empty,.rq-empty){color:#839189;min-height:250px;font-size:12px;gap:16px}
+.station-workspace-theme .rs-empty svg{color:#a9bbb0;background:#eff5f1;padding:12px;border-radius:18px;width:76px;height:76px}
+.station-workspace-theme .rs-stat-grid{padding:24px 12px;gap:28px}
+.station-workspace-theme .rs-stat-grid strong{color:var(--sw-accent);font-size:28px;letter-spacing:-.7px;font-weight:600}
+.station-workspace-theme .rs-overview{gap:18px}
+.station-workspace-theme .rs-point-grid{background:transparent;gap:12px}
+.station-workspace-theme .rs-point-grid>div{border:1px solid var(--sw-border);border-radius:8px;padding:18px}
+.station-workspace-theme .rs-point-grid strong{font-size:21px;color:var(--sw-text)}
+/* Station device inventory: inset category navigation and a distinct tool strip. */
+.station-workspace-theme .rd-station-devices{--rd-teal:var(--sw-accent);background:#fff;border:1px solid var(--sw-border);border-radius:var(--sw-radius);overflow:hidden;box-shadow:var(--sw-shadow);min-height:560px}
+.station-workspace-theme .rd-station-devices .rd-toolbar{height:66px;margin-left:176px;padding:0 20px;gap:10px;border-bottom-color:var(--sw-border)}
+.station-workspace-theme .rd-station-devices .rd-toolbar h1{font-size:14px;font-weight:600;color:var(--sw-text);margin-right:8px}
+.station-workspace-theme .rd-toolbar>.rd-add{min-height:34px;height:34px;background:var(--sw-accent);border-color:var(--sw-accent);border-radius:7px;box-shadow:0 1px 2px #123c2110;color:white;font-size:12px}
+.station-workspace-theme .rd-station-devices .rd-toolbar>.rd-add{background:var(--sw-accent);border-color:var(--sw-accent)}
+.station-workspace-theme .rd-toolbar>.rd-add:hover:not(:disabled){background:var(--sw-accent-hover);color:white}
+.station-workspace-theme .rd-station-devices .rd-search{height:36px;border-radius:7px;border-color:var(--sw-border);width:260px;padding:0 11px;background:#fff}
+.station-workspace-theme .rd-station-devices .rd-search input{border:0;min-height:0;padding:0;box-shadow:none;background:transparent;font-size:12px}
+.station-workspace-theme .rd-station-devices .rd-toolbar>button:not(.rd-add){height:34px;width:34px;border-radius:7px;border-color:var(--sw-border)}
+.station-workspace-theme .rd-station-devices .rd-category-rail{width:176px;margin-top:-66px;padding:14px 10px;background:#fbfcfb;border-color:var(--sw-border)}
+.station-workspace-theme .rd-category-rail>select{height:36px;min-height:36px;width:100%;margin:0 0 20px;border-color:var(--sw-border);border-radius:7px;font-size:12px}
+.station-workspace-theme .rd-category-rail [role=tab]{height:38px;min-height:38px;margin-bottom:4px;padding:0 12px;border:0;border-radius:7px;box-shadow:none;font-size:12px;background:transparent;color:#6a7970}
+.station-workspace-theme .rd-category-rail [role=tab][aria-selected=true]{background:var(--sw-tint);color:var(--sw-accent);font-weight:600;border:0}
+.station-workspace-theme .rd-category-rail small{font-size:9px;border:1px solid var(--sw-border);padding:0 4px;border-radius:3px}
+.station-workspace-theme .rd-station-devices .rd-facets{gap:6px;padding:14px 20px;background:white}
+.station-workspace-theme .rd-facets button{height:30px;min-height:30px;border:1px solid var(--sw-border);border-radius:6px;padding:0 10px;color:#708078;font-size:11px;box-shadow:none}
+.station-workspace-theme .rd-facets button.selected{background:var(--sw-tint);color:var(--sw-accent);border-color:#c6e1d1}
+.station-workspace-theme .rd-station-devices .rd-facets select{min-height:30px;height:30px;padding:0 10px;border-radius:6px;font-size:11px}
+.station-workspace-theme .rd-table-area th{height:44px;background:#f5f8f6;color:#758078;border-color:var(--sw-border);font-size:11px}
+.station-workspace-theme .rd-table-area th>button{background:transparent;border:0;padding:0;box-shadow:none;min-height:28px;color:inherit}
+.station-workspace-theme .rd-table-area td{height:62px;border-color:#edf1ee;padding:12px 16px;line-height:19px;font-size:12px}
+.station-workspace-theme .rd-table-area tr:nth-child(even) td{background:#fcfdfc}
+.station-workspace-theme .rd-table-area .rd-device-link{color:var(--sw-accent);font-size:12px;line-height:19px;min-height:0;box-shadow:none;background:transparent;border:0;padding:0}
+.station-workspace-theme .rd-actions button{width:27px;height:27px;min-height:27px;border-radius:6px;border:1px solid var(--sw-border);background:#fff;padding:0;box-shadow:none}
+.station-workspace-theme .rd-actions .rd-delete{background:#fff5f4;color:#be5e52;border-color:#f2d9d5}
+.station-workspace-theme .rd-pagination{height:58px;padding:0 20px;border-top:1px solid var(--sw-border)}
+.station-workspace-theme .rd-current{background:var(--sw-tint);border-radius:6px;color:var(--sw-accent)}
+/* Settings use inset navigation and grouped information cards. */
+.station-workspace-theme .rq-settings{gap:20px;background:transparent}
+.station-workspace-theme .rq-settings>nav{width:190px;align-self:flex-start;padding:8px;border:1px solid var(--sw-border);border-radius:var(--sw-radius);box-shadow:var(--sw-shadow)}
+.station-workspace-theme .rq-settings>nav button{padding:10px 12px;margin-bottom:3px;min-height:38px;border:0;border-radius:6px;font-size:12px;box-shadow:none;color:#6a7970}
+.station-workspace-theme .rq-settings>nav button[aria-current=page]{background:var(--sw-tint);color:var(--sw-accent);font-weight:600}
+.station-workspace-theme .rq-content{padding:0;overflow:visible}
+.station-workspace-theme .rq-title{min-height:40px;margin-bottom:16px}
+.station-workspace-theme .rq-title h3{font-size:18px;letter-spacing:-.3px}
+.station-workspace-theme .rq-sheet{padding:24px;margin-bottom:16px;flex:none}
+.station-workspace-theme .rq-info{gap:22px 26px}
+.station-workspace-theme .rq-info dt{font-size:11px;color:var(--sw-muted);margin-bottom:7px}
+.station-workspace-theme .rq-info dd{font-size:13px;color:var(--sw-text);margin-bottom:8px;line-height:1.7}
+.station-workspace-theme .rq-sheet h4{font-size:13px;font-weight:600;margin:24px 0 18px;border-color:var(--sw-border);color:var(--sw-text)}
+.station-workspace-theme .rq-source-modes>div{border-color:var(--sw-border);border-radius:var(--sw-radius);padding:22px;box-shadow:var(--sw-shadow)}
+.station-workspace-theme .rq-source-layout{padding:0;overflow:hidden}
+.station-workspace-theme .rq-source-layout>nav{padding:8px;width:150px;background:#fbfcfb;border-color:var(--sw-border)}
+.station-workspace-theme .rq-source-layout>nav button{padding:10px;border-radius:6px;margin-bottom:4px}
+.station-workspace-theme .rq-source-layout>nav button[aria-pressed=true]{background:var(--sw-tint);color:var(--sw-accent);border:0}
+.station-workspace-theme .rq-offset-menu button[aria-pressed=true]{border-color:#bdd9c9;color:var(--sw-accent);background:var(--sw-tint)}
+/* Modal and drawer treatments stay within this workspace. */
+.station-workspace-theme :is(.rs-modal-backdrop,.rq-modal-shade,.rd-detail-backdrop){background:#14251d55;backdrop-filter:blur(2px)}
+.station-workspace-theme :is(.rs-modal,.rq-modal,.rd-dialog){border:1px solid var(--sw-border);border-radius:14px;box-shadow:0 24px 80px #10261926;color:var(--sw-text)}
+.station-workspace-theme .rs-modal{padding:26px}
+.station-workspace-theme :is(.rs-modal,.rq-modal) header{border-bottom:1px solid var(--sw-border);padding-bottom:18px;font-size:17px}
+.station-workspace-theme :is(.rs-modal,.rq-modal) footer{border-top:1px solid var(--sw-border);padding-top:18px;gap:10px}
+.station-workspace-theme .rq-modal>header,.station-workspace-theme .rq-modal>footer{padding:20px 24px}
+.station-workspace-theme .rq-modal-body{padding:24px}
+.station-workspace-theme .rs-substation-drawer>.rs-modal{border-radius:14px 0 0 14px;padding:26px}
+.station-workspace-theme .rd-detail-drawer{width:min(1080px,calc(100% - 180px));border-radius:14px 0 0 14px;border-left:1px solid var(--sw-border);box-shadow:-18px 0 70px #14251d20;overflow:auto;background:var(--sw-bg)}
+.station-workspace-theme .rd-device-detail .rs-header{height:64px;padding:0 24px}
+.station-workspace-theme .rd-device-detail .rs-header>strong{font-size:16px;font-weight:600}
+.station-workspace-theme .rd-device-detail .rs-body{padding:20px}
+.station-workspace-theme .rd-detail-grid{gap:16px}
+.station-workspace-theme .rd-detail-grid>.rs-panel{padding:20px;border-radius:10px;border:1px solid var(--sw-border);box-shadow:var(--sw-shadow)}
+.station-workspace-theme .rd-device-detail h3{font-size:14px;padding-bottom:14px;margin-bottom:16px;border-color:var(--sw-border)}
+.station-workspace-theme .rd-device-detail .rs-point-grid{gap:10px}
+.station-workspace-theme .rd-device-detail .rs-point-grid>div{padding:12px;background:#f8faf9;border:1px solid #edf1ee;border-radius:7px}
+.station-workspace-theme .rd-device-detail .rs-point-grid strong{font-size:16px;color:#2c4c3b}
+.station-workspace-theme .rd-device-detail .rs-stat-grid{padding:4px 0;gap:18px 12px}
+@media(max-width:1100px){.station-workspace-theme .rs-body{padding:18px}.station-workspace-theme .rs-tabs{padding-left:18px;padding-right:18px}.station-workspace-theme .rs-tabs button{padding:8px 10px}.station-workspace-theme .rd-station-devices .rd-search{width:200px}.station-workspace-theme .rd-station-devices .rd-toolbar h1{display:none}.station-workspace-theme .rq-settings{gap:14px}.station-workspace-theme .rq-settings>nav{width:155px}}
+@media(max-width:760px){.station-workspace-theme .rs-body{padding:12px}.station-workspace-theme .rs-station-header{padding:18px;gap:10px}.station-workspace-theme .rs-station-header>strong{font-size:20px}.station-workspace-theme .rs-header-actions{margin-left:0}.station-workspace-theme .rq-settings{flex-direction:column}.station-workspace-theme .rq-settings>nav{width:100%;display:flex;overflow:auto;white-space:nowrap;padding:6px}.station-workspace-theme .rq-settings>nav button{width:auto;flex-shrink:0;margin:0 3px}.station-workspace-theme .rq-info{grid-template-columns:1fr 1fr}.station-workspace-theme .rd-station-devices .rd-toolbar{margin-left:132px;padding:0 10px}.station-workspace-theme .rd-station-devices .rd-category-rail{width:132px;padding:14px 6px}.station-workspace-theme .rd-station-devices .rd-search{width:150px}.station-workspace-theme .rd-toolbar>.rd-add{font-size:11px;padding:0 8px}.station-workspace-theme .rd-station-devices .rd-facets{padding:12px;flex-wrap:wrap}.station-workspace-theme .rd-detail-drawer{width:100%;border-radius:0}.station-workspace-theme .rd-device-detail .rs-header>strong{font-size:13px}.station-workspace-theme .rd-detail-grid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.station-workspace-theme :is(button,input,select,textarea){transition:none}}
+.station-workspace-theme .ref-lifecycle-overlay{background:#14251d55;backdrop-filter:blur(2px);color:var(--sw-text)}
+.station-workspace-theme .ref-lifecycle-panel{border:1px solid var(--sw-border);border-radius:14px;box-shadow:0 24px 80px #10261926;overflow:hidden}
+.station-workspace-theme .ref-lifecycle-panel header{height:72px;padding:0 26px;border-color:var(--sw-border)}
+.station-workspace-theme .ref-lifecycle-panel h2{font-size:19px;letter-spacing:-.3px;color:var(--sw-text)}
+.station-workspace-theme .ref-lifecycle-panel button{border-radius:7px;min-height:36px;border-color:var(--sw-border);font-size:12px;font-weight:500}
+.station-workspace-theme .ref-lifecycle-body{padding:26px}
+.station-workspace-theme .ref-lifecycle-field{gap:8px;margin-bottom:22px}
+.station-workspace-theme .ref-lifecycle-field>span{font-size:12px;color:#64746a;font-weight:500}
+.station-workspace-theme .ref-lifecycle-panel :is(input:not([type=checkbox]):not([type=radio]),select){height:38px;border:1px solid var(--sw-border);border-radius:7px;color:var(--sw-text);box-shadow:0 1px 2px #122c1d03}
+.station-workspace-theme .ref-lifecycle-panel :is(input,select):focus{border-color:var(--sw-accent);outline:2px solid #27846020;outline-offset:1px}
+.station-workspace-theme .ref-lifecycle-section{border:1px solid var(--sw-border);border-radius:10px;padding:24px;margin-bottom:18px;box-shadow:var(--sw-shadow)}
+.station-workspace-theme .ref-lifecycle-section h3{font-size:15px;font-weight:600;border-color:var(--sw-border);padding-bottom:16px;margin-bottom:20px}
+.station-workspace-theme .ref-lifecycle-overlay.is-full{background:var(--sw-bg);padding:18px}
+.station-workspace-theme .is-full .ref-lifecycle-panel{border-radius:12px;height:100%}
+.station-workspace-theme .is-full .ref-lifecycle-body{padding:22px;background:var(--sw-bg)}

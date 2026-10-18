@@ -75,12 +75,12 @@ public class SubstationService {
    long count=((Number)row.get("device_count")).longValue();out.put("deviceCount",count);out.put("state",count==0?"pending_devices":"ready");return out;
   }catch(java.io.IOException e){throw new IllegalStateException(e);}
  }
- public List<Map<String,Object>> list(long station){read(station);var result=s.db.queryForList(SELECT+" WHERE c.station_id=? ORDER BY lower(c.name),c.id",station).stream().map(this::output).toList();read(station);return result;}
+ public List<Map<String,Object>> list(long station){read(station);var result=s.db.queryForList(SELECT+" WHERE c.archived_at IS NULL AND c.station_id=? ORDER BY lower(c.name),c.id",station).stream().map(this::output).toList();read(station);return result;}
  public Map<String,Object> detail(long station,UUID id){read(station);var result=one(station,id);read(station);return result;}
- private Map<String,Object> one(long station,UUID id){return output(s.one(SELECT+" WHERE c.station_id=? AND c.id=?",station,id));}
+ private Map<String,Object> one(long station,UUID id){return output(s.one(SELECT+" WHERE c.archived_at IS NULL AND c.station_id=? AND c.id=?",station,id));}
  private void version(long station,UUID id,Long expected){
   if(expected==null||expected<1)throw invalid("expectedVersion 必须为正整数");
-  var row=s.one("SELECT version FROM substation WHERE station_id=? AND id=? FOR UPDATE",station,id);
+  var row=s.one("SELECT version FROM substation WHERE archived_at IS NULL AND station_id=? AND id=? FOR UPDATE",station,id);
   if(((Number)row.get("version")).longValue()!=expected)throw new BusinessException(409,"子场站已更新，请刷新重试");
  }
  public Map<String,Object> create(long station,Request request){edit(station);return write(station,()->{
@@ -93,6 +93,16 @@ public class SubstationService {
   s.db.update("UPDATE substation SET name=?,configuration=?::jsonb,version=version+1,updated_at=clock_timestamp() WHERE station_id=? AND id=?",request.name().strip(),json(config),station,id);
   audit(station,id,"update");return one(station,id);
  });}
+ public record DeleteRequest(@JsonDeserialize(using=StationSpaceService.StrictVersion.class) Long expectedVersion) {}
+ public void archive(long station,UUID id,DeleteRequest request){
+  edit(station);if(request==null)throw invalid("请求不能为空");write(station,()->{
+   version(station,id,request.expectedVersion());
+   s.db.update("INSERT INTO substation_device_history(substation_id,station_id,device_id,linked_at,archived_by) SELECT substation_id,station_id,device_id,created_at,? FROM substation_device WHERE station_id=? AND substation_id=?",s.access.userId(),station,id);
+   s.db.update("DELETE FROM substation_device WHERE station_id=? AND substation_id=?",station,id);
+   s.db.update("UPDATE substation SET archived_at=clock_timestamp(),archived_by=?,version=version+1,updated_at=clock_timestamp() WHERE station_id=? AND id=?",s.access.userId(),station,id);
+   audit(station,id,"archive");return null;
+  });
+ }
  public List<Map<String,Object>> devices(long station){read(station);var result=s.db.queryForList("SELECT d.id::text AS \"deviceId\",d.name,d.code,l.substation_id::text AS \"substationId\",c.name AS \"substationName\" FROM device d LEFT JOIN substation_device l ON l.device_id=d.id LEFT JOIN substation c ON c.id=l.substation_id WHERE d.station_id=? AND d.archived_at IS NULL ORDER BY d.id",station);read(station);return result;}
  public Map<String,Object> replaceDevices(long station,UUID id,BindRequest request){
   edit(station);if(request==null||request.deviceIds()==null||request.deviceIds().size()>200)throw invalid("设备清单最多200项");
