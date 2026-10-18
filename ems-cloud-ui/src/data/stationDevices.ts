@@ -20,6 +20,9 @@ export type StationDevice = {
   code: string;
   group: string;
   sourceType?: string;
+  manufacturer?: string;
+  ratedPowerKw?: number | null;
+  capacityKwh?: number | null;
   status: DeviceStatus;
   model: string;
   serial: string;

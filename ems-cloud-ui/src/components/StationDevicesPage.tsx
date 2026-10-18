@@ -43,6 +43,8 @@ import {
   type DeviceType,type DeviceDetail,type DeviceConfiguration,
 } from "@/data/stationDevices"
 
+const archiveText=(value:unknown)=>value==null||value===''||value==='—'||value==='--'?'未采集':String(value)
+
 type DeviceTab = "概况" | "参数" | "告警" | "版本" | "操作记录"
 
 const TABS: DeviceTab[] = ["概况", "告警", "操作记录"]
@@ -531,22 +533,22 @@ function LiveDeviceDetails({device,station}:{device:StationDevice;station:Statio
   const schema=DEVICE_SCHEMAS[detail.type]??DEVICE_SCHEMAS.other
   const points=detail.points.map(p=>detailPoint(p,observations.find(o=>String(o.pointId)===String(p.id))))
   const archive=detail.archive
-  const archiveValue=(key:string)=>archive[key]==null||archive[key]===''?'—':String(archive[key])
+  const archiveValue=(key:string)=>archiveText(archive[key])
   const tabs=['概况',...(canTelemetry?['实时参数','历史曲线']:[]),'连接关系',...(canAlarm?['告警']:[]),'版本','操作记录','本地配置']
   const selectedPoints=new Set(configuration.selectedPointIds)
   const matched=new Set(schema.match.flatMap(regex=>points.filter(p=>regex.test(p.label)).map(p=>p.id)))
   return <section className="device-details" aria-label="所选设备详情">
     <header className="device-detail-heading"><h2>{device.name}</h2><StatusBadge status={device.status}/><span>{schema.label}</span></header>
-    <p className="device-sync">{archiveValue('manufacturer')} · {archiveValue('model')} · 最近采集 {dateText(String(archive.observed_at??''))}</p>
+    <p className="device-sync">{archiveValue('manufacturer')} · {archiveValue('model')} · 最近采集 {archive.observed_at?dateText(String(archive.observed_at)):'未采集'}</p>
     <div className="device-tabs" style={{overflowX:'auto',flexShrink:0}} role="tablist" aria-label="设备信息标签">{tabs.map(item=><button key={item} role="tab" aria-selected={tab===item} onClick={()=>setTab(item)}>{item}</button>)}</div>
     <div className="device-tab-content" role="tabpanel" aria-label={tab}>
       {tab==='概况'&&<>
         <section className="device-info-band device-info-band--tinted"><h3>{schema.label}档案</h3><DeviceFields fields={[
-          {label:'生产厂家',value:archiveValue('manufacturer')},{label:'型号',value:archiveValue('model')},{label:'设备序列号',value:archiveValue('serial_number')},
+          {label:'所属站点',value:station.name},{label:'设备类型',value:schema.label},{label:'生产厂家',value:archiveValue('manufacturer')},{label:'型号',value:archiveValue('model')},{label:'设备序列号',value:archiveValue('serial_number')},
           {label:'设备编号',value:archiveValue('code')},{label:'来源类型',value:archiveValue('source_type')},{label:'当前固件',value:archiveValue('firmware_version')},
         ]}/></section>
         <section className="device-info-band device-info-band--tinted"><h3>厂家额定参数</h3><DeviceFields fields={[
-          {label:'额定功率',value:archive.rated_power_kw==null?'—':`${archive.rated_power_kw} kW`},{label:'额定容量',value:archive.capacity_kwh==null?'—':`${archive.capacity_kwh} kWh`},
+          {label:'额定功率',value:archive.rated_power_kw==null?'未采集':`${archive.rated_power_kw} kW`},{label:'额定容量',value:archive.capacity_kwh==null?'未采集':`${archive.capacity_kwh} kWh`},
         ]}/></section>
         <section className="device-info-band"><h3>分类数据范围</h3><p>{schema.sections.join(' · ')}</p><p className="device-sync">未接入的测点与采样保留空态。硬件控制、固件下发与完整电芯分析尚未接入。</p></section>
       </>}
@@ -750,6 +752,9 @@ export default function StationDevicesPage({
   station: Station
   initialDeviceId?: string
 }) {
+  const {user}=useAuth()
+  const [view,setView]=useState<'list'|'detail'>('detail')
+  const canExport=DEMO_MODE||hasStationPermission(user,station.id,'report.export')
   const [filter, setFilter] = useState<"all" | DeviceStatus>("all")
 
   const [search, setSearch] = useState("")
@@ -795,9 +800,11 @@ export default function StationDevicesPage({
     { id: "online", label: "在线" },
     { id: "warning", label: "告警" },
     { id: "offline", label: "离线" },
+    { id: "unknown", label: "未知" },
   ]
 
   function exportDevices() {
+    if(!canExport)return
     const rows = [
       [
         "设备名称",
@@ -805,6 +812,9 @@ export default function StationDevicesPage({
         "系统",
         "状态",
         "型号",
+        "厂家",
+        "额定功率(kW)",
+        "额定容量(kWh)",
         "序列号",
         "固件",
         "投运日期",
@@ -821,6 +831,9 @@ export default function StationDevicesPage({
           device.group,
           DEVICE_STATUS_LABEL[device.status],
           device.model,
+          device.manufacturer??"",
+          device.ratedPowerKw==null?"":String(device.ratedPowerKw),
+          device.capacityKwh==null?"":String(device.capacityKwh),
           device.serial,
           device.firmware,
           device.commissionedAt,
@@ -861,7 +874,7 @@ export default function StationDevicesPage({
     <div className="station-devices-page">
 
       <header className="device-toolbar">
-        <h1>设备详情</h1>
+        <h1>设备列表与详情</h1><button className="device-action" aria-pressed={view==='list'} onClick={()=>setView('list')}>设备列表视图</button><button className="device-action" aria-pressed={view==='detail'} onClick={()=>setView('detail')}>设备目录与详情</button>
         <div className="device-filters" role="group" aria-label="设备状态筛选">
           {filters.map((item) => (
             <button
@@ -904,7 +917,7 @@ export default function StationDevicesPage({
           type="button"
           className="device-action device-export"
           onClick={exportDevices}
-          disabled={!filtered.length}
+          disabled={!filtered.length||!canExport}
         >
           <Download size={14} />
           导出设备数据
@@ -913,11 +926,12 @@ export default function StationDevicesPage({
       <div className="device-data-source">
         <span>
           {station.name} ·{" "}
-          {isDemo ? "示例设备数据 · 2 s 刷新" : "已接入设备数据"}
+          {isDemo ? "示例设备数据 · 2 s 刷新" : "已登记设备档案 · 实时采样缺失时明确留空"}
         </span>
         <span role="status">{notice}</span>
       </div>
-      <div className="device-workspace">
+      {view==='list'&&<section className="device-inventory-list" aria-label="设备列表"><label>列表设备类型 <select aria-label="列表设备类型" value={deviceType} onChange={e=>setDeviceType(e.target.value as DeviceType|'all')}><option value="all">全部类型</option>{[...DEVICE_TYPES,'other' as const].map(type=><option key={type} value={type}>{DEVICE_SCHEMAS[type].label}</option>)}</select></label><p>共 {filtered.length} 台 · 通信状态来自当前系统，未知不等于离线；无设备采样时不使用站点快照代替。</p><div className="device-table-scroll"><table className="device-record-table" aria-label="设备档案列表"><thead><tr>{['设备名称','设备类型','所属站点','通信状态','厂家','型号','序列号','额定功率(kW)','额定容量(kWh)','固件','最近采集','操作'].map(label=><th key={label}>{label}</th>)}</tr></thead><tbody>{filtered.map(d=><tr key={d.id} data-device-id={d.id}><td>{d.name}</td><td>{DEVICE_SCHEMAS[deviceTypeFromSource(d.sourceType,d.group)].label}</td><td>{station.name}</td><td>{DEVICE_STATUS_LABEL[d.status]}</td><td>{archiveText(d.manufacturer)}</td><td>{archiveText(d.model)}</td><td>{archiveText(d.serial)}</td><td>{archiveText(d.ratedPowerKw)}</td><td>{archiveText(d.capacityKwh)}</td><td>{archiveText(d.firmware)}</td><td>{d.updatedAt?dateText(d.updatedAt):'未采集'}</td><td><button className="device-action" aria-label={`查看设备 ${d.name}`} onClick={()=>{setSelectedId(d.id);setView('detail')}}>查看详情</button></td></tr>)}</tbody></table></div>{!filtered.length&&<p>暂无符合条件的设备</p>}</section>}
+      <div className="device-workspace" style={view==='list'?{display:'none'}:undefined}>
         <aside className="device-directory" aria-label="设备目录">
           <header>
             <h2>设备目录</h2>
@@ -979,6 +993,7 @@ export default function StationDevicesPage({
                 className="device-action"
                 onClick={() => {
                   setFilter("all")
+                  setDeviceType("all")
                   setSearch("")
                 }}
               >

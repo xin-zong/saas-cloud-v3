@@ -10,7 +10,7 @@ test('device types, persistent local configuration, bounded EMS history and true
   const permissions=['asset.read','asset.edit','telemetry.read','alarm.read']
   const user={id:'7',name:'设备验收用户',account:'device@test',role:'operator',organization:'验收组织',stationIds:['12'],permissions,stationPermissions:{'12':permissions},organizationPermissions:{}}
   const sources=['Inverter','Energy Storage Cabinet','PCS','Battery Cluster','Battery Stack','Air Conditioner','Smart Meter','Logger','EMS']
-  const devices=sources.map((source_type,i)=>({id:i+1,name:`验收${source_type}`,code:`DEVICE-${i+1}`,serial_number:`SYNTHETIC-${i+1}`,source_type,category:'OTHER'}))
+  const devices=sources.map((source_type,i)=>({id:i+1,name:`验收${source_type}`,code:`DEVICE-${i+1}`,serial_number:`SYNTHETIC-${i+1}`,source_type,category:'OTHER',rated_power_kw:0,capacity_kwh:100}))
   await page.addInitScript(()=>sessionStorage.setItem('enerlution-api-token','device-test'))
   await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com|static\.figma\.com/,r=>r.abort())
   await page.route(/^http:\/\/127\.0\.0\.1:1809[01]\/api\//,async route=>{
@@ -32,8 +32,16 @@ test('device types, persistent local configuration, bounded EMS history and true
    else if(p==='/points/31/history')data=[]
    await route.fulfill({json:{code:0,data}})
   })
-  async function open(){await page.goto(process.env.API_PREVIEW_URL||'http://127.0.0.1:8444',{waitUntil:'domcontentloaded'});try {await page.getByRole('navigation',{name:'一级导航'}).getByRole('button',{name:'电站管理',exact:true}).click();await page.locator('.station-name-button').first().click();await page.getByRole('button',{name:'设备详情',exact:true}).click();await page.getByLabel('设备类型').waitFor()} catch(e){console.log('UI diagnostics:',await page.locator('body').innerText(),errors,requests.slice(-10));throw e}}
+  async function open(){await page.goto(process.env.API_PREVIEW_URL||'http://127.0.0.1:8444',{waitUntil:'domcontentloaded'});try {await page.getByRole('navigation',{name:'一级导航'}).getByRole('button',{name:'电站管理',exact:true}).click();await page.getByRole('button',{name:'列表查询',exact:true}).click();await page.locator('.station-name-button').first().click();await page.getByRole('button',{name:'设备详情',exact:true}).click();await page.getByLabel('设备类型').waitFor()} catch(e){console.log('UI diagnostics:',await page.locator('body').innerText(),errors,requests.slice(-10));throw e}}
   await open()
+  await page.getByRole('button',{name:'设备列表视图',exact:true}).click()
+  assert.equal(await page.getByRole('table',{name:'设备档案列表'}).locator('tbody tr').count(),9)
+  assert.equal(await page.getByRole('table',{name:'设备档案列表'}).locator('tbody tr').first().locator('td').nth(7).innerText(),'0')
+  assert.equal(await page.getByRole('button',{name:'导出设备数据',exact:true}).isDisabled(),true)
+  await page.getByRole('button',{name:/未知\s*9/}).click()
+  assert.equal(await page.getByRole('table',{name:'设备档案列表'}).locator('tbody tr').count(),9)
+  await page.getByRole('button',{name:'查看设备 验收Battery Cluster',exact:true}).click()
+  await page.getByRole('heading',{name:'电池簇档案',exact:true}).waitFor()
   assert.equal(await page.getByLabel('设备类型').locator('option').count(),11)
   await page.getByLabel('设备类型').selectOption('battery-cluster');await page.getByRole('heading',{name:'电池簇档案',exact:true}).waitFor()
   await page.getByRole('tab',{name:'本地配置',exact:true}).click()
@@ -49,7 +57,7 @@ test('device types, persistent local configuration, bounded EMS history and true
   await page.getByRole('tab',{name:'告警',exact:true}).click();await page.getByText('验收设备采样告警',{exact:true}).waitFor();assert.equal(await page.getByRole('cell',{name:'已恢复',exact:true}).count(),1)
   assert.ok(requests.some(u=>u.includes('/alarms/workspace?')&&u.includes('stationId=12')&&u.includes('deviceId=4')));assert.equal(requests.some(u=>u.includes('/workspace/read')),false)
   await page.getByRole('tab',{name:'实时参数',exact:true}).click()
-  const directory=path.resolve(__dirname,'../.figma/device-detail');await fs.mkdir(directory,{recursive:true});await page.screenshot({path:path.join(directory,'battery-cluster-1440.png')})
+  const directory=path.resolve(__dirname,'../../.local-tools/implementation/device-detail');await fs.mkdir(directory,{recursive:true});await page.screenshot({path:path.join(directory,'battery-cluster-1440.png')})
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)
   assert.equal(writes.length,3);assert.deepEqual(configuration.theoryValues,{loopNum:6000,theorySoh:80.5});assert.deepEqual(errors,[])
  }finally{await browser.close()}

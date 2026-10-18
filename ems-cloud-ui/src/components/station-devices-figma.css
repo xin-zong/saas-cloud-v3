@@ -37,3 +37,8 @@
 [data-design-area="stations"] .device-details > footer button {font-size:11px;}
 [data-design-area="stations"] .device-no-selection {border:1px solid #dce2e5; border-radius:8px; min-height:400px;}
 @media(max-width:1150px){[data-design-area="stations"] .device-workspace {grid-template-columns:220px minmax(0,1fr);}[data-design-area="stations"] .device-fields {grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+[data-design-area="stations"] .device-data-source{height:auto;min-height:24px;padding:5px 0;overflow:visible}
+[data-design-area="stations"] .device-data-source>span:first-child{display:inline}
+.device-inventory-list{flex:1;min-height:0;overflow:auto;border:1px solid #dce7df;border-radius:8px;padding:14px;font-size:12px;color:#496354}
+.device-inventory-list p{color:#7a8c80;margin:10px 0}.device-inventory-list select{border:1px solid #dce7df;border-radius:5px;padding:6px;background:#fff}.device-inventory-list table{width:100%;white-space:nowrap}.device-inventory-list th,.device-inventory-list td{padding:10px;text-align:left;border-bottom:1px solid #edf2ee}
