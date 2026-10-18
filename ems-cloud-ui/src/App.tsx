@@ -10,6 +10,9 @@ import { apiRoleConfig, hasStationPermission, stationRoleConfig } from "@/auth/a
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import Sidebar from "@/components/Sidebar"
+import ReferenceWorkspace from '@/components/ReferenceWorkspace'
+import MonitorOverviewPage from '@/components/MonitorOverviewPage'
+import {referencePages,canOpenReferencePage} from '@/navigation/referenceNavigation'
 import StationGlobalHeader from "@/components/StationGlobalHeader"
 import "@/styles/stations-figma.css"
 
@@ -401,6 +404,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   const [monitorSiteFilter,setMonitorSiteFilter]=useState<WorkspaceQuery>({})
+  const [referencePage,setReferencePage]=useState('dashboard')
   const [activeNav, setActiveNav] = useState<NavLabel>(() =>
     getInitialNavFromHash(user),
   )
@@ -452,6 +456,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
     if (!(await requestActiveEditorLeave())) return
 
     setActiveNav("资产与站点")
+    setReferencePage('sites')
     setElectricView('stations')
     setFocusedDevice(deviceId)
 
@@ -490,6 +495,11 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
   }
 
   function requestActiveEditorLeave() {
+    if (!DEMO_MODE) {
+      if(referencePage==='sites') return activeDetailId ? requestStationLeave() : assetsLeaveGuard.current?.() ?? Promise.resolve(true)
+      if(referencePage==='dashboard') return overviewLeaveGuard.current?.() ?? Promise.resolve(true)
+      return Promise.resolve(true)
+    }
     if (activeNav === "总览") return overviewLeaveGuard.current?.() ?? Promise.resolve(true)
     if (activeNav === "资产与站点") return activeDetailId ? requestStationLeave() : electricView==='operations'?requestOperationsLeave():electricView==='maintenance'?maintenanceLeaveGuard.current?.()??Promise.resolve(true):assetsLeaveGuard.current?.() ?? Promise.resolve(true)
     if (activeNav === "运营中心") return requestOperationsLeave()
@@ -883,6 +893,57 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
       }
     }
   }, [stations, user])
+
+  if (!DEMO_MODE) {
+    const referenceEntry = referencePages.find(p => p.id === referencePage)!
+    const permitted = canOpenReferencePage(referenceEntry,user)
+    const navigateReference = async (id:string) => {
+      const target=referencePages.find(p=>p.id===id)
+      if(!target || !(await requestActiveEditorLeave())) return false
+      setReferencePage(id)
+      setActiveNav(id==='sites'?'资产与站点':'总览')
+      setElectricView('stations')
+      setActiveDetailId(null)
+      return true
+    }
+    return <ReferenceWorkspace user={user} page={referencePage} onNavigate={navigateReference} onLogout={requestLogout}>
+      {logoutConfirm && <SettingsDialog title="退出登录？" logout onClose={() => setLogoutConfirm(false)}><p>确认退出当前账户？</p><footer><button onClick={() => setLogoutConfirm(false)}>取消</button><button className="settings-confirm-logout" onClick={() => {void confirmLogout()}}>退出登录</button></footer></SettingsDialog>}
+      {!permitted ? <section className="reference-placeholder"><h2>当前账户无访问权限</h2><p>请联系管理员分配菜单和业务权限。</p></section> : referencePage==='dashboard' ?
+        <MonitorOverviewPage user={user} registerLeaveGuard={registerOverviewLeaveGuard} onOpenStation={handleOpenStation} onOpenSites={async filters=>{if(await requestActiveEditorLeave()){setMonitorSiteFilter(filters);await navigateReference('sites')}}}/>
+      : referencePage==='sites' ? activeDetailId!==null ? (
+          <StationDetailPage
+            onRefresh={refreshApi}
+            tabs={detailTabs
+
+              .map((id) => scopedStations.find((s) => s.id === id)!)
+
+              .filter(Boolean)}
+            activeId={activeDetailId}
+            initialSubNav={detailSubNav}
+            initialDeviceId={focusedDevice}
+            onClose={handleCloseDetailTab}
+            onSetActive={(id) => {
+              void (async () => {
+                if (id !== activeDetailId && !(await requestStationLeave())) return
+                setDetailSubNav(rememberedSubNav.current[id] ?? "站点概览")
+                setActiveDetailId(id)
+              })()
+            }}
+            onBack={handleBackFromDetail}
+            onSubNavChange={(id, subNav) => {
+              rememberedSubNav.current[id] = subNav
+              if (id === activeDetailId) setDetailSubNav(subNav)
+            }}
+            registerLeaveGuard={registerStationLeaveGuard}
+            requestLeave={requestStationLeave}
+            allowedSubNavs={DEMO_MODE ? roleConfig.stationSubNavs : stationRoleConfig(user, activeDetailId).stationSubNavs}
+            role={user.role}
+            onOpenOrders={(stationId,orderId,queue)=>{setWorkOrderFocus({stationId,orderId,queue});setActiveNav('工单与审批')}}
+          />
+      ) : <AssetsPage referenceNavigation stations={scopedStations} monitorFilter={monitorSiteFilter} onUpdateStation={handleUpdateStation} onCreateStation={handleCreateStation} onOpenStation={handleOpenStation} canEdit={user.permissions.includes('asset.edit')} canEditStation={id=>hasStationPermission(user,id,'asset.edit')} showRevenue={roleConfig.showAssetRevenue} registerLeaveGuard={registerAssetsLeaveGuard} onEditorStateChange={setAssetEditorOpen}/>
+      : <section className="reference-placeholder"><h2>{referenceEntry.label}</h2><p>菜单入口已按参考平台建立，该页面尚未完成复刻。</p><p>原有页面已从此入口屏蔽，不以旧页面替代参考页面。</p></section>}
+    </ReferenceWorkspace>
+  }
 
   return (
     <div className="workspace-shell" data-immersive={immersive} data-nav-collapsed={sidebarCollapsed} data-design-area={activeNav === "资产与站点" ? "stations" : activeNav !== "总览" ? "business" : undefined}>

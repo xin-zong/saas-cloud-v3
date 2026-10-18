@@ -18,6 +18,7 @@ import "./station-provision/station-entry.css"
 import MonitorSitesPage from './MonitorSitesPage'
 import type {WorkspaceQuery} from '@/api/monitorWorkspace'
 interface Props {
+  referenceNavigation?: boolean
   stations: Station[]
   onUpdateStation: (id: string, patch: Partial<Station>) => void | Promise<void>
   onCreateStation: (patch: Partial<Station>) => void
@@ -32,6 +33,7 @@ interface Props {
 const number = (value: number, suffix = "") =>
   Number.isFinite(value) ? String(value) + suffix : "—"
 export default function AssetsPage({
+  referenceNavigation = false,
   stations,
   onUpdateStation,
   onOpenStation,
@@ -167,7 +169,7 @@ export default function AssetsPage({
       className="assets-workspace station-entry-scope station-assets"
       data-design-node="1114:8271"
     >
-      <EntryTabs active={tab} onChange={changeTab} tabs={DEMO_MODE?undefined:['运行监控','列表查询','地图查询','收藏站点']} />
+      {!referenceNavigation && <EntryTabs active={tab} onChange={changeTab} tabs={DEMO_MODE?undefined:['运行监控','列表查询','地图查询','收藏站点']} />}
       {(tab === '运行监控'||!DEMO_MODE&&tab==='收藏站点') && user ? <MonitorSitesPage key={tab} initialWatched={tab==='收藏站点'} user={user} initialFilter={monitorFilter} onOpenStation={onOpenStation} canEditStation={canEditStation} onEdit={id=>{const station=stations.find(s=>s.id===id);if(station){setViewOnly(false);setEditing(station)}}} onTags={()=>setTagsTarget('manage')} onBuildDraft={canEdit?()=>setProvision('new'):undefined} registerLeaveGuard={registerLeaveGuard}/> : tab === "地图查询" ? (
         <MapQueryTab stations={stations} onOpenStation={onOpenStation} />
       ) : tab === "智能规则" ? (
