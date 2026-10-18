@@ -16,10 +16,12 @@ import OverviewDashboard from "./OverviewDashboard"
 import {overviewCardNames,overviewPresentationRole} from './overviewCards'
 import {useDisplayPreferences} from '@/preferences/PreferencesProvider'
 import {useInterfaceTranslation} from '@/i18n/useInterfaceTranslation'
-import {loadMonitorStations,loadMonitorLayout,saveMonitorLayout,defaultMonitorLayout,type MonitorStation,type MonitorLayout,type MonitorWidget} from '@/api/monitor'
+import {loadMonitorLayout,saveMonitorLayout,defaultMonitorLayout,type MonitorStation,type MonitorLayout,type MonitorWidget} from '@/api/monitor'
 
 import MonitorOverviewPage from './MonitorOverviewPage'
-import type {WorkspaceQuery} from '@/api/monitorWorkspace'
+import {loadWorkspace,communicationNames,type WorkspaceQuery,type WorkspaceData} from '@/api/monitorWorkspace'
+import {OverviewDataContext} from './OverviewDataContext'
+import {matchingCapture} from '@/data/overviewLive'
 
 type Props = { stations: Station[]; user: AuthUser; nav: NavLabel[]; immersive: boolean; onExitImmersive: () => void; onOpenStation: (id: string, subNav?: string) => void; onOpenSites?: (filters:WorkspaceQuery)=>void; onNavigate: (nav: NavLabel) => void; registerLeaveGuard: (guard: null | (() => Promise<boolean>)) => void; requestLeave: () => Promise<boolean> }
 export default function OverviewPage({ stations, user, nav, immersive, onExitImmersive, onOpenStation, onOpenSites, onNavigate, registerLeaveGuard, requestLeave }: Props) {
@@ -30,6 +32,7 @@ export default function OverviewPage({ stations, user, nav, immersive, onExitImm
   const [view, setView] = useState<"map" | "dashboard" | "monitor">(DEMO_MODE?"map":"monitor")
   const [region, setRegion] = useState("global")
   const legacy = view !== 'monitor'
+  const [legacySource,setLegacySource]=useState<'capture'|'current'>('capture'),[legacyScope,setLegacyScope]=useState('imported'),[live,setLive]=useState<WorkspaceData|null>(null),[refreshKey,setRefreshKey]=useState(0)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [search,setSearch]=useState('')
   const [scene]=useState('all'),[communication]=useState('all'),[monitorStations,setMonitorStations]=useState<MonitorStation[]>([]),[monitorError,setMonitorError]=useState(''),[monitorLoading,setMonitorLoading]=useState(false)
@@ -42,7 +45,7 @@ export default function OverviewPage({ stations, user, nav, immersive, onExitImm
   const [templatesOpen,setTemplatesOpen]=useState(false),[configurationError,setConfigurationError]=useState(''),[configurationBusy,setConfigurationBusy]=useState(false),[configurationLoaded,setConfigurationLoaded]=useState(false)
   const activeTemplate=configuration.items.find(t=>t.id===configuration.selectedId)
   const cards=(DEMO_MODE ? chosenCards??availableCards : layoutLoaded&&layout.widgets?.length?layout.widgets.map(w=>w.card):activeTemplate?.cards??availableCards).filter(c=>availableCards.includes(c))
-  useEffect(()=>{if(DEMO_MODE||!legacy)return;const controller=new AbortController();setMonitorStations([]);setMonitorLoading(true);setMonitorError('');loadMonitorStations(scene,communication,search,controller.signal).then(value=>{if(!controller.signal.aborted)setMonitorStations(value)}).catch(e=>{if(!controller.signal.aborted)setMonitorError(e.message)}).finally(()=>{if(!controller.signal.aborted)setMonitorLoading(false)});return()=>controller.abort()},[scene,communication,search,user.id,legacy])
+  useEffect(()=>{if(DEMO_MODE||!legacy)return;const controller=new AbortController();setLive(null);setMonitorStations([]);setMonitorLoading(true);setMonitorError('');(async()=>{const query={scope:legacyScope,sourceMode:legacySource,includeDashboard:'true',limit:200};const first=await loadWorkspace(query,controller.signal);let items=[...first.items];while(items.length<first.total){const page=await loadWorkspace({...query,includeDashboard:'false',offset:items.length},controller.signal);if(!page.items.length)throw new Error('站点范围在读取期间变化，请刷新');items.push(...page.items)}if(new Set(items.map(r=>r.id)).size!==items.length)throw new Error('站点范围在读取期间变化，请刷新');return {...first,items}})().then(value=>{if(!controller.signal.aborted){setLive(value);setMonitorStations(value.items.map(r=>({id:r.id,name:r.name,code:r.code,scene:r.scene,region:r.region??'',communication:r.currentCommunication as MonitorStation['communication'],rated_power_kw:r.metrics.storagePower??NaN,capacity_kwh:r.metrics.storageCapacity??NaN,solar_capacity_kw:r.metrics.pvCapacity,device_count:r.device_count})))}}).catch(e=>{if(!controller.signal.aborted)setMonitorError(e.message)}).finally(()=>{if(!controller.signal.aborted)setMonitorLoading(false)});return()=>controller.abort()},[user.id,legacy,legacyScope,legacySource,refreshKey])
   useEffect(()=>{if(DEMO_MODE||!legacy)return;const controller=new AbortController();setLayoutLoaded(false);setLayout({widgets:[],version:0});if(!configurationLoaded)return;loadMonitorLayout(activeTemplate?.id??null,controller.signal).then(value=>{if(!value||!Array.isArray(value.widgets)||typeof value.version!=='number')throw new Error('布局服务未返回有效配置');if(!controller.signal.aborted){setLayout(value);setLayoutLoaded(true)}}).catch(e=>{if(!controller.signal.aborted)setConfigurationError(e.message)});return()=>controller.abort()},[activeTemplate?.id,configurationLoaded,user.id,legacy])
   const reloadConfiguration=async()=>{const data=await loadMonitorTemplates();setConfiguration(data);setConfigurationLoaded(true);return data}
   useEffect(()=>{if(!legacy)return;let current=true;setConfiguration({items:[],selectedId:null});setConfigurationLoaded(false);setConfigurationError('');
@@ -60,7 +63,12 @@ export default function OverviewPage({ stations, user, nav, immersive, onExitImm
     const updated=await saveMonitorLayout(targetId,{widgets:widgets??defaultMonitorLayout(permitted),version:layout.version})
     setLayout(updated)
   }
-  const visibleStations = useMemo(() => stations.filter(s => (DEMO_MODE||monitorStations.some(r=>r.id===s.id))&&inMapRegion(s,region)&&`${s.name} ${translate(s.name)} ${s.code} ${s.region}`.toLowerCase().includes(search.trim().toLowerCase())), [stations, region,search,translate,monitorStations])
+  const visibleStations = useMemo(() => stations.filter(s => (DEMO_MODE||live?.items.some(r=>r.id===s.id))&&inMapRegion(s,region)&&`${s.name} ${translate(s.name)} ${s.code} ${s.region}`.toLowerCase().includes(search.trim().toLowerCase())).map(s=>{
+    if(DEMO_MODE)return s;const row=live!.items.find(r=>r.id===s.id)!,m=row.metrics
+    return {...s,status:(row.communication==='online'?'online':row.communication==='connecting'?'building':row.communication==='partial'?'fault':'offline') as Station['status'],runStatus:communicationNames[row.communication]??'通信未知',dataStatus:(row.communication==='online'?'connected':row.communication==='partial'?'partial':'disconnected') as Station['dataStatus'],activePower:m.storageActivePower??NaN,loadRate:NaN,ratedPower:m.storagePower??NaN,storageCapacity:m.storageCapacity??NaN,pvOutput:m.pvPower==null?NaN:m.pvPower/1000,soc:m.storageSoc??NaN,updateTime:row.updatedAt??'未取得数据',updateSub:legacySource==='capture'?'已导入快照':'当前运行数据'}
+  }), [stations,region,search,translate,live,legacySource])
+  const visibleItems=live?.items.filter(r=>visibleStations.some(s=>s.id===r.id))??[]
+  const capture=legacySource==='capture'?matchingCapture(live,visibleStations.map(s=>s.id)):null
   const selected = visibleStations.find(s => s.id === selectedId) ?? null
   const events = visibleStations.flatMap(s => s.alerts.map(alert => ({ ...alert, station: s }))).slice(0, 5)
   useEffect(() => {
@@ -78,10 +86,12 @@ export default function OverviewPage({ stations, user, nav, immersive, onExitImm
   const eventsPanel = <section className="overview-events"><h2>实时事件日志 <small>{events.length} 条</small></h2>{!DEMO_MODE && <p>当前告警快照 · 实时事件流未接通</p>}{events.length ? events.map((e, i) => <button key={i} onClick={() => setSelectedId(e.station.id)}><i className={e.level} /><span>{e.station.name} · {e.msg}</span><time>{e.time}</time></button>) : <p>暂无活动事件</p>}</section>
   const livePanel = <div className="overview-live-data"><div><span>电网频率</span><b>—</b></div><div><span>总有功功率</span><b>{visibleStations.length && visibleStations.every(s => Number.isFinite(s.activePower)) ? visibleStations.reduce((n, s) => n + s.activePower, 0).toFixed(1) + " kW" : "—"}</b></div><div><span>碳减排速率</span><b>—</b></div></div>
   const mapToolbar = <div className="overview-map-toolbar"><input type="search" aria-label="模糊搜索总览电站" placeholder="搜索电站名称 / 编码" value={search} onChange={e=>{setSearch(e.target.value);setSelectedId(null)}}/><select aria-label="总览区域" value={region} onChange={e => { setRegion(e.target.value); setSelectedId(null) }}>{MAP_REGIONS.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}{[...new Set(stations.map(s => s.region).filter(Boolean))].map(r => <option key={r}>{r}</option>)}</select><select aria-label="选择总览站点" value={selected?.id ?? ""} onChange={e => setSelectedId(e.target.value || null)}><option value="">选择站点</option>{visibleStations.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
-  return <section className="overview-workspace" data-overview-view={view} data-immersive={immersive}>
+  return <OverviewDataContext.Provider value={{items:visibleItems,capture,loading:monitorLoading,error:monitorError,source:legacySource}}><section className="overview-workspace" data-overview-view={view} data-immersive={immersive}>
     <header className="overview-header">{immersive ? <div className="overview-fullscreen-title"><strong>站点实时总览</strong><span>{visibleStations.length} 个授权站点</span></div> : <div className="overview-view-switch" role="group" aria-label="总览视图">{!DEMO_MODE&&<button aria-pressed={view==='monitor'} onClick={async()=>{if(await requestLeave())setView('monitor')}}>数据看板</button>}<button aria-pressed={view === "map"} onClick={async () => { if (await requestLeave()) setView("map") }}>地图总览</button><button aria-pressed={view === "dashboard"} onClick={async()=>{if(await requestLeave())setView("dashboard")}}>经营看板</button></div>}{view!=='monitor'&&mapToolbar}{immersive && <button className="overview-exit" onClick={onExitImmersive}>← 退出全屏</button>}</header>
     {!DEMO_MODE && !immersive && view!=='monitor' && <div className="configuration-toolbar">
       {monitorLoading&&<p role="status">正在读取授权监控范围…</p>}{monitorError&&<p role="alert">{monitorError}</p>}
+      <label>数据来源 <select aria-label="总览数据来源" value={legacySource} onChange={e=>{setLive(null);setLegacySource(e.target.value as 'capture'|'current')}}><option value="capture">已导入快照</option><option value="current">当前运行数据</option></select></label><label>站点范围 <select aria-label="总览站点范围" value={legacyScope} onChange={e=>{setLive(null);setLegacyScope(e.target.value);setSelectedId(null)}}><option value="imported">已导入站点</option><option value="all">全部授权站点</option></select></label><Button onClick={()=>setRefreshKey(n=>n+1)}>刷新总览数据</Button>
+      <small>{legacySource==='capture'?'站点快照与来源看板分别标注时间；不代表实时运行状态':'当前运行数据；无有效采样的指标显示未采集'}{live&&live.total>live.items.length?' · 超过200站，仅展示已加载站点':''}</small>
       <label>看板模板 <select aria-label="看板模板" disabled={configurationBusy || !configurationLoaded} value={configuration.selectedId??''} onChange={async e=>{const id=e.target.value||null;if(!await requestLeave())return;setConfigurationBusy(true);setConfigurationError('');try{await chooseTemplate(id)}catch(error){setConfigurationError((error as Error).message)}finally{setConfigurationBusy(false)}}}><option value="">默认卡片</option>{configuration.items.map(t=><option key={t.id} value={t.id}>{t.pinned?'★ ':''}{t.name}</option>)}</select></label>
       <Button disabled={configurationBusy || !configurationLoaded} onClick={async()=>{if(await requestLeave())setTemplatesOpen(true)}}>私人看板模板</Button>
       <Button disabled={configurationBusy} onClick={async()=>{if(!await requestLeave())return;setConfigurationBusy(true);try{await reloadConfiguration();setConfigurationError('')}catch(e){setConfigurationError((e as Error).message)}finally{setConfigurationBusy(false)}}}>刷新看板模板</Button>
@@ -100,5 +110,5 @@ export default function OverviewPage({ stations, user, nav, immersive, onExitImm
 
     </div>}
     </div>
-  </section>
+  </section></OverviewDataContext.Provider>
 }

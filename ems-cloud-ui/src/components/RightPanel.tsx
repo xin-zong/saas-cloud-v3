@@ -1,3 +1,7 @@
+import {useOverviewData} from './OverviewDataContext'
+import {sumMetric} from '@/data/overviewLive'
+import {metricText} from '@/api/monitorWorkspace'
+import OverviewLiveRevenue from './OverviewLiveRevenue'
 import { localized as __locale } from '@/preferences/date'
 import { DEMO_MODE } from "@/api/client"
 import { useMemo } from "react"
@@ -49,6 +53,8 @@ interface Props {
 }
 
 export default function RightPanel({ stations, role,visibleCards }: Props) {
+  const live=useOverviewData(),pv=sumMetric(live.items,'pvCapacity'),storage=sumMetric(live.items,'storageCapacity'),pvPower=sumMetric(live.items,'pvPower')
+  const capacityTotal=(name:string)=>name==='储能系统'?storage:name==='光伏系统'?pv:null
   const capacityItems = useMemo(() => buildCapacityItems(stations), [stations])
   const energyData = useMemo(() => buildEnergyMix(stations).map((item, index) => ({ ...item, color: ["#4c6ef5", "#2f875a", "#f59e0b"][index] })), [stations])
   const revenueData = useMemo(() => DEMO_MODE ? buildRevenueSeries(stations) : [], [stations])
@@ -84,7 +90,7 @@ export default function RightPanel({ stations, role,visibleCards }: Props) {
           <span style={title}>
             {role === "integrator" ? "已接入容量" : "在线运行容量"}
           </span>
-          <span style={{ ...label, fontSize: 9 }}>TODAY</span>
+          <span style={{ ...label, fontSize: 9 }}>{DEMO_MODE?"TODAY":live.source==='capture'?"采集快照":"当前采样"}</span>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -104,10 +110,10 @@ export default function RightPanel({ stations, role,visibleCards }: Props) {
                       color: "#1d2f2a",
                     }}
                   >
-                    {DEMO_MODE ? item.value : "—"}
+                    {DEMO_MODE ? item.value : "未采集"}
                   </span>
                   <span style={{ ...mono, fontSize: 9, color: "#76857f" }}>
-                    / {DEMO_MODE ? item.total : item.label === "储能系统" && stations.length && stations.every(station => Number.isFinite(station.storageCapacity)) ? __locale((stations.reduce((sum, station) => sum + station.storageCapacity, 0) / 1000), 'toLocaleString') : "—"} {item.unit}
+                    / {DEMO_MODE ? item.total : capacityTotal(item.label)?.value==null?'未采集':(capacityTotal(item.label)!.value!/1000).toLocaleString('zh-CN',{maximumFractionDigits:5})} {item.unit}
                   </span>
                 </div>
               </div>
@@ -141,6 +147,7 @@ export default function RightPanel({ stations, role,visibleCards }: Props) {
             </div>
           ))}
         </div>
+      {!DEMO_MODE&&<small style={{fontSize:10,color:"#76857f"}}>装机容量：光伏 {pv.covered}/{pv.total}、储能 {storage.covered}/{storage.total} 站有值；运行容量未采集</small>}
       </div>
 
       <div style={card} data-overview-card="能源供应与构成" hidden={!!visibleCards&&!visibleCards.includes('能源供应与构成')}>
@@ -148,7 +155,7 @@ export default function RightPanel({ stations, role,visibleCards }: Props) {
           <span style={title}>
             {role === "integrator" ? "站点能源构成" : "能源供应与构成"}
           </span>
-          <span style={{ ...label, fontSize: 9 }}>TODAY</span>
+          <span style={{ ...label, fontSize: 9 }}>{DEMO_MODE?"TODAY":live.source==='capture'?"采集快照":"当前采样"}</span>
         </div>
 
         <div className="flex items-center gap-3">
@@ -188,7 +195,7 @@ export default function RightPanel({ stations, role,visibleCards }: Props) {
           </div>
 
           <div className="flex flex-1 flex-col gap-2">
-            {energyData.map((item) => (
+            {!DEMO_MODE&&<small style={{fontSize:10,color:"#76857f"}}>光伏功率 {pvPower.covered}/{pvPower.total} 站有值；电网/发电机功率未采集，无法计算占比</small>}{energyData.map((item) => (
               <div key={item.name} className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <div
@@ -212,7 +219,7 @@ export default function RightPanel({ stations, role,visibleCards }: Props) {
                     color: "#24423b",
                   }}
                 >
-                  {DEMO_MODE ? item.value : "—"}
+                  {DEMO_MODE ? item.value : item.name==='光伏(Solar)'?`${metricText(pvPower.value)} kW`:'未采集'}
                 </span>
               </div>
             ))}
@@ -224,7 +231,7 @@ export default function RightPanel({ stations, role,visibleCards }: Props) {
         <div style={card} data-role-panel="revenue-summary" data-overview-card="收益概览" hidden={!!visibleCards&&!visibleCards.includes('收益概览')}>
           <div style={{ ...title, marginBottom: 12 }}>收益概览</div>
 
-          <div className="mb-3 grid grid-cols-2 gap-2">
+          {!DEMO_MODE?<OverviewLiveRevenue stations={stations}/>:<>          <div className="mb-3 grid grid-cols-2 gap-2">
             {[
               {
                 label: "昨日收益",
@@ -256,7 +263,7 @@ export default function RightPanel({ stations, role,visibleCards }: Props) {
                     marginTop: 2,
                   }}
                 >
-                  {DEMO_MODE ? item.value : "—"}
+                  {item.value}
                 </div>
               </div>
             ))}
@@ -286,7 +293,7 @@ export default function RightPanel({ stations, role,visibleCards }: Props) {
                 dot={false}
               />
             </AreaChart>
-          </div>
+          </div></>}
         </div>
       ) : role === "operator" ? (
         <div style={card} data-role-panel="operation-health" data-overview-card="运行健康" hidden={!!visibleCards&&!visibleCards.includes('运行健康')}>

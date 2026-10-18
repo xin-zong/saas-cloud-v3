@@ -1,3 +1,5 @@
+import {useOverviewData} from './OverviewDataContext'
+import {metricText} from '@/api/monitorWorkspace'
 import { DEMO_MODE } from "@/api/client"
 import { useMemo, useState } from "react"
 import { AlertTriangle, Bell, ChevronRight } from "lucide-react"
@@ -20,13 +22,15 @@ export default function BottomBar({
   role,
   visibleCards,
 }: Props) {
+  const live=useOverviewData()
+  const efficiency=live.capture?.summary.totals?.storageEfficiency?.value
   const [hoveredAlert, setHoveredAlert] = useState<number | null>(null)
   const globalAlerts = useMemo(() => buildGlobalAlerts(stations), [stations])
   const subsystems = useMemo(() => buildSubsystems(stations), [stations])
   const visibleAlerts = globalAlerts.slice(0, 2)
   const heading =
     role === "owner"
-      ? "资产安全动态"
+      ? (DEMO_MODE?"资产安全动态":"资产安全动态（本系统）")
       : role === "operator"
         ? "异常与告警实时监控"
         : "接入异常与交付提醒"
@@ -161,7 +165,7 @@ export default function BottomBar({
                 lineHeight: 1,
               }}
             >
-              {DEMO_MODE ? item.value : "—"}
+              {DEMO_MODE ? item.value : item.label==='储能充放效率'?`${metricText(efficiency)}${efficiency==null?'（未采集）':'%（快照）'}`:"未采集"}
             </div>
           </div>
         ))}

@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-18",
+  "branch": "develop-toyingzhen",
+  "database": "ems_cloud_saas_toyingzhen",
+  "change": "Connect existing map and business overview cards to authorized persisted workspace data; retain prototype composition",
+  "verified": {
+    "databaseToApi": "station snapshots, asset capacities, device counts and source monthly curves matched",
+    "apiToVisiblePage": "both views: station/device/communication counts and all 31 monthly rows matched; business weekly 7 rows matched",
+    "boundaries": "filtered scope does not reuse fleet curve; source switch clears capture; all result pages fetched",
+    "dates": "week/month source observations and bounded custom date ranges; cancelled date drafts do not affect applied data",
+    "revenue": "existing permission-scoped calculated settlement records grouped by currency; unknown/uncalculated/disputed excluded with explicit empty state",
+    "tests": "4 data tests + 4 overview browser tests passed; custom-range regression passed after final draft fix",
+    "build": "TypeScript noEmit and production Vite build passed",
+    "priorData": "existing 16 dashboard periods / 306 observations still equal stored captures; 8 baseline business table hashes unchanged"
+  },
+  "limitations": [
+    "Source snapshots are not live synchronization; observation times are displayed",
+    "No hourly curves, environmental factors, generator/grid power or subsystem availability are invented when absent",
+    "Fleet curves cannot be decomposed to individual stations; unmatched filtered scopes explicitly lack those curves",
+    "Nameplate capacity is not online operating capacity; missing operating capacity is labelled",
+    "Revenue date range is the existing past-year settlement loading window, not lifetime revenue"
+  ],
+  "isolation": "frontend-only source change; no reference-platform operations, business DB writes, API restart or deployment"
+}

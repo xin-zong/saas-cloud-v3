@@ -40,6 +40,7 @@ async function setup(browser){
   if(data?.dashboardCapture)data.dashboardCapture.cards.pvPeak7.trend={start:'2026-10-11',end:'2026-10-17',granularity:'day',method:'ui-tooltip',observedAt:'2026-10-18T03:50:00Z',series:['metric'],points:[{date:'2026-10-11',values:{metric:0}},{date:'2026-10-12',values:{metric:null}},{date:'2026-10-13',values:{metric:3.79}}]}
   if(data?.dashboardCapture)data.dashboardCapture.cards.pvPeakMonth={verified:true,value:9,ranking:[],trend:{...data.dashboardCapture.cards.pvPeak7.trend,start:'2026-10-01',end:'2026-10-31'}}
   if(data?.dashboardCapture)data.dashboardCapture.cards.pvPeak7.trend.points.splice(1,1) // a missing date must remain a visible gap, not a cross-date line
+  if(data?.dashboardCapture)data.dashboardCapture.cards.storageEfficiencyMonth={verified:true,value:100,ranking:[],chargeEnergy:7240,dischargeEnergy:10590,trend:{start:'2026-10-01',end:'2026-10-31',granularity:'day',method:'ui-tooltip',observedAt:'2026-10-18T03:50:00Z',series:['chargeEnergy','dischargeEnergy'],points:[{date:'2026-10-01',values:{chargeEnergy:0,dischargeEnergy:123.45}},{date:'2026-10-03',values:{chargeEnergy:456.78,dischargeEnergy:null}}]}}
   await route.fulfill({json:{code:0,data}})
  })
  await page.goto(preview,{waitUntil:'domcontentloaded'})
@@ -105,5 +106,45 @@ test('column settings retain draft on conflict, refresh version and persist afte
   await dialog.getByLabel('默认数据来源').selectOption('capture')
   await dialog.getByRole('button',{name:'保存显示设置',exact:true}).click();await dialog.waitFor({state:'detached'})
   assert.equal(await page.getByLabel('场站数据来源').inputValue(),'capture')
+ }finally{await browser.close()}
+})
+
+
+test('map and business display stored curves, clear them on scope changes, and preserve unknown values',{timeout:90000},async()=>{
+ const browser=await chromium.launch({channel:'msedge',headless:true})
+ try{
+  const {page,state}=await setup(browser);state.dashboard=true
+  await page.getByRole('button',{name:'地图总览',exact:true}).click()
+  await page.locator('[data-metric="charge-total"]').filter({hasText:'7.24'}).waitFor()
+  assert.equal(await page.locator('[data-metric="station-total"]').innerText(),'2')
+  assert.equal(await page.locator('[data-metric="station-status-online"]').innerText(),'1')
+  assert.equal(await page.locator('[data-metric="station-status-offline"]').innerText(),'1')
+  await page.getByRole('button',{name:'查看充放电明细'}).click()
+  const rows=page.getByRole('table',{name:'总览充放电数据明细'}).locator('tbody tr')
+  assert.deepEqual(await rows.nth(0).locator('td').allTextContents(),['2026-10-01','0','123.45'])
+  assert.deepEqual(await rows.nth(1).locator('td').allTextContents(),['2026-10-02','—','—'])
+  await page.getByRole('searchbox',{name:'模糊搜索总览电站'}).fill('Alpha')
+  await page.getByText('当前范围未采集月曲线，未使用其他站点数据补齐',{exact:true}).waitFor()
+  assert.equal(await page.getByRole('table',{name:'总览充放电数据明细'}).count(),0)
+  await page.getByRole('searchbox',{name:'模糊搜索总览电站'}).fill('')
+  await page.getByRole('button',{name:'经营看板',exact:true}).click()
+  await page.locator('[data-metric="charge-total"]').filter({hasText:'7.24'}).waitFor()
+  assert.ok((await page.locator('[data-overview-card="在线运行容量"]').innerText()).includes('0.1'))
+  assert.ok(!(await page.locator('body').innerText()).includes('NaN'))
+  await page.getByRole('button',{name:'自定义',exact:true}).click()
+  await page.getByLabel('开始日期',{exact:true}).fill('2026-10-01')
+  await page.getByLabel('结束日期',{exact:true}).fill('2026-10-03')
+  await page.getByRole('button',{name:'应用时间范围'}).click()
+  await page.getByRole('button',{name:'查看充放电明细'}).click()
+  assert.equal(await page.getByRole('table',{name:'总览充放电数据明细'}).locator('tbody tr').count(),3)
+  await page.getByRole('button',{name:'自定义',exact:true}).click()
+  await page.getByLabel('开始日期',{exact:true}).fill('2026-09-01')
+  await page.getByRole('button',{name:'关闭弹窗'}).click()
+  assert.equal(await page.getByRole('table',{name:'总览充放电数据明细'}).locator('tbody tr').count(),3)
+  await page.getByRole('button',{name:'采集月',exact:true}).click()
+
+  await page.getByRole('combobox',{name:'总览数据来源'}).selectOption('current')
+  await page.getByText('当前范围未采集月曲线，未使用其他站点数据补齐',{exact:true}).waitFor()
+  assert.ok(!(await page.locator('[data-overview-card="储能充放趋势"]').innerText()).includes('7.24'))
  }finally{await browser.close()}
 })

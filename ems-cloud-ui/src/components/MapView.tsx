@@ -1,10 +1,11 @@
+import {DEMO_MODE} from '@/api/client'
 import { useEffect,useRef,useState } from 'react'
 import type { Station } from '@/App'
 import { useDisplayPreferences } from '@/preferences/PreferencesProvider'
 import { mapRegionView,stationCoordinates } from '@/maps/regions'
 import { useInterfaceTranslation } from '@/i18n/useInterfaceTranslation'
 const colors:Record<string,string>={online:'#10b981',fault:'#ef4444',offline:'#76857f',building:'#1f7a68'}
-const labels:Record<string,string>={online:'在线',fault:'故障',offline:'离线',building:'建设中'}
+const labels:Record<string,string>=DEMO_MODE?{online:'在线',fault:'故障',offline:'离线',building:'建设中'}:{online:'通讯正常',fault:'部分离线',offline:'离线/未知',building:'接入中'}
 interface Props {stations:Station[];selectedStation:Station|null;onSelectStation:(s:Station,pos?:{x:number;y:number})=>void;region?:string;compact?:boolean}
 export default function MapView({stations,selectedStation,onSelectStation,region='global',compact=false}:Props){
  const {language}=useDisplayPreferences()

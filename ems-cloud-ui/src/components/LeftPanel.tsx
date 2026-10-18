@@ -1,3 +1,5 @@
+import {useOverviewData} from './OverviewDataContext'
+import OverviewLiveStorage,{type StoragePeriod} from './OverviewLiveStorage'
 import { localized as __locale } from '@/preferences/date'
 import { DEMO_MODE } from "@/api/client"
 import { useMemo, useState } from "react"
@@ -53,6 +55,7 @@ const title = { fontSize: 14, fontWeight: 700, color: "#18232d" } as const
 const mono = { fontFamily: "'JetBrains Mono',monospace" } as const
 
 interface Props {
+  storagePeriod?:StoragePeriod
   stations: Station[]
   role: UserRole
   visibleCards?:string[]
@@ -67,7 +70,9 @@ function EnvironmentalIcon({ kind }: { kind: string }) {
   return <img src={`/figma/overview/map/${kind === "coal" ? "imgFlame" : kind === "tree" ? "imgTrees" : "imgLeaf"}.svg`} alt="" />
 }
 
-export default function LeftPanel({ stations, role, onViewStations,visibleCards }: Props) {
+export default function LeftPanel({ stations, role, onViewStations,visibleCards,storagePeriod }: Props) {
+  const live=useOverviewData()
+  const liveStatus=[['online','通讯正常'],['partial','部分离线'],['offline','全部离线'],['connecting','接入中'],['unknown','通信未知']]
   const [tab, setTab] = useState<"today" | "month">("today")
   const statusItems = useMemo(() => buildStatusItems(stations).map(item => ({ ...item, color: ({ online: "#2f875a", fault: "#ef4444", offline: "#94a3b8", building: "#4c6ef5" })[item.status] })), [stations])
   const deviceSummary = useMemo(() => buildDeviceSummary(stations), [stations])
@@ -106,13 +111,14 @@ export default function LeftPanel({ stations, role, onViewStations,visibleCards 
 <div className="overview-status-heading"><span style={title}>站点运营概况</span>{onViewStations ? <button aria-label="查看站点列表" onClick={onViewStations}><img src="/figma/overview/map/imgChevronRight.svg" alt="" /></button> : <span style={label}>{roleScope}</span>}</div>
 <div className="overview-status-total"><span style={label}>站点总数</span><strong data-metric="station-total">{stations.length}</strong></div>
 <div className="overview-status-bar">{statusItems.map(item => <span key={item.status} style={{ flex: DEMO_MODE ? item.count : 1, background: DEMO_MODE ? item.color : "#e6eee9" }} />)}</div>
-<div className="overview-status-counts">{statusItems.map(item => <span key={item.status}><i style={{ background: item.color }} />{item.label} <b data-metric={"station-status-" + item.status}>{DEMO_MODE ? item.count : "—"}</b></span>)}</div>
-<div className="overview-status-total"><span style={label}>关联设备数</span><strong data-metric="device-total">{DEMO_MODE ? deviceSummary.total : stations.reduce((sum, station) => sum + (station.deviceInventory?.length ?? 0), 0)}</strong></div>
+<div className="overview-status-counts">{DEMO_MODE?statusItems.map(item=><span key={item.status}>{item.label} <b>{item.count}</b></span>):liveStatus.map(([key,name])=><span key={key}>{name} <b data-metric={'station-status-'+key}>{live.loading||live.error?'—':live.items.filter(r=>r.communication===key).length}</b></span>)}</div>
+{!DEMO_MODE&&<small style={{fontSize:10,color:'#76857f'}}>{live.source==='capture'?'站点通信快照 · 非实时状态':'当前设备采样状态'}</small>}
+<div className="overview-status-total"><span style={label}>关联设备数</span><strong data-metric="device-total">{DEMO_MODE ? deviceSummary.total : live.items.reduce((sum, row) => sum + (row.device_count ?? 0), 0)}</strong></div>
 <div className="overview-status-bar"><span style={{ width: DEMO_MODE ? deviceSummary.onlinePct + "%" : "0%", background: "#2f875a" }} /></div>
 </div>
       {role !== "integrator" ? (
         <div style={card} className="overview-storage-card" data-overview-card="储能充放趋势" hidden={!!visibleCards&&!visibleCards.includes('储能充放趋势')}>
-          <div className="mb-3 flex items-center justify-between">
+          {!DEMO_MODE?<OverviewLiveStorage selection={storagePeriod}/>:<>          <div className="mb-3 flex items-center justify-between">
             <span style={title}>储能充放趋势</span>
             <div className="flex gap-3">
               {(["today", "month"] as const).map((item) => (
@@ -210,7 +216,7 @@ export default function LeftPanel({ stations, role, onViewStations,visibleCards 
               />
             </BarChart></ResponsiveContainer>
           </div>
-
+</>}
         </div>
       ) : (
         <div style={card} data-role-panel="delivery-progress" data-overview-card="建站与接入进度" hidden={!!visibleCards&&!visibleCards.includes('建站与接入进度')}>
@@ -266,7 +272,7 @@ export default function LeftPanel({ stations, role, onViewStations,visibleCards 
 
       {role === "owner" ? (
         <div style={card} data-role-panel="environmental-benefits" data-overview-card="社会与环境效益" hidden={!!visibleCards&&!visibleCards.includes('社会与环境效益')}>
-          <div style={{ ...title, marginBottom: 12 }}>社会与环境效益</div>
+          <div style={{ ...title, marginBottom: 12 }}>社会与环境效益</div>{!DEMO_MODE&&<small style={{fontSize:10,color:"#76857f"}}>未采集减排、标准煤和植树指标；未按经验系数估算</small>}
           <div className="grid grid-cols-3 gap-2">
             {environmental.map((item) => (
               <div

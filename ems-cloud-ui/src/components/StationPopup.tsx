@@ -176,7 +176,7 @@ export default function StationPopup({ station, initialPos, onClose, onOpenStati
         <div>
           <div style={{ fontSize: 9, color: "#64748b", marginBottom: 1 }}>额定功率</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#18232d" }}>
-            {station.ratedPower}
+            {Number.isFinite(station.ratedPower)?station.ratedPower:"未采集"}
             <span style={{ fontSize: 9, fontWeight: 400, marginLeft: 2 }}>kW</span>
           </div>
         </div>
@@ -200,7 +200,7 @@ export default function StationPopup({ station, initialPos, onClose, onOpenStati
             <span style={{ fontSize: 9, color: "#64748b" }}>光伏出力</span>
           </div>
           <div style={{ fontSize: 11, fontWeight: 600, color: "#18232d" }}>
-            {Number.isFinite(station.pvOutput) ? station.pvOutput : "—"} <span style={{ fontSize: 9, fontWeight: 400 }}>MWp</span>
+            {Number.isFinite(station.pvOutput) ? station.pvOutput : "—"} <span style={{ fontSize: 9, fontWeight: 400 }}>{DEMO_MODE?"MWp":"MW"}</span>
           </div>
           <div style={{ fontSize: 9, color: "#64748b", marginTop: 1 }}>{DEMO_MODE ? "可用率 91.2%" : "可用率 未知"}</div>
         </div>
@@ -210,7 +210,7 @@ export default function StationPopup({ station, initialPos, onClose, onOpenStati
             <span style={{ fontSize: 9, color: "#64748b" }}>储能容量</span>
           </div>
           <div style={{ fontSize: 11, fontWeight: 600, color: "#18232d" }}>
-            {station.storageCapacity} <span style={{ fontSize: 9, fontWeight: 400 }}>{DEMO_MODE ? "MWh" : "kWh"}</span>
+            {Number.isFinite(station.storageCapacity)?station.storageCapacity:"未采集"} <span style={{ fontSize: 9, fontWeight: 400 }}>{DEMO_MODE ? "MWh" : "kWh"}</span>
           </div>
           <div style={{ fontSize: 9, color: "#64748b", marginTop: 1 }}>SOC {Number.isFinite(station.soc) ? station.soc : "—"}%</div>
         </div>

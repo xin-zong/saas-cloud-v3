@@ -1,3 +1,4 @@
+import {useOverviewData} from './OverviewDataContext'
 import { useEffect, useRef, useState } from "react"
 import type { Station } from "@/App"
 import type { AuthUser, NavLabel } from "@/auth/roles"
@@ -44,6 +45,7 @@ export default function OverviewDashboard({
   widgets,
   monitorStations,
 }: Props) {
+  const overviewData=useOverviewData()
   const [draftWidgets,setDraftWidgets]=useState<MonitorWidget[]>([])
   const [editing, setEditing] = useState(false),
     [draft, setDraft] = useState(cards),
@@ -51,11 +53,12 @@ export default function OverviewDashboard({
     [error, setError] = useState(""),
     [leave, setLeave] = useState(false),
     [custom, setCustom] = useState(false),
-    [period, setPeriod] = useState("今日"),
+    [period, setPeriod] = useState(DEMO_MODE?"今日":"采集月"),
     [range, setRange] = useState({
       start: dateKey(new Date()),
       end: dateKey(new Date()),
     })
+  const [draftRange,setDraftRange]=useState(range)
   const [saving, setSaving] = useState(false)
   const [editingTargetId,setEditingTargetId] = useState<string|null>(null)
   const pending = useRef<null | (() => void)>(null)
@@ -121,13 +124,13 @@ export default function OverviewDashboard({
         </div>
         <div className="overview-dashboard-actions">
           <div className="ui-segmented">
-            {["今日", "近7天", "近30天", "自定义"].map((p) => (
+            {(DEMO_MODE?["今日", "近7天", "近30天", "自定义"]:["采集日", "近7日", "采集月", "自定义"]).map((p) => (
               <button
                 key={p}
                 aria-pressed={period === p}
                 onClick={() => {
-                  setPeriod(p)
-                  if (p === "自定义") setCustom(true)
+                  if (p === "自定义") {setDraftRange(range);setCustom(true)}
+                  else setPeriod(p)
                 }}
               >
                 {p}
@@ -153,7 +156,7 @@ export default function OverviewDashboard({
         </div>
       </div>
       <p className="overview-dashboard-range">
-        当前授权站点快照；日期选择不改变快照，历史曲线请从站点详情查看。
+        周期选择作用于充放电曲线；资产与通信按标注快照，收益按近一年结算记录。
       </p>
       {notice && (
         <p role="status" className="overview-notice">
@@ -166,6 +169,7 @@ export default function OverviewDashboard({
           role={role}
           visibleCards={cards}
           onViewStations={viewStations}
+          storagePeriod={DEMO_MODE?undefined:{kind:period==='采集日'?'day':period==='近7日'?'week':period==='自定义'?'custom':'month',start:range.start,end:range.end}}
         />
         <RightPanel stations={stations} role={role} visibleCards={cards} />
       </div>
@@ -274,11 +278,13 @@ export default function OverviewDashboard({
           actions={
             <Button
               onClick={() => {
-                if (!range.start||!range.end||range.start > range.end||Date.parse(range.end)-Date.parse(range.start)>30*86400000) {
+                if (!draftRange.start||!draftRange.end||draftRange.start > draftRange.end||Date.parse(draftRange.end)-Date.parse(draftRange.start)>30*86400000) {
                   setError("请选择31天内有效日期范围")
                   return
                 }
-                setNotice(`已选择 ${range.start} 至 ${range.end}；指标仍为当前授权站点快照`)
+                setRange({...draftRange})
+                setPeriod("自定义")
+                setNotice(`已选择 ${draftRange.start} 至 ${draftRange.end}；充放电明细按所选日期展示，未采集日期保持空态`)
                 setCustom(false)
                 setError("")
               }}
@@ -291,16 +297,16 @@ export default function OverviewDashboard({
             开始日期
             <input
               type="date"
-              value={range.start}
-              onChange={(e) => setRange({ ...range, start: e.target.value })}
+              value={draftRange.start}
+              onChange={(e) => setDraftRange({ ...draftRange, start: e.target.value })}
             />
           </label>
           <label>
             结束日期
             <input
               type="date"
-              value={range.end}
-              onChange={(e) => setRange({ ...range, end: e.target.value })}
+              value={draftRange.end}
+              onChange={(e) => setDraftRange({ ...draftRange, end: e.target.value })}
             />
           </label>
           {error && <p role="alert">{error}</p>}

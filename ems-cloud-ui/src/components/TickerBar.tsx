@@ -77,7 +77,7 @@ function TickerItem({
 
       {/* Status */}
       <span style={{ fontSize: 10, color: STATUS_COLOR[station.status], whiteSpace: "nowrap" }}>
-        {STATUS_LABEL[station.status]}
+        {(DEMO_MODE ? STATUS_LABEL[station.status] : station.runStatus)}
       </span>
 
       {/* Metrics follow the signed-in role's work context. */}
@@ -105,7 +105,7 @@ function TickerItem({
             {Number.isFinite(deviceTotal) ? deviceTotal : "—"} 台设备
           </span>
         </>
-      ) : station.activePower > 0 ? (
+      ) : Number.isFinite(station.activePower) ? (
         <>
           <span style={{ fontSize: 9, color: "#cbd8d0" }}>|</span>
           <span style={{ fontSize: 10, color: "#61716b", fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap" }}>
@@ -113,7 +113,7 @@ function TickerItem({
           </span>
           <span style={{ fontSize: 9, color: "#cbd8d0" }}>|</span>
           <span style={{ fontSize: 10, color: "#61716b", fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap" }}>
-            {station.loadRate}%
+            {Number.isFinite(station.loadRate)?station.loadRate:"未采集"}{Number.isFinite(station.loadRate)?"%":""}
           </span>
         </>
       ) : null}
@@ -160,7 +160,7 @@ export default function TickerBar({ stations, onSelectStation, role }: Props) {
         }}
       >
         <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", animation: "tickerPulse 2s ease-out infinite" }} />
-        <span style={{ fontSize: 10, fontWeight: 600, color: "#61716b", whiteSpace: "nowrap" }}>实时状态</span>
+        <span style={{ fontSize: 10, fontWeight: 600, color: "#61716b", whiteSpace: "nowrap" }}>状态快照</span>
       </div>
 
       {/* Fade edges */}
