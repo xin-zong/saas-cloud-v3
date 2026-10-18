@@ -1,0 +1,19 @@
+/* Keep the prototype's map / two side panels / bottom strip composition.
+   Narrow screens use the original single side panel, not overlapping columns. */
+.overview-workspace[data-overview-view="map"] .configuration-toolbar {
+  flex-wrap: wrap;
+  align-items: center;
+}
+@media (max-width: 760px) {
+  .overview-workspace[data-overview-view="map"] .overview-map {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 36px minmax(360px, auto) 94px;
+  }
+  .overview-workspace[data-overview-view="map"] .overview-left {
+    grid-column: 1;
+    grid-row: 2;
+    width: min(260px, 100%);
+  }
+  .overview-workspace[data-overview-view="map"] .overview-right { display: none; }
+  .overview-workspace[data-overview-view="map"] .overview-bottom { grid-row: 3; }
+}

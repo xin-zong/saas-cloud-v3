@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-18",
+  "branch": "develop-toyingzhen",
+  "database": "ems_cloud_saas_toyingzhen",
+  "scope": "仅修正总览的三个视图",
+  "rootCauses": [
+    "上一版以分站快照相加或相除替代来源数据看板汇总，报告边界不一致",
+    "经营看板由原型分区改成逐卡片12列坐标网格",
+    "隔离前端缺少原环境已有地图配置；窄屏地图又被覆盖为双侧列"
+  ],
+  "corrections": [
+    "V40独立保存来源看板汇总和站点范围，7站、13个已核验周期卡片已导入",
+    "来源效率等数值原样保留，不根据站点计数器重算，不用排行均值代替来源统计",
+    "只有完整相同授权站点集合且有遥测权限时返回来源全局汇总，报警数量另按报警权限脱敏",
+    "默认数据看板展示已导入来源范围，标明来源更新时间和采集时间",
+    "经营看板恢复原型的左右卡片和底部区域，保留私人模板、卡片选择与版本冲突处理",
+    "地图保留原型左右面板和底部区域，窄屏恢复单侧面板；地图配置仅复制到隔离环境",
+    "旧地图和经营看板请求仅在进入这两个视图时读取，避免与数据看板同时加载"
+  ],
+  "persistence": {
+    "tables": ["monitor_dashboard_capture", "monitor_dashboard_capture_station"],
+    "idempotence": "重复同份观察输入不会新增记录",
+    "existingTargetBusinessTablesUnchanged": 8
+  },
+  "verification": {
+    "sourceCaptureUnitTests": 2,
+    "sourceCaptureRealPostgresTests": 1,
+    "newImporterTests": 2,
+    "browserFlows": 15,
+    "httpScopeBoundaryCases": 4,
+    "typescript": "passed",
+    "productionBuild": "passed; existing bundle size warning",
+    "visual": "1366桌面和760窄屏；地图正常加载，经营卡片无重叠，无页面横向溢出",
+    "independentStaticReview": "无阻断项"
+  },
+  "remaining": [
+    "来源数据为已核验快照，不是持续同步",
+    "趋势序列尚未采集，不由周期统计伪造曲线",
+    "未核验的计划总周期和卓越口径明确显示未核验，不回退为其他周期数据",
+    "地图和经营看板保留本系统原有数据范围；不能将未接入遥测和收益的字段补成原型示例值"
+  ],
+  "isolation": {
+    "sourceBusinessWrites": 0,
+    "originalDatabaseWrites": 0,
+    "originalWorkspaceWrites": 0,
+    "originalServiceRestarted": false,
+    "localPage": "http://127.0.0.1:8444/"
+  }
+}

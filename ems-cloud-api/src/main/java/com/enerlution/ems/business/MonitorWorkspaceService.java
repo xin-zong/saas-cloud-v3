@@ -104,9 +104,10 @@ public class MonitorWorkspaceService {
     var facetQuery=new LinkedHashMap<>(q);facetQuery.put("communication","all");facetQuery.put("alarm","all");var facets=summary(rows.stream().filter(row->matches(row,facetQuery)).toList());
     int from=Math.min((int)q.get("offset"),filtered.size()),to=Math.min(from+(int)q.get("limit"),filtered.size());var page=new ArrayList<>(export?filtered:filtered.subList(from,to));
     var rules=ruleSummary(filtered);
+    var dashboard="true".equals(parameters.get("includeDashboard"))?MonitorDashboardCapture.read(s,json,filtered,q):null;
     var currentAssets=new HashSet<>(s.access.stationIds("asset.read"));var currentTelemetry=new HashSet<>(s.access.stationIds("telemetry.read"));var currentAlarms=new HashSet<>(s.access.stationIds("alarm.read"));
     for(var row:rows){long id=Long.parseLong(row.get("id").toString());if(!currentAssets.contains(id)||Boolean.TRUE.equals(row.get("telemetryAllowed"))&&!currentTelemetry.contains(id)||Boolean.TRUE.equals(row.get("alarmAllowed"))&&!currentAlarms.contains(id))throw new BusinessException(403,"监控查询期间权限已变化，请刷新重试");if(export&&filtered.contains(row))s.access.requireStationPermission(id,"report.export");}
-    var result=new LinkedHashMap<String,Object>();result.put("items",page);result.put("total",filtered.size());result.put("limit",q.get("limit"));result.put("offset",q.get("offset"));result.put("summary",summary(filtered));result.put("facets",facets);result.put("rules",rules);result.put("preferences",preference);result.put("options",options);result.put("sourceMode",q.get("sourceMode"));result.put("serverTime",Instant.now().toString());return result;
+    var result=new LinkedHashMap<String,Object>();result.put("items",page);result.put("total",filtered.size());result.put("limit",q.get("limit"));result.put("offset",q.get("offset"));result.put("summary",summary(filtered));result.put("facets",facets);result.put("rules",rules);result.put("preferences",preference);result.put("options",options);result.put("sourceMode",q.get("sourceMode"));result.put("serverTime",Instant.now().toString());result.put("dashboardCapture",dashboard);return result;
   }
   private static Object time(Object v){return v instanceof java.sql.Timestamp ts?ts.toInstant().toString():v;}
   @SuppressWarnings("unchecked") private static boolean matches(Map<String,Object> r,Map<String,Object> q){

@@ -18,6 +18,7 @@ import OverviewPage from "@/components/OverviewPage"
 import type {WorkspaceQuery} from "@/api/monitorWorkspace"
 import "@/styles/all-modules-shell.css"
 import '@/styles/platform-alignment.css'
+import '@/styles/overview-restored.css'
 
 import AssetsPage from "@/components/AssetsPage"
 

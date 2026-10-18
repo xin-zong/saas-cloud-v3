@@ -7,7 +7,7 @@ async function setup(browser){
  const page=await context.newPage();page.setDefaultTimeout(18000)
  const permission=['asset.read','asset.edit','telemetry.read','alarm.read','report.export']
  const user={id:'7',name:'验收',account:'monitor@test',role:'owner',organization:'验收组织',stationIds:['12','13'],permissions:permission,stationPermissions:{12:permission,13:permission},organizationPermissions:{}}
- const state={preference:{settings:{},watchedStationIds:[],version:0},rejectNext:false}
+ const state={preference:{settings:{},watchedStationIds:[],version:0},rejectNext:false,dashboard:false}
  const sites=[{id:'12',name:'Alpha站',code:'A',region:'华东',address:'地址A',scene:'Hybrid',communication:'online',currentCommunication:'unknown',imported:true,alarmCount:0,telemetryAllowed:true,alarmAllowed:true,capturedAt:'2026-10-17T00:00:00Z',updatedAt:'2026-10-16T23:55:00Z',source:'reference_capture',siteType:'商业',productionStatus:'running',chargeStatus:'idle',tags:[],metrics:{pvPower:0,pvCapacity:100,pvTotal:0,storagePower:100,storageCapacity:200,storageSoc:0,storageSoh:98}},{id:'13',name:'Beta站',code:'B',region:'华东',address:'地址B',scene:'BESS',communication:'offline',currentCommunication:'unknown',imported:true,alarmCount:0,telemetryAllowed:true,alarmAllowed:true,capturedAt:'2026-10-17T00:00:00Z',updatedAt:'2026-10-16T23:55:00Z',source:'reference_capture',siteType:'商业',productionStatus:'running',chargeStatus:'charging',tags:[],metrics:{storagePower:50,storageCapacity:100,storageSoc:50,storageSoh:96}}]
  const summary=rows=>({total:rows.length,online:rows.filter(r=>r.communication==='online').length,offline:rows.filter(r=>r.communication==='offline').length,partial:0,connecting:0,unknown:0,alarmSites:0,alarmUnknown:0,PV:0,BESS:rows.filter(r=>r.scene==='BESS').length,Hybrid:rows.filter(r=>r.scene==='Hybrid').length,totals:{pvTotal:{value:0,covered:1,total:rows.length,complete:false},storageTotalCharged:{value:null,covered:0,total:rows.length,complete:false},storageTotalDischarged:{value:null,covered:0,total:rows.length,complete:false},storageEfficiency:{value:null,covered:0,total:rows.length,complete:false}},pvCapacity:100,storagePower:150,storageCapacity:300,captureSites:rows.length,latestCapturedAt:'2026-10-17T00:00:00Z'})
  await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com|static\.figma\.com/,r=>r.abort())
@@ -34,6 +34,7 @@ async function setup(browser){
    if(q.get('communication')&&q.get('communication')!=='all')filtered=filtered.filter(r=>r.communication===q.get('communication'))
    if(q.get('scene')&&q.get('scene')!=='all')filtered=filtered.filter(r=>r.scene===q.get('scene'))
    data={items:filtered,total:filtered.length,limit:50,offset:0,summary:summary(filtered),facets,rules:{counts:[],recent:[]},preferences:state.preference,options:{regions:['华东'],siteTypes:['商业'],tags:[]},sourceMode:'capture',serverTime:'2026-10-18T00:00:00Z'}
+   if(state.dashboard&&q.get('includeDashboard')==='true'&&q.get('scope')==='imported')data.dashboardCapture={summary:{...summary(filtered),totals:Object.fromEntries(Object.entries({pvTotal:912340,storageTotalCharged:78900,storageTotalDischarged:90100,storageEfficiency:100}).map(([key,value])=>[key,{value,covered:2,total:2,complete:true}])),storageCapacity:1160},cards:{pvPeak7:{verified:true,value:null,ranking:[{stationId:'12',value:21.35}]}},sourceUpdatedAt:'2026-10-18T03:13:44Z',capturedAt:'2026-10-18T04:00:00Z',sourceHost:'ess-cloud-login.qudeox.com'}
   }
   else if(p.endsWith('/space-devices'))data={items:[],total:0}
   await route.fulfill({json:{code:0,data}})
@@ -57,6 +58,23 @@ test('overview status navigation, source labels, server watchlist and same-filte
   await page.reload({waitUntil:'domcontentloaded'});await assets(page)
   await page.getByRole('button',{name:'我的关注',exact:true}).click();await page.getByRole('button',{name:'取消关注Beta站',exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'Alpha站',exact:true}).count(),0)
   const download=page.waitForEvent('download');await page.getByRole('button',{name:'导出筛选场站',exact:true}).click();const file=await download;const text=await fs.readFile(await file.path(),'utf8');assert.ok(text.includes('Beta站'));assert.ok(!text.includes('Alpha站'));assert.ok(text.includes('已导入快照'))
+ }finally{await browser.close()}
+})
+
+test('overview uses persisted source dashboard totals and restores prototype card sections',{timeout:90000},async()=>{
+ const browser=await chromium.launch({channel:'msedge',headless:true})
+ try{
+  const {page,state}=await setup(browser);state.dashboard=true
+  await page.getByRole('button',{name:'刷新数据看板',exact:true}).click()
+  await page.getByText('QUDEOX 看板原始汇总',{exact:true}).waitFor()
+  const totals=await page.locator('.monitor-energy-totals').innerText()
+  for(const value of ['912.34','78.9','90.1','100'])assert.ok(totals.includes(value),value)
+  assert.ok(totals.includes('来源看板原值'));assert.ok(!/2\s*\/\s*2/.test(totals),'source fleet totals do not prove per-station coverage')
+  assert.ok((await page.locator('.monitor-ranking').first().innerText()).includes('21.35'))
+  await page.getByRole('button',{name:'经营看板',exact:true}).click()
+  await page.locator('.overview-shared-card-grid').waitFor()
+  assert.equal(await page.getByRole('region',{name:'个人看板布局',exact:true}).count(),0)
+  assert.equal(await page.locator('.overview-shared-bottom').count(),1)
  }finally{await browser.close()}
 })
 test('column settings retain draft on conflict, refresh version and persist after reload',{timeout:90000},async()=>{

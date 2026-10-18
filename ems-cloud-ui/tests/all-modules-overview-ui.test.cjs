@@ -109,7 +109,7 @@ test('overview API: dashboard range validation, honest empty data, customization
     await page.getByRole('heading', { name: '平台总览运营看板' }).waitFor()
     assert.equal(await page.getByText('禁止显示站点').count(), 0)
     assert.equal(await page.locator('[data-overview-card="储能充放趋势"]').isVisible(), false)
-    await page.getByText('资产与通信为当前快照；实测功率按所选日期读取，最长31天。', { exact: true }).waitFor()
+    await page.getByText('当前授权站点快照；日期选择不改变快照，历史曲线请从站点详情查看。', { exact: true }).waitFor()
     await page.getByRole('button', { name: '自定义', exact: true }).click()
     await page.getByLabel('开始日期', { exact: true }).fill('2026-09-26')
     await page.getByLabel('结束日期', { exact: true }).fill('2026-09-01')

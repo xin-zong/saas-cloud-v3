@@ -29,9 +29,10 @@ export default function OverviewPage({ stations, user, nav, immersive, onExitImm
   useEffect(() => { registerLeaveGuard(() => templateGuard.current?.() ?? layoutGuard.current?.() ?? Promise.resolve(true)); return () => registerLeaveGuard(null) }, [registerLeaveGuard])
   const [view, setView] = useState<"map" | "dashboard" | "monitor">(DEMO_MODE?"map":"monitor")
   const [region, setRegion] = useState("global")
+  const legacy = view !== 'monitor'
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [search,setSearch]=useState('')
-  const [scene,setScene]=useState('all'),[communication,setCommunication]=useState('all'),[monitorStations,setMonitorStations]=useState<MonitorStation[]>([]),[monitorError,setMonitorError]=useState(''),[monitorLoading,setMonitorLoading]=useState(false)
+  const [scene]=useState('all'),[communication]=useState('all'),[monitorStations,setMonitorStations]=useState<MonitorStation[]>([]),[monitorError,setMonitorError]=useState(''),[monitorLoading,setMonitorLoading]=useState(false)
   const [layout,setLayout]=useState<MonitorLayout>({widgets:[],version:0}),[layoutLoaded,setLayoutLoaded]=useState(false)
   const {language}=useDisplayPreferences(),translate=useInterfaceTranslation(stations.map(s=>s.name),language)
   const availableCards=overviewCardNames(user),role=overviewPresentationRole(user)
@@ -41,14 +42,14 @@ export default function OverviewPage({ stations, user, nav, immersive, onExitImm
   const [templatesOpen,setTemplatesOpen]=useState(false),[configurationError,setConfigurationError]=useState(''),[configurationBusy,setConfigurationBusy]=useState(false),[configurationLoaded,setConfigurationLoaded]=useState(false)
   const activeTemplate=configuration.items.find(t=>t.id===configuration.selectedId)
   const cards=(DEMO_MODE ? chosenCards??availableCards : layoutLoaded&&layout.widgets?.length?layout.widgets.map(w=>w.card):activeTemplate?.cards??availableCards).filter(c=>availableCards.includes(c))
-  useEffect(()=>{if(DEMO_MODE)return;const controller=new AbortController();setMonitorStations([]);setMonitorLoading(true);setMonitorError('');loadMonitorStations(scene,communication,search,controller.signal).then(value=>{if(!controller.signal.aborted)setMonitorStations(value)}).catch(e=>{if(!controller.signal.aborted)setMonitorError(e.message)}).finally(()=>{if(!controller.signal.aborted)setMonitorLoading(false)});return()=>controller.abort()},[scene,communication,search,user.id])
-  useEffect(()=>{if(DEMO_MODE)return;const controller=new AbortController();setLayoutLoaded(false);setLayout({widgets:[],version:0});if(!configurationLoaded)return;loadMonitorLayout(activeTemplate?.id??null,controller.signal).then(value=>{if(!value||!Array.isArray(value.widgets)||typeof value.version!=='number')throw new Error('布局服务未返回有效配置');if(!controller.signal.aborted){setLayout(value);setLayoutLoaded(true)}}).catch(e=>{if(!controller.signal.aborted)setConfigurationError(e.message)});return()=>controller.abort()},[activeTemplate?.id,configurationLoaded,user.id])
+  useEffect(()=>{if(DEMO_MODE||!legacy)return;const controller=new AbortController();setMonitorStations([]);setMonitorLoading(true);setMonitorError('');loadMonitorStations(scene,communication,search,controller.signal).then(value=>{if(!controller.signal.aborted)setMonitorStations(value)}).catch(e=>{if(!controller.signal.aborted)setMonitorError(e.message)}).finally(()=>{if(!controller.signal.aborted)setMonitorLoading(false)});return()=>controller.abort()},[scene,communication,search,user.id,legacy])
+  useEffect(()=>{if(DEMO_MODE||!legacy)return;const controller=new AbortController();setLayoutLoaded(false);setLayout({widgets:[],version:0});if(!configurationLoaded)return;loadMonitorLayout(activeTemplate?.id??null,controller.signal).then(value=>{if(!value||!Array.isArray(value.widgets)||typeof value.version!=='number')throw new Error('布局服务未返回有效配置');if(!controller.signal.aborted){setLayout(value);setLayoutLoaded(true)}}).catch(e=>{if(!controller.signal.aborted)setConfigurationError(e.message)});return()=>controller.abort()},[activeTemplate?.id,configurationLoaded,user.id,legacy])
   const reloadConfiguration=async()=>{const data=await loadMonitorTemplates();setConfiguration(data);setConfigurationLoaded(true);return data}
-  useEffect(()=>{let current=true;setConfiguration({items:[],selectedId:null});setConfigurationLoaded(false);setConfigurationError('');
+  useEffect(()=>{if(!legacy)return;let current=true;setConfiguration({items:[],selectedId:null});setConfigurationLoaded(false);setConfigurationError('');
     if(DEMO_MODE){try{const value=JSON.parse(localStorage.getItem(cardKey)||'null');setChosenCards(Array.isArray(value)&&value.every(c=>typeof c==='string')?value:null)}catch{setChosenCards(null)};return}
     loadMonitorTemplates().then(data=>{if(current){setConfiguration(data);setConfigurationLoaded(true)}}).catch(e=>{if(current)setConfigurationError(e.message)})
     return()=>{current=false}
-  },[user.id,cardKey])
+  },[user.id,cardKey,legacy])
   const chooseTemplate=async(id:string|null)=>{await selectMonitorTemplate(id);await reloadConfiguration()}
   const updateCards=async(value:string[],targetId:string|null,widgets?:MonitorWidget[])=>{
     const permitted=value.filter(c=>availableCards.includes(c))
@@ -80,8 +81,6 @@ export default function OverviewPage({ stations, user, nav, immersive, onExitImm
   return <section className="overview-workspace" data-overview-view={view} data-immersive={immersive}>
     <header className="overview-header">{immersive ? <div className="overview-fullscreen-title"><strong>站点实时总览</strong><span>{visibleStations.length} 个授权站点</span></div> : <div className="overview-view-switch" role="group" aria-label="总览视图">{!DEMO_MODE&&<button aria-pressed={view==='monitor'} onClick={async()=>{if(await requestLeave())setView('monitor')}}>数据看板</button>}<button aria-pressed={view === "map"} onClick={async () => { if (await requestLeave()) setView("map") }}>地图总览</button><button aria-pressed={view === "dashboard"} onClick={async()=>{if(await requestLeave())setView("dashboard")}}>经营看板</button></div>}{view!=='monitor'&&mapToolbar}{immersive && <button className="overview-exit" onClick={onExitImmersive}>← 退出全屏</button>}</header>
     {!DEMO_MODE && !immersive && view!=='monitor' && <div className="configuration-toolbar">
-      <label>业务场景 <select aria-label="监控业务场景" value={scene} onChange={e=>setScene(e.target.value)}><option value="all">全部场景</option><option value="PV">光伏</option><option value="BESS">储能</option><option value="Hybrid">光储混合</option><option value="Wind">风电</option><option value="Diesel">柴油发电</option></select></label>
-      <label>通信状态 <select aria-label="监控通信状态" value={communication} onChange={e=>setCommunication(e.target.value)}><option value="all">全部通信状态</option><option value="online">在线</option><option value="offline">离线</option><option value="unknown">未取得心跳</option></select></label>
       {monitorLoading&&<p role="status">正在读取授权监控范围…</p>}{monitorError&&<p role="alert">{monitorError}</p>}
       <label>看板模板 <select aria-label="看板模板" disabled={configurationBusy || !configurationLoaded} value={configuration.selectedId??''} onChange={async e=>{const id=e.target.value||null;if(!await requestLeave())return;setConfigurationBusy(true);setConfigurationError('');try{await chooseTemplate(id)}catch(error){setConfigurationError((error as Error).message)}finally{setConfigurationBusy(false)}}}><option value="">默认卡片</option>{configuration.items.map(t=><option key={t.id} value={t.id}>{t.pinned?'★ ':''}{t.name}</option>)}</select></label>
       <Button disabled={configurationBusy || !configurationLoaded} onClick={async()=>{if(await requestLeave())setTemplatesOpen(true)}}>私人看板模板</Button>
@@ -96,7 +95,7 @@ export default function OverviewPage({ stations, user, nav, immersive, onExitImm
       <div className="overview-left"><LeftPanel visibleCards={cards} stations={visibleStations} role={role} onViewStations={nav.includes("资产与站点") ? () => { onExitImmersive(); onNavigate("资产与站点") } : undefined} />{immersive && livePanel}</div>
       <div className="overview-right"><RightPanel visibleCards={cards} stations={visibleStations} role={role} />{immersive && eventsPanel}</div>
       {selected && <StationPopup key={selected.id} station={selected} onClose={() => setSelectedId(null)} onOpenStation={id => { onExitImmersive(); onOpenStation(id) }} />}
-      {!visibleStations.length && <div className="overview-map-empty" role="status">当前范围暂无授权站点</div>}
+      {!monitorLoading&&!visibleStations.length && <div className="overview-map-empty" role="status">当前范围暂无授权站点</div>}
       <div className="overview-bottom"><BottomBar visibleCards={cards} stations={visibleStations} role={role} onSelectStation={s => setSelectedId(s.id)} onViewAll={allAlarms} /></div>
 
     </div>}
