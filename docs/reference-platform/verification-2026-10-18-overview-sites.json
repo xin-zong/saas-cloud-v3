@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-18",
+  "branch": "develop-toyingzhen",
+  "database": "ems_cloud_saas_toyingzhen",
+  "reference": "https://ess-cloud-login.qudeox.com/",
+  "designBasis": "用户指定的 QUDEOX 中文实屏及已核实清单；不再读取或参考 Figma",
+  "batch": ["总览数据看板", "场站运行列表"],
+  "implemented": [
+    "场景、站点范围及快照/当前运行数据切换，刷新周期和显示设置",
+    "累计能源及数据覆盖数量、类型分布、装机容量、通信与报警统计",
+    "概况卡片跳转同条件站点列表，规则报警发生中/已恢复统计及站点详情入口",
+    "已保存周期指标的分类、周期切换、排行、升降序、更多和口径说明",
+    "光伏和储能完整字段列、搜索、通信及报警筛选、高级筛选、排序和分页",
+    "服务端关注列表、账户显示列设置、版本冲突保留草稿、同筛选全量 CSV 导出",
+    "新鲜有效且唯一映射的当前 PV 功率/SOC，完整筛选集合排序后分页"
+  ],
+  "retained": ["现有权限校验", "白绿浅色风格", "地图总览", "经营看板与私人模板及布局", "原有列表查询", "站点详情和档案编辑", "标签管理", "年度发电计划", "空间管理"],
+  "persistence": {
+    "migrations": [38, 39],
+    "tables": ["monitor_station_capture", "monitor_user_workspace"],
+    "importedStationObservations": 7,
+    "idempotenceCheck": {"alreadyPresent": 7, "wouldInsert": 0},
+    "businessIdentityUpdates": false,
+    "sourceMode": "历史观察快照；保留采集与源更新时间，不能当作连续实测；分类沿用来源组合口径，MPPT随储能，本系统资产类型不改写",
+    "originalTargetBusinessTableFingerprintsUnchanged": 8
+  },
+  "verification": {
+    "backendTests": 34,
+    "realPostgresTestsIncluded": 7,
+    "httpAcceptanceChecks": 29,
+    "frontendApiTests": 4,
+    "importerTests": 2,
+    "newBrowserFlows": 2,
+    "retainedConfigurationBrowserFlows": 8,
+    "retainedOverviewBrowserFlows": 4,
+    "typescript": "passed",
+    "productionBuild": "passed; existing large bundle warning",
+    "independentReview": "实时单位、分页排序、多柜口径及小数秒时间排序问题均已补测试并修正"
+  },
+  "remaining": [
+    "参考站点尚无本系统连续实测接入；没有新鲜有效采样的运行值保持空态",
+    "PR、满发小时、计划完成率和储能效率/利用率的连续历史重算及日趋势不以周期快照伪造",
+    "累计充放电计数的计量边界不一致时，效率显示空值和待核对，不截断伪造为100%",
+    "工程建站保留现有草稿入口，未实现正式建站提交，本批不声称完成",
+    "无权限或看不到的参考模块继续保留未验证/不可见标记"
+  ],
+  "isolation": {
+    "frontend": "http://127.0.0.1:8444/",
+    "api": "http://127.0.0.1:18091/",
+    "referenceBusinessWrites": 0,
+    "originalDatabaseWrites": 0,
+    "originalWorkspaceChanges": 0,
+    "originalServiceRestarted": false,
+    "collectorStarted": false
+  }
+}

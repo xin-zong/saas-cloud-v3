@@ -1,5 +1,7 @@
 # figma-make-app
 
+本分支以根 AGENTS.md 的 2026-10-18 用户最新指令为准：只参考 QUDEOX 网站和核实清单，不再读取或参考 Figma。下方 Figma 规则保留为历史说明，不适用于本分支后续页面改造。
+
 ## Figma Design Source
 
 Follow the repository root `AGENTS.md` design rules. Before every page styling/layout change, inspect the relevant current design in [Enerlution 全平台基础版 V1](https://www.figma.com/design/Y0KMYFvalDXgSPnVZ5zG39/?node-id=4-3). When duplicate designs exist, prefer the version whose title contains “克制风格”. Record the chosen node IDs and verify the rendered implementation against those designs.

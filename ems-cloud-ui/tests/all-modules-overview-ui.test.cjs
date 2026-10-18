@@ -32,15 +32,22 @@ async function apiPage(browser, options = {}) {
   const user = { id: '7', name: '总览用户', account: 'overview@test', role: 'owner', organization: '测试组织', stationIds: ['12'], permissions: ['asset.read'], stationPermissions: { '12': ['asset.read'] }, organizationPermissions: {} }
   Object.assign(user, options.user)
   const configuration = {items:[{id:'overview-template',name:'测试看板',cards:['站点运营概况','在线运行容量','能源供应与构成',...(user.permissions.includes('alarm.read')?['当班处置态势','运行健康','异常与告警实时监控']:[])],pinned:false,sortOrder:0,version:0}],selectedId:'overview-template'}
+    let layout={widgets:[],version:0}
   await page.route(/^http:\/\/127\.0\.0\.1:1809[01]\/api\//, async route => {
     const p = new URL(route.request().url()).pathname.slice(4)
     if(p === '/monitor/templates') return route.fulfill({json:{code:0,data:configuration}})
+      if(p === '/monitor/layout') {
+        if(route.request().method()==='PUT'){const body=route.request().postDataJSON();layout={widgets:body.widgets,version:body.expectedVersion+1}}
+        return route.fulfill({json:{code:0,data:layout}})
+      }
+      if(p === '/monitor/stations')return route.fulfill({json:{code:0,data:(options.stations??[{id:'12',name:'授权测试站点',code:'SITE-12'}]).filter(s=>user.stationIds.includes(String(s.id))).map(s=>({...s,id:String(s.id)}))}})
     if(p === '/monitor/templates/overview-template' && route.request().method()==='PUT') { const body=route.request().postDataJSON();configuration.items[0]={...configuration.items[0],name:body.name,cards:body.cards,version:body.expectedVersion+1};return route.fulfill({json:{code:0,data:configuration.items[0]}}) }
     const data = p === '/auth/me' ? user : p === '/stations' ? options.stations ?? [{ id: 12, name: '授权测试站点', code: 'SITE-12', rated_power_kw: 100, capacity_kwh: 200 }, { id: 99, name: '禁止显示站点' }] : []
     await route.fulfill({ json: { code: 0, data } })
   })
   await page.goto(apiUrl, { waitUntil: 'domcontentloaded' })
   await page.getByRole('button', { name: '总览', exact: true }).click()
+  await page.getByRole('button', { name: '地图总览', exact: true }).click()
   return { context, page, refreshUser: async patch => {
     Object.assign(user, patch)
     const refreshed = page.waitForResponse(response => response.url().endsWith('/auth/me'))
@@ -102,12 +109,12 @@ test('overview API: dashboard range validation, honest empty data, customization
     await page.getByRole('heading', { name: '平台总览运营看板' }).waitFor()
     assert.equal(await page.getByText('禁止显示站点').count(), 0)
     assert.equal(await page.locator('[data-overview-card="储能充放趋势"]').isVisible(), false)
-    await page.getByText('当前授权站点快照 · 历史聚合未接通，所选日期不改变当前快照', { exact: true }).waitFor()
+    await page.getByText('资产与通信为当前快照；实测功率按所选日期读取，最长31天。', { exact: true }).waitFor()
     await page.getByRole('button', { name: '自定义', exact: true }).click()
     await page.getByLabel('开始日期', { exact: true }).fill('2026-09-26')
     await page.getByLabel('结束日期', { exact: true }).fill('2026-09-01')
     await page.getByRole('button', { name: '应用时间范围', exact: true }).click()
-    await page.getByText('结束日期不能早于开始日期', { exact: true }).waitFor()
+    await page.getByText('请选择31天内有效日期范围', { exact: true }).waitFor()
     await page.screenshot({ path: path.join(artifacts, 'date-range-validation-1440.png'), animations: 'disabled' })
     await page.getByLabel('结束日期', { exact: true }).fill('2026-09-26')
     await page.getByRole('button', { name: '应用时间范围', exact: true }).click()
@@ -117,7 +124,7 @@ test('overview API: dashboard range validation, honest empty data, customization
     await page.getByText('布局已保存至服务器，地图总览同步更新', { exact: true }).waitFor()
     assert.equal(await page.locator('.overview-shared-card-grid [data-overview-card="在线运行容量"]').isVisible(), false)
     const downloaded = page.waitForEvent('download')
-    await page.getByRole('button', { name: '数据导出', exact: true }).click()
+    await page.getByRole('button', { name: '站点快照导出', exact: true }).click()
     const download = await downloaded
     const body = await fs.readFile(await download.path(), 'utf8')
     assert.ok(body.includes('授权测试站点'))
@@ -243,7 +250,7 @@ test('overview customization: rejected server save, cancel/continue and outer na
     await page.getByRole('button', { name: '经营看板', exact: true }).click()
     await page.getByRole('button', { name: '页面定制', exact: true }).click()
     await page.getByLabel('在线运行容量', { exact: true }).uncheck()
-    await page.route(/\/api\/monitor\/templates\/overview-template$/, route => route.fulfill({status:503,json:{code:503,msg:'模板保存暂不可用'}}))
+    await page.route(/\/api\/monitor\/layout(?:\?|$)/, route => route.request().method()==='PUT'?route.fulfill({status:503,json:{code:503,msg:'模板保存暂不可用'}}):route.fallback())
     await page.getByRole('button', { name: '保存页面布局', exact: true }).click()
     await page.getByRole('alert').filter({ hasText: '模板保存暂不可用' }).waitFor()
     await page.screenshot({ path: path.join(artifacts, 'layout-save-failure-1440.png'), animations: 'disabled' })

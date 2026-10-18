@@ -99,13 +99,15 @@ export function Field({
 export function EntryTabs({
   active = "列表查询",
   onChange,
+  tabs = ["列表查询", "地图查询", "收藏站点"],
 }: {
   active?: string
   onChange: (value: string) => void
+  tabs?: string[]
 }) {
   return (
     <nav className="station-entry-tabs" aria-label="站点查询方式">
-      {["列表查询", "地图查询", "收藏站点"].map((tab) => (
+      {tabs.map((tab) => (
         <button
           type="button"
           key={tab}

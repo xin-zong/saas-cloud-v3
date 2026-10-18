@@ -8,7 +8,7 @@ async function setup(browser) {
  const context = await browser.newContext({viewport:{width:1280,height:900}})
  await context.addInitScript(()=>sessionStorage.setItem('enerlution-api-token','configuration-test'))
  const page=await context.newPage(); page.setDefaultTimeout(12000); page.setDefaultNavigationTimeout(60000)
- const state={tags:[],assigned:[],items:[],selectedId:null,failTag:false,failLayout:false,writes:[]}
+ const state={tags:[],assigned:[],items:[],layouts:{},selectedId:null,failTag:false,failLayout:false,writes:[]}
  const user={id:'7',name:'配置测试用户',account:'configuration@test',role:'operator',organization:'验收组织',stationIds:['12'],permissions:['asset.read','asset.edit'],stationPermissions:{'12':['asset.read','asset.edit']},organizationPermissions:{}}
  await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com|static\.figma\.com/,r=>r.abort())
  await page.route(/^http:\/\/127\.0\.0\.1:1809[01]\/api\//,async route=>{
@@ -19,6 +19,16 @@ async function setup(browser) {
   if(p==='/auth/me') data=user
   else if(p==='/stations')data=[{id:12,name:'授权测试站点',code:'SITE-12',region:'华东'}]
   else if(p==='/stations/12/space-devices')data={items:[],total:0}
+  else if(p==='/monitor/layout'){
+   const scope=url.searchParams.get('templateId')??'default'
+   if(method==='PUT'){
+    if(state.failLayout)return reply(409,'布局已更新')
+    const current=state.layouts[scope]??{widgets:[],version:0}
+    if(body.expectedVersion!==current.version)return reply(409,'布局已更新')
+    state.layouts[scope]={widgets:body.widgets,version:current.version+1}
+   }
+   data=state.layouts[scope]??{widgets:[],version:0}
+  }
   else if(p==='/station-tags'&&method==='GET')data=state.tags
   else if(p==='/station-tags'&&method==='POST'){if(state.failTag)return reply(409,'标签名称已存在');const tag={id:'tag-1',...body,version:0};state.tags.push(tag);data=tag}
   else if(p==='/station-tags/tag-1'&&method==='PUT'){if(state.failTag)return reply(409,'标签版本已变化');const tag={id:'tag-1',name:body.name,description:body.description,version:body.expectedVersion+1};state.tags=[tag];data=tag}
@@ -35,9 +45,10 @@ async function setup(browser) {
  await page.goto(preview,{waitUntil:'domcontentloaded'})
  await page.getByRole('navigation',{name:'一级导航'}).getByRole('button',{name:'总览',exact:true}).click()
  await page.getByRole('button',{name:'经营看板',exact:true}).waitFor()
+ await page.getByRole('button',{name:'地图总览',exact:true}).click()
  return {page,context,state,user}
 }
-async function assets(page){await page.getByRole('navigation',{name:'一级导航'}).getByRole('button',{name:'电站管理',exact:true}).click()}
+async function assets(page){await page.getByRole('navigation',{name:'一级导航'}).getByRole('button',{name:'电站管理',exact:true}).click();await page.getByRole('button',{name:'列表查询',exact:true}).click()}
 async function close(page){await page.getByRole('dialog').getByRole('button',{name:'关闭',exact:true}).click()}
 async function template(page){await page.getByRole('button',{name:'私人看板模板',exact:true}).click();await page.getByRole('button',{name:'新建模板',exact:true}).click();await page.getByLabel('模板名称',{exact:true}).fill('我的运营模板');await page.getByRole('button',{name:'保存模板',exact:true}).click();await page.getByRole('button',{name:'选择我的运营模板',exact:true}).click();await close(page)}
 test('tags CRUD, server reload, conflict draft, station assignment and unlink delete', {timeout:90000}, async()=>{
@@ -87,16 +98,16 @@ test('private template create rename pin server selection and async layout confl
    assert.equal(await page.getByRole('checkbox',{name:'在线运行容量',exact:true}).isChecked(),false)
   }
   state.failLayout=true
-  await page.getByRole('button',{name:'保存页面布局',exact:true}).click();await page.getByText('模板版本已变化',{exact:true}).waitFor()
+  await page.getByRole('button',{name:'保存页面布局',exact:true}).click();await page.getByText('布局已更新',{exact:true}).waitFor()
   assert.equal(await page.getByRole('checkbox',{name:'在线运行容量',exact:true}).isChecked(),false)
   state.failLayout=false;state.items[0].version++
   await page.getByRole('button',{name:'刷新版本（保留卡片草稿）',exact:true}).click()
   await page.getByText('已刷新模板版本；卡片草稿已保留，请核对后保存',{exact:true}).waitFor()
   await page.getByRole('button',{name:'保存页面布局',exact:true}).click();await page.getByText('布局已保存至服务器，地图总览同步更新',{exact:true}).waitFor()
-  assert.equal(state.items[0].cards.includes('在线运行容量'),false)
+  assert.equal(state.layouts['template-1'].widgets.some(w=>w.card==='在线运行容量'),false)
   const local=await page.evaluate(()=>Object.keys(localStorage).filter(k=>k.startsWith('enerlution-overview-cards')));assert.deepEqual(local,[])
   await page.getByRole('button',{name:'私人看板模板',exact:true}).click();await page.getByRole('button',{name:'重命名我的运营模板',exact:true}).click();await page.getByLabel('模板名称',{exact:true}).fill('运行简报');await page.getByRole('button',{name:'保存模板',exact:true}).click();await page.getByRole('button',{name:'置顶运行简报',exact:true}).click();await page.getByRole('button',{name:'取消置顶运行简报',exact:true}).waitFor();await close(page)
-  await page.reload();await page.getByRole('option',{name:'★ 运行简报',exact:true}).waitFor({state:'attached'});assert.equal(await page.getByLabel('看板模板',{exact:true}).inputValue(),'template-1')
+  await page.reload({waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'地图总览',exact:true}).click();await page.getByRole('option',{name:'★ 运行简报',exact:true}).waitFor({state:'attached'});assert.equal(await page.getByLabel('看板模板',{exact:true}).inputValue(),'template-1')
   await page.getByRole('button',{name:'经营看板',exact:true}).click();assert.equal(await page.locator('.overview-shared-card-grid [data-overview-card="在线运行容量"]').isVisible(),false)
   await fs.mkdir(path.join(__dirname,'../.figma/configuration'),{recursive:true});await page.screenshot({path:path.join(__dirname,'../.figma/configuration/mock-templates-persisted-1280.png'),animations:'disabled'})
   await page.getByRole('button',{name:'私人看板模板',exact:true}).click();await page.getByRole('button',{name:'删除运行简报',exact:true}).click();await page.getByRole('button',{name:'确认删除模板',exact:true}).click();await page.getByText('暂无私人模板，新建后可保存页面布局。',{exact:true}).waitFor();await close(page)

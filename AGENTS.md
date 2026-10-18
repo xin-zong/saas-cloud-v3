@@ -1,5 +1,10 @@
 # 项目设计依据
 
+## develop-toyingzhen 最新页面参考约定（2026-10-18 用户明确指定）
+
+- 本分支后续页面改造只参考用户指定的 QUDEOX 网站及已核实实屏清单，不再读取或参考 Figma。此约定覆盖下方历史 Figma 规则及前端同类规则。
+- 按逐项清单保留现有成熟能力、融合已证实业务；沿用本项目权限和白绿风格，不默认整体替换架构。参考平台保持只读。
+
 ## develop-toyingzhen 分支隔离约定
 
 - 本分支的业务 PostgreSQL 固定使用 `ems_cloud_saas_toyingzhen`，专用账号 `ems_toyingzhen_owner`；原库 `ems_cloud_saas_v3` 和 `ems_cloud_v2_proto` 不得作为本分支运行或迁移目标。

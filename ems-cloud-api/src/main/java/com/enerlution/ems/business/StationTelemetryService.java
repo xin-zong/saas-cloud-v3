@@ -48,6 +48,11 @@ public class StationTelemetryService {
      else value.put("staleReason",staleReason(value,Boolean.TRUE.equals(m.get("reachable")),now));
    }
    var result=new LinkedHashMap<String,Object>();result.put("items",values);result.put("serverTime",now);
+   // Count bindings even when a point has never produced a sample. A single returned value
+   // does not imply that its cabinet is the only mapped cabinet at this station.
+   var counts=new LinkedHashMap<String,Long>();
+   for(var mapping:mappings)counts.merge(mapping.get("namespace")+":"+mapping.get("source_id"),1L,Long::sum);
+   result.put("mappingCounts",counts);
    result.put("presence",includePresence?presence.snapshot(station):null);
    return result;
  }

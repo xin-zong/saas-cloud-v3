@@ -15,6 +15,8 @@ import StationProvisionPage from "./station-provision/StationProvisionPage"
 import { Asset, EntryTabs, Modal } from "./station-provision/Common"
 import { provisionDraftKey, parseDraft } from "./station-provision/model"
 import "./station-provision/station-entry.css"
+import MonitorSitesPage from './MonitorSitesPage'
+import type {WorkspaceQuery} from '@/api/monitorWorkspace'
 interface Props {
   stations: Station[]
   onUpdateStation: (id: string, patch: Partial<Station>) => void | Promise<void>
@@ -25,6 +27,7 @@ interface Props {
   showRevenue?: boolean
   registerLeaveGuard?: RegisterLeaveGuard
   onEditorStateChange?:(open:boolean)=>void
+  monitorFilter?: WorkspaceQuery
 }
 const number = (value: number, suffix = "") =>
   Number.isFinite(value) ? String(value) + suffix : "—"
@@ -37,12 +40,14 @@ export default function AssetsPage({
   showRevenue = true,
   registerLeaveGuard,
   onEditorStateChange,
+  monitorFilter,
 }: Props) {
   const { user } = useAuth()
   const [tagsTarget, setTagsTarget] = useState<Station | "manage" | null>(null)
   const [generationTarget, setGenerationTarget] = useState<Station | null>(null)
   const [spacesTarget, setSpacesTarget] = useState<Station | null>(null)
-  const [tab, setTab] = useState("列表查询")
+  const [tab, setTab] = useState(DEMO_MODE?"列表查询":"运行监控")
+  useEffect(()=>{if(monitorFilter)setTab('运行监控')},[monitorFilter])
   const [search, setSearch] = useState("")
   const [region, setRegion] = useState("")
   const [advanced,setAdvanced]=useState(false),[rule,setRule]=useState(''),[status,setStatus]=useState(''),[minimumSoc,setMinimumSoc]=useState(''),[maximumSoc,setMaximumSoc]=useState('')
@@ -162,8 +167,8 @@ export default function AssetsPage({
       className="assets-workspace station-entry-scope station-assets"
       data-design-node="1114:8271"
     >
-      <EntryTabs active={tab} onChange={changeTab} />
-      {tab === "地图查询" ? (
+      <EntryTabs active={tab} onChange={changeTab} tabs={DEMO_MODE?undefined:['运行监控','列表查询','地图查询','收藏站点']} />
+      {(tab === '运行监控'||!DEMO_MODE&&tab==='收藏站点') && user ? <MonitorSitesPage key={tab} initialWatched={tab==='收藏站点'} user={user} initialFilter={monitorFilter} onOpenStation={onOpenStation} canEditStation={canEditStation} onEdit={id=>{const station=stations.find(s=>s.id===id);if(station){setViewOnly(false);setEditing(station)}}} onTags={()=>setTagsTarget('manage')} onBuildDraft={canEdit?()=>setProvision('new'):undefined} registerLeaveGuard={registerLeaveGuard}/> : tab === "地图查询" ? (
         <MapQueryTab stations={stations} onOpenStation={onOpenStation} />
       ) : tab === "智能规则" ? (
         <SmartRulesTab stations={stations} onOpenStation={onOpenStation} />
@@ -342,7 +347,7 @@ export default function AssetsPage({
                           className="station-row-actions"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <button
+                          {DEMO_MODE&&<button
                             aria-label={
                               (stars[s.id] ? "取消收藏" : "收藏") + s.name
                             }
@@ -358,7 +363,7 @@ export default function AssetsPage({
                                 (stars[s.id] ? "Filled" : "Unfilled")
                               }
                             />
-                          </button>
+                          </button>}
                           {canEditStation(s.id) && (
                             <button
                               aria-label={"编辑" + s.name}

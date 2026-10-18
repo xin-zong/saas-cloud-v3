@@ -15,6 +15,7 @@ import "@/styles/stations-figma.css"
 
 import Header from "@/components/Header"
 import OverviewPage from "@/components/OverviewPage"
+import type {WorkspaceQuery} from "@/api/monitorWorkspace"
 import "@/styles/all-modules-shell.css"
 import '@/styles/platform-alignment.css'
 
@@ -398,6 +399,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
+  const [monitorSiteFilter,setMonitorSiteFilter]=useState<WorkspaceQuery>({})
   const [activeNav, setActiveNav] = useState<NavLabel>(() =>
     getInitialNavFromHash(user),
   )
@@ -980,6 +982,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
           }}
         >
           <AssetsPage
+            monitorFilter={monitorSiteFilter}
             onEditorStateChange={setAssetEditorOpen}
             registerLeaveGuard={registerAssetsLeaveGuard}
             stations={scopedStations}
@@ -1061,7 +1064,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
             onLogout={requestLogout}
           />
         )}
-        {activeNav === "总览" && <OverviewPage stations={scopedStations} user={user} nav={roleConfig.nav} immersive={immersive} onExitImmersive={() => setImmersive(false)} onOpenStation={handleOpenStation} registerLeaveGuard={registerOverviewLeaveGuard} requestLeave={() => overviewLeaveGuard.current?.() ?? Promise.resolve(true)} onNavigate={async nav => { if (roleConfig.nav.includes(nav) && await requestActiveEditorLeave()) setActiveNav(nav) }} />}
+        {activeNav === "总览" && <OverviewPage onOpenSites={async filters=>{if(roleConfig.nav.includes("资产与站点")&&await requestActiveEditorLeave()){setMonitorSiteFilter(filters);setElectricView('stations');setActiveNav("资产与站点");setActiveDetailId(null)}}} stations={scopedStations} user={user} nav={roleConfig.nav} immersive={immersive} onExitImmersive={() => setImmersive(false)} onOpenStation={handleOpenStation} registerLeaveGuard={registerOverviewLeaveGuard} requestLeave={() => overviewLeaveGuard.current?.() ?? Promise.resolve(true)} onNavigate={async nav => { if (roleConfig.nav.includes(nav) && await requestActiveEditorLeave()) setActiveNav(nav) }} />}
       </div>
 
       {DEMO_MODE && (
