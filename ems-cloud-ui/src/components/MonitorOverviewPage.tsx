@@ -35,7 +35,7 @@ function MetricCard({title,keys,unit,rows,onOpen,superiorKeys,cards}:CardProps){
 }
 export default function MonitorOverviewPage({user,onOpenStation,onOpenSites,onOpenAlarms,registerLeaveGuard}:Props){
  const pref=useMonitorPreferences(user.id),[scene,setScene]=useState('all'),[field,setField]=useState<'solar'|'storage'|null>(null),[settings,setSettings]=useState(false),[ruleView,setRuleView]=useState('active'),[interval,setInterval]=useState<number|null>(null)
- const scope='imported',sourceMode='capture' as const,tab=field??pref.preference.settings.dashboardField??'solar',minutes=interval??pref.preference.settings.refreshMinutes??0
+ const scope='replica',sourceMode='capture' as const,tab=field??pref.preference.settings.dashboardField??'solar',minutes=interval??pref.preference.settings.refreshMinutes??0
  const {data,busy,error,refresh}=useMonitorWorkspace(user.id+JSON.stringify(user.stationPermissions??{}),{scene,scope,sourceMode,includeDashboard:'true',limit:200},!pref.loading&&!pref.error,minutes),capture=data?.dashboardCapture,summary=capture&&capture.completeScope!==false&&data?{...data.summary,...capture.summary}:data?.summary
  const status=(key:string)=>onOpenSites({scene,scope,sourceMode,...(key==='alarmSites'?{alarm:'active'}:key==='all'?{}:{communication:key})})
  const total=summary?.total??0,pv=summary?.PV??0,bess=summary?.BESS??0,first=total?pv/total*360:0,second=total?(pv+bess)/total*360:0

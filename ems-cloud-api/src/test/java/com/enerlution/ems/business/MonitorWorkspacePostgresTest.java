@@ -98,4 +98,8 @@ class MonitorWorkspacePostgresTest {
   when(telemetry.snapshot(eq(a),anyList(),anyBoolean())).thenReturn(Map.of("mappingCounts",Map.of("cabinet:20107",2L),"items",List.of(sample(20107,125,now,false))));
   assertFalse(((Map<?,?>)items(reader.workspace(Map.of("stationId",Long.toString(a),"sourceMode","current"),false)).getFirst().get("metrics")).containsKey("pvPower"));
  }
-}
+ @Test void replicaIncludesExplicitLocalSitesWithoutPretendingTheyWereImportedAndHidesArchives(){
+  db.update("UPDATE station SET replica_visible=true WHERE id=?",a);
+  var params=Map.of("search",prefix,"scope","replica");var rows=items(service.workspace(params,false));assertEquals(1,rows.size());assertEquals(Long.toString(a),rows.getFirst().get("id"));assertEquals(false,rows.getFirst().get("imported"));
+  db.update("UPDATE station SET archived_at=now() WHERE id=?",a);assertTrue(items(service.workspace(params,false)).isEmpty());
+ }}

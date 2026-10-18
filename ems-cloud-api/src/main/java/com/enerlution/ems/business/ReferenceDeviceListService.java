@@ -39,14 +39,14 @@ public class ReferenceDeviceListService {
         r.model,r.manufacturer,r.rated_power_kw,r.capacity_kwh,
         parent.name AS parent_name,parent.serial_number AS parent_serial,
         CASE WHEN o.observed_at<=now() AND o.observed_at>=now()-interval '90 seconds' THEN o.communication_status END AS communication_status
-      FROM device d JOIN device_reference_import i ON i.device_id=d.id
-      JOIN station_reference_import si ON si.station_id=d.station_id
+      FROM device d LEFT JOIN device_reference_import i ON i.device_id=d.id
+      LEFT JOIN station_reference_import si ON si.station_id=d.station_id
       JOIN station st ON st.id=d.station_id
       LEFT JOIN device_reference_profile r ON r.device_id=d.id
       LEFT JOIN LATERAL(SELECT p.name,p.serial_number FROM device p WHERE p.station_id=d.station_id
         AND p.serial_number=i.provenance->'device'->'raw'->>'parentSerialNumber' ORDER BY p.id LIMIT 1) parent ON true
       LEFT JOIN device_observation o ON o.device_id=d.id
-      WHERE EXISTS(SELECT 1 FROM saas_effective_station_permission p WHERE p.user_id=? AND p.client=? AND p.station_id=d.station_id AND p.permission_code='asset.read')
+      WHERE d.archived_at IS NULL AND st.archived_at IS NULL AND (si.station_id IS NOT NULL OR st.replica_visible) AND EXISTS(SELECT 1 FROM saas_effective_station_permission p WHERE p.user_id=? AND p.client=? AND p.station_id=d.station_id AND p.permission_code='asset.read')
         AND (?::bigint IS NULL OR d.station_id=?) ORDER BY d.id LIMIT 2001
       """,s.access.userId(),s.access.client(),stationId,stationId);
     if(raw.size()>2000)throw new BusinessException(413,"设备过多，请选择场站缩小范围");

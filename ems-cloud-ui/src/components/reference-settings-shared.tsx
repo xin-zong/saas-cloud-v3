@@ -1,0 +1,10 @@
+import {useEffect,useRef,useState,type ReactNode} from 'react'
+import {useConfigurationLeaveGuard} from './useConfigurationLeaveGuard'
+import type {RegisterLeaveGuard} from './useEditorLeaveGuard'
+export function SettingsDialog({title,busy,dirty=true,onClose,registerLeaveGuard,children,actions}:{title:string;busy:boolean;dirty?:boolean;onClose:()=>void;registerLeaveGuard?:RegisterLeaveGuard;children:ReactNode;actions:ReactNode}){
+ const leave=useConfigurationLeaveGuard({dirty,busy,onClose,onDiscard:()=>{},registerLeaveGuard})
+ return <div className="rq-modal-shade"><section role="dialog" aria-modal="true" aria-label={title} className="rq-modal"><header><h3>{title}</h3><button disabled={busy} aria-label="关闭弹窗" onClick={()=>void leave.close()}>×</button></header><div className="rq-modal-body">{children}</div><footer><button disabled={busy} onClick={()=>void leave.close()}>取消</button>{actions}</footer></section>{leave.confirmation}</div>
+}
+export function useSettingsAction(){const [busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');const lock=useRef(false),alive=useRef(true),generation=useRef(0);useEffect(()=>{alive.current=true;return()=>{alive.current=false;lock.current=false;generation.current++}},[]);async function run(action:()=>Promise<void>){if(lock.current)return;const requestGeneration=generation.current;lock.current=true;setBusy(true);setError('');setNotice('');try{await action()}catch(e){if(alive.current&&generation.current===requestGeneration&&!(e instanceof Error&&e.name==='AbortError'))setError(e instanceof Error?e.message:'操作失败')}finally{if(generation.current===requestGeneration){lock.current=false;if(alive.current)setBusy(false)}}}return {busy,error,notice,setNotice,run}}
+export function SettingsNotice({error,notice}:{error?:string;notice?:string}){return <>{error&&<p className="rq-error" role="alert">{error}</p>}{notice&&<p className="rq-note" role="status">{notice}</p>}</>}
+export const emptyText=(v:unknown)=>v==null||v===''?'--':String(v)

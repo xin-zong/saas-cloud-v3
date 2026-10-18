@@ -1,0 +1,9 @@
+import {useState} from 'react'
+import {api,type ApiRow} from '@/api/client'
+import {minuteText} from '@/api/planning'
+import {base,display,Empty,QueryState,useStationQuery} from './shared'
+export function ReferenceStationEnergy({stationId}:{stationId:string}){
+ const [tab,setTab]=useState('实时控制'),[date,setDate]=useState(new Date().toISOString().slice(0,10))
+ const q=useStationQuery(`energy:${stationId}:${date}`,signal=>api<ApiRow[]>(base(stationId)+'/plans?'+new URLSearchParams({date}),{signal}))
+ return <article className="rs-panel"><nav className="rs-tabs" role="tablist">{['实时控制','下发日志'].map(v=><button role="tab" aria-selected={v===tab} key={v} onClick={()=>setTab(v)}>{v}</button>)}</nav>{tab==='实时控制'?<><div className="rs-toolbar"><h3>采集器</h3></div><p className="rs-note">实时设备控制尚未接入，以下指令不可下发。</p><div className="rs-stat-grid">{['急停 / 恢复','关机 / 恢复','故障复位','重启'].map(v=><div key={v}><span>{v}</span><button disabled>下发指令</button></div>)}</div><div className="rs-toolbar"><h3>已登记运行策略</h3><span className="rs-spacer"/><input type="date" aria-label="运行策略日期" value={date} onChange={e=>e.target.value&&setDate(e.target.value)}/></div><QueryState {...q}/>{q.data?.map(plan=><section key={String(plan.id)}><div className="rs-toolbar"><strong>版本 {display(plan.version)}</strong><span>{({draft:'草稿',submitted:'待审批',approved:'已批准',rejected:'已驳回'} as Record<string,string>)[String(plan.status)]??display(plan.status)}</span></div><table><thead><tr><th>开始时间</th><th>结束时间</th><th>运行模式</th><th>功率 (kW)</th></tr></thead><tbody>{(Array.isArray(plan.periods)?plan.periods as ApiRow[]:[]).map(p=><tr key={String(p.id)}><td>{minuteText(p.start_minute)}</td><td>{minuteText(p.end_minute)}</td><td>{({charge:'充电',discharge:'放电',standby:'待机'} as Record<string,string>)[String(p.mode)]??display(p.mode)}</td><td>{display(p.power_kw)}</td></tr>)}</tbody></table></section>)}{!q.loading&&!q.error&&!q.data?.length&&<Empty text="所选日期暂无已登记运行策略"/>}</>:<Empty text="尚未接入指令下发日志"/>}</article>
+}

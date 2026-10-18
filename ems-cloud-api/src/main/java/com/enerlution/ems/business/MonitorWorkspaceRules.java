@@ -19,7 +19,7 @@ final class MonitorWorkspaceRules {
     option(p,q,"communication","all",Set.of("all","online","partial","offline","connecting","unknown"));
     option(p,q,"alarm","all",Set.of("all","active","clear","unknown"));
     option(p,q,"sourceMode","capture",Set.of("capture","current"));
-    option(p,q,"scope","all",Set.of("all","imported"));
+    option(p,q,"scope","all",Set.of("all","imported","replica"));
     option(p,q,"chargeStatus","all",Set.of("all","charging","discharging","idle","unknown"));
     option(p,q,"productionStatus","all",Set.of("all","running","not_started","unknown"));
     option(p,q,"direction","ASC",Set.of("ASC","DESC"));

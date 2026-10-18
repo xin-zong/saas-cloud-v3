@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import Sidebar from "@/components/Sidebar"
 import ReferenceWorkspace from '@/components/ReferenceWorkspace'
+import ReferenceAssetWorkspace from '@/components/ReferenceAssetWorkspace'
 import {ReferenceDevicesPage} from '@/components/ReferenceDevicesPage'
 import MonitorOverviewPage from '@/components/MonitorOverviewPage'
 import {referencePages,canOpenReferencePage} from '@/navigation/referenceNavigation'
@@ -914,38 +915,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
       {logoutConfirm && <SettingsDialog title="退出登录？" logout onClose={() => setLogoutConfirm(false)}><p>确认退出当前账户？</p><footer><button onClick={() => setLogoutConfirm(false)}>取消</button><button className="settings-confirm-logout" onClick={() => {void confirmLogout()}}>退出登录</button></footer></SettingsDialog>}
       {!permitted ? <section className="reference-placeholder"><h2>当前账户无访问权限</h2><p>请联系管理员分配菜单和业务权限。</p></section> : referencePage==='dashboard' ?
         <MonitorOverviewPage user={user} registerLeaveGuard={registerOverviewLeaveGuard} onOpenAlarms={()=>void navigateReference('alarm-live')} onOpenStation={handleOpenStation} onOpenSites={async filters=>{if(await requestActiveEditorLeave()){setMonitorSiteFilter(filters);await navigateReference('sites')}}}/>
-      : referencePage==='devices' ? <ReferenceDevicesPage user={user} registerLeaveGuard={registerDevicesLeaveGuard} onOpenStation={id=>handleOpenStation(id)} onOpenDevice={(stationId,deviceId)=>handleOpenStation(stationId,'设备详情',deviceId)}/>
-      : referencePage==='sites' ? activeDetailId!==null ? (
-          <StationDetailPage
-            onRefresh={refreshApi}
-            tabs={detailTabs
-
-              .map((id) => scopedStations.find((s) => s.id === id)!)
-
-              .filter(Boolean)}
-            activeId={activeDetailId}
-            initialSubNav={detailSubNav}
-            initialDeviceId={focusedDevice}
-            onClose={handleCloseDetailTab}
-            onSetActive={(id) => {
-              void (async () => {
-                if (id !== activeDetailId && !(await requestStationLeave())) return
-                setDetailSubNav(rememberedSubNav.current[id] ?? "站点概览")
-                setActiveDetailId(id)
-              })()
-            }}
-            onBack={handleBackFromDetail}
-            onSubNavChange={(id, subNav) => {
-              rememberedSubNav.current[id] = subNav
-              if (id === activeDetailId) setDetailSubNav(subNav)
-            }}
-            registerLeaveGuard={registerStationLeaveGuard}
-            requestLeave={requestStationLeave}
-            allowedSubNavs={DEMO_MODE ? roleConfig.stationSubNavs : stationRoleConfig(user, activeDetailId).stationSubNavs}
-            role={user.role}
-            onOpenOrders={(stationId,orderId,queue)=>{setWorkOrderFocus({stationId,orderId,queue});setActiveNav('工单与审批')}}
-          />
-      ) : <AssetsPage referenceNavigation stations={scopedStations} monitorFilter={monitorSiteFilter} onUpdateStation={handleUpdateStation} onCreateStation={handleCreateStation} onOpenStation={handleOpenStation} canEdit={user.permissions.includes('asset.edit')} canEditStation={id=>hasStationPermission(user,id,'asset.edit')} showRevenue={roleConfig.showAssetRevenue} registerLeaveGuard={registerAssetsLeaveGuard} onEditorStateChange={setAssetEditorOpen}/>
+      : referencePage==='devices'||referencePage==='sites' ? <ReferenceAssetWorkspace user={user} mode={referencePage==='devices'?'devices':activeDetailId?'detail':'sites'} stationId={activeDetailId??undefined} initialDeviceId={focusedDevice} initialTab={detailSubNav} initialFilter={monitorSiteFilter} onOpenStation={handleOpenStation} onBack={handleBackFromDetail} registerLeaveGuard={referencePage==='devices'?registerDevicesLeaveGuard:activeDetailId?registerStationLeaveGuard:registerAssetsLeaveGuard} onChanged={refreshApi}/>
       : <section className="reference-placeholder"><h2>{referenceEntry.label}</h2><p>菜单入口已按参考平台建立，该页面尚未完成复刻。</p><p>原有页面已从此入口屏蔽，不以旧页面替代参考页面。</p></section>}
     </ReferenceWorkspace>
   }

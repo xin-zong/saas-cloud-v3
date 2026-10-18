@@ -38,7 +38,7 @@ class SubstationPostgresTest {
    INSERT INTO device VALUES(19,101,'Solar meter','s19'),(20,101,'Storage meter','s20'),(30,102,'Foreign','s30');
    INSERT INTO measurement_point VALUES(190,19),(191,19),(200,20),(300,30);
    """);
-  db.execute("ALTER TABLE app_user ADD COLUMN display_name text");
+  db.execute("ALTER TABLE device ADD COLUMN archived_at timestamptz"); db.execute("ALTER TABLE app_user ADD COLUMN display_name text");
     db.execute(Files.readString(Path.of("src/main/resources/db/migration/V44__station_operation_logs.sql")));
     db.execute(Files.readString(Path.of("src/main/resources/db/migration/V43__substations.sql")));
   access=mock(AccessControl.class);when(access.userId()).thenReturn(7L);when(access.context()).thenReturn(new TenantContext(7,11,"enterprise",false));
@@ -105,4 +105,12 @@ class SubstationPostgresTest {
   when(telemetry.snapshot(101,List.of(190L,191L),false)).thenAnswer(inv->{doThrow(new BusinessException(403,"revoked")).when(access).requireStationPermission(101,"telemetry.read");return Map.of("items",List.of());});
   assertEquals(403,assertThrows(BusinessException.class,()->service.telemetry(101,id(a))).status());
  }
-}
+ @Test void archivedDevicesAreNotCandidatesOrNewBindingsAndExistingLinksSurviveReplacement(){
+  var child=service.create(101,request("Archived boundary","10",null));
+  service.replaceDevices(101,id(child),new SubstationService.BindRequest(List.of("19"),1L));
+  db.update("UPDATE device SET archived_at=now() WHERE id IN (19,20)");
+  assertTrue(service.devices(101).isEmpty());
+  failure(409,()->service.replaceDevices(101,id(child),new SubstationService.BindRequest(List.of("20"),2L)));
+  service.replaceDevices(101,id(child),new SubstationService.BindRequest(List.of(),2L));
+  assertEquals(List.of(19L),db.queryForList("SELECT device_id FROM substation_device WHERE substation_id=?",Long.class,id(child)));
+ }}

@@ -57,12 +57,12 @@ public class MonitorWorkspaceService {
         bool_or(permission_code='telemetry.read') AS telemetry,bool_or(permission_code='alarm.read') AS alarm
        FROM saas_effective_station_permission WHERE user_id=? AND client=? GROUP BY station_id
       )
-      SELECT st.id::text,st.name,st.code,st.asset_type AS scene,st.region,st.address,st.rated_power_kw,st.capacity_kwh,
+      SELECT st.replica_visible,st.id::text,st.name,st.code,st.asset_type AS scene,st.region,st.address,st.rated_power_kw,st.capacity_kwh,
        sp.solar_capacity_kw,sp.country,sp.province,sp.city,sp.timezone,sp.commissioned_on,sp.grid_connection_date,
        coalesce(sp.details->>'siteType','unknown') AS site_type,coalesce(sp.details->'systems','[]'::jsonb)::text AS reference_systems,
        EXISTS(SELECT 1 FROM station_reference_import i WHERE i.station_id=st.id) AS imported,
        cap.captured_at,cap.source_updated_at,cap.communication AS captured_communication,cap.charge_status,cap.metrics::text AS captured_metrics,
-       (SELECT count(*) FROM device d WHERE d.station_id=st.id) AS device_count,
+       (SELECT count(*) FROM device d WHERE d.station_id=st.id AND d.archived_at IS NULL) AS device_count,
        permitted.telemetry AS telemetry_allowed,permitted.alarm AS alarm_allowed,
        coalesce((SELECT jsonb_agg(jsonb_build_object('id',t.id,'name',t.name)) FROM station_tag_link l JOIN station_tag t ON t.id=l.tag_id AND t.tenant_id=l.tenant_id WHERE l.station_id=st.id AND l.tenant_id=st.tenant_id),'[]'::jsonb)::text AS tags,
        (SELECT count(*) FROM ems_binding_period b WHERE b.station_id=st.id AND b.valid_to IS NULL AND b.valid_from<=now()) AS connections,
@@ -71,14 +71,14 @@ public class MonitorWorkspaceService {
        (SELECT count(*) FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN alarm_business_origin o ON o.alarm_id=a.id WHERE coalesce(o.station_id,d.station_id)=st.id AND a.deleted_at IS NULL AND a.closed_at IS NULL AND a.occurred_at<=now() AND (a.recovered_at IS NULL OR a.recovered_at>now())) AS alarm_count
       FROM station st JOIN permitted ON permitted.station_id=st.id LEFT JOIN station_profile sp ON sp.station_id=st.id
       LEFT JOIN LATERAL(SELECT * FROM monitor_station_capture c WHERE c.station_id=st.id ORDER BY c.captured_at DESC,c.id DESC LIMIT 1) cap ON true
-      WHERE permitted.asset ORDER BY st.id LIMIT 2001
+      WHERE permitted.asset AND st.archived_at IS NULL ORDER BY st.id LIMIT 2001
       """,user,client);
     if(raw.size()>2000)throw new BusinessException(413,"授权站点超过2000；请先缩小站点授权范围");
     var rows=new ArrayList<Map<String,Object>>();
     for(var r:raw){
       long id=Long.parseLong(r.get("id").toString());if(!assetScope.contains(id))continue;
       boolean t=Boolean.TRUE.equals(r.get("telemetry_allowed"))&&telemetryScope.contains(id),a=Boolean.TRUE.equals(r.get("alarm_allowed"))&&alarmScope.contains(id);
-      var row=new LinkedHashMap<String,Object>();for(String key:List.of("id","name","code","scene","region","address","country","province","city","timezone","imported","device_count"))row.put(key,r.get(key));
+      var row=new LinkedHashMap<String,Object>();for(String key:List.of("id","name","code","scene","region","address","country","province","city","timezone","imported","replica_visible","device_count"))row.put(key,r.get(key));
       var metrics=new LinkedHashMap<String,Object>();boolean capture=q.get("sourceMode").equals("capture");
       row.put("assetScene",r.get("scene"));
       if(capture&&t&&Boolean.TRUE.equals(r.get("imported"))&&r.get("captured_at")!=null)row.put("scene",capturedScene(r.get("reference_systems"),r.get("scene").toString()));
@@ -124,7 +124,7 @@ public class MonitorWorkspaceService {
   private static Object time(Object v){return v instanceof java.sql.Timestamp ts?ts.toInstant().toString():v;}
   @SuppressWarnings("unchecked") private static boolean matches(Map<String,Object> r,Map<String,Object> q){
     for(String key:List.of("scene","communication","productionStatus","chargeStatus"))if(!q.get(key).equals("all")&&!q.get(key).equals(r.get(key)))return false;
-    if(q.get("scope").equals("imported")&&!Boolean.TRUE.equals(r.get("imported")))return false;
+    if(q.get("scope").equals("replica")&&!Boolean.TRUE.equals(r.get("imported"))&&!Boolean.TRUE.equals(r.get("replica_visible")))return false; if(q.get("scope").equals("imported")&&!Boolean.TRUE.equals(r.get("imported")))return false;
     if(q.get("watched").equals("true")&&!Boolean.TRUE.equals(r.get("watched")))return false;
     if(!q.get("stationId").equals("")&&!q.get("stationId").equals(r.get("id")))return false;
     for(String key:List.of("region","siteType"))if(!q.get(key).equals("")&&!q.get(key).equals(r.get(key)))return false;

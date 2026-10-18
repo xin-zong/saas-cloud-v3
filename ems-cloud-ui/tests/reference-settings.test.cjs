@@ -1,0 +1,6 @@
+const test=require('node:test'),assert=require('node:assert/strict'),ts=require('typescript'),fs=require('node:fs'),vm=require('node:vm');const output=ts.transpileModule(fs.readFileSync('src/components/reference-settings-model.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;const m={exports:{}};vm.runInNewContext(output,{exports:m.exports,module:m});const {planTotal,numericOffset,sourceGroups,settingsSections,energyOffsetDate}=m.exports;
+test('plan totals preserve measured zero and incomplete excellent plans',()=>{assert.equal(planTotal([{plannedKwh:'0',excellentKwh:null}]),0);assert.equal(planTotal([{plannedKwh:'0',excellentKwh:null}],true),null)});
+test('offset validates finite decimal without discarding signed zero',()=>{assert.equal(numericOffset('0'),'0');assert.equal(numericOffset('-1.25'),'-1.25');for(const v of ['', 'NaN','Infinity','1e99'])assert.throws(()=>numericOffset(v))});
+test('verified settings and metric groups retain all known categories',()=>{assert.equal(settingsSections.length,12);assert.equal(sourceGroups.length,5)});
+
+test('cumulative offsets use canonical lifetime date independently of recalc day',()=>{assert.equal(energyOffsetDate('TOTAL','2026-10-18'),'1970-01-01');assert.equal(energyOffsetDate('DAILY','2026-10-18'),'2026-10-18')});

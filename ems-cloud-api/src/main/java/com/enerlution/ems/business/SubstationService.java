@@ -93,20 +93,22 @@ public class SubstationService {
   s.db.update("UPDATE substation SET name=?,configuration=?::jsonb,version=version+1,updated_at=clock_timestamp() WHERE station_id=? AND id=?",request.name().strip(),json(config),station,id);
   audit(station,id,"update");return one(station,id);
  });}
- public List<Map<String,Object>> devices(long station){read(station);var result=s.db.queryForList("SELECT d.id::text AS \"deviceId\",d.name,d.code,l.substation_id::text AS \"substationId\",c.name AS \"substationName\" FROM device d LEFT JOIN substation_device l ON l.device_id=d.id LEFT JOIN substation c ON c.id=l.substation_id WHERE d.station_id=? ORDER BY d.id",station);read(station);return result;}
+ public List<Map<String,Object>> devices(long station){read(station);var result=s.db.queryForList("SELECT d.id::text AS \"deviceId\",d.name,d.code,l.substation_id::text AS \"substationId\",c.name AS \"substationName\" FROM device d LEFT JOIN substation_device l ON l.device_id=d.id LEFT JOIN substation c ON c.id=l.substation_id WHERE d.station_id=? AND d.archived_at IS NULL ORDER BY d.id",station);read(station);return result;}
  public Map<String,Object> replaceDevices(long station,UUID id,BindRequest request){
   edit(station);if(request==null||request.deviceIds()==null||request.deviceIds().size()>200)throw invalid("设备清单最多200项");
   List<Long> ids=request.deviceIds().isEmpty()?List.of():StationSpaceService.normalizeDeviceIds(request.deviceIds());
   return write(station,()->{
    version(station,id,request.expectedVersion());
    for(long device:ids.stream().sorted().toList()){
-    var row=s.one("SELECT station_id FROM device WHERE id=? FOR UPDATE",device);
+    var row=s.one("SELECT station_id,archived_at FROM device WHERE id=? FOR UPDATE",device);
     if(((Number)row.get("station_id")).longValue()!=station)throw new BusinessException(403,"设备不属于父场站");
     var existing=s.db.queryForList("SELECT substation_id FROM substation_device WHERE device_id=?",UUID.class,device);
+    if(row.get("archived_at")!=null&&(existing.isEmpty()||!existing.getFirst().equals(id)))throw new BusinessException(409,"已归档设备不能新增子场站关联");
     if(!existing.isEmpty()&&!existing.getFirst().equals(id))throw new BusinessException(409,"设备已关联其他子场站，请先解除关联");
    }
-   s.db.update("DELETE FROM substation_device WHERE station_id=? AND substation_id=?",station,id);
-   for(long device:ids)s.db.update("INSERT INTO substation_device(device_id,station_id,substation_id,created_by) VALUES(?,?,?,?)",device,station,id,s.access.userId());
+   // Archived associations remain historical records when the active selection is replaced.
+   s.db.update("DELETE FROM substation_device l USING device d WHERE l.device_id=d.id AND l.station_id=? AND l.substation_id=? AND d.archived_at IS NULL",station,id);
+   for(long device:ids)s.db.update("INSERT INTO substation_device(device_id,station_id,substation_id,created_by) VALUES(?,?,?,?) ON CONFLICT(device_id) DO NOTHING",device,station,id,s.access.userId());
    s.db.update("UPDATE substation SET version=version+1,updated_at=clock_timestamp() WHERE station_id=? AND id=?",station,id);
    audit(station,id,"devices-replace");return one(station,id);
   });

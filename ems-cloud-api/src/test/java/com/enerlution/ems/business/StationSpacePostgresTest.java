@@ -41,7 +41,7 @@ class StationSpacePostgresTest {
       INSERT INTO station VALUES(101,11),(102,22);
       INSERT INTO device VALUES(19,101,'Solar meter','serial-19'),(20,101,'Storage meter','serial-20'),(30,102,'Foreign meter','foreign-30');
       """);
-    db.execute("ALTER TABLE app_user ADD COLUMN display_name text");
+    db.execute("ALTER TABLE device ADD COLUMN archived_at timestamptz"); db.execute("ALTER TABLE app_user ADD COLUMN display_name text");
     db.execute(Files.readString(Path.of("src/main/resources/db/migration/V44__station_operation_logs.sql")));
     db.execute(Files.readString(Path.of("src/main/resources/db/migration/V29__station_spaces.sql")));
     access=mock(AccessControl.class);when(access.userId()).thenReturn(7L);
@@ -159,4 +159,11 @@ class StationSpacePostgresTest {
     assertEquals(before,spaces.list(101));assertEquals(devicesBefore,spaces.devices(101,null,null,false,20,0));
     assertEquals(auditsBefore,db.queryForObject("SELECT count(*) FROM audit_event",Integer.class));
   }
-}
+ @Test void archivedDevicesAreNotCandidatesOrNewBindingsAndExistingLinksRemain(){
+  var space=create(101,null,"Archived boundary",10);
+  spaces.bind(101,space.id(),new StationSpaceService.BindRequest(List.of("19"),1L));
+  db.update("UPDATE device SET archived_at=now() WHERE id IN (19,20)");
+  assertTrue(spaces.devices(101,null,null,false,20,0).items().isEmpty());
+  failure(409,()->spaces.bind(101,space.id(),new StationSpaceService.BindRequest(List.of("20"),2L)));
+  assertEquals(List.of(19L),db.queryForList("SELECT device_id FROM station_space_device WHERE space_id=?",Long.class,space.id()));
+ }}

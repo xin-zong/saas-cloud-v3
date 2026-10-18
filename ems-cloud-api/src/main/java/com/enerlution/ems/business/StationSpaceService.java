@@ -143,7 +143,7 @@ public class StationSpaceService {
     if(keyword.codePointCount(0,keyword.length())>500)throw invalid("搜索内容过长");
     if(spaceId!=null)requireParent(station,spaceId);
     var args=new ArrayList<Object>();args.add(station);args.add(keyword);
-    String filter=" WHERE d.station_id=? AND position(lower(?) in lower(d.name || ' ' || d.code))>0";
+    String filter=" WHERE d.station_id=? AND d.archived_at IS NULL AND position(lower(?) in lower(d.name || ' ' || d.code))>0";
     if(spaceId!=null){filter+=" AND l.space_id=?";args.add(spaceId);}
     if(unassigned)filter+=" AND l.device_id IS NULL";
     args.add(limit);args.add(offset);
@@ -166,7 +166,8 @@ public class StationSpaceService {
       locked(station,id,request.expectedVersion());
       // Validate the complete batch before inserting any association.
       for(long device:devices.stream().sorted().toList()) {
-        requireDeviceStation(station,device);
+        boolean archived=requireDeviceStation(station,device);
+        if(archived&&!Boolean.TRUE.equals(s.db.queryForObject("SELECT EXISTS(SELECT 1 FROM station_space_device WHERE device_id=? AND station_id=? AND space_id=?)",Boolean.class,device,station,id)))throw new BusinessException(409,"已归档设备不能新增空间关联");
         requireUnassignedOrSameSpace(device,id);
       }
       for(long device:devices)
@@ -201,10 +202,11 @@ public class StationSpaceService {
     if(rows.isEmpty())throw invalid("父空间或筛选空间不存在");
     if(((Number)rows.getFirst().get("station_id")).longValue()!=station)throw new BusinessException(403,"空间不属于当前站点");
   }
-  private void requireDeviceStation(long station,long device) {
-    var rows=s.db.queryForList("SELECT station_id FROM device WHERE id=? FOR UPDATE",device);
+  private boolean requireDeviceStation(long station,long device) {
+    var rows=s.db.queryForList("SELECT station_id,archived_at FROM device WHERE id=? FOR UPDATE",device);
     if(rows.isEmpty())throw invalid("设备不存在");
     if(((Number)rows.getFirst().get("station_id")).longValue()!=station)throw new BusinessException(403,"设备不属于当前站点");
+    return rows.getFirst().get("archived_at")!=null;
   }
   private void requireUnassignedOrSameSpace(long device,UUID space) {
     var links=s.db.queryForList("SELECT space_id FROM station_space_device WHERE device_id=?",UUID.class,device);

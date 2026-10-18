@@ -29,7 +29,7 @@ public class AssetController {
             "SELECT s.* FROM station s JOIN "
                 + s.access.stationPermissionTable()
                 + " us ON us.station_id=s.id"
-                + " WHERE us.user_id=? AND us.permission_code='asset.read' ORDER BY s.id LIMIT ?"
+                + " WHERE s.archived_at IS NULL AND us.user_id=? AND us.permission_code='asset.read' ORDER BY s.id LIMIT ?"
                 + " OFFSET ?",
             s.access.userId(),
             s.limit(limit),
@@ -56,7 +56,7 @@ public class AssetController {
             "SELECT st.id,st.name FROM station st JOIN "
                 + s.access.stationPermissionTable()
                 + " p ON"
-                + " p.station_id=st.id WHERE p.user_id=? AND p.permission_code=? ORDER BY st.id",
+                + " p.station_id=st.id WHERE st.archived_at IS NULL AND p.user_id=? AND p.permission_code=? ORDER BY st.id",
             s.access.userId(),
             permission));
   }
@@ -141,7 +141,7 @@ public class AssetController {
                 + " AS health_score,o.firmware_version FROM device d LEFT JOIN device_model m ON"
                 + " m.id=d.model_id LEFT JOIN device_reference_profile rp ON rp.device_id=d.id"
                 + " LEFT JOIN device_observation o ON o.device_id=d.id WHERE"
-                + " d.station_id=? ORDER BY d.id",
+                + " d.station_id=? AND d.archived_at IS NULL ORDER BY d.id",
             id));
   }
 
