@@ -11,6 +11,7 @@ import {
 } from "./model"
 import {
   cabinetNodes,
+  isStructure,
   removeNode,
   validateSiteTopology,
   splitCabinet,
@@ -32,6 +33,7 @@ import {
 } from "./topologyCanvasModel"
 import "./topology-editor.css"
 import "./topology-studio.css"
+import "./topology-editor-polish.css"
 export function NodeIcon({ type }: { type: DeviceType }) {
   return <img className="provision-node-icon" src={nodeIcon(type)} alt="" />
 }
@@ -105,6 +107,12 @@ export default function TopologyEditor(props: Props) {
         ? device
         : draft.devices.find((n) => n.id === device?.cabinetId),
     issues = checked ? validateSiteTopology(draft) : []
+  const query=search.trim().toLowerCase()
+  const libraryGroups=groups.map(g=>({...g,types:g.types.filter(t=>`${deviceLabels[t]} ${t}`.toLowerCase().includes(query))})).filter(g=>g.types.length)
+  const listedDevices=projected.devices.filter(n=>`${n.name} ${n.code}`.toLowerCase().includes(query))
+  const issueGroups=new Map<string,TopologyIssue[]>()
+  for(const issue of issues) issueGroups.set(issue.nodeId,[...(issueGroups.get(issue.nodeId)??[]),issue])
+
   useEffect(() => {
     if (DEMO_MODE) {
       setCatalogError("演示环境未连接型号目录")
@@ -130,8 +138,8 @@ export default function TopologyEditor(props: Props) {
     return () => controller.abort()
   }, [catalogRevision])
   useEffect(() => {
-    if (!projected.devices.some((n) => n.id === selected))
-      setSelected(draft.devices[0]?.id ?? "")
+    if (selected && !projected.devices.some((n) => n.id === selected))
+      setSelected("")
   }, [draft.devices, selected])
   useEffect(() => {
     if (validationTrigger) setChecked(true)
@@ -158,6 +166,7 @@ export default function TopologyEditor(props: Props) {
   }, [expanded])
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if(e.defaultPrevented) return
       if (e.key === "Escape") {
         setExpanded(false)
         return
@@ -165,6 +174,10 @@ export default function TopologyEditor(props: Props) {
       const input = (e.target as HTMLElement)?.closest(
         'input,textarea,select,[contenteditable="true"]',
       )
+      if (!input && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
+        e.preventDefault()
+        if(!readOnly) redo()
+      }
       if (!input && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
         e.preventDefault()
         if (!readOnly) (e.shiftKey ? redo : undo)()
@@ -283,7 +296,7 @@ export default function TopologyEditor(props: Props) {
       className={`topology-studio ${
         expanded ? "topology-studio-fullscreen" : ""
       }`}
-      data-design-node="3689:97748,3689:103565,3643:19627"
+      data-design-node={expanded ? "3643:19518" : mode === "communication" ? "3689:103565" : "3689:97748"}
       role={expanded ? "dialog" : undefined}
       aria-modal={expanded ? true : undefined}
       aria-label={expanded ? "拓扑全屏编辑" : undefined}
@@ -320,29 +333,32 @@ export default function TopologyEditor(props: Props) {
             aria-pressed={tab === "library"}
             onClick={() => setTab("library")}
           >
-            节点库
+            {mode === "communication" ? "通信节点" : "节点库"}
           </button>
           <button aria-pressed={tab === "list"} onClick={() => setTab("list")}>
             设备列表
           </button>
         </nav>
         <input
+          type="search"
           aria-label="搜索设备或结构"
-          placeholder="搜索节点名称"
+          placeholder={mode === "communication" ? "搜索通信节点" : "搜索节点名称"}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        {tab === "library" ? (
-          groups.map((g) => (
+        {mode === "communication" && tab === "library" ? (
+          <div className="topo-device-list topo-communication-list">
+            <button className="topo-comm-add" disabled={readOnly} aria-label="新增 EMS" onClick={()=>add("EMS")}><NodeIcon type="EMS"/><span>新增 EMS</span><b>＋</b></button>
+            {listedDevices.filter(n=>n.type!=="标准柜"&&!isStructure(n)).map(n=><button key={n.id} aria-pressed={selected===n.id} onClick={()=>{setChecked(false);locate(n.id)}}><NodeIcon type={n.type}/><span>{n.code}<small>{n.name}</small></span></button>)}
+            {!listedDevices.some(n=>n.type!=="标准柜"&&!isStructure(n))&&<p className="topo-library-empty" role="status">{query ? "未找到匹配设备" : "暂无通信设备，请先添加 EMS 和设备"}</p>}
+          </div>
+        ) : tab === "library" ? (
+          <>{!libraryGroups.length && <p className="topo-library-empty" role="status">未找到匹配节点</p>}{libraryGroups.map((g) => (
             <section key={g.label}>
               <h3>{g.label}</h3>
               <div>
                 {g.types
-                  .filter((t) =>
-                    `${deviceLabels[t]} ${t}`
-                      .toLowerCase()
-                      .includes(search.toLowerCase()),
-                  )
+
                   .map((t) => (
                     <button
                       key={t}
@@ -357,27 +373,21 @@ export default function TopologyEditor(props: Props) {
                     >
                       <NodeIcon type={t} />
                       <span>
-                        {t === "电表" ? "电网侧电表" : deviceLabels[t]}
+                        {({PCS:"PCS", "电池 / BMS":"电池系统", "光伏 DC/DC":"DC/DC", "电表":"电网侧电表"} as Partial<Record<DeviceType,string>>)[t] ?? deviceLabels[t]}
                       </span>
                       <b>＋</b>
                     </button>
                   ))}
               </div>
             </section>
-          ))
+          ))}</>
         ) : (
           <div className="topo-device-list">
-            {projected.devices
-              .filter((n) =>
-                `${n.name} ${n.code}`
-                  .toLowerCase()
-                  .includes(search.toLowerCase()),
-              )
-              .map((n) => (
+            {listedDevices.map((n) => (
                 <button
                   key={n.id}
                   aria-pressed={selected === n.id}
-                  onClick={() => locate(n.id)}
+                  onClick={() => { if(mode==="communication"&&(n.type==="标准柜"||isStructure(n)))setMode("electrical");else if(mode==="electrical"&&n.type==="EMS")setMode("communication");locate(n.id) }}
                 >
                   <NodeIcon type={n.type} />
                   <span>
@@ -387,7 +397,7 @@ export default function TopologyEditor(props: Props) {
                   <span>⌖</span>
                 </button>
               ))}
-            {!draft.devices.length && <p>暂无设备，从节点库添加</p>}
+            {!listedDevices.length && <p className="topo-library-empty" role="status">{draft.devices.length ? "未找到匹配设备" : "暂无设备，从节点库添加"}</p>}
           </div>
         )}
       </aside>
@@ -424,7 +434,7 @@ export default function TopologyEditor(props: Props) {
               校验{checked && issues.length ? ` ${issues.length}` : ""}
             </button>
           </nav>
-          <div className="topo-actions">
+          <div className="topo-actions" role="toolbar" aria-label="画布操作">
             {action("撤销", "imgIcon", undo, !canUndo || readOnly)}
             {action("重做", "imgIcon1", redo, !canRedo || readOnly)}
             {action(
@@ -445,7 +455,8 @@ export default function TopologyEditor(props: Props) {
             )}
             <button
               aria-label="重置缩放"
-              onClick={() => setFitRevision((n) => n + 1)}
+              title="重置为 100%"
+              onClick={() => setZoom(1)}
             >
               {Math.round(zoom * 100)}%
             </button>
@@ -518,21 +529,16 @@ export default function TopologyEditor(props: Props) {
                   <p>校验电气结构与通信配置，修正后可重新校验。</p>
                   <button onClick={() => setChecked(true)}>重新校验</button>
                 </div>
-                {issues.map((issue, i) => (
-                  <section
-                    className="topo-issue"
-                    key={`${issue.nodeId}:${issue.field}:${i}`}
-                  >
-                    <small>
-                      {draft.devices.find((n) => n.id === issue.nodeId)?.code ||
-                        "全站"}
-                    </small>
-                    <p>{issue.message}</p>
-                    <button onClick={() => locateIssue(issue)}>
-                      定位设备与字段 →
-                    </button>
+                {[...issueGroups].map(([nodeId,group])=>{
+                  const code=projected.devices.find(n=>n.id===nodeId)?.code||"全站"
+                  return <section className="topo-issue-group" key={nodeId}>
+                    <h4>{code}<small>{group.length} 项</small></h4>
+                    {group.map((issue,i)=><div className="topo-issue" key={`${issue.field}:${i}`}>
+                      <p>{issue.message.startsWith(`${code} · `)?issue.message.slice(code.length+3):issue.message}</p>
+                      <button onClick={()=>locateIssue(issue)}>定位设备与字段 →</button>
+                    </div>)}
                   </section>
-                ))}
+                })}
               </>
             ) : (
               <>
@@ -604,7 +610,7 @@ export default function TopologyEditor(props: Props) {
                               <button
                                 key={n.id}
                                 className="topo-member"
-                                onClick={() => locate(n.id)}
+                                onClick={() => { if(mode==="communication"&&(n.type==="标准柜"||isStructure(n)))setMode("electrical");else if(mode==="electrical"&&n.type==="EMS")setMode("communication");locate(n.id) }}
                               >
                                 <NodeIcon type={n.type} />
                                 <span>

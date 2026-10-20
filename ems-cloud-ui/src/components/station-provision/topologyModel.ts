@@ -36,6 +36,7 @@ export function canWire(a: Device, b: Device, kind: "AC" | "DC") {
 export function cabinetNodes(count: number, withPv: boolean, emsId: string) {
     const cabinet = createDevice("标准柜", count);
     cabinet.emsId = emsId;
+    cabinet.height = 270;
     const pcs = createDevice("PCS", count), bat = createDevice("电池 / BMS", count), bus = createDevice("直流母线", count);
     const nodes = [pcs, bat, bus, createDevice("光伏 DC/DC", count)];
     nodes.forEach((n) => {
@@ -98,9 +99,10 @@ export function buildSiteTemplate(template: string): Pick<ProvisionDraft, "devic
     meter.protocol = "Modbus RTU";
     meter.access = "EMS";
     bus.x = 50;
-    bus.y = 40;
-    load.x = 72;
-    load.y = 60;
+    bus.y = 30;
+    bus.width = 600;
+    load.x = 82;
+    load.y = 12;
     const devices = [grid, bus, load, ems], connections: Connection[] = [];
     const link = (a: Device, b: Device) => connections.push({
         id: newNodeId(), from: a.id, to: b.id, kind: "AC"
@@ -114,8 +116,8 @@ export function buildSiteTemplate(template: string): Pick<ProvisionDraft, "devic
     link(bus, load);
     for (let i = 1; i <= 1; i++) {
         const group = cabinetNodes(i, template !== "工商业储能", ems.id);
-        group.cabinet.x = i === 1 ? 28 : 73;
-        group.cabinet.y = 66;
+        group.cabinet.x = 50;
+        group.cabinet.y = 56;
         devices.push(...group.devices);
         connections.push(...group.connections);
         link(bus, group.pcs);
@@ -139,18 +141,19 @@ export function nodePosition(draft: ProvisionDraft, d: Device, index: number): {
 } {
     if (d.cabinetId && d.x === undefined && d.y === undefined) {
         const cab = draft.devices.find((n) => n.id === d.cabinetId), x = cab?.x ?? 45, y = cab?.y ?? 65;
+        const batteryOffset = Math.min(22, Math.max(0, ((cab?.height ?? 270) - 65 - 42) / 7.4));
         if (d.type === "PCS")
             return {
-                x, y: y - 4
+                x, y: y + 3
             };
         if (d.type === "直流母线")
             return {
-                x, y: y + 7
+                x, y: y + Math.min(12, Math.max(7, batteryOffset - 10))
             };
         const children = draft.devices.filter((n) => n.cabinetId === d.cabinetId &&
             ["电池 / BMS", "光伏 DC/DC"].includes(n.type));
         return {
-            x: x + (children.indexOf(d) === 0 ? -8 : 8), y: y + 17
+            x: x + (children.indexOf(d) === 0 ? -8 : 8), y: y + batteryOffset
         };
     }
     return {

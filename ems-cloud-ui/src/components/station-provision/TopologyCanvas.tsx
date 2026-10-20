@@ -9,6 +9,7 @@ import { isStructure } from "./topologyModel"
 import { type Device, type DeviceType, type ProvisionDraft } from "./model"
 import {
   canvasPosition,
+  fitCanvasViewport,
   communicationDraft,
   persistCanvasPatch,
   communicationEdges,
@@ -101,17 +102,18 @@ export default function TopologyCanvas({
   const fit = () => {
     const box = host.current?.getBoundingClientRect()
     if (!box) return
-    const scale = Math.min(box.width / WORLD.width, box.height / WORLD.height)
-    setView({
-      x: (box.width - WORLD.width * scale) / 2,
-      y: (box.height - WORLD.height * scale) / 2,
-      scale,
-    })
-    setZoom(scale)
+    const next=fitCanvasViewport(visible.map(d=>{
+      const p=point(d),s=size(d)
+      return {x:p.x-s.x/2,y:d.type==='标准柜'?p.y-65:p.y-s.y/2,width:s.x,height:s.y}
+    }),{x:box.width,y:box.height})
+    setView(next)
+    setZoom(next.scale)
   }
+  const fitLatest = useRef(fit)
+  fitLatest.current = fit
   useEffect(() => {
     fit()
-    const observer = new ResizeObserver(() => fit())
+    const observer = new ResizeObserver(() => fitLatest.current())
     if (host.current) observer.observe(host.current)
     return () => observer.disconnect()
   }, [mode, fitRevision])
@@ -156,14 +158,15 @@ export default function TopologyCanvas({
   useEffect(() => {
     const escape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        if (gesture.current || portStart.current) { e.preventDefault(); status(portStart.current ? "已取消连线" : "已取消操作") }
         gesture.current = null
         portStart.current = null
         setPreview(null)
         setWire(null)
       }
     }
-    window.addEventListener("keydown", escape)
-    return () => window.removeEventListener("keydown", escape)
+    window.addEventListener("keydown", escape, true)
+    return () => window.removeEventListener("keydown", escape, true)
   }, [])
   function local(e: { clientX: number; clientY: number }) {
     const r = host.current!.getBoundingClientRect()
@@ -196,7 +199,7 @@ export default function TopologyCanvas({
           ? (fields.commHeight ?? (d.type === "EMS" ? 80 : 62))
           : (fields.height ??
             (d.type === "标准柜"
-              ? 245
+              ? 270
               : ["交流母线", "直流母线"].includes(d.type)
                 ? 4
                 : 58)),
@@ -269,6 +272,7 @@ export default function TopologyCanvas({
     const g = gesture.current
     if (g && g.type !== "pan" && g.changed && previewRef.current)
       commit({ devices: previewRef.current.devices })
+    if (g?.type === "pan" && !g.changed) select("")
     gesture.current = null
     setPreview(null)
     if (host.current?.hasPointerCapture(e.pointerId))
@@ -370,6 +374,7 @@ export default function TopologyCanvas({
         const g = gesture.current
         if (!g) return
         if (g.type === "pan") {
+          g.changed ||= Math.hypot(e.clientX-g.start.x,e.clientY-g.start.y)>3
           setView({
             ...g.view,
             x: g.view.x + e.clientX - g.start.x,

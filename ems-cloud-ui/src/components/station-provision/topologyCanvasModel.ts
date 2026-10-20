@@ -21,6 +21,18 @@ export type CanvasEdge = {
   legacy?: boolean
 }
 export const WORLD = { width: 1000, height: 740 }
+/** Fit the visible content with a stable reading scale; preserve empty-canvas defaults. */
+export function fitCanvasViewport(rects: {x:number;y:number;width:number;height:number}[], box: Point, padding=48): Viewport {
+  const valid=rects.filter(r=>[r.x,r.y,r.width,r.height].every(Number.isFinite)&&r.width>0&&r.height>0)
+  const bounds=valid.length?{
+    left:Math.min(...valid.map(r=>r.x)),top:Math.min(...valid.map(r=>r.y)),
+    right:Math.max(...valid.map(r=>r.x+r.width)),bottom:Math.max(...valid.map(r=>r.y+r.height)),
+  }:{left:0,top:0,right:WORLD.width,bottom:WORLD.height}
+  const width=bounds.right-bounds.left,height=bounds.bottom-bounds.top
+  const scale=Math.max(.25,Math.min(1.2,Math.max(1,box.x-padding*2)/width,Math.max(1,box.y-padding*2)/height))
+  return {scale,x:box.x/2-(bounds.left+width/2)*scale,y:box.y/2-(bounds.top+height/2)*scale}
+}
+
 export const screenToWorld = (p: Point, v: Viewport): Point => ({
   x: (p.x - v.x) / v.scale,
   y: (p.y - v.y) / v.scale,

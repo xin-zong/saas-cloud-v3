@@ -1,9 +1,10 @@
+const { seedReferenceDraft } = require('./fixtures/topology-industrial-reference/draft.cjs');
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=require('node:path'),{chromium}=require('playwright')
-test('reference package can be loaded, edited, saved and downloaded as matching draft-2 XML',{timeout:90000},async()=>{
+test('reference test draft restores, saves and downloads matching draft-2 XML',{timeout:90000},async()=>{
  const browser=await chromium.launch({channel:'msedge',headless:true})
  try{
   const page=await browser.newPage({viewport:{width:1440,height:1000}});page.setDefaultTimeout(15000)
-  await page.addInitScript(()=>sessionStorage.setItem('enerlution-api-token','reference-export'))
+  await seedReferenceDraft(page);await page.addInitScript(()=>sessionStorage.setItem('enerlution-api-token','reference-export'))
   await page.route(/^http:\/\/127\.0\.0\.1:(18090|18092)\/api\//,async route=>{
    const data=new URL(route.request().url()).pathname==='/api/auth/me'?{id:'7',name:'建站测试',tenantName:'测试企业',tenant:{actorId:7,tenantId:2,kind:'enterprise',administrator:true},menus:[{id:1,client:'web',kind:'page',path:'assets',children:[]}],roleNames:['Admin'],stationIds:[],permissions:['asset.read','asset.edit','asset.create'],stationPermissions:{}}:[]
    await route.fulfill({json:{code:200,data}})
@@ -11,7 +12,6 @@ test('reference package can be loaded, edited, saved and downloaded as matching 
   await page.goto(process.env.API_PREVIEW_URL||'http://127.0.0.1:8461/',{waitUntil:'domcontentloaded',timeout:60000})
   await page.getByRole('navigation',{name:'一级导航'}).getByRole('button',{name:'电站管理',exact:true}).click()
   await page.getByRole('button',{name:'＋ 新增站点',exact:true}).click()
-  await page.getByRole('button',{name:'载入工商业参考示例',exact:true}).click()
   await page.getByRole('button',{name:'下一步',exact:true}).click()
   await page.getByRole('button',{name:'生成 XML',exact:true}).click()
   const preview=page.getByRole('region',{name:'拓扑配置导出'})

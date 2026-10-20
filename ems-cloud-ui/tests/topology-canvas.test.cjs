@@ -265,3 +265,31 @@ test('single device electrical ports cannot fan out and reserved interfaces cann
 
 test('copying the reference cabinet renews all identities and rewires internal references deeply',()=>{const {createIndustrialReference}=load('topologyReference'),{cloneNode}=load('topologyModel'),{topologyNodes,xmlNodeId}=load('topologyContract');const d=createIndustrialReference(),cab=d.devices.find(n=>n.type==='标准柜'),pcs=d.devices.find(n=>n.type==='PCS'),emu=d.devices.find(n=>n.type==='电池 / BMS'),pv=d.devices.find(n=>n.type==='光伏 DC/DC'),internal=d.connections.find(e=>(e.from===emu.id||e.to===emu.id));pcs.nodeId='PCS_XML_EXPLICIT';pcs.metering={nodeId:'LOCAL_METER',name:'柜内计量',access:'设备转发',forwardDeviceId:emu.id,measurement:{measuredObjectRef:internal.id,positiveDirection:'Endpoint1To2'},digitalInput:{activeLevel:'High',signalMeaning:'ready'}};const before=structuredClone(d),r=cloneNode(d,cab.id),originalIds=new Set(d.devices.map(n=>n.id)),copies=r.devices.filter(n=>!originalIds.has(n.id)),newCab=copies.find(n=>n.type==='标准柜'),newEmu=copies.find(n=>n.type===emu.type),newPcs=copies.find(n=>n.type==='PCS'),newPv=copies.find(n=>n.type===pv.type),newWire=r.connections.find(e=>e.to===newEmu.id||e.from===newEmu.id);assert.notEqual(newCab.cabinetNumber,cab.cabinetNumber);assert.match(newCab.cabinetNumber,/^[1-9]\d*$/);assert.notEqual(newPcs.nodeId,pcs.nodeId);assert.notEqual(newEmu.coolingConfiguration.nodeId,emu.coolingConfiguration.nodeId);const nodes=topologyNodes({...d,devices:r.devices,connections:r.connections});assert.equal(new Set(nodes.map(xmlNodeId)).size,nodes.length);assert.equal(newPv.forwardDeviceId,newEmu.id);assert.equal(newPcs.metering.forwardDeviceId,newEmu.id);assert.notEqual(newWire.id,internal.id);assert.equal(newPcs.metering.measurement.measuredObjectRef,newWire.id);assert.equal(newWire.fromPort,internal.fromPort);assert.equal(newWire.toPort,internal.toPort);newPcs.metering.measurement.positiveDirection='Endpoint2To1';newPcs.metering.digitalInput.signalMeaning='changed';newEmu.coolingConfiguration.name='changed';assert.deepEqual(d,before);const again=cloneNode({...d,devices:r.devices,connections:r.connections},cab.id);assert.equal(new Set(again.devices.filter(n=>n.type==='标准柜').map(n=>n.cabinetNumber)).size,3)});
 test('copying a single meter retains its valid external measurement wire while isolating config objects',()=>{const {createIndustrialReference}=load('topologyReference'),{cloneNode}=load('topologyModel');const d=createIndustrialReference(),owner=d.devices.find(n=>n.metering),wire=d.connections[0];const meter={...createDevice('电表',1),nodeId:'METER_EXPLICIT',measurement:{measuredObjectRef:wire.id,positiveDirection:'Endpoint1To2'},metering:{nodeId:'NESTED_TEST',measurement:{measuredObjectRef:wire.id,positiveDirection:'Endpoint1To2'}}};d.devices.push(meter);const r=cloneNode(d,meter.id),copy=r.devices.find(n=>n.id===r.selectedId);assert.notEqual(copy.nodeId,meter.nodeId);assert.equal(copy.measurement.measuredObjectRef,wire.id);assert.equal(copy.metering.measurement.measuredObjectRef,wire.id);assert.notEqual(copy.measurement,meter.measurement);assert.notEqual(copy.metering.measurement,meter.metering.measurement)});
+
+
+test("fit-to-content preserves padding and centers the actual nodes rather than an empty world",()=>{
+ const {fitCanvasViewport}=load("topologyCanvasModel")
+ const view=fitCanvasViewport([{x:200,y:100,width:600,height:400}],{x:800,y:600},48)
+ assert.equal(view.scale,(800-96)/600)
+ assert.equal(view.x+500*view.scale,400)
+ assert.equal(view.y+300*view.scale,300)
+ assert.ok(view.x+200*view.scale>=48)
+ assert.ok(view.y+100*view.scale>=48)
+ const empty=fitCanvasViewport([],{x:600,y:400},48)
+ assert.ok(Number.isFinite(empty.scale)&&Number.isFinite(empty.x)&&Number.isFinite(empty.y))
+})
+
+test("new starter templates center cabinet members inside the group without changing topology identities",()=>{
+ const {buildSiteTemplate,nodePosition}=load("topologyModel"),draft={...emptyProvision(),...buildSiteTemplate('工商业储能')}
+ const cabinet=draft.devices.find(d=>d.type==='标准柜'),pos=nodePosition(draft,cabinet,0)
+ assert.equal(pos.x,50)
+ const members=draft.devices.filter(d=>d.cabinetId===cabinet.id)
+ for(const member of members){const p=nodePosition(draft,member,draft.devices.indexOf(member));assert.ok(Math.abs(p.x-pos.x)<=10);assert.ok(p.y>=pos.y+3&&p.y<=pos.y+22)}
+ assert.ok(draft.connections.every(c=>draft.devices.some(d=>d.id===c.from)&&draft.devices.some(d=>d.id===c.to)))
+})
+
+test("implicit cabinet layout respects restored custom cabinet heights",()=>{
+ const {buildSiteTemplate,nodePosition}=load("topologyModel"),draft={...emptyProvision(),...buildSiteTemplate('工商业储能')}
+ const cab=draft.devices.find(d=>d.type==='标准柜'),battery=draft.devices.find(d=>d.type==='电池 / BMS')
+ for(const height of [245,220,270]) {cab.height=height;const p=nodePosition(draft,battery,0);assert.ok(p.y*7.4+29<=cab.y*7.4-65+height,'battery must fit '+height)}
+})

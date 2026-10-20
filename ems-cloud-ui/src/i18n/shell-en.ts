@@ -1,4 +1,8 @@
 export const shellEnglish:Record<string,string>={
+ '搜索通信节点':'Search communication nodes','通信节点':'Communication nodes','新增 EMS':'Add EMS',
+
+ '未找到匹配节点':'No matching nodes','未找到匹配设备':'No matching devices','重置为 100%':'Reset to 100%','画布操作':'Canvas controls','已取消连线':'Connection cancelled','已取消操作':'Operation cancelled',
+
  '近30天并网储能充放量趋势':'Grid storage charge and discharge over the last 30 days','今日并网储能充放量趋势':'Today’s grid storage charge and discharge','自定义并网储能充放量趋势':'Grid storage charge and discharge for selected dates',
 
  '按有效采样区间积分，仅统计已观测数据':'Integrated over valid sample intervals; observed data only','已观测充放量趋势':'Observed charge and discharge trend',

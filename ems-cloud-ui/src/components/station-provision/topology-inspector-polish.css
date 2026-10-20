@@ -1,0 +1,223 @@
+/* Figma 3689:97748 · Inspector / Electrical (3725:30108).
+   Limit these rules to the current studio; the legacy editor shares its fields. */
+.topology-studio .topo-inspector-fields {
+  margin: 0;
+  color: #18232d;
+}
+
+.topology-studio .topo-inspector :is(h2, h3) {
+  color: var(--topo-accent, #1e6656);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.topology-studio .topo-inspector h2 {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 22px;
+}
+
+.topology-studio .topo-inspector h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 16px 0 8px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.topology-studio .topo-inspector .station-field,
+.topology-studio .topo-inspector-fields > label {
+  min-width: 0;
+  gap: 4px;
+  margin: 0 0 10px;
+  font-size: 11px;
+  line-height: 18px;
+  color: #4e5c68;
+}
+
+.topology-studio .topo-inspector .station-field > span:first-child {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.topology-studio .topo-inspector .inspector-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  column-gap: 12px;
+  row-gap: 0;
+}
+
+.topology-studio .topo-inspector :is(input:not([type="checkbox"]), select) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  padding: 6px 8px;
+  border: 1px solid #dce2e5;
+  border-radius: 8px;
+  background-color: #fff;
+  color: #18232d;
+  font: inherit;
+  font-size: 11px;
+  line-height: 20px;
+  transition: border-color 120ms, box-shadow 120ms;
+}
+
+.topology-studio .topo-inspector select {
+  padding-right: 23px;
+  cursor: pointer;
+}
+
+.topology-studio .topo-inspector :is(input, select):hover:not(:disabled):not([readonly]) {
+  border-color: #a4beb5;
+}
+
+.topology-studio .topo-inspector :is(input, select):focus-visible {
+  outline: 2px solid #1e665629;
+  outline-offset: 1px;
+  border-color: var(--topo-accent, #1e6656);
+  box-shadow: none;
+}
+
+.topology-studio .topo-inspector input[readonly] {
+  background: #f7f8f9;
+  color: #4e5c68;
+  cursor: default;
+}
+
+.topology-studio .topo-inspector :is(input, select, button):disabled {
+  color: #7a8992;
+  background-color: #f7f8f9;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.topology-studio .topo-inspector :is(input, select)[aria-invalid="true"] {
+  border-color: #c34b45;
+  background-color: #fff8f7;
+}
+
+.topology-studio .topo-inspector .station-field:has(> .provision-switch) {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 24px;
+  color: #18232d;
+}
+
+.topology-studio .topo-inspector .provision-switch {
+  flex: 0 0 34px;
+  width: 34px;
+  min-width: 34px;
+  height: 20px;
+  margin: 0;
+  padding: 2px;
+  border-radius: 12px;
+}
+
+.topology-studio .topo-inspector .provision-switch[aria-checked="true"] {
+  background: var(--topo-accent, #1e6656);
+}
+
+.topology-studio .topo-inspector .provision-switch[aria-checked="true"] > span {
+  transform: translateX(14px);
+}
+
+.topology-studio .topo-inspector .ems-interface {
+  min-width: 0;
+  margin: 10px 0 14px;
+  padding: 8px 10px;
+  border: 1px solid #dce2e5;
+  border-radius: 6px;
+  background: #e8f1ee;
+}
+
+.topology-studio .topo-inspector .ems-interface > summary {
+  margin: 0;
+  padding: 0;
+  color: var(--topo-accent, #1e6656);
+  font-size: 11px;
+  line-height: 18px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.topology-studio .topo-inspector .ems-interface[open] > summary {
+  margin-bottom: 10px;
+}
+
+.topology-studio .topo-inspector .ems-interface h2 {
+  margin-bottom: 8px;
+  font-size: 11px;
+  line-height: 18px;
+}
+
+.topology-studio .topo-inspector .ems-interface > :last-child {
+  margin-bottom: 0;
+}
+
+.topology-studio .topo-inspector .inspector-model-catalog {
+  min-width: 0;
+  margin: 0 0 10px;
+}
+
+.topology-studio .topo-inspector .inspector-model-catalog > .station-field:last-child {
+  margin-bottom: 0;
+}
+
+.topology-studio .topo-inspector p {
+  margin: 4px 0 10px;
+  font-size: 11px;
+  line-height: 18px;
+  color: #4e5c68;
+  overflow-wrap: anywhere;
+}
+
+.topology-studio .topo-inspector .model-catalog-hint {
+  margin: 6px 0 0;
+  padding: 7px 8px;
+  border-radius: 6px;
+  background: #f7f8f9;
+  color: #677781;
+  font-size: 10px;
+  line-height: 17px;
+}
+
+.topology-studio .topo-inspector .ems-interface .model-catalog-hint {
+  background: #ffffffa6;
+}
+
+.topology-studio .topo-inspector :is(h3 button, .station-text-button) {
+  min-height: 28px;
+  border: 1px solid #dce2e5;
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: #fff;
+  color: var(--topo-accent, #1e6656);
+  font-size: 11px;
+  line-height: 18px;
+}
+
+.topology-studio .topo-inspector .station-danger {
+  color: #b6423d;
+}
+
+.topology-studio .topo-inspector input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0 6px 0 0;
+  accent-color: var(--topo-accent, #1e6656);
+  vertical-align: middle;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topology-studio .topo-inspector :is(input, select, .provision-switch span) {
+    transition: none;
+  }
+}

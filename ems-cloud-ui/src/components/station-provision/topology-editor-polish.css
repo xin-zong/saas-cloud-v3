@@ -1,0 +1,91 @@
+/* Current electrical editor 3689:97748 / fullscreen 3643:19518. */
+.topology-studio.topology-studio {
+ --provision-accent:#1e6656; --topo-accent:#1e6656;
+ --topo-surface:var(--ui-surface,#fff); --topo-canvas:#f7f9f9;
+ --topo-border:#dce2e5; --topo-text:#18232d; --topo-muted:#687982;
+ grid-template-columns:184px minmax(0,1fr) 296px; gap:12px;
+ height:674px; min-height:560px; color:var(--topo-text); background:var(--topo-surface);
+ font-family:"Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;
+}
+.topology-studio :is(button,input,select,textarea) { font-family:inherit; }
+.topology-studio .topo-library,.topology-studio .topo-inspector { background:var(--topo-surface); border:1px solid var(--topo-border); border-radius:8px; scrollbar-width:thin; scrollbar-color:#c8d3d5 transparent; }
+.topology-studio .topo-library nav { height:44px; padding:0 12px; gap:18px; background:var(--topo-surface); }
+.topology-studio .topo-library nav button { font-size:11px; color:var(--topo-muted); }
+.topology-studio .topo-library nav button[aria-pressed=true] { color:var(--topo-accent); font-weight:600; }
+.topology-studio .topo-library > input { margin:6px 10px 4px; height:34px; border-radius:6px; font-size:11px; background:var(--topo-surface); }
+.topology-studio .topo-library section { padding:0 10px; }
+.topology-studio .topo-library h3 { margin:16px 0 8px; font-size:11px; font-weight:500; color:var(--topo-muted); }
+.topology-studio .topo-library section > div { grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+.topology-studio .topo-library section button { min-height:40px; padding:6px; gap:5px; font-size:10px; background:var(--topo-surface); transition:background .12s,border-color .12s; }
+.topology-studio .topo-library section button > span { white-space:normal; overflow:visible; overflow-wrap:anywhere; line-height:15px; }
+.topology-studio .topo-library section button:hover { border-color:#88b6a8; background:#eef6f3; }
+.topology-studio .topo-library section button:active { background:#e8f1ee; }
+.topology-studio .topo-device-list button { border-radius:6px; margin:2px 6px; width:calc(100% - 12px); padding:10px 8px; }
+.topology-studio .topo-device-list button[aria-pressed=true] { background:#e8f1ee; color:#1e6656; }
+.topology-studio .topo-toolbar { flex-direction:row; flex-wrap:wrap; align-items:center; min-height:40px; padding:0 0 8px; gap:8px; }
+.topology-studio .topo-toolbar nav { gap:6px; }
+.topology-studio .topo-toolbar nav button { height:30px; padding:0 12px; font-size:11px; border:1px solid var(--topo-border); border-radius:6px; color:var(--topo-muted); }
+.topology-studio .topo-toolbar nav button[aria-pressed=true] { color:var(--topo-accent); background:#e8f1ee; border-color:#e8f1ee; font-weight:500; }
+.topology-studio .topo-actions { gap:6px; padding:2px 0; flex-wrap:nowrap; }
+.topology-studio .topo-actions button { width:28px; min-width:28px; height:28px; padding:5px; border-radius:6px; border-color:var(--topo-border); color:var(--topo-muted); background:var(--topo-surface); transition:background .12s; }
+.topology-studio .topo-actions button[aria-label="重置缩放"] { width:44px; font-size:11px; padding:0; }
+.topology-studio .topo-actions button:hover:not(:disabled) { background:#eef5f2; border-color:#aac7bd; }
+.topology-studio .topo-actions button:disabled { opacity:.35; }
+.topology-studio .topo-viewport { min-height:0; background:var(--topo-canvas); border:1px solid var(--topo-border); border-radius:8px; }
+.topology-studio .topo-card { background:var(--topo-surface); border-color:var(--topo-border); border-radius:7px; }
+.topology-studio .topo-card-body { gap:8px; padding:8px 10px; }
+.topology-studio .topo-card-body small { color:var(--topo-muted); font-size:9px; }
+.topology-studio .topo-card-body strong { color:var(--topo-text); font-size:11px; line-height:16px; font-weight:500; }
+.topology-studio .topo-card.selected { border-color:#44987f; box-shadow:0 0 0 2px #1e665611; background:#f2f8f5; }
+.topology-studio .topo-card:hover:not(.topo-bus) { border-color:#8db5a9; }
+.topology-studio .topo-bus { border:0; border-radius:2px; background:#547787; }
+.topology-studio .topo-bus-dc { background:#ca811e; }
+.topology-studio .topo-cabinet { border-color:#acd3c7; background:#ffffffb8; }
+.topology-studio .topo-cabinet > button:first-child { padding:12px; font-size:12px; }
+.topology-studio .topo-cabinet .topo-resize { opacity:0; }
+.topology-studio .topo-cabinet:hover .topo-resize,.topology-studio .topo-cabinet.selected .topo-resize { opacity:1; }
+.topology-studio .topo-footer { min-height:30px; padding:8px 2px 0; gap:12px; }
+.topology-studio .topo-footer small { color:var(--topo-muted); font-size:10px; line-height:16px; }
+.topology-studio .topo-footer button { font-size:11px; white-space:nowrap; }
+.topology-studio .topo-inspector { padding:16px; }
+.topology-studio .topo-inspector > header { padding-bottom:12px; margin-bottom:12px; border-bottom:1px solid var(--topo-border); }
+.topology-studio .topo-inspector > header h3 { margin:0 0 5px; color:var(--topo-accent); font-size:13px; font-weight:600; }
+.topology-studio .topo-validation-summary { margin:0 0 16px; padding:12px; border:1px solid #dbeae3; font-size:12px; }
+.topology-studio .topo-validation-summary.pending { border-color:#f1e5cd; background:#fff8eb; }
+.topology-studio .topo-issue { padding:12px; margin-bottom:8px; border:1px solid var(--topo-border); border-radius:6px; }
+.topology-studio .topo-issue p { margin:6px 0 10px; color:var(--topo-text); font-size:11px; line-height:18px; }
+.topology-studio .topo-issue button { color:var(--topo-accent); background:#f5f9f7; border-color:#d4e4dd; }
+.topology-studio.topology-studio-fullscreen { height:100dvh; min-height:0; grid-template-columns:minmax(0,1fr); grid-template-rows:42px minmax(0,1fr); padding:16px; }
+.topology-studio-fullscreen .topo-toolbar { min-height:40px; }
+@media(min-width:1700px) { .topology-studio:not(.topology-studio-fullscreen) { grid-template-columns:208px minmax(0,1fr) 296px; } }
+@media(max-width:1150px) { .topology-studio:not(.topology-studio-fullscreen) { grid-template-columns:168px minmax(0,1fr) 270px; } .topology-studio .topo-toolbar { align-items:flex-start; } }
+@media(max-width:960px) { .topology-studio:not(.topology-studio-fullscreen) { height:auto; grid-template-columns:160px minmax(0,1fr); } .topology-studio .topo-workspace { min-height:600px; } .topology-studio .topo-inspector { grid-column:1/-1; max-height:480px; } }
+@media(max-width:620px) { .topology-studio:not(.topology-studio-fullscreen) { grid-template-columns:132px minmax(0,1fr); gap:8px; } .topology-studio .topo-library section > div { grid-template-columns:1fr; } .topology-studio .topo-actions { flex-wrap:wrap; } }
+@media(prefers-color-scheme:dark) {
+ html[data-theme="system"] .topology-studio { --topo-accent:#7bd0b3; --topo-text:var(--ui-text); --topo-muted:var(--ui-muted); --topo-border:var(--ui-border); --topo-canvas:var(--ui-surface-soft); }
+ html[data-theme="system"] .topology-studio .topo-card-body strong { color:var(--ui-text); }
+}
+
+.topology-studio .topo-library-empty { padding:24px 12px; font-size:11px; line-height:18px; text-align:center; color:var(--topo-muted); }
+.topology-studio .topo-issue-group { margin:0 0 12px; border:1px solid var(--topo-border); border-radius:8px; overflow:hidden; }
+.topology-studio .topo-issue-group h4 { display:flex; justify-content:space-between; align-items:center; margin:0; padding:10px 12px; font-size:11px; font-weight:600; background:#f3f7f5; color:var(--topo-text); }
+.topology-studio .topo-issue-group h4 small { font-size:10px; font-weight:400; color:var(--topo-muted); }
+.topology-studio .topo-issue-group .topo-issue { border:0; border-top:1px solid var(--topo-border); border-radius:0; margin:0; }
+.topology-studio .topo-port span { padding:4px 7px; border-radius:5px; font-size:10px; line-height:16px; }
+
+@media(prefers-color-scheme:dark) {
+ html[data-theme="system"] .topology-studio .topo-inspector :is(.ems-interface,.model-catalog-hint,.topo-issue-group h4) { background:var(--ui-surface-soft); color:var(--ui-text); border-color:var(--ui-border); }
+ html[data-theme="system"] .topology-studio .topo-card.topo-bus { background:#8db2c2!important; }
+ html[data-theme="system"] .topology-studio .topo-card.topo-bus-dc { background:#e8aa4e!important; }
+ html[data-theme="system"] .topology-studio .topo-legend span { color:var(--ui-muted); }
+ html[data-theme="system"] .topology-studio :is(.topo-actions,.topo-library,.topo-card-body) img { filter:brightness(0) invert(.8); }
+ html[data-theme="system"] .topology-studio .topo-inspector .provision-switch[aria-checked="true"] { background:var(--ui-primary)!important; }
+}
+
+.topology-studio .topo-communication-list { padding:6px 0 12px; }
+.topology-studio .topo-device-list .topo-comm-add { border:1px solid #bdd9cf; background:#eef6f2; color:var(--topo-accent); }
+.topology-studio .topo-comm-add b { margin-left:auto; font-size:15px; font-weight:400; }
+
+@media(prefers-color-scheme:dark) {
+ html[data-theme="system"] .topology-studio .topo-inspector .ems-interface > summary { background:transparent; color:var(--ui-text); }
+}

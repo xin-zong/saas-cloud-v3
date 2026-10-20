@@ -5,6 +5,7 @@ import { isStructure } from "./topologyModel";
 import { assignEms, availableEmus, configureDcPv, hasDcPv, portKind, setEmsPortType, setOperationEnabled, forwardingCandidates, assignCabinetMember, renameEmsPort, type ProvisionModel, } from "./deviceConfiguration";
 import ModelField from "./ModelField";
 import { enabledValue, measurementFor } from "./topologyContract";
+import "./topology-inspector-polish.css";
 export default function DeviceInspector({ device, draft, patch, change, models, mode, }: {
     device: Device;
     draft: ProvisionDraft;

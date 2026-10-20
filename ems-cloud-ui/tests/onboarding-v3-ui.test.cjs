@@ -1,15 +1,16 @@
+const { seedReferenceDraft } = require('./fixtures/topology-industrial-reference/draft.cjs');
 const test=require('node:test'),assert=require('node:assert/strict'),{chromium}=require('playwright'),fs=require('node:fs/promises'),path=require('node:path')
 test('new station workflow edits runtime slots, locates SOC errors and reports honest deployment',{timeout:90000},async()=>{
  const browser=await chromium.launch({channel:'msedge',headless:true})
  try{
   const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(12000); page.setDefaultNavigationTimeout(60000)
-  await page.addInitScript(()=>sessionStorage.setItem('enerlution-api-token','onboarding-v3'))
+  await seedReferenceDraft(page);await page.addInitScript(()=>sessionStorage.setItem('enerlution-api-token','onboarding-v3'))
   await page.route(/^http:\/\/127\.0\.0\.1:(18090|18092)\/api\//,async route=>{let data=[];if(new URL(route.request().url()).pathname==='/api/auth/me')data={id:'7',name:'建站测试',tenantName:'测试企业',tenant:{actorId:7,tenantId:2,kind:'enterprise',administrator:true},menus:[{id:1,client:'web',kind:'page',path:'assets',children:[]}],roleNames:['Admin'],stationIds:[],permissions:['asset.read','asset.edit','asset.create'],stationPermissions:{}};await route.fulfill({json:{code:200,data}})})
   await page.goto(process.env.API_PREVIEW_URL||'http://127.0.0.1:8461/',{waitUntil:'domcontentloaded',timeout:60000})
   await page.getByRole('navigation',{name:'一级导航'}).getByRole('button',{name:/电站管理|资产与站点/,exact:true}).click()
   await page.getByRole('button',{name:'＋ 新增站点',exact:true}).click()
   await page.getByLabel('站点名称 *',{exact:true}).fill('建站功能验证');await page.getByLabel('站点 ID *',{exact:true}).fill('V3-TEST');await page.getByLabel('所在地区 *',{exact:true}).selectOption('欧洲');await page.getByLabel('详细地址 *',{exact:true}).fill('Berlin')
-  await page.getByRole('button',{name:'载入工商业参考示例',exact:true}).click();await page.getByRole('dialog',{name:'载入完整参考示例？'}).getByRole('button',{name:'载入示例',exact:true}).click();await page.getByRole('button',{name:'下一步',exact:true}).click()
+  await page.getByRole('button',{name:'下一步',exact:true}).click()
   await page.getByRole('button',{name:'运行参数',exact:false}).click()
   await page.getByRole('switch',{name:'强制保电',exact:true}).click();await page.getByLabel('强制保电 SOC（%）',{exact:true}).fill('105')
   await page.getByRole('button',{name:'校验配置',exact:true}).click();await page.getByRole('button',{name:'定位参数',exact:false}).first().click()
