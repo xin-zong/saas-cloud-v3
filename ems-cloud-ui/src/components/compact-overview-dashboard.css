@@ -70,3 +70,5 @@
 @media(max-width:600px){.overview-dashboard.exact-figma-dashboard{padding:16px}}
 
 .overview-dashboard .compact-live-chart{height:154px;min-width:0}.overview-dashboard .compact-live-chart>small{display:block;text-align:right;font-size:9px;color:var(--ui-muted)}
+
+.overview-dashboard .compact-panel td.compact-empty { display:table-cell; height:136px; text-align:center; vertical-align:middle; white-space:normal; }

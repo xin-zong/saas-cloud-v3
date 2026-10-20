@@ -33,6 +33,7 @@ test('dashboard-optimized exact card geometry and honest empty states at 1440', 
  assert.equal((await cards[0].boundingBox()).width,(await cards[3].boundingBox()).width)
  assert.match(await page.locator('.compact-chart-empty').innerText(),/权限|数据/)
  assert.equal(requested.includes('/approvals'),false)
+ const emptyCell=page.locator('.compact-panel td.compact-empty');assert.equal(await emptyCell.evaluate(e=>getComputedStyle(e).display),'table-cell');assert.ok(Math.abs((await emptyCell.boundingBox()).width-(await page.locator('.compact-panel table').boundingBox()).width)<2)
  assert.equal(await page.locator('.compact-kpi strong').first().innerText(),'1')
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false)
  await fs.mkdir(path.resolve(__dirname,'../.figma/overview-exact'),{recursive:true})
