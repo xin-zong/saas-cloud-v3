@@ -1,836 +1,676 @@
-export const PROVISION_KEY = "enerlution_station_provision_v1"
-
+export const PROVISION_KEY = "enerlution_station_provision_v1";
 export function newNodeId(): string {
-  if (typeof crypto.randomUUID === "function") return crypto.randomUUID()
-
-  return Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) =>
-    b.toString(16).padStart(2, "0"),
-  ).join("")
+    if (typeof crypto.randomUUID === "function")
+        return crypto.randomUUID();
+    return Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
 }
-
-export function provisionDraftKey(
-  identity: string,
-
-  demo: boolean,
-
-  stationId?: string,
-): string {
-  return `${PROVISION_KEY}:${
-    demo ? "demo" : "api"
-  }:${encodeURIComponent(identity)}:${
-    stationId === undefined ? "new" : `station:${encodeURIComponent(stationId)}`
-  }`
+export function provisionDraftKey(identity: string, demo: boolean, stationId?: string): string {
+    return `${PROVISION_KEY}:${demo ? "demo" : "api"}:${encodeURIComponent(identity)}:${stationId === undefined ? "new" : `station:${encodeURIComponent(stationId)}`}`;
 }
-
 export const deviceTypes = [
-  "标准柜", "直流母线", "光伏侧电表", "柴油发电机", "充电桩", "可控负载", "不可控负载",
-  "电网",
-
-  "光伏",
-
-  "光伏 DC/DC",
-
-  "PCS",
-
-  "电池 / BMS",
-
-  "负载",
-
-  "电表",
-
-  "变压器",
-
-  "交流母线",
-
-  "断路器",
-
-  "EMS",
-] as const
-
-export type DeviceType = typeof deviceTypes[number]
-
-export type Device = {
-  cabinetId?: string
-  emsId?: string
-  emuId?: string
-  enabled?: boolean
-  dcPvConfigured?: boolean
-  cooling?: boolean
-  coolingModel?: string
-  access?: string
-  subnet?: string
-  manufacturer?: string
-  code?: string
-
-  model?: string
-
-  rating?: string
-
-  unit?: string
-
-  voltage?: string
-
-  voltageUnit?: string
-
-  meteringRole?: string
-
-  gridId?: string
-
-  commX?: number
-  commY?: number
-  x?: number
-
-  y?: number
-
-  ports?: CommunicationPort[]
-
-  id: string
-
-  type: DeviceType
-
-  name: string
-
-  protocol: string
-
-  interface: string
-
-  ip: string
-
-  port: string
-
-  address: string
-
-  bus: string
-
-  baud: string
-
-  parity: string
-
-  bits: string
-}
-
-export type ProvisionDraft = {
-  runtime?: import('./runtimeModel').RuntimeParameters
-  template?: string
-
-  connections?: Connection[]
-
-  schema: 1
-
-  customerId?: string | null
-
-  name: string
-
-  code: string
-
-  organization: string
-
-  region: string
-
-  type: string
-
-  timezone: string
-
-  address: string
-
-  imageUrl: string
-
-  ratedPower: string
-
-  storageCapacity: string
-
-  devices: Device[]
-
-  buses: string[]
-
-  version: number
-
-  stationId?: string
-}
-
-export type CommunicationPort = {
-  kind?: '' | 'ETH' | 'RS485'
-  baud?: string
-  parity?: string
-  bits?: string
-  subnet?: string
-  id: string
-
-  interface: string
-
-  protocol: string
-
-  role: string
-
-  ip: string
-
-  port: string
-
-  address: string
-
-  version: string
-
-  targets: string[]
-}
-
-export type Connection = {
-  id: string
-
-  from: string
-
-  to: string
-
-  kind: "AC" | "DC"
-}
-
-export const templates = [
-  "光储协同",
-
-  "工商业储能",
-
-  "光储充",
-
-  "自定义空白拓扑",
-] as const
-
-export const deviceLabels: Record<DeviceType, string> = {
-  标准柜: "标准柜", 直流母线: "直流母线", 光伏侧电表: "光伏侧电表", 柴油发电机: "柴油发电机", 充电桩: "充电桩", 可控负载: "可控负载", 不可控负载: "不可控负载",
-  电网: "公共电网",
-
-  光伏: "光伏逆变器",
-
-  "光伏 DC/DC": "光伏 DC/DC",
-
-  PCS: "储能 PCS",
-
-  "电池 / BMS": "电池系统",
-
-  负载: "负荷",
-
-  电表: "计量电表",
-
-  变压器: "变压器",
-
-  交流母线: "交流母线",
-
-  断路器: "断路器",
-
-  EMS: "站级 EMS",
-}
-
-export function createDevice(type: DeviceType, count: number): Device {
-  const prefix: Record<DeviceType, string> = {
-    标准柜: "CAB", 直流母线: "DC-BUS", 光伏侧电表: "PV-M", 柴油发电机: "DG", 充电桩: "EV", 可控负载: "CL", 不可控负载: "LOAD",
-    电网: "GRID",
-
-    光伏: "INV",
-
-    "光伏 DC/DC": "DCDC",
-
-    PCS: "PCS",
-
-    "电池 / BMS": "BAT",
-
-    负载: "LOAD",
-
-    电表: "M",
-
-    变压器: "T",
-
-    交流母线: "BUS",
-
-    断路器: "QF",
-
-    EMS: "EMS",
-  }
-
-  return {
-    id: newNodeId(),
-
-    type,
-
-    name: `${deviceLabels[type]} ${count}`,
-
-    code: `${prefix[type]}-${String(count).padStart(2, "0")}`,
-
-    model: "",
-
-    rating: "",
-
-    unit: type === "电池 / BMS" ? "kWh" : "kW",
-
-    voltage: "",
-
-    voltageUnit: "V",
-
-    meteringRole: "并网计量",
-
-    gridId: "",
-
-    ports: [],
-
-    protocol: "",
-
-    interface: "LAN 1",
-
-    ip: "",
-
-    port: "502",
-
-    address: String(count),
-
-    bus: "",
-
-    baud: "9600",
-
-    parity: "无校验",
-
-    bits: "8 / 1",
-  }
-}
-
-export function buildTemplate(
-  template: string,
-): Pick<ProvisionDraft, "devices" | "buses" | "connections" | "template"> {
-  if (template === "自定义空白拓扑")
-    return { template, devices: [], buses: [], connections: [] }
-
-  const types: DeviceType[] = [
+    "温控设备",
+    "ATS",
+    "AC充电桩",
+    "DC充电桩",
+    "标准柜",
+    "直流母线",
+    "光伏侧电表",
+    "柴油发电机",
+    "充电桩",
+    "可控负载",
+    "不可控负载",
     "电网",
-
-    "电表",
-
-    "变压器",
-
-    "交流母线",
-
-    ...(template === "工商业储能" ? [] : ["光伏" as DeviceType]),
-
+    "光伏",
+    "光伏 DC/DC",
     "PCS",
-
-    "PCS",
-
+    "电池 / BMS",
     "负载",
-
-    "电池 / BMS",
-
-    "电池 / BMS",
-  ]
-
-  const devices = types.map((type, i) =>
-    createDevice(type, types.slice(0, i).filter((t) => t === type).length + 1),
-  )
-
-  const get = (type: DeviceType) => devices.filter((d) => d.type === type)
-
-  get("电网")[0].x = 50
-
-  get("电网")[0].y = 9
-
-  get("电表")[0].x = 50
-
-  get("电表")[0].y = 27
-
-  get("电表")[0].gridId = get("电网")[0].id
-
-  get("变压器")[0].x = 50
-
-  get("变压器")[0].y = 45
-
-  get("交流母线")[0].x = 50
-
-  get("交流母线")[0].y = 57
-
-  const lower = devices.filter((d) => ["光伏", "PCS", "负载"].includes(d.type))
-
-  lower.forEach((d, i) => {
-    d.x = 14 + (i * 72) / Math.max(1, lower.length - 1)
-
-    d.y = 70
-  })
-
-  get("电池 / BMS").forEach((d, i) => {
-    d.x = get("PCS")[i].x
-
-    d.y = 90
-  })
-
-  if (template === "光储充") get("负载")[0].name = "充电设施"
-
-  const connections: Connection[] = []
-
-  const link = (a: Device, b: Device, kind: "AC" | "DC" = "AC") =>
-    connections.push({ id: newNodeId(), from: a.id, to: b.id, kind })
-
-  link(get("电网")[0], get("电表")[0])
-
-  link(get("电表")[0], get("变压器")[0])
-
-  link(get("变压器")[0], get("交流母线")[0])
-
-  lower.forEach((d) => link(get("交流母线")[0], d))
-
-  get("PCS").forEach((d, i) => link(d, get("电池 / BMS")[i], "DC"))
-
-  return { template, devices, buses: [], connections }
+    "电表",
+    "变压器",
+    "交流母线",
+    "断路器",
+    "EMS",
+] as const;
+export type DeviceType = typeof deviceTypes[number];
+export type EnabledState = 'true' | 'false' | 'Unspecified';
+export type TopologyMetadata = {
+    configSetId: string;
+    revision: string;
+    siteId: string;
+    parametersFile?: string;
+    emsRef?: string;
+};
+export type TopologyMeasurement = {
+    measuredObjectRef: string;
+    positiveDirection: 'Endpoint1To2' | 'Endpoint2To1' | 'Unspecified';
+};
+export type TopologyDigitalInput = {
+    activeLevel: 'High' | 'Low' | 'Unspecified';
+    signalMeaning: string;
+};
+export type TopologyPeer = {
+    id: string;
+    no: string;
+    role: 'Master' | 'Slave' | 'Standalone';
+    host: string;
+    port: string;
+};
+export type EmbeddedConfiguration = {
+    nodeId?: string;
+    modelId?: string | number;
+    modelCode?: string;
+    enabledState?: EnabledState;
+    measurement?: TopologyMeasurement;
+    digitalInput?: TopologyDigitalInput;
+    emsId?: string;
+    emuId?: string;
+    commX?: number;
+    commY?: number;
+    commWidth?: number;
+    commHeight?: number;
+    code?: string;
+    name?: string;
+    model?: string;
+    manufacturer?: string;
+    enabled?: boolean;
+    access?: string;
+    forwardDeviceId?: string;
+    protocol?: string;
+    interface?: string;
+    ip?: string;
+    port?: string;
+    address?: string;
+    controlPermission?: "collect" | "control";
+    reverse?: boolean;
+    measuredConnectionId?: string;
+};
+export type Device = {
+    reverse?: boolean;
+    measuredConnectionId?: string;
+    nodeId?: string;
+    modelId?: string | number;
+    modelCode?: string;
+    enabledState?: EnabledState;
+    measurement?: TopologyMeasurement;
+    digitalInput?: TopologyDigitalInput;
+    emsPeers?: TopologyPeer[];
+    width?: number;
+    height?: number;
+    commWidth?: number;
+    commHeight?: number;
+    cabinetNumber?: string;
+    forwardDeviceId?: string;
+    controlPermission?: "collect" | "control";
+    emsRole?: "standalone" | "master" | "slave";
+    masterEmsId?: string;
+    peerEmsIds?: string[];
+    emsNumber?: string;
+    emuCode?: string;
+    coolingConfiguration?: EmbeddedConfiguration;
+    metering?: EmbeddedConfiguration;
+    cabinetId?: string;
+    emsId?: string;
+    emuId?: string;
+    enabled?: boolean;
+    dcPvConfigured?: boolean;
+    cooling?: boolean;
+    coolingModel?: string;
+    access?: string;
+    subnet?: string;
+    manufacturer?: string;
+    code?: string;
+    model?: string;
+    rating?: string;
+    unit?: string;
+    voltage?: string;
+    voltageUnit?: string;
+    meteringRole?: string;
+    gridId?: string;
+    commX?: number;
+    commY?: number;
+    x?: number;
+    y?: number;
+    ports?: CommunicationPort[];
+    id: string;
+    type: DeviceType;
+    name: string;
+    protocol: string;
+    interface: string;
+    ip: string;
+    port: string;
+    address: string;
+    bus: string;
+    baud: string;
+    parity: string;
+    bits: string;
+};
+export type ProvisionDraft = {
+    topologyMeta?: TopologyMetadata;
+    runtime?: import("./runtimeModel").RuntimeParameters;
+    template?: string;
+    connections?: Connection[];
+    schema: 1;
+    customerId?: string | null;
+    name: string;
+    code: string;
+    organization: string;
+    region: string;
+    type: string;
+    timezone: string;
+    address: string;
+    imageUrl: string;
+    ratedPower: string;
+    storageCapacity: string;
+    devices: Device[];
+    buses: string[];
+    version: number;
+    stationId?: string;
+};
+export type CommunicationPort = {
+    kind?: "" | "ETH" | "RS485" | "DI" | "CAN" | "DO" | "LSD" | "HSD" | "ADC";
+    enabledState?: EnabledState;
+    enabled?: boolean;
+    dhcp?: boolean;
+    purpose?: "uplink" | "device" | "peer" | "reserved";
+    name?: string;
+    baud?: string;
+    parity?: string;
+    bits?: string;
+    subnet?: string;
+    id: string;
+    interface: string;
+    protocol: string;
+    role: string;
+    ip: string;
+    port: string;
+    address: string;
+    version: string;
+    targets: string[];
+};
+export type Connection = {
+    fromPort?: string;
+    toPort?: string;
+    id: string;
+    from: string;
+    to: string;
+    kind: "AC" | "DC";
+};
+export const templates = [
+    "光储协同",
+    "工商业储能",
+    "光储充",
+    "自定义空白拓扑",
+] as const;
+export const deviceLabels: Record<DeviceType, string> = {
+    温控设备: "温控设备",
+    ATS: "ATS",
+    AC充电桩: "AC充电桩",
+    DC充电桩: "DC充电桩",
+    标准柜: "标准柜",
+    直流母线: "直流母线",
+    光伏侧电表: "光伏侧电表",
+    柴油发电机: "柴油发电机",
+    充电桩: "充电桩",
+    可控负载: "可控负载",
+    不可控负载: "不可控负载",
+    电网: "公共电网",
+    光伏: "光伏逆变器",
+    "光伏 DC/DC": "光伏 DC/DC",
+    PCS: "储能 PCS",
+    "电池 / BMS": "电池系统",
+    负载: "负荷",
+    电表: "计量电表",
+    变压器: "变压器",
+    交流母线: "交流母线",
+    断路器: "断路器",
+    EMS: "站级 EMS",
+};
+export function createDevice(type: DeviceType, count: number): Device {
+    const prefix: Record<DeviceType, string> = {
+        温控设备: "TMS",
+        ATS: "ATS",
+        AC充电桩: "AC-EV",
+        DC充电桩: "DC-EV",
+        标准柜: "CAB",
+        直流母线: "DC-BUS",
+        光伏侧电表: "PV-M",
+        柴油发电机: "DG",
+        充电桩: "EV",
+        可控负载: "CL",
+        不可控负载: "LOAD",
+        电网: "GRID",
+        光伏: "INV",
+        "光伏 DC/DC": "DCDC",
+        PCS: "PCS",
+        "电池 / BMS": "BAT",
+        负载: "LOAD",
+        电表: "M",
+        变压器: "T",
+        交流母线: "BUS",
+        断路器: "QF",
+        EMS: "EMS",
+    };
+    return {
+        id: newNodeId(),
+        enabled: true,
+        type,
+        name: `${deviceLabels[type]} ${count}`,
+        code: `${prefix[type]}-${String(count).padStart(2, "0")}`,
+        model: "",
+        rating: "",
+        unit: type === "电池 / BMS" ? "kWh" : "kW",
+        voltage: "",
+        voltageUnit: "V",
+        meteringRole: "并网计量",
+        gridId: "",
+        ports: [],
+        protocol: "",
+        interface: "LAN 1",
+        ip: "",
+        port: "502",
+        address: String(count),
+        bus: "",
+        baud: "9600",
+        parity: "无校验",
+        bits: "8 / 1",
+    };
 }
-
+export function buildTemplate(template: string): Pick<ProvisionDraft, "devices" | "buses" | "connections" | "template"> {
+    if (template === "自定义空白拓扑")
+        return {
+            template, devices: [], buses: [], connections: []
+        };
+    const types: DeviceType[] = [
+        "电网",
+        "电表",
+        "变压器",
+        "交流母线",
+        ...(template === "工商业储能" ? [] : ["光伏" as DeviceType]),
+        "PCS",
+        "PCS",
+        "负载",
+        "电池 / BMS",
+        "电池 / BMS",
+    ];
+    const devices = types.map((type, i) => createDevice(type, types.slice(0, i).filter((t) => t === type).length + 1));
+    const get = (type: DeviceType) => devices.filter((d) => d.type === type);
+    get("电网")[0].x = 50;
+    get("电网")[0].y = 9;
+    get("电表")[0].x = 50;
+    get("电表")[0].y = 27;
+    get("电表")[0].gridId = get("电网")[0].id;
+    get("变压器")[0].x = 50;
+    get("变压器")[0].y = 45;
+    get("交流母线")[0].x = 50;
+    get("交流母线")[0].y = 57;
+    const lower = devices.filter((d) => ["光伏", "PCS", "负载"].includes(d.type));
+    lower.forEach((d, i) => {
+        d.x = 14 + (i * 72) / Math.max(1, lower.length - 1);
+        d.y = 70;
+    });
+    get("电池 / BMS").forEach((d, i) => {
+        d.x = get("PCS")[i].x;
+        d.y = 90;
+    });
+    if (template === "光储充")
+        get("负载")[0].name = "充电设施";
+    const connections: Connection[] = [];
+    const link = (a: Device, b: Device, kind: "AC" | "DC" = "AC") => connections.push({
+        id: newNodeId(), from: a.id, to: b.id, kind
+    });
+    link(get("电网")[0], get("电表")[0]);
+    link(get("电表")[0], get("变压器")[0]);
+    link(get("变压器")[0], get("交流母线")[0]);
+    lower.forEach((d) => link(get("交流母线")[0], d));
+    get("PCS").forEach((d, i) => link(d, get("电池 / BMS")[i], "DC"));
+    return {
+        template, devices, buses: [], connections
+    };
+}
 export function validateGraph(draft: ProvisionDraft): string[] {
-  if (!draft.connections) return validateTopology(draft.devices)
-
-  const errors: string[] = []
-
-  const ids = new Set(draft.devices.map((d) => d.id))
-
-  const codes = new Set<string>()
-
-  const addresses = new Set<string>()
-
-  if (!draft.devices.length) errors.push("请添加至少一个节点并配置连接")
-
-  for (const edge of draft.connections) {
-    if (!ids.has(edge.from) || !ids.has(edge.to) || edge.from === edge.to)
-      errors.push("电气连接端点失效")
-
-    const types = [
-      draft.devices.find((d) => d.id === edge.from)?.type,
-
-      draft.devices.find((d) => d.id === edge.to)?.type,
-    ]
-
-    if (edge.kind === "AC" && types.includes("电池 / BMS"))
-      errors.push("电池系统应连接 DC 直流端口")
-
-    if (
-      edge.kind === "DC" &&
-      types.some((t) => t && ["电网", "交流母线", "变压器"].includes(t))
-    )
-      errors.push("交流结构不能连接 DC 直流端口")
-  }
-
-  for (const d of draft.devices) {
-    if (!d.name.trim() || !d.code?.trim())
-      errors.push(`${d.name}：请填写名称与设计编号`)
-
-    if (d.code && codes.has(d.code.trim()))
-      errors.push(`${d.name}：设计编号重复`)
-
-    if (d.code) codes.add(d.code.trim())
-
-    if (
-      d.type !== "EMS" &&
-      !draft.connections.some((e) => e.from === d.id || e.to === d.id)
-    )
-      errors.push(`${d.name}：未连接电气拓扑`)
-
-    if (
-      d.type === "电表" &&
-      d.meteringRole === "并网计量" &&
-      !draft.devices.some((g) => g.id === d.gridId && g.type === "电网")
-    )
-      errors.push(`${d.name}：请选择有效所属并网点`)
-
-    for (const [value, label] of [
-      [d.rating, "额定值"],
-
-      [d.voltage, "额定电压"],
-    ])
-      if (value && (!Number.isFinite(Number(value)) || Number(value) < 0))
-        errors.push(`${d.name}：${label}必须为非负数`)
-
-    if (
-      !["电网", "负载", "变压器", "交流母线", "断路器", "EMS"].includes(
-        d.type,
-      ) &&
-      !d.ports?.length
-    )
-      errors.push(`${d.name}：请配置通信端口`)
-
-    for (const p of d.ports ?? []) {
-      if (!p.targets.length && d.type !== "EMS")
-        errors.push(`${d.name}/${p.id}：请选择目标端口`)
-
-      if (!["Modbus TCP", "Modbus RTU", "CAN"].includes(p.protocol))
-        errors.push(`${d.name}/${p.id}：请选择有效通信协议`)
-
-      if (
-        (p.protocol === "Modbus TCP" && !p.interface.startsWith("LAN")) ||
-        (p.protocol === "Modbus RTU" && !p.interface.startsWith("COM")) ||
-        (p.protocol === "CAN" && !p.interface.startsWith("CAN"))
-      )
-        errors.push(`${d.name}/${p.id}：接口与协议不兼容`)
-
-      for (const target of p.targets) {
-        const [id, port] = target.split("/")
-
-        const dest = draft.devices
-
-          .find((n) => n.id === id)
-
-          ?.ports?.find((q) => q.id === port)
-
-        if (!dest || id === d.id) errors.push(`${d.name}/${p.id}：目标端口失效`)
-        else if (dest.protocol !== p.protocol)
-          errors.push(`${d.name}/${p.id}：目标协议不兼容`)
-      }
-
-      if (
-        p.protocol === "Modbus TCP" &&
-        (!/^(\d{1,3}\.){3}\d{1,3}$/.test(p.ip) ||
-          p.ip.split(".").some((n) => +n > 255) ||
-          !/^\d+$/.test(p.port) ||
-          +p.port < 1 ||
-          +p.port > 65535)
-      )
-        errors.push(`${d.name}/${p.id}：IP 或 TCP 端口无效`)
-
-      if (
-        p.protocol === "Modbus RTU" &&
-        (!/^\d+$/.test(p.address) || +p.address < 1 || +p.address > 247)
-      )
-        errors.push(`${d.name}/${p.id}：设备地址应为 1–247`)
-
-      const key =
-        p.protocol === "Modbus TCP"
-          ? `${p.ip.split(".").map(Number).join(".")}:${+p.port}`
-          : `${p.targets.slice().sort().join(",")}:${p.address}`
-
-      if (p.protocol !== "CAN" && p.targets.length && addresses.has(key))
-        errors.push(`${d.name}/${p.id}：通信地址冲突`)
-
-      addresses.add(key)
+    if (!draft.connections)
+        return validateTopology(draft.devices);
+    const errors: string[] = [];
+    const ids = new Set(draft.devices.map((d) => d.id));
+    const codes = new Set<string>();
+    const addresses = new Set<string>();
+    if (!draft.devices.length)
+        errors.push("请添加至少一个节点并配置连接");
+    for (const edge of draft.connections) {
+        if (!ids.has(edge.from) || !ids.has(edge.to) || edge.from === edge.to)
+            errors.push("电气连接端点失效");
+        const types = [
+            draft.devices.find((d) => d.id === edge.from)?.type,
+            draft.devices.find((d) => d.id === edge.to)?.type,
+        ];
+        if (edge.kind === "AC" && types.includes("电池 / BMS"))
+            errors.push("电池系统应连接 DC 直流端口");
+        if (edge.kind === "DC" &&
+            types.some((t) => t && ["电网", "交流母线", "变压器"].includes(t)))
+            errors.push("交流结构不能连接 DC 直流端口");
     }
-  }
-
-  return [...new Set(errors)]
-}
-
-export function emptyProvision(): ProvisionDraft {
-  return {
-    schema: 1,
-
-    template: "自定义空白拓扑",
-
-    connections: [],
-
-    name: "",
-
-    code: "",
-
-    organization: "",
-
-    region: "",
-
-    type: "工商业储能",
-
-    timezone: "Asia/Shanghai (UTC+08:00)",
-
-    address: "",
-
-    imageUrl: "",
-
-    ratedPower: "",
-
-    storageCapacity: "",
-
-    devices: [],
-
-    buses: [],
-
-    version: 1,
-  }
-}
-
-export function validateBasics(d: ProvisionDraft) {
-  const errors: string[] = []
-
-  if (!d.name.trim()) errors.push("请填写站点名称")
-
-  if (!d.code.trim()) errors.push("请填写站点 ID")
-
-
-  if (!d.region.trim()) errors.push("请选择所在地区")
-
-  if (!d.address.trim()) errors.push("请填写详细地址")
-
-  for (const [value, label] of [
-    [d.ratedPower, "额定功率"],
-
-    [d.storageCapacity, "储能容量"],
-  ])
-    if (value !== "" && (!Number.isFinite(Number(value)) || Number(value) < 0))
-      errors.push(`${label}必须为非负数`)
-
-  return errors
-}
-
-export function validateTopology(devices: Device[]) {
-  const errors: string[] = []
-
-  const addresses = new Set<string>()
-
-  if (!devices.length) errors.push("请添加至少一个设备并连接母线")
-
-  for (const d of devices) {
-    if (!d.name.trim()) errors.push("逻辑设备名称不能为空")
-
-    if (!d.bus) errors.push(`${d.name}：未连接母线`)
-
-    if (["电网", "光伏", "负载"].includes(d.type)) continue
-
-    if (!d.protocol) errors.push(`${d.name}：请选择协议`)
-
-    if (!d.interface) errors.push(`${d.name}：请选择 EMS 接口`)
-
-    if (
-      !/^\d+$/.test(d.address) ||
-      Number(d.address) < 1 ||
-      Number(d.address) > 247
-    )
-      errors.push(`${d.name}：设备地址应为 1–247`)
-
-    if (d.interface.startsWith("LAN")) {
-      if (
-        !/^(\d{1,3}\.){3}\d{1,3}$/.test(d.ip) ||
-        d.ip.split(".").some((n) => Number(n) > 255)
-      )
-        errors.push(`${d.name}：请输入有效 IP 地址`)
-
-      if (!/^\d+$/.test(d.port) || Number(d.port) < 1 || Number(d.port) > 65535)
-        errors.push(`${d.name}：端口应为 1–65535`)
-    }
-
-    const key = [
-      d.interface,
-
-      d.interface.startsWith("LAN")
-        ? `${d.ip.split(".").map(Number).join(".")}:${Number(d.port)}`
-        : "",
-
-      Number(d.address),
-    ].join("/")
-
-    if (addresses.has(key)) errors.push(`${d.name}：通信地址冲突`)
-
-    addresses.add(key)
-  }
-
-  return errors
-}
-
-export const deploymentStages = [
-  "配置发布",
-
-  "手机下载",
-
-  "绑定 EMS",
-
-  "传输与校验",
-
-  "设备关联",
-
-  "结果回传",
-].map((label) => ({ label, status: "unavailable" as const }))
-
-export function parseDraft(raw: string | null): ProvisionDraft | null {
-  try {
-    const d = JSON.parse(raw ?? "null")
-
-    if (
-      d?.schema !== 1 ||
-      typeof d.name !== "string" ||
-      !Array.isArray(d.devices) ||
-      !Array.isArray(d.buses)
-    )
-      return null
-
-    const base = emptyProvision()
-
-    for (const key of Object.keys(base)) {
-      const value = d[key]
-
-      if (
-        typeof base[(key as keyof ProvisionDraft)] === "string" &&
-        typeof value !== "string" &&
-        key !== "template"
-      )
-        return null
-    }
-
-    if (
-      d.devices.some(
-        (v: Device) =>
-          !v ||
-          typeof v.id !== "string" ||
-          !deviceTypes.includes(v.type) ||
-          (v.dcPvConfigured !== undefined && typeof v.dcPvConfigured !== 'boolean') ||
-          [
-            "name",
-
-            "protocol",
-
-            "interface",
-
-            "ip",
-
-            "port",
-
-            "address",
-
-            "bus",
-
-            "baud",
-
-            "parity",
-
-            "bits",
-          ].some((k) => typeof v[(k as keyof Device)] !== "string"),
-      )
-    )
-      return null
-
-    if (
-      d.customerId !== undefined &&
-      d.customerId !== null &&
-      (typeof d.customerId !== "string" || !/^[1-9]\d*$/.test(d.customerId))
-    )
-      return null
-
-    if (
-      d.connections !== undefined &&
-      (!Array.isArray(d.connections) ||
-        d.connections.some(
-          (e: Connection) =>
-            !e ||
-            typeof e.id !== "string" ||
-            typeof e.from !== "string" ||
-            typeof e.to !== "string" ||
-            !["AC", "DC"].includes(e.kind),
-        ))
-    )
-      return null
-
-    if (
-      d.devices.some(
-        (n: Device) =>
-          n.ports !== undefined &&
-          (!Array.isArray(n.ports) ||
-            n.ports.some(
-              (p) =>
-                !p ||
-                (p.kind !== undefined && !['', 'ETH', 'RS485'].includes(p.kind)) ||
-                [
-                  "id",
-
-                  "interface",
-
-                  "protocol",
-
-                  "role",
-
-                  "ip",
-
-                  "port",
-
-                  "address",
-
-                  "version",
-                ].some(
-                  (k) => typeof p[(k as keyof CommunicationPort)] !== "string",
-                ) ||
-                !Array.isArray(p.targets) ||
-                p.targets.some((t) => typeof t !== "string"),
-            )),
-      )
-    )
-      return null
-
-    if (d.connections === undefined) {
-      const devices: Device[] = d.devices.map((n: Device, i: number) => ({
-        ...createDevice(n.type, i + 1),
-
-        ...n,
-      }))
-
-      const buses: Device[] = d.buses.map((name: string, i: number) => ({
-        ...createDevice("交流母线", i + 1),
-
-        name,
-
-        x: 50,
-
-        y: 40 + i * 25,
-      }))
-
-      const connections: Connection[] = devices.flatMap((n) => {
-        const bus = buses.find((b) => b.name === n.bus)
-
-        return bus
-          ? [
-              {
-                id: newNodeId(),
-
-                from: bus.id,
-
-                to: n.id,
-
-                kind: (n.bus.includes("直流") ? "DC" : "AC") as "AC" | "DC",
-              },
-            ]
-          : []
-      })
-
-      const communicating = devices.filter((n) => n.protocol)
-
-      if (communicating.length) {
-        const ems = createDevice("EMS", 1)
-
-        ems.name = "站级 EMS（旧草稿通信配置）"
-
-        for (const n of communicating) {
-          const targetId = `P${String((ems.ports?.length ?? 0) + 1).padStart(2, "0")}`
-
-          const port: CommunicationPort = {
-            id: "P01",
-            interface: n.interface.replace(" ", "-"),
-            protocol: n.protocol,
-            role: "服务端 / 从站",
-            ip: n.ip,
-            port: n.port,
-            address: n.address,
-            version: "",
-            targets: [`${ems.id}/${targetId}`],
-          }
-
-          n.ports = [port]
-
-          ems.ports?.push({
-            ...port,
-            id: targetId,
-            role: "客户端 / 主站",
-            ip: "",
-            targets: [],
-          })
+    for (const d of draft.devices) {
+        if (!d.name.trim() || !d.code?.trim())
+            errors.push(`${d.name}：请填写名称与设计编号`);
+        if (d.code && codes.has(d.code.trim()))
+            errors.push(`${d.name}：设计编号重复`);
+        if (d.code)
+            codes.add(d.code.trim());
+        if (d.type !== "EMS" &&
+            !draft.connections.some((e) => e.from === d.id || e.to === d.id))
+            errors.push(`${d.name}：未连接电气拓扑`);
+        if (d.type === "电表" &&
+            d.meteringRole === "并网计量" &&
+            !draft.devices.some((g) => g.id === d.gridId && g.type === "电网"))
+            errors.push(`${d.name}：请选择有效所属并网点`);
+        for (const [value, label] of [
+            [d.rating, "额定值"],
+            [d.voltage, "额定电压"],
+        ])
+            if (value && (!Number.isFinite(Number(value)) || Number(value) < 0))
+                errors.push(`${d.name}：${label}必须为非负数`);
+        if (!["电网", "负载", "变压器", "交流母线", "断路器", "EMS"].includes(d.type) &&
+            !d.ports?.length)
+            errors.push(`${d.name}：请配置通信端口`);
+        for (const p of d.ports ?? []) {
+            if (!p.targets.length && d.type !== "EMS")
+                errors.push(`${d.name}/${p.id}：请选择目标端口`);
+            if (!["Modbus TCP", "Modbus RTU", "CAN"].includes(p.protocol))
+                errors.push(`${d.name}/${p.id}：请选择有效通信协议`);
+            if ((p.protocol === "Modbus TCP" && !p.interface.startsWith("LAN")) ||
+                (p.protocol === "Modbus RTU" && !p.interface.startsWith("COM")) ||
+                (p.protocol === "CAN" && !p.interface.startsWith("CAN")))
+                errors.push(`${d.name}/${p.id}：接口与协议不兼容`);
+            for (const target of p.targets) {
+                const [id, port] = target.split("/");
+                const dest = draft.devices
+                    .find((n) => n.id === id)
+                    ?.ports?.find((q) => q.id === port);
+                if (!dest || id === d.id)
+                    errors.push(`${d.name}/${p.id}：目标端口失效`);
+                else if (dest.protocol !== p.protocol)
+                    errors.push(`${d.name}/${p.id}：目标协议不兼容`);
+            }
+            if (p.protocol === "Modbus TCP" &&
+                (!/^(\d{1,3}\.){3}\d{1,3}$/.test(p.ip) ||
+                    p.ip.split(".").some((n) => +n > 255) ||
+                    !/^\d+$/.test(p.port) ||
+                    +p.port < 1 ||
+                    +p.port > 65535))
+                errors.push(`${d.name}/${p.id}：IP 或 TCP 端口无效`);
+            if (p.protocol === "Modbus RTU" &&
+                (!/^\d+$/.test(p.address) || +p.address < 1 || +p.address > 247))
+                errors.push(`${d.name}/${p.id}：设备地址应为 1–247`);
+            const key = p.protocol === "Modbus TCP"
+                ? `${p.ip.split(".").map(Number).join(".")}:${+p.port}`
+                : `${p.targets.slice().sort().join(",")}:${p.address}`;
+            if (p.protocol !== "CAN" && p.targets.length && addresses.has(key))
+                errors.push(`${d.name}/${p.id}：通信地址冲突`);
+            addresses.add(key);
         }
-
-        devices.push(ems)
-      }
-
-      return {
-        ...base,
-
-        ...d,
-
-        devices: [...devices, ...buses],
-
-        buses: [],
-
-        connections,
-      }
     }
-
-    return { ...base, ...d }
-  } catch {
-    return null
-  }
+    return [...new Set(errors)];
+}
+export function emptyProvision(): ProvisionDraft {
+    return {
+        schema: 1,
+        topologyMeta: {
+            configSetId: newNodeId(), revision: "1", siteId: newNodeId()
+        },
+        template: "自定义空白拓扑",
+        connections: [],
+        name: "",
+        code: "",
+        organization: "",
+        region: "",
+        type: "工商业储能",
+        timezone: "Asia/Shanghai (UTC+08:00)",
+        address: "",
+        imageUrl: "",
+        ratedPower: "",
+        storageCapacity: "",
+        devices: [],
+        buses: [],
+        version: 1,
+    };
+}
+export function validateBasics(d: ProvisionDraft) {
+    const errors: string[] = [];
+    if (!d.name.trim())
+        errors.push("请填写站点名称");
+    if (!d.code.trim())
+        errors.push("请填写站点 ID");
+    if (!d.region.trim())
+        errors.push("请选择所在地区");
+    if (!d.address.trim())
+        errors.push("请填写详细地址");
+    for (const [value, label] of [
+        [d.ratedPower, "额定功率"],
+        [d.storageCapacity, "储能容量"],
+    ])
+        if (value !== "" && (!Number.isFinite(Number(value)) || Number(value) < 0))
+            errors.push(`${label}必须为非负数`);
+    return errors;
+}
+export function validateTopology(devices: Device[]) {
+    const errors: string[] = [];
+    const addresses = new Set<string>();
+    if (!devices.length)
+        errors.push("请添加至少一个设备并连接母线");
+    for (const d of devices) {
+        if (!d.name.trim())
+            errors.push("逻辑设备名称不能为空");
+        if (!d.bus)
+            errors.push(`${d.name}：未连接母线`);
+        if (["电网", "光伏", "负载"].includes(d.type))
+            continue;
+        if (!d.protocol)
+            errors.push(`${d.name}：请选择协议`);
+        if (!d.interface)
+            errors.push(`${d.name}：请选择 EMS 接口`);
+        if (!/^\d+$/.test(d.address) ||
+            Number(d.address) < 1 ||
+            Number(d.address) > 247)
+            errors.push(`${d.name}：设备地址应为 1–247`);
+        if (d.interface.startsWith("LAN")) {
+            if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(d.ip) ||
+                d.ip.split(".").some((n) => Number(n) > 255))
+                errors.push(`${d.name}：请输入有效 IP 地址`);
+            if (!/^\d+$/.test(d.port) || Number(d.port) < 1 || Number(d.port) > 65535)
+                errors.push(`${d.name}：端口应为 1–65535`);
+        }
+        const key = [
+            d.interface,
+            d.interface.startsWith("LAN")
+                ? `${d.ip.split(".").map(Number).join(".")}:${Number(d.port)}`
+                : "",
+            Number(d.address),
+        ].join("/");
+        if (addresses.has(key))
+            errors.push(`${d.name}：通信地址冲突`);
+        addresses.add(key);
+    }
+    return errors;
+}
+export const deploymentStages = [
+    "配置发布",
+    "手机下载",
+    "绑定 EMS",
+    "传输与校验",
+    "设备关联",
+    "结果回传",
+].map((label) => ({
+    label, status: "unavailable" as const
+}));
+// Shape validation protects editor rendering while allowing incomplete but well-typed drafts.
+function validExactOptional(value: Device): boolean {
+    const record = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
+    const state = (v: unknown) => v === undefined || ['true', 'false', 'Unspecified'].includes(v as string);
+    const measurement = (v: unknown) => v === undefined || (record(v) && typeof v.measuredObjectRef === 'string' && ['Endpoint1To2', 'Endpoint2To1', 'Unspecified'].includes(v.positiveDirection as string));
+    const digital = (v: unknown) => v === undefined || (record(v) && ['High', 'Low', 'Unspecified'].includes(v.activeLevel as string) && typeof v.signalMeaning === 'string');
+    const identity = (v: Record<string, unknown>) => state(v.enabledState) && measurement(v.measurement) && digital(v.digitalInput) && (v.enabled === undefined || typeof v.enabled === 'boolean') && ['nodeId', 'modelCode', 'manufacturer'].every(k => v[k] === undefined || typeof v[k] === 'string') && (v.modelId === undefined || typeof v.modelId === 'string' || typeof v.modelId === 'number' && Number.isFinite(v.modelId));
+    if (!identity(value as unknown as Record<string, unknown>))
+        return false;
+    if (value.emsPeers !== undefined && (!Array.isArray(value.emsPeers) || value.emsPeers.some(p => !record(p) || !(['id', 'no', 'host', 'port'] as const).every(k => typeof p[k] === 'string') || !['Master', 'Slave', 'Standalone'].includes(p.role as string))))
+        return false;
+    if (value.ports !== undefined && (!Array.isArray(value.ports) || value.ports.some(p => !p || !state(p.enabledState))))
+        return false;
+    return [value.metering, value.coolingConfiguration].every(v => v === undefined || record(v) && identity(v as Record<string, unknown>));
+}
+export function parseDraft(raw: string | null): ProvisionDraft | null {
+    try {
+        const d = JSON.parse(raw ?? "null");
+        if (d?.schema !== 1 ||
+            typeof d.name !== "string" ||
+            !Array.isArray(d.devices) ||
+            !Array.isArray(d.buses))
+            return null;
+        const base = emptyProvision();
+        for (const key of Object.keys(base)) {
+            const value = d[key];
+            if (typeof base[(key as keyof ProvisionDraft)] === "string" &&
+                typeof value !== "string" &&
+                key !== "template" && key !== "topologyMeta")
+                return null;
+        }
+        if (d.devices.some((v: Device) => !v ||
+            typeof v.id !== "string" ||
+            !deviceTypes.includes(v.type) ||
+            (v.dcPvConfigured !== undefined &&
+                typeof v.dcPvConfigured !== "boolean") ||
+            (v.peerEmsIds !== undefined &&
+                (!Array.isArray(v.peerEmsIds) ||
+                    v.peerEmsIds.some((id) => typeof id !== "string"))) ||
+            (v.emsRole !== undefined && typeof v.emsRole !== "string") ||
+            (v.controlPermission !== undefined && typeof v.controlPermission !== "string") ||
+            ["width", "height", "commWidth", "commHeight", "commX", "commY"].some((key) => v[(key as keyof Device)] !== undefined &&
+                (typeof v[(key as keyof Device)] !== "number" ||
+                    !Number.isFinite(v[(key as keyof Device)]))) ||
+            [v.metering, v.coolingConfiguration].some((config) => config !== undefined &&
+                (!config ||
+                    typeof config !== "object" ||
+                    Array.isArray(config) ||
+                    Object.entries(config).some(([key, value]) => value === undefined ? false : ["measurement", "digitalInput"].includes(key) ? !value || typeof value !== "object" || Array.isArray(value) || Object.values(value).some(v => typeof v !== "string") : key === "modelId" ? !["string", "number"].includes(typeof value) : ["enabled", "reverse"].includes(key)
+                        ? typeof value !== "boolean"
+                        : ["commX", "commY", "commWidth", "commHeight"].includes(key)
+                            ? typeof value !== "number" || !Number.isFinite(value)
+                            : typeof value !== "string"))) ||
+            [
+                "name",
+                "protocol",
+                "interface",
+                "ip",
+                "port",
+                "address",
+                "bus",
+                "baud",
+                "parity",
+                "bits",
+            ].some((k) => typeof v[(k as keyof Device)] !== "string")))
+            return null;
+        if (d.devices.some((n: Device) => !validExactOptional(n)))
+            return null;
+        if (d.topologyMeta !== undefined && (!d.topologyMeta || typeof d.topologyMeta !== 'object' || Array.isArray(d.topologyMeta) || Object.entries(d.topologyMeta).some(([, v]) => typeof v !== 'string')))
+            return null;
+        if (d.customerId !== undefined &&
+            d.customerId !== null &&
+            (typeof d.customerId !== "string" || !/^[1-9]\d*$/.test(d.customerId)))
+            return null;
+        if (d.connections !== undefined &&
+            (!Array.isArray(d.connections) ||
+                d.connections.some((e: Connection) => !e ||
+                    typeof e.id !== "string" ||
+                    typeof e.from !== "string" ||
+                    typeof e.to !== "string" ||
+                    !["AC", "DC"].includes(e.kind))))
+            return null;
+        if (d.devices.some((n: Device) => n.ports !== undefined &&
+            (!Array.isArray(n.ports) ||
+                n.ports.some((p) => !p ||
+                    (p.kind !== undefined &&
+                        !["", "ETH", "RS485", "DI", "CAN", "DO", "LSD", "HSD", "ADC"].includes(p.kind)) ||
+                    (p.enabled !== undefined && typeof p.enabled !== "boolean") ||
+                    (p.dhcp !== undefined && typeof p.dhcp !== "boolean") ||
+                    (p.purpose !== undefined &&
+                        !["uplink", "device", "peer", "reserved"].includes(p.purpose)) ||
+                    [
+                        "id",
+                        "interface",
+                        "protocol",
+                        "role",
+                        "ip",
+                        "port",
+                        "address",
+                        "version",
+                    ].some((k) => typeof p[(k as keyof CommunicationPort)] !== "string") ||
+                    !Array.isArray(p.targets) ||
+                    p.targets.some((t) => typeof t !== "string")))))
+            return null;
+        if (d.connections === undefined) {
+            const devices: Device[] = d.devices.map((n: Device, i: number) => ({
+                ...createDevice(n.type, i + 1),
+                ...n,
+            }));
+            const buses: Device[] = d.buses.map((name: string, i: number) => ({
+                ...createDevice("交流母线", i + 1),
+                name,
+                x: 50,
+                y: 40 + i * 25,
+            }));
+            const connections: Connection[] = devices.flatMap((n) => {
+                const bus = buses.find((b) => b.name === n.bus);
+                return bus
+                    ? [
+                        {
+                            id: newNodeId(),
+                            from: bus.id,
+                            to: n.id,
+                            kind: (n.bus.includes("直流") ? "DC" : "AC") as "AC" | "DC",
+                        },
+                    ]
+                    : [];
+            });
+            const communicating = devices.filter((n) => n.protocol);
+            if (communicating.length) {
+                const ems = createDevice("EMS", 1);
+                ems.name = "站级 EMS（旧草稿通信配置）";
+                for (const n of communicating) {
+                    const targetId = `P${String((ems.ports?.length ?? 0) + 1).padStart(2, "0")}`;
+                    const port: CommunicationPort = {
+                        id: "P01",
+                        interface: n.interface.replace(" ", "-"),
+                        protocol: n.protocol,
+                        role: "服务端 / 从站",
+                        ip: n.ip,
+                        port: n.port,
+                        address: n.address,
+                        version: "",
+                        targets: [`${ems.id}/${targetId}`],
+                    };
+                    n.ports = [port];
+                    ems.ports?.push({
+                        ...port,
+                        id: targetId,
+                        role: "客户端 / 主站",
+                        ip: "",
+                        targets: [],
+                    });
+                }
+                devices.push(ems);
+            }
+            return {
+                ...base,
+                ...d,
+                devices: [...devices, ...buses],
+                buses: [],
+                connections,
+            };
+        }
+        return {
+            ...base, ...d
+        };
+    }
+    catch {
+        return null;
+    }
 }

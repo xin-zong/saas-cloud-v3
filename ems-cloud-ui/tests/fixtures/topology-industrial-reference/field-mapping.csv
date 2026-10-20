@@ -1,0 +1,17 @@
+﻿界面内容,页面,XML位置,映射规则
+设备身份,E02–E11、C01、C05–C09,"Nodes/Node@id,name,enabled",名称可改；ID只读；启用与控制权限独立
+厂家与型号,E02、E04–E10、C01,"Nodes/Node@manufacturer,modelCode",选择适配字典中的厂家和型号
+电池系统,E08、E09、C06,Node[@id='EMU01'],界面设备ID为Bat-01；XML按现有格式映射EMU01；不新增Battery类型
+内置液冷,E09、C07,Node[@id='TMS01'],存在液冷时生成TMS节点并加入CAB01；界面归电池系统内部
+DCDC,E06、E10、C08,Node[@id='DCDC01'][@type='PVDC'],界面叫DCDC；文件类型仍为PVDC
+标准柜,E01、E04–E06,"Groups/Group@id,name,cabinetNo;Member@nodeRef",设备视角展示PCS、电池系统、DCDC；文件成员含EMU、TMS和直流母线
+电气连线,E01–E12画布,"ElectricalConnections/Connection@id;Endpoint@nodeRef,portRef",由画布连线生成；右侧连接关系只读
+电网计量,E02、C09,"Node[@id='METER01']/Measurement@measuredObjectRef,positiveDirection",绑定WIRE01；正方向GRID01→ACBUS01；画布端点M标记
+EMS身份,C01,"EmsIdentity@no,role;Peers",no=1、Master；本示例无其他EMS
+接口基本信息,C02–C04,"Interfaces/Interface@id,type,name,enabled",先选类型再选硬件接口ID；名称可编辑
+以太网接口,C02、C03,"Network@mode,ip,subnetMask",ETH1 DHCP不输出静态地址；ETH3 Static输出IP和掩码
+串口接口,C04,"SerialSettings@baudRate,dataBits,parity,stopBits",9600/8/None/1；电表继承接口参数
+直接通信,C05、C06、C09,"Communication@mode;Connection@protocol,interfaceRef,host,port,unitId",TCP显示IP和端口；RTU显示从站地址，不输出TCP参数
+设备转发,C07、C08,"Communication@mode,viaRef",经EMU01转发；不重复配置所属EMS或空Connection
+允许控制,C05–C09,Communication@controlEnabled,仅通信拓扑配置；PCS/EMU/TMS/DCDC=true，电表=false；false仍可采集
+配置元数据,生成阶段,"SiteTopology@schemaVersion,status,configSetId,revision,siteId,siteCode,emsRef",平台生成或承接站点信息；不要求用户在拓扑右栏重复输入

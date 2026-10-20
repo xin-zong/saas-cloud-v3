@@ -16,7 +16,7 @@ async function apiPage(browser, options = {}) {
   await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com|static\.figma\.com/, route => route.abort())
   const user = { id: '7', name: '总览用户', account: 'overview@test', role: 'owner', organization: '测试组织', stationIds: ['12'], permissions: ['asset.read'], stationPermissions: { '12': ['asset.read'] }, organizationPermissions: {} }
   Object.assign(user, options.user)
-  await page.route('http://127.0.0.1:18090/api/**', async route => {
+  await page.route(/^http:\/\/127\.0\.0\.1:(18090|18092)\/api\//, async route => {
     const p = new URL(route.request().url()).pathname.slice(4)
     const data = p === '/auth/me' ? user : p === '/stations' ? options.stations ?? [{ id: 12, name: '授权测试站点', code: 'SITE-12', rated_power_kw: 100, capacity_kwh: 200 }, { id: 99, name: '禁止显示站点' }] : []
     await route.fulfill({ json: { code: 0, data } })
@@ -254,7 +254,7 @@ test('map ticker remains visible outside immersion, scrolls and selects scoped s
     for (const width of [1366, 1440, 1920, 760]) {
       await page.setViewportSize({ width, height: 900 })
       const ticker = await page.locator('.overview-ticker').boundingBox()
-      const panel = await page.locator('.overview-left').boundingBox()
+      const panel = await page.locator('.energy-overview-metrics').boundingBox()
       assert.ok(ticker.y + ticker.height <= panel.y, `ticker overlaps panel at ${width}`)
     }
     await page.setViewportSize({ width: 1440, height: 900 })
@@ -298,15 +298,13 @@ test('overview cards do not clip or overlap controls and view switch stays ancho
       assert.ok(Math.abs(after.x-before.x)<1 && Math.abs(after.y-before.y)<1, 'switch must keep the same position')
       await page.getByRole('button', { name: '地图总览', exact: true }).click()
       const geometry = await page.evaluate(() => {
-        const rect = s => { const r=document.querySelector(s).getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right} }
-        return { left:rect('.overview-left'),right:rect('.overview-right'),bottom:rect('.overview-bottom'),zoom:rect('.map-zoom-controls'),ticker:rect('.overview-ticker'),panels:['.overview-left','.overview-right'].map(s=>{const e=document.querySelector(s);return {client:e.clientHeight,scroll:e.scrollHeight}}) }
+        const rect = s => {const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right}}
+        return {metrics:rect('.energy-overview-metrics'),main:rect('.energy-overview-main'),map:rect('.energy-overview-map'),zoom:rect('.map-zoom-controls'),ticker:rect('.energy-overview-ticker'),cards:[...document.querySelectorAll('.energy-overview [data-overview-card]')].filter(e=>!e.hidden).map(e=>({client:e.clientWidth,scroll:e.scrollWidth}))}
       })
-      for (const side of [geometry.left,geometry.right]) {
-        assert.ok(side.top>=geometry.ticker.bottom)
-        assert.ok(side.bottom<=geometry.bottom.top)
-        assert.ok(side.bottom<=geometry.zoom.top || side.right<=geometry.zoom.left || side.left>=geometry.zoom.right)
-      }
-      assert.ok(geometry.panels.every(p=>p.scroll<=p.client+1),'side cards must not be independently clipped')
+      assert.ok(geometry.ticker.bottom<=geometry.metrics.top,'ticker must not cover summary metrics')
+      assert.ok(geometry.metrics.bottom<=geometry.main.top,'metrics must precede the map workspace')
+      assert.ok(geometry.zoom.top>=geometry.map.top&&geometry.zoom.bottom<=geometry.map.bottom,'map controls stay inside the map')
+      assert.ok(geometry.cards.every(card=>card.scroll<=card.client+1),'selected cards must wrap without horizontal clipping')
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)
       await fs.mkdir(artifacts,{recursive:true})
       await page.screenshot({path:path.join(artifacts,`layout-stable-${width}.png`),fullPage:true})
@@ -343,24 +341,22 @@ test('fullscreen columns, live metrics and events never overlap and exit remains
  }finally{await browser.close()}
 })
 
-test('dashboard regional map uses live tiles, real coordinates and station navigation', { timeout: 60000 }, async () => {
+test('dashboard regional map uses Google SDK, real coordinates and station navigation', { timeout: 60000 }, async () => {
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   try {
     const { page } = await apiPage(browser, { stations: [{ id: 12, name: '授权测试站点', code: 'SITE-12', latitude: 31.82, longitude: 117.23 }] })
+    await page.route('https://maps.googleapis.com/maps/api/js?**',route=>route.fulfill({contentType:'application/javascript',body:`window.__sites=[];window.google={maps:{Map:class{constructor(el,opts){window.__mapOptions=opts;this.el=el;this.zoom=opts.zoom;this.center=opts.center}addListener(){return{remove(){}}}getZoom(){return this.zoom}setZoom(z){this.zoom=z}setCenter(p){this.center=p}getCenter(){return this.center}panTo(p){this.center=p}setOptions(){}},Marker:class{constructor(opts){window.__sites.push(opts.position);this.button=document.createElement('button');this.button.textContent=opts.title;this.button.setAttribute('aria-label',opts.title);opts.map.el.appendChild(this.button)}addListener(type,fn){this.button.addEventListener(type,fn)}setMap(value){if(value===null)this.button.remove()}},SymbolPath:{CIRCLE:0},event:{clearInstanceListeners(){},trigger(){}}}};initializeEmsMap();`}))
     await page.getByRole('button', { name: '经营看板', exact: true }).click()
     const map = page.getByRole('region', { name: '核心站点实时地图' })
-    const marker = map.locator('.leaflet-marker-icon')
-    await marker.waitFor()
-    assert.equal(await map.locator('img[src*="imgMapLayer"]').count(), 0)
-    assert.ok(await map.locator('img.leaflet-tile').count() > 0)
-    const box = await map.boundingBox()
-    const pin = await marker.boundingBox()
-    assert.ok(pin.x >= box.x && pin.x + pin.width <= box.x + box.width, JSON.stringify({box,pin}))
-    assert.ok(pin.y >= box.y && pin.y + pin.height <= box.y + box.height)
-    await map.getByRole('button', { name: '放大地图' }).click()
-    await fs.mkdir(artifacts, { recursive: true })
-    await page.screenshot({ path: path.join(artifacts, 'dashboard-live-map.png'), animations: 'disabled' })
-    await marker.click()
+    const iframe=map.locator('iframe[title="Google Maps"]');await iframe.waitFor()
+    const frame=await(await iframe.elementHandle()).contentFrame()
+    await frame.getByRole('button',{name:'授权测试站点',exact:true}).waitFor()
+    const sdk=await frame.evaluate(()=>({sites:window.__sites,styles:window.__mapOptions.styles}))
+    assert.ok(sdk.sites.some(position=>position.lat===31.82&&position.lng===117.23),'SDK receives authorized station coordinates')
+    assert.ok(Array.isArray(sdk.styles)&&sdk.styles.length>0,'repository Google map style is supplied to the SDK')
+    assert.equal(await map.locator('img[src*="imgMapLayer"],.leaflet-container').count(),0)
+    await map.getByRole('button',{name:'放大地图',exact:true}).click()
+    await frame.getByRole('button',{name:'授权测试站点',exact:true}).click()
     await page.locator('.station-detail-shell').waitFor()
   } finally { await browser.close() }
 })

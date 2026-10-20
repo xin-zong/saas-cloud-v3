@@ -83,11 +83,12 @@ export default function LoginPage({onRegister,onProgress}:{onRegister?:()=>void;
           <strong>Enerlution</strong>
         </div>
         <div className="auth-context-copy">
-          <p>Energy Asset Platform</p>
-          <h1>Enerlution，让能源资产运行更清晰</h1>
+          <p>ENERLUTION / ENERGY MANAGEMENT</p>
+          <h1>连接企业与能源资产</h1>
           <span>
-            Enerlution 源自 Energy Solution，聚焦能源资产的运营、交付与运维管理。通过统一的数据视图和角色化工作台，让站点状态、设备接入、告警处置与收益表现更清楚、更可追踪。
+            统一管理电站、运行数据与团队协作。
           </span>
+          <ol className="auth-capabilities"><li>电站与设备</li><li>运行监控与分析</li><li>企业与团队</li></ol>
         </div>
         <dl className="auth-status">
           <div><dt>运行环境</dt><dd><i />{DEMO_MODE ? "演示环境" : "业务服务环境"}</dd></div>
@@ -144,8 +145,8 @@ export default function LoginPage({onRegister,onProgress}:{onRegister?:()=>void;
               <div className="auth-heading">
                 <span className="auth-heading-icon"><LockKeyhole /></span>
                 <div>
-                  <h2>登录工作台</h2>
-                  <p>账号将自动匹配角色和授权电站</p>
+                  <h2>登录 Enerlution</h2>
+                  <p>使用企业或平台账号登录</p>
                 </div>
               </div>
               <form className="auth-form" onSubmit={submitLogin}>
@@ -215,8 +216,8 @@ export default function LoginPage({onRegister,onProgress}:{onRegister?:()=>void;
               </div>}
             </>
           )}
+          {!pendingUser&&<div className="auth-entry-links">{onRegister&&<button aria-label="企业入驻申请" onClick={onRegister}>企业注册</button>}{onProgress&&<button aria-label="查询申请进度" onClick={onProgress}>已有申请？查询进度</button>}</div>}
         </div>
-        {!pendingUser&&<div className="tenant-toolbar">{onRegister&&<button onClick={onRegister}>企业入驻申请</button>}{onProgress&&<button onClick={onProgress}>查询申请进度</button>}</div>}
         <p className="auth-footnote">
           登录即代表你同意按照当前项目授权范围使用平台。关键操作将记录到安全审计。
         </p>

@@ -48,7 +48,10 @@ test('maintenance retains primary tabs and hides unfinished tools at three width
    await page.setViewportSize({width,height:900})
    for(const tab of ['运维总览','告警事件','设备健康','固件升级']){
     await page.getByRole('navigation',{name:'运维中心二级导航'}).getByRole('button',{name:tab,exact:true}).click()
-    if(tab==='运维总览')await page.getByText('今日到期巡检',{exact:true}).waitFor()
+    if(tab==='运维总览'){
+     await page.getByRole('heading',{name:'近7天告警新增与恢复',exact:true}).waitFor()
+     assert.equal(await page.locator('.stylized-maintenance-metrics > div').count(),3)
+    }
     await page.locator('main').evaluate(el=>el.scrollTo(0,0))
     assert.ok(await page.locator('main').evaluate(el=>el.scrollWidth<=el.clientWidth+1))
     await page.screenshot({path:path.join(artifacts,`${tab}-${width}.png`)})

@@ -3,7 +3,8 @@ import { shellEnglish } from './shell-en'
 import { businessEnglish } from './business-en'
 import { knownName } from '../tenant/permissionLabels'
 import { tenantEnglish } from './tenant-en'
-const dictionary={...businessEnglish,...english,...shellEnglish,...tenantEnglish}
+import { onboardingEnglish } from './onboarding-en'
+const dictionary={...businessEnglish,...english,...shellEnglish,...tenantEnglish,...onboardingEnglish}
 export function translate(text:string,language:string):string {
   if(language!=='English')return text
   const match=text.match(/^(\s*)(.*?)(\s*)$/s);if(!match)return text

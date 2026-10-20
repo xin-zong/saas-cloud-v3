@@ -50,8 +50,8 @@ function TickerItem({
       style={{
         padding: "3px 12px 3px 8px",
         margin: "0 6px",
-        background: isFault ? "rgba(239,68,68,0.08)" : "rgba(255,255,255,0.6)",
-        border: `1px solid ${isFault ? "rgba(239,68,68,0.2)" : "#dbe6df"}`,
+        background: isFault ? "rgba(239,68,68,0.08)" : "var(--ui-surface)",
+        border: `1px solid ${isFault ? "rgba(239,68,68,0.2)" : "var(--ui-border)"}`,
         cursor: "pointer",
       }}
     >
@@ -71,7 +71,7 @@ function TickerItem({
       </div>
 
       {/* Name */}
-      <span style={{ fontSize: 11, fontWeight: 600, color: isFault ? "#ef4444" : "#24423b", whiteSpace: "nowrap" }}>
+      <span style={{ fontSize: 11, fontWeight: 600, color: isFault ? "#ef4444" : "var(--ui-text)", whiteSpace: "nowrap" }}>
         {station.name}
       </span>
 
@@ -87,7 +87,7 @@ function TickerItem({
           <span
             style={{
               fontSize: 10,
-              color: "#61716b",
+              color: "var(--ui-muted)",
               whiteSpace: "nowrap",
             }}
           >
@@ -97,7 +97,7 @@ function TickerItem({
           <span
             style={{
               fontSize: 10,
-              color: "#61716b",
+              color: "var(--ui-muted)",
               fontFamily: "'JetBrains Mono',monospace",
               whiteSpace: "nowrap",
             }}
@@ -108,11 +108,11 @@ function TickerItem({
       ) : station.activePower > 0 ? (
         <>
           <span style={{ fontSize: 9, color: "#cbd8d0" }}>|</span>
-          <span style={{ fontSize: 10, color: "#61716b", fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: 10, color: "var(--ui-muted)", fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap" }}>
             {station.activePower} kW
           </span>
           <span style={{ fontSize: 9, color: "#cbd8d0" }}>|</span>
-          <span style={{ fontSize: 10, color: "#61716b", fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: 10, color: "var(--ui-muted)", fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap" }}>
             {station.loadRate}%
           </span>
         </>
@@ -144,8 +144,8 @@ export default function TickerBar({ stations, onSelectStation, role }: Props) {
       className="flex-shrink-0 flex items-center overflow-hidden"
       style={{
         height: 34,
-        background: "rgba(248,250,252,0.95)",
-        borderBottom: "1px solid #dbe6df",
+        background: "var(--ui-surface-soft)",
+        borderBottom: "1px solid var(--ui-border)",
         position: "relative",
       }}
     >
@@ -154,18 +154,18 @@ export default function TickerBar({ stations, onSelectStation, role }: Props) {
         className="flex items-center gap-1.5 flex-shrink-0 px-3"
         style={{
           height: "100%",
-          borderRight: "1px solid #dbe6df",
-          background: "rgba(248,250,252,0.98)",
+          borderRight: "1px solid var(--ui-border)",
+          background: "var(--ui-surface-soft)",
           zIndex: 2,
         }}
       >
         <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", animation: "tickerPulse 2s ease-out infinite" }} />
-        <span style={{ fontSize: 10, fontWeight: 600, color: "#61716b", whiteSpace: "nowrap" }}>实时状态</span>
+        <span style={{ fontSize: 10, fontWeight: 600, color: "var(--ui-muted)", whiteSpace: "nowrap" }}>实时状态</span>
       </div>
 
       {/* Fade edges */}
-      <div style={{ position: "absolute", left: 88, top: 0, bottom: 0, width: 24, background: "linear-gradient(to right, rgba(248,250,252,0.95), transparent)", zIndex: 1, pointerEvents: "none" }} />
-      <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 32, background: "linear-gradient(to left, rgba(248,250,252,0.95), transparent)", zIndex: 1, pointerEvents: "none" }} />
+      <div style={{ position: "absolute", left: 88, top: 0, bottom: 0, width: 24, background: "linear-gradient(to right, var(--ui-surface-soft), transparent)", zIndex: 1, pointerEvents: "none" }} />
+      <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 32, background: "linear-gradient(to left, var(--ui-surface-soft), transparent)", zIndex: 1, pointerEvents: "none" }} />
 
       {/* Scrolling track */}
       <div style={{ overflow: "hidden", flex: 1, height: "100%", display: "flex", alignItems: "center" }}>
@@ -191,7 +191,7 @@ export default function TickerBar({ stations, onSelectStation, role }: Props) {
             ))}
           </div>
         ) : (
-          <span style={{ paddingLeft: 12, fontSize: 11, color: "#61716b" }}>暂无站点数据</span>
+          <span style={{ paddingLeft: 12, fontSize: 11, color: "var(--ui-muted)" }}>暂无站点数据</span>
         )}
       </div>
 

@@ -63,6 +63,9 @@ export default function PersonalCenterPage() {
           <Field label="登录邮箱">
             <input readOnly value={user?.account ?? ""} />
           </Field>
+          <Field label="联系电话">
+            <input readOnly value={profile.data?.phone ?? ""} placeholder="—" />
+          </Field>
         </div>
         <p className="tenant-muted">
           {profile.data?.tenant_name} ·{" "}

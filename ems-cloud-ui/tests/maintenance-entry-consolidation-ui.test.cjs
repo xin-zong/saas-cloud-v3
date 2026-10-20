@@ -97,6 +97,7 @@ test('due inspection shortcut opens the central inspection queue and readonly us
   const {context,page}=await setup(browser)
   await page.getByRole('navigation',{name:'一级导航'}).getByRole('button',{name:'电站管理',exact:true}).click()
   await page.locator('.electric-management-tabs').getByRole('button',{name:'运维总览',exact:true}).click()
+  await page.getByText('更多运维指标与处置',{exact:true}).click()
   await page.getByTestId('maintenance-inspections').click()
   await page.getByRole('button',{name:'巡检与检修',exact:true}).waitFor()
   assert.equal(await page.getByRole('button',{name:'巡检与检修',exact:true}).getAttribute('aria-pressed'),'true')

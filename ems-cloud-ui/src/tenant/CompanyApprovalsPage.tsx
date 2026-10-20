@@ -73,7 +73,8 @@ export default function CompanyApprovalsPage() {
         title="企业审批"
         description="审核通过创建独立企业和受保护管理员，并发送一次性激活邀请。"
       />
-      <div className="tenant-toolbar">
+      <div className="tenant-toolbar company-approvals-toolbar" data-figma-node="3666:23057">
+        <Field label="企业 / 联系人 / 邮箱 / 申请编号">
         <input
           aria-label="搜索企业申请"
           placeholder="企业 / 邮箱 / 联系人 / 申请编号"
@@ -84,6 +85,8 @@ export default function CompanyApprovalsPage() {
             setOffset(0)
           }}
         />
+        </Field>
+        <Field label="审批状态">
         <select
           aria-label="申请状态"
           value={status}
@@ -100,6 +103,8 @@ export default function CompanyApprovalsPage() {
             </option>
           ))}
         </select>
+        </Field>
+        <Field label="企业类型">
         <select
           aria-label="申请企业类型"
           value={type}
@@ -116,6 +121,7 @@ export default function CompanyApprovalsPage() {
             </option>
           ))}
         </select>
+        </Field>
         <Button
           variant="primary"
           onClick={() => {

@@ -1,0 +1,11 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Canvas icon / DCDC01" clip-path="url(#clip0_0_39)">
+<path id="Vector" opacity="0.5" d="M3.5 1.5H12.5C13.6046 1.5 14.5 2.39543 14.5 3.5V12.5C14.5 13.6046 13.6046 14.5 12.5 14.5H3.5C2.39543 14.5 1.5 13.6046 1.5 12.5V3.5C1.5 2.39543 2.39543 1.5 3.5 1.5Z" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" stroke="#58707B"/>
+<path id="Vector_2" d="M3 5H11M9 7L11 5L9 3M13 11H5M7 13L5 11L7 9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" stroke="#58707B"/>
+</g>
+<defs>
+<clipPath id="clip0_0_39">
+<rect width="16" height="16" fill="white"/>
+</clipPath>
+</defs>
+</svg>

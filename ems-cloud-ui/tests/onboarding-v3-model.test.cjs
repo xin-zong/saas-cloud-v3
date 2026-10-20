@@ -36,7 +36,7 @@ test('EMS port types allocate unused names after deletion and clear dependent re
  ems.ports=[{...ems.ports[0],id:'ETH-2',interface:'ETH-2'}, {...ems.ports[0],id:'new',interface:''}]
  pcs.interface='new'
  const changed=c.setEmsPortType(d,ems.id,1,'ETH'),ports=changed.devices.find(x=>x.id===ems.id).ports
- assert.equal(ports[1].id,'ETH-1');assert.equal(new Set(ports.map(x=>x.id)).size,2)
+ assert.equal(ports[1].id,'ETH1');assert.equal(new Set(ports.map(x=>x.id)).size,2)
  assert.equal(changed.devices.find(x=>x.id===pcs.id).interface,'')
  const reset=c.setEmsPortType({...d,...changed},ems.id,1,'').devices.find(x=>x.id===ems.id).ports[1]
  assert.equal(reset.interface,'');assert.equal(reset.protocol,'')
@@ -45,6 +45,7 @@ test('EMS port types allocate unused names after deletion and clear dependent re
 test('DCDC powers and EMU associations are validated without hiding stopped devices',()=>{
  const m=load('model'),n=load('topologyModel'),c=load('deviceConfiguration')
  const d={...m.emptyProvision(),...n.buildSiteTemplate('光储协同')},pv=d.devices.find(x=>x.type==='光伏 DC/DC'),bat=d.devices.find(x=>x.type==='电池 / BMS')
+ d.topologyMeta=undefined // explicitly exercise the legacy schema 1 editor path
  pv.dcPvConfigured=true;pv.rating='-2'
  assert.ok(n.validateSiteTopology(d).some(x=>x.nodeId===pv.id&&x.field==='rating'))
  pv.rating='100';bat.emsId='foreign'
@@ -127,8 +128,9 @@ test('deleting a cabinet removes children, electrical and communication referenc
 test('new device configuration is checked by EMS interface and keeps the chosen unit id',()=>{
   const m=load('model'),n=load('topologyModel'),d={...m.emptyProvision(),...n.buildSiteTemplate('工商业储能')}
   const pcs=d.devices.find(x=>x.type==='PCS'),ems=d.devices.find(x=>x.type==='EMS')
-  pcs.emsId=ems.id;pcs.interface='ETH-1';pcs.protocol='Modbus TCP';pcs.ip='192.168.1.2';pcs.port='502';pcs.address='1';pcs.model='manual'
+ d.topologyMeta=undefined // explicitly exercise the legacy schema 1 editor path
+  pcs.emsId=ems.id;pcs.interface='ETH1';pcs.protocol='Modbus TCP';pcs.ip='192.168.1.2';pcs.port='502';pcs.address='1';pcs.model='manual'
   assert.ok(!n.validateSiteTopology(d).some(x=>x.nodeId===pcs.id&&x.field==='interface'))
-  pcs.interface='RS485-1'
+  pcs.interface='RS485_1'
   assert.ok(n.validateSiteTopology(d).some(x=>x.nodeId===pcs.id&&x.field==='interface'))
 })

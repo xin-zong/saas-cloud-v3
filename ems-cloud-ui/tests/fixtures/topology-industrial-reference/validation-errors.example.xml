@@ -1,0 +1,77 @@
+<?xml version='1.0' encoding='utf-8'?>
+<SiteTopology schemaVersion="draft-2" status="Draft" configSetId="a6323bdc-272e-4c58-9c50-80a2add8dd35" revision="1" siteId="6f5c4100a8d7484ebf343c8ac2874d25" siteCode="CIBESS-DEMO-001" emsRef="EMS01">
+
+  <Nodes>
+    <Node id="EMS01" type="EMS" name="园区EMS" enabled="true" manufacturer="Enerlution" modelCode="EMS3.0">
+      <EmsIdentity no="1" role="Master" />
+      <Interfaces>
+        <Interface id="ETH1" type="Ethernet" name="平台上行" enabled="true">
+          <Network mode="DHCP" />
+        </Interface>
+        <Interface id="ETH3" type="Ethernet" name="设备以太网" enabled="true">
+          <Network mode="Static" ip="192.168.1.100" subnetMask="255.255.255.0" />
+        </Interface>
+        <Interface id="RS485_1" type="RS485" name="进线电表" enabled="true">
+          <SerialSettings baudRate="9600" dataBits="8" parity="None" stopBits="1" />
+        </Interface>
+      </Interfaces>
+    </Node>
+    <Node id="GRID01" type="ExternalGrid" name="园区电网" enabled="true" />
+    <Node id="ACBUS01" type="ACBus" name="储能交流母线" enabled="true" />
+    <Node id="DCBUS01" type="DCBus" name="1号柜直流母线" enabled="true" />
+    <Node id="PCS01" type="PCS" name="1号PCS" enabled="true" manufacturer="SOSEN" modelCode="SSE-HH125K-P35U">
+      <Communication mode="Direct" controlEnabled="true">
+        <Connection protocol="ModbusTcp" interfaceRef="ETH3" host="192.168.1.180" port="502" unitId="1" />
+      </Communication>
+    </Node>
+    <Node id="EMU01" type="EMU" name="1号电池系统" enabled="true" manufacturer="Enerlution" modelCode="HY-EMU01">
+      <Communication mode="Direct" controlEnabled="true">
+        <Connection protocol="ModbusTcp" interfaceRef="ETH3" host="" port="502" unitId="1" />
+      </Communication>
+    </Node>
+    <Node id="TMS01" type="TMS" name="1号液冷" enabled="true" manufacturer="HANERSUN" modelCode="CCN-WA08A2HFEA">
+      <Communication mode="Forwarded" viaRef="EMU01" controlEnabled="true" />
+    </Node>
+    <Node id="DCDC01" type="PVDC" name="1号DCDC" enabled="true" manufacturer="HANERSUN" modelCode="HYD-HH125K-D2EU">
+      <Communication mode="Forwarded" viaRef="DCDC01" controlEnabled="true" />
+    </Node>
+    <Node id="METER01" type="GridMeter" name="进线计量" enabled="true" manufacturer="CHINT" modelCode="DTSU666Q">
+      <Measurement measuredObjectRef="WIRE01" positiveDirection="Endpoint1To2" />
+      <Communication mode="Direct" controlEnabled="false">
+        <Connection protocol="ModbusRtu" interfaceRef="RS485_1" unitId="1" />
+      </Communication>
+    </Node>
+  </Nodes>
+  <Peers />
+  <ElectricalConnections>
+    <Connection id="WIRE01">
+      <Endpoint nodeRef="GRID01" portRef="ac" />
+      <Endpoint nodeRef="ACBUS01" portRef="bus" />
+    </Connection>
+    <Connection id="WIRE02">
+      <Endpoint nodeRef="PCS01" portRef="ac" />
+      <Endpoint nodeRef="ACBUS01" portRef="bus" />
+    </Connection>
+    <Connection id="WIRE03">
+      <Endpoint nodeRef="PCS01" portRef="dc" />
+      <Endpoint nodeRef="DCBUS01" portRef="bus" />
+    </Connection>
+    <Connection id="WIRE04">
+      <Endpoint nodeRef="EMU01" portRef="dc" />
+      <Endpoint nodeRef="DCBUS01" portRef="bus" />
+    </Connection>
+    <Connection id="WIRE05">
+      <Endpoint nodeRef="DCDC01" portRef="dc" />
+      <Endpoint nodeRef="DCBUS01" portRef="bus" />
+    </Connection>
+  </ElectricalConnections>
+  <Groups>
+    <Group id="CAB01" type="Cabinet" name="CAB01" cabinetNo="1">
+      <Member nodeRef="PCS01" />
+      <Member nodeRef="EMU01" />
+      <Member nodeRef="TMS01" />
+      <Member nodeRef="DCDC01" />
+      <Member nodeRef="DCBUS01" />
+    </Group>
+  </Groups>
+</SiteTopology>

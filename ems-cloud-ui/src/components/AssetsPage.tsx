@@ -153,7 +153,7 @@ export default function AssetsPage({
   return (
     <div
       className="assets-workspace station-entry-scope station-assets"
-      data-design-node="1114:8271"
+      data-design-node="3672:18858"
     >
       <EntryTabs active={tab} onChange={changeTab} />
       {tab === "地图查询" ? (

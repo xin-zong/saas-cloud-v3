@@ -1,0 +1,263 @@
+{
+  "siteName": "工商业储能示例站",
+  "siteId": "6f5c4100a8d7484ebf343c8ac2874d25",
+  "siteCode": "CIBESS-DEMO-001",
+  "configSetId": "a6323bdc-272e-4c58-9c50-80a2add8dd35",
+  "revision": "1",
+  "emsRef": "EMS01",
+  "interfaces": [
+    {
+      "id": "ETH1",
+      "type": "Ethernet",
+      "name": "平台上行",
+      "enabled": "true",
+      "network": {
+        "mode": "DHCP"
+      }
+    },
+    {
+      "id": "ETH3",
+      "type": "Ethernet",
+      "name": "设备以太网",
+      "enabled": "true",
+      "network": {
+        "mode": "Static",
+        "ip": "192.168.1.100",
+        "subnetMask": "255.255.255.0"
+      }
+    },
+    {
+      "id": "RS485_1",
+      "type": "RS485",
+      "name": "进线电表",
+      "enabled": "true",
+      "serial": {
+        "baudRate": "9600",
+        "dataBits": "8",
+        "parity": "None",
+        "stopBits": "1"
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "EMS01",
+      "type": "EMS",
+      "name": "园区EMS",
+      "enabled": "true",
+      "manufacturer": "Enerlution",
+      "modelCode": "EMS3.0",
+      "identity": {
+        "no": "1",
+        "role": "Master"
+      }
+    },
+    {
+      "id": "GRID01",
+      "type": "ExternalGrid",
+      "name": "园区电网",
+      "enabled": "true"
+    },
+    {
+      "id": "ACBUS01",
+      "type": "ACBus",
+      "name": "储能交流母线",
+      "enabled": "true"
+    },
+    {
+      "id": "DCBUS01",
+      "type": "DCBus",
+      "name": "1号柜直流母线",
+      "enabled": "true"
+    },
+    {
+      "id": "PCS01",
+      "type": "PCS",
+      "name": "1号PCS",
+      "enabled": "true",
+      "manufacturer": "SOSEN",
+      "modelCode": "SSE-HH125K-P35U",
+      "communication": {
+        "mode": "Direct",
+        "controlEnabled": "true"
+      },
+      "connection": {
+        "protocol": "ModbusTcp",
+        "interfaceRef": "ETH3",
+        "host": "192.168.1.180",
+        "port": "502",
+        "unitId": "1"
+      }
+    },
+    {
+      "id": "EMU01",
+      "type": "EMU",
+      "name": "1号电池系统",
+      "enabled": "true",
+      "manufacturer": "Enerlution",
+      "modelCode": "HY-EMU01",
+      "communication": {
+        "mode": "Direct",
+        "controlEnabled": "true"
+      },
+      "connection": {
+        "protocol": "ModbusTcp",
+        "interfaceRef": "ETH3",
+        "host": "192.168.1.150",
+        "port": "502",
+        "unitId": "1"
+      }
+    },
+    {
+      "id": "TMS01",
+      "type": "TMS",
+      "name": "1号液冷",
+      "enabled": "true",
+      "manufacturer": "HANERSUN",
+      "modelCode": "CCN-WA08A2HFEA",
+      "communication": {
+        "mode": "Forwarded",
+        "viaRef": "EMU01",
+        "controlEnabled": "true"
+      }
+    },
+    {
+      "id": "DCDC01",
+      "type": "PVDC",
+      "name": "1号DCDC",
+      "enabled": "true",
+      "manufacturer": "HANERSUN",
+      "modelCode": "HYD-HH125K-D2EU",
+      "communication": {
+        "mode": "Forwarded",
+        "viaRef": "EMU01",
+        "controlEnabled": "true"
+      }
+    },
+    {
+      "id": "METER01",
+      "type": "GridMeter",
+      "name": "进线计量",
+      "enabled": "true",
+      "manufacturer": "CHINT",
+      "modelCode": "DTSU666Q",
+      "measurement": {
+        "measuredObjectRef": "WIRE01",
+        "positiveDirection": "Endpoint1To2"
+      },
+      "communication": {
+        "mode": "Direct",
+        "controlEnabled": "false"
+      },
+      "connection": {
+        "protocol": "ModbusRtu",
+        "interfaceRef": "RS485_1",
+        "unitId": "1"
+      }
+    }
+  ],
+  "wires": [
+    {
+      "id": "WIRE01",
+      "ends": [
+        [
+          "GRID01",
+          "ac"
+        ],
+        [
+          "ACBUS01",
+          "bus"
+        ]
+      ]
+    },
+    {
+      "id": "WIRE02",
+      "ends": [
+        [
+          "PCS01",
+          "ac"
+        ],
+        [
+          "ACBUS01",
+          "bus"
+        ]
+      ]
+    },
+    {
+      "id": "WIRE03",
+      "ends": [
+        [
+          "PCS01",
+          "dc"
+        ],
+        [
+          "DCBUS01",
+          "bus"
+        ]
+      ]
+    },
+    {
+      "id": "WIRE04",
+      "ends": [
+        [
+          "EMU01",
+          "dc"
+        ],
+        [
+          "DCBUS01",
+          "bus"
+        ]
+      ]
+    },
+    {
+      "id": "WIRE05",
+      "ends": [
+        [
+          "DCDC01",
+          "dc"
+        ],
+        [
+          "DCBUS01",
+          "bus"
+        ]
+      ]
+    }
+  ],
+  "group": {
+    "id": "CAB01",
+    "type": "Cabinet",
+    "name": "CAB01",
+    "cabinetNo": "1",
+    "members": [
+      "PCS01",
+      "EMU01",
+      "TMS01",
+      "DCDC01",
+      "DCBUS01"
+    ]
+  },
+  "uiMapping": {
+    "Bat-01": {
+      "nodeRef": "EMU01",
+      "embeddedControllers": [
+        "EMU01",
+        "TMS01"
+      ]
+    },
+    "CAB01": {
+      "groupRef": "CAB01",
+      "visibleDevices": [
+        "PCS01",
+        "Bat-01",
+        "DCDC01"
+      ],
+      "structure": [
+        "DCBUS01"
+      ]
+    },
+    "GRID01": {
+      "meterRef": "METER01",
+      "meterWireRef": "WIRE01"
+    }
+  }
+}

@@ -41,7 +41,7 @@ export default function OperationsOverviewPage({ stations, onOpenStation, onSche
   const states = ["充电", "放电", "待机", "离线", "未知"].map(label => ({label, count: rows.filter(row => row.state === label).length}))
   const attention = rows.filter(row => row.dispatch && !["正常", "待执行", "建设中"].includes(row.dispatch.status))
   const revenue = rows.filter(row => allowed(row.station.id, "revenue.read"))
-  return <div className="ops-overview ops-current-overview">
+  return <div className="ops-overview ops-current-overview" data-figma-node="3666:102664">
 
     <section className="ops-current-toolbar" aria-label="运营范围与时间">
       <select aria-label="运营站点范围" value={scope} onChange={e=>setScope(e.target.value)}>

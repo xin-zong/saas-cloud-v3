@@ -19,7 +19,7 @@ import {
 
 import CompanyForm, { companyFrom } from "./CompanyForm"
 
-import { companyTypes, type Row, type PageRows } from "./types"
+import { companyTypes, businessScopes, type Row, type PageRows } from "./types"
 
 export function CompanyProfilePage() {
   const { user } = useAuth()
@@ -30,8 +30,7 @@ export function CompanyProfilePage() {
   return (
     <>
       <PageHeader
-        title="企业资料"
-        description="管理员登录邮箱固定；联系人资料独立维护。"
+        title={profile.data?.name || "企业资料"}
         actions={
           user?.permissions.includes("company.profile.manage") && (
             <Button
@@ -46,8 +45,8 @@ export function CompanyProfilePage() {
       />
       <QueryState loading={profile.loading} error={profile.error} />
       {profile.data && (
-        <section className="tenant-card">
-          <CompanyDetails row={profile.data} />
+        <section className="tenant-card company-profile-card" data-figma-node="3666:3283">
+          <CompanyDetails row={profile.data} own />
         </section>
       )}
       {edit && profile.data && (
@@ -277,7 +276,16 @@ export default function CompaniesPage() {
   )
 }
 
-function CompanyDetails({ row }: { row: Row }) {
+function CompanyDetails({ row, own = false }: { row: Row; own?: boolean }) {
+  if (own) {
+    const shown = {...row,
+      fullAddress: [[row.country,row.province,row.city].filter(Boolean).join(' · '),row.address].filter(Boolean).join('\n') || '—',
+      companyType: row.companyTypes?.map((value:string)=>companyTypes.find(([key])=>key===value)?.[1]??value).join(' / ') || '—',
+      businessScope: row.businessScopes?.map((value:string)=>businessScopes.find(([key])=>key===value)?.[1]??value).join(' / ') || '—',
+      taxNumber: row.taxId || row.tax_id || '—',
+    }
+    return <><div className="company-profile-columns"><section><h2>企业资料</h2><DetailGrid row={shown} fields={[["name","企业名称"],["companyType","企业类型"],["fullAddress","注册地址"],["businessScope","业务范围"],["system_scale","预计系统规模"],["postcode","服务邮编"],["service_description","服务范围"]]}/></section><section><h2>联系人与注册资料</h2><DetailGrid row={shown} fields={[["contact_name","联系人姓名"],["email","管理员邮箱"],["phone","联系电话"],["website","企业官网"],["registration_no","商业注册号"],["taxNumber","Tax ID / VAT"]]}/></section></div><p className="company-profile-policy">企业类型、注册地址及管理员邮箱由平台维护。如需变更，请联系平台管理员。</p>{row.packages?.length > 0 && <details className="company-profile-packages"><summary>已分配权限包</summary><p>{row.packages.map((item:Row)=>`${item.name}${item.enabled?'':'（停用）'}`).join('、')}</p></details>}</>
+  }
   return (
     <>
       <DetailGrid

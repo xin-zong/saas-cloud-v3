@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { Station } from "@/App"
 import type { AuthUser, NavLabel } from "@/auth/roles"
 import { Button } from "./ui/Workspace"
@@ -53,6 +53,15 @@ export default function OverviewDashboard({
     onConfirm: () => setLeave(true),
     onCancel: () => setLeave(false),
   })
+  const authorizationKey = `${availableCards.join('|')}:${[...user.permissions].sort().join('|')}:${[...user.stationIds].sort().join('|')}`
+  useEffect(() => {
+    // Permission/scope changes cancel the pending destination and the stale editor.
+    pending.current = null
+    settleLeave(false)
+    setLeave(false)
+    setEditing(false)
+    setDraft(cards)
+  }, [authorizationKey, settleLeave])
   const role = overviewPresentationRole(user)
   const viewStations = nav.includes("资产与站点")
     ? () => onNavigate("资产与站点")

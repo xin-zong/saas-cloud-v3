@@ -1,0 +1,19 @@
+import {Bar,BarChart,CartesianGrid,ResponsiveContainer,Tooltip,XAxis,YAxis} from 'recharts'
+import type {MaintenanceStation} from '@/data/stationMaintenance'
+import {dateKey,formatDate} from '@/preferences/date'
+import {buildWeekMaintenance} from './stylizedSummary'
+
+type Props={rows:MaintenanceStation[];now:Date;canViewAlarms:boolean;onAllAlarms:()=>void;onStationAlarms:(id:string)=>void;onAlarm:(stationId:string,alarmId:string)=>void}
+export default function StylizedMaintenanceOverview({rows,now,canViewAlarms,onAllAlarms,onStationAlarms,onAlarm}:Props){
+  const today=new Date(dateKey(now)+'T12:00:00Z')
+  const days=Array.from({length:7},(_,index)=>{const day=new Date(today);day.setUTCDate(day.getUTCDate()-6+index);return day.toISOString().slice(0,10)})
+  const summary=buildWeekMaintenance(rows,now.getTime(),days,dateKey)
+  const count=(n:number|null)=>n===null?'—':n
+  const ordered=[...rows].sort((a,b)=>b.critical-a.critical||b.active.length-a.active.length)
+  return <section className="stylized-maintenance-overview" data-figma-node="3666:104851">
+    <header className="stylized-maintenance-status"><span>当前状态 · 更新 {formatDate(now,{hour:'2-digit',minute:'2-digit'})}</span>{canViewAlarms&&<button className="operations-button" onClick={onAllAlarms}>查看全部告警 →</button>}</header>
+    <div className="stylized-maintenance-metrics">{[['近一周告警总数',summary.total],['近一周严重告警数量',summary.critical],['当前未恢复告警数量',summary.active]].map(([label,value],index)=><div key={label!}><span>{label}</span><strong className={index===1?'is-critical':''}>{count(value as number|null)}</strong></div>)}</div>
+    <section className="stylized-maintenance-chart"><header><div><h2>近7天告警新增与恢复</h2><p>按日统计 · 今日截至 {formatDate(now,{hour:'2-digit',minute:'2-digit'})}</p></div><span>新增 {count(summary.total)}　　恢复 {count(summary.recovered)}</span></header>{summary.known?<ResponsiveContainer width="100%" height={204}><BarChart data={summary.trend} margin={{top:10,right:16,left:-24,bottom:0}}><CartesianGrid vertical={false} stroke="var(--ui-border)"/><XAxis dataKey="day" tickFormatter={value=>value.slice(5).replace('-','/')} axisLine={false} tickLine={false} tick={{fontSize:11,fill:'var(--ui-muted)'}}/><YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fontSize:11,fill:'var(--ui-muted)'}}/><Tooltip/><Bar dataKey="added" name="新增告警" fill="#9b5a00" maxBarSize={24}/><Bar dataKey="recovered" name="恢复告警" fill="#176d4c" maxBarSize={24}/></BarChart></ResponsiveContainer>:<div className="stylized-maintenance-chart-empty">告警历史尚未接入</div>}</section>
+    <section className="stylized-maintenance-stations"><header><h2>站点运维概况</h2><span>严重未恢复优先 · {rows.length} 个站点</span></header><div className="stylized-maintenance-table-scroll"><table><thead><tr>{['站点','最新告警事件','最新告警时间','未恢复','严重未恢复','最新事件处理','负责人','操作'].map(label=><th key={label}>{label}</th>)}</tr></thead><tbody>{ordered.map(row=>{const latest=[...row.alarms].sort((a,b)=>Date.parse(b.occurredAt??'')-Date.parse(a.occurredAt??''))[0];return <tr key={row.station.id}><td>{row.station.name}</td><td>{latest&&canViewAlarms?<button className="operations-link" onClick={()=>onAlarm(row.station.id,latest.id)}>{latest.title}</button>:latest?.title??(row.alarmsKnown?'暂无告警':'—')}</td><td>{latest?.occurredAt?formatDate(latest.occurredAt,{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}</td><td>{row.alarmsKnown?row.active.length:'—'}</td><td className={row.critical?'is-critical':''}>{row.alarmsKnown?row.critical:'—'}</td><td>{latest?latest.status==='recovered'?'已恢复':latest.acknowledged?'处理中':'待处理':'—'}</td><td>{latest?.owner||row.station.manager||'—'}</td><td>{canViewAlarms&&<button className="operations-link" onClick={()=>onStationAlarms(row.station.id)}>站点告警 →</button>}</td></tr>})}</tbody></table></div>{!rows.length&&<p className="stylized-maintenance-chart-empty">暂无授权站点</p>}</section>
+  </section>
+}

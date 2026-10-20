@@ -18,6 +18,8 @@ import {
 import "./topology-editor.css"
 
 const icons: Record<DeviceType, string> = {
+  温控设备: "load",
+ ATS: "bus", AC充电桩: "load", DC充电桩: "load",
   标准柜: "battery", 直流母线: "bus", 光伏侧电表: "meter", 柴油发电机: "pcs", 充电桩: "load", 可控负载: "load", 不可控负载: "load",
   电网: "grid",
 

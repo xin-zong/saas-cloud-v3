@@ -63,6 +63,7 @@ import "./maintenance-center.css"
 
 import { PageHeader } from "./ui/Workspace"
 import MaintenanceFirmware from "./maintenance/MaintenanceFirmware"
+import StylizedMaintenanceOverview from "./maintenance/StylizedMaintenanceOverview"
 import type { RegisterLeaveGuard } from "./useEditorLeaveGuard"
 
 const TABS = ["运维总览", "告警事件", "设备健康", "固件升级"] as const
@@ -1692,7 +1693,7 @@ export default function MaintenanceCenterPage({
       )}
       <div className="maintenance-content">
         {(ordersOnly || tab === "运维总览") && (
-          <section className="maintenance-toolbar" aria-label="运维筛选">
+          <details className="stylized-maintenance-filters" open={ordersOnly || filtersActive}><summary>筛选条件</summary><section className="maintenance-toolbar" aria-label="运维筛选">
             <label>
               责任范围
               <select
@@ -1767,7 +1768,7 @@ export default function MaintenanceCenterPage({
                 <RotateCcw size={15} />
               </button>
             )}
-          </section>
+          </section></details>
         )}
         {!ordersOnly && tab === "告警事件" && (
           <section
@@ -2011,6 +2012,8 @@ export default function MaintenanceCenterPage({
         )}
         {!ordersOnly && tab === "运维总览" && (
           <>
+            <StylizedMaintenanceOverview rows={rows} now={now} canViewAlarms={visibleTabs.includes("告警事件")} onAllAlarms={()=>{switchTab("告警事件");setSeverity("");setState("")}} onStationAlarms={id=>{setScope(id);switchTab("告警事件");setSeverity("");setState("")}} onAlarm={(stationId,id)=>open("alarm",stationId,id)} />
+            <details className="stylized-maintenance-more"><summary>更多运维指标与处置</summary><div className="stylized-maintenance-more-content">
             <section className="maintenance-metrics" aria-label="运维风险指标">
               {[
                 {
@@ -2538,6 +2541,7 @@ export default function MaintenanceCenterPage({
                 ))}
               </Table>
             </section>
+            </div></details>
           </>
         )}
         {!ordersOnly && tab === "告警事件" && (

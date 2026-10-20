@@ -1,125 +1,814 @@
-import { useEffect, useState } from 'react';
-import { api, DEMO_MODE } from '@/api/client';
-import { assignEms, hasDcPv, type ProvisionModel } from './deviceConfiguration';
-import { createDevice, newNodeId, deviceLabels, type Device, type DeviceType, type ProvisionDraft } from './model';
-import { cabinetNodes, canWire, removeNode, validateSiteTopology, nodePosition, splitCabinet, cloneNode, moveNode, arrangeNodes, isStructure, type TopologyIssue } from './topologyModel';
-import DeviceInspector from './DeviceInspector';
-import LegacyTopologyEditor from './LegacyTopologyEditor';
-import './topology-editor.css';
-const iconNames: Record<DeviceType, string> = { 标准柜: 'battery', 电网: 'grid', 光伏: 'pv', '光伏 DC/DC': 'pcs', PCS: 'pcs', '电池 / BMS': 'battery', 负载: 'load', 电表: 'meter', 变压器: 'grid', 交流母线: 'bus', 直流母线: 'bus', 断路器: 'bus', EMS: 'pcs', 光伏侧电表: 'meter', 柴油发电机: 'pcs', 充电桩: 'load', 可控负载: 'load', 不可控负载: 'load' };
-export function NodeIcon({ type }: {
-    type: DeviceType;
-}) { return <img className="provision-node-icon" src={`/figma/provision-v3/${iconNames[type]}.svg`} alt=""/>; }
+import { useEffect, useRef, useState, type ReactNode } from "react"
+import { createPortal } from "react-dom"
+import { api, DEMO_MODE } from "@/api/client"
+import { assignEms, type ProvisionModel } from "./deviceConfiguration"
+import {
+  createDevice,
+  deviceLabels,
+  type Device,
+  type DeviceType,
+  type ProvisionDraft,
+} from "./model"
+import {
+  cabinetNodes,
+  removeNode,
+  validateSiteTopology,
+  splitCabinet,
+  cloneNode,
+  arrangeNodes,
+  type TopologyIssue,
+} from "./topologyModel"
+import DeviceInspector from "./DeviceInspector"
+import LegacyTopologyEditor from "./LegacyTopologyEditor"
+import TopologyCanvas, { nodeIcon } from "./TopologyCanvas"
+import {
+  electricalPorts,
+  communicationEdges,
+  arrangeCommunication,
+  communicationDraft,
+  persistCanvasPatch,
+  type CanvasMode,
+  type Point,
+} from "./topologyCanvasModel"
+import "./topology-editor.css"
+import "./topology-studio.css"
+export function NodeIcon({ type }: { type: DeviceType }) {
+  return <img className="provision-node-icon" src={nodeIcon(type)} alt="" />
+}
 type Props = {
-    draft: ProvisionDraft;
-    change: (patch: Partial<ProvisionDraft>) => void;
-    undo: () => void;
-    redo: () => void;
-    canUndo: boolean;
-    canRedo: boolean;
-    onClear: () => void;
-    onExport: () => void;
-    validationTrigger?: number;
-};
-const groups: {
-    label: string;
-    types: DeviceType[];
-}[] = [{ label: '储能设备', types: ['标准柜', 'PCS', '电池 / BMS', '光伏 DC/DC'] }, { label: '控制设备', types: ['EMS'] }, { label: '计量设备', types: ['电表', '光伏侧电表'] }, { label: '电气结构', types: ['电网', '交流母线', '直流母线'] }, { label: '发电设备', types: ['光伏', '柴油发电机'] }, { label: '用电设备', types: ['充电桩', '可控负载', '不可控负载'] }];
+  draft: ProvisionDraft
+  change: (patch: Partial<ProvisionDraft>) => void
+  undo: () => void
+  redo: () => void
+  canUndo: boolean
+  canRedo: boolean
+  onClear: () => void
+  onExport: () => void
+  validationTrigger?: number
+  readOnly?: boolean
+  exportPanel?: ReactNode
+  onDismissExport?: () => void
+}
+const groups: { label: string; types: DeviceType[] }[] = [
+  {
+    label: "储能与控制",
+    types: ["标准柜", "PCS", "电池 / BMS", "光伏 DC/DC", "EMS", "温控设备"],
+  },
+  {
+    label: "电气结构",
+    types: ["电网", "交流母线", "直流母线", "ATS"],
+  },
+  { label: "计量与发电", types: ["电表", "光伏侧电表", "光伏", "柴油发电机"] },
+  {
+    label: "用电设备",
+    types: ["AC充电桩", "DC充电桩", "可控负载", "不可控负载"],
+  },
+]
 export default function TopologyEditor(props: Props) {
-    const { draft, change, undo, redo, canUndo, canRedo, onClear, onExport, validationTrigger = 0 } = props;
-    const [showCommunication, setShowCommunication] = useState(true);
-    const [models, setModels] = useState<ProvisionModel[]>([]);
-    const [catalogError, setCatalogError] = useState('');
-    const [catalogLoading, setCatalogLoading] = useState(false);
-    const [catalogRevision, setCatalogRevision] = useState(0);
-    useEffect(() => {
-        if (DEMO_MODE) { setCatalogError('演示环境未连接型号目录'); return; }
-        const controller = new AbortController();
-        setCatalogLoading(true); setCatalogError(''); setModels([]);
-        api<ProvisionModel[]>('/provision-models', { signal: controller.signal }).then(rows => {
-            if (!Array.isArray(rows)) throw new Error('型号目录响应无效');
-            if (!controller.signal.aborted) setModels(rows);
-        }).catch(error => { if (!controller.signal.aborted) setCatalogError(error instanceof Error ? error.message : '无法读取型号目录'); })
-            .finally(() => { if (!controller.signal.aborted) setCatalogLoading(false); });
-        return () => controller.abort();
-    }, [catalogRevision]);
-    const [library, setLibrary] = useState(true), [search, setSearch] = useState(''), [selected, setSelected] = useState(draft.devices.find(n => n.type === '标准柜')?.id ?? ''), [expanded, setExpanded] = useState(false), [connect, setConnect] = useState(false), [source, setSource] = useState(''), [kind, setKind] = useState<'AC' | 'DC'>('AC'), [zoom, setZoom] = useState(1), [message, setMessage] = useState(''), [checked, setChecked] = useState(false), [legacy, setLegacy] = useState(false);
-    const device = draft.devices.find(d => d.id === selected), container = device?.type === '标准柜' ? device : draft.devices.find(n => n.id === device?.cabinetId), issues = checked ? validateSiteTopology(draft) : [];
-    useEffect(() => {
-        if (!draft.devices.some(n => n.id === selected)) {
-            setSelected(draft.devices.find(n => n.type === '标准柜')?.id ?? draft.devices[0]?.id ?? '');
-        }
-    }, [draft.devices, selected]);
-    useEffect(() => { if (validationTrigger)
-        setChecked(true); }, [validationTrigger]);
-    useEffect(() => { const escape = (e: KeyboardEvent) => { if (e.key === 'Escape') {
-        setExpanded(false);
-        setConnect(false);
-        setSource('');
-    } }; window.addEventListener('keydown', escape); return () => window.removeEventListener('keydown', escape); }, []);
-    const patch = (id: string, values: Partial<Device>) => change({ devices: draft.devices.map(d => d.id === id ? { ...d, ...values } : d) });
-    function add(type: DeviceType) {
-        let number = draft.devices.filter(d => d.type === type).length + 1;
-        while (draft.devices.some(d => d.code === createDevice(type, number).code))
-            number++;
-        if (type === '标准柜') {
-            const group = cabinetNodes(number, true, draft.devices.find(n => n.type === 'EMS')?.id ?? '');
-            group.cabinet.x = 30 + (number % 2) * 35;
-            group.cabinet.y = 65;
-            change({ devices: [...draft.devices, ...group.devices], connections: [...(draft.connections ?? []), ...group.connections] });
-            setSelected(group.cabinet.id);
-        }
-        else {
-            const d = createDevice(type, number);
-            d.x = 15 + (draft.devices.length % 4) * 22;
-            d.y = 20 + (draft.devices.length % 3) * 15;
-            d.enabled = true;
-            if (type === '光伏 DC/DC') d.dcPvConfigured = true;
-            d.access = type === '光伏 DC/DC' ? 'EMU' : 'EMS';
-            d.emsId = draft.devices.find(n => n.type === 'EMS')?.id ?? '';
-            change({ devices: [...draft.devices, d] });
-            setSelected(d.id);
-        }
-        setChecked(false);
+  const {
+    draft,
+    change,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    onClear,
+    onExport,
+    validationTrigger = 0,
+    readOnly = false,
+  } = props
+  const [mode, setMode] = useState<CanvasMode>("electrical"),
+    [tab, setTab] = useState<"library" | "list">("library"),
+    [selected, setSelected] = useState(
+      draft.devices.find((n) => n.type === "标准柜")?.id ??
+        draft.devices[0]?.id ??
+        "",
+    ),
+    [search, setSearch] = useState(""),
+    [expanded, setExpanded] = useState(false),
+    [checked, setChecked] = useState(false),
+    [legacy, setLegacy] = useState(false),
+    [message, setMessage] = useState(""),
+    [zoom, setZoom] = useState(1),
+    [fitRevision, setFitRevision] = useState(0),
+    [focusRevision, setFocusRevision] = useState(0),
+    [models, setModels] = useState<ProvisionModel[]>([]),
+    [catalogError, setCatalogError] = useState(""),
+    [catalogLoading, setCatalogLoading] = useState(false),
+    [catalogRevision, setCatalogRevision] = useState(0)
+  const fullButton = useRef<HTMLButtonElement>(null),
+    lastActive = useRef<HTMLElement | null>(null)
+  const projected = communicationDraft(draft)
+  const device = projected.devices.find((d) => d.id === selected),
+    container =
+      device?.type === "标准柜"
+        ? device
+        : draft.devices.find((n) => n.id === device?.cabinetId),
+    issues = checked ? validateSiteTopology(draft) : []
+  useEffect(() => {
+    if (DEMO_MODE) {
+      setCatalogError("演示环境未连接型号目录")
+      return
     }
-    function pick(d: Device) { setSelected(d.id); if (!connect)
-        return; if (!source) {
-        setSource(d.id);
-        setMessage('请选择目标节点');
-        return;
-    } const from = draft.devices.find(n => n.id === source); if (!from || !canWire(from, d, kind)) {
-        setMessage('连接不兼容：EMS/机柜不接主电路，请连接实际设备的 AC/DC 端口');
-        return;
-    } if (draft.connections?.some(e => (e.from === source && e.to === d.id) || (e.from === d.id && e.to === source))) {
-        setMessage('节点已经连接');
-        return;
-    } change({ connections: [...(draft.connections ?? []), { id: newNodeId(), from: source, to: d.id, kind }] }); setSource(''); setMessage('已添加本地电气连接'); }
-    function position(d: Device, i: number) { return nodePosition(draft, d, i); }
-    function duplicate() { if (!device)
-        return; const { selectedId, ...patch } = cloneNode(draft, device.id); change(patch); setSelected(selectedId); }
-    function locate(issue: TopologyIssue) { setChecked(false); setSelected(issue.nodeId); requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-device-field="${issue.nodeId}:${issue.field}"]`)?.focus()); }
-    if (legacy)
-        return <div><button className="station-text-button" onClick={() => setLegacy(false)}>返回统一拓扑画布</button><LegacyTopologyEditor {...props}/></div>;
-    const node = (d: Device, i: number) => { const p = position(d, i), bus = d.type === '交流母线' || d.type === '直流母线'; return <button key={d.id} className={`topology-device unified-node ${bus ? (d.type === '直流母线' ? 'unified-bus unified-dc-bus' : 'unified-bus') : ''} ${selected === d.id ? 'selected' : ''}`} aria-label={`配置 ${d.name}`} style={{ left: `${p.x}%`, top: `${p.y}%` }} draggable={!connect} onDragStart={e => e.dataTransfer.setData('text/plain', d.id)} onClick={() => pick(d)}><NodeIcon type={d.type}/><span>{d.code}<small>{d.name}</small>{!isStructure(d) && showCommunication && <em>{d.type === 'EMS' ? 'TCP / RS485' : d.access === '不接入' ? '不接入' : d.access === 'EMU' ? 'EMU' : d.protocol || '待配置'}</em>}</span></button>; };
-    return <div className={`topology-v3 ${expanded ? 'topology-expanded' : ''}`} data-design-node="2136:8619">
-  {expanded && <header className="topology-fullscreen-heading"><h2>拓扑与设备 · 全屏编辑</h2><button className="station-text-button" onClick={() => setExpanded(false)}>退出全屏</button></header>}
-  <aside className="unified-library"><nav><button aria-pressed={library} onClick={() => setLibrary(true)}>节点库</button><button aria-pressed={!library} onClick={() => setLibrary(false)}>设备列表</button></nav><input aria-label="搜索设备或结构" placeholder="按名称搜索" value={search} onChange={e => setSearch(e.target.value)}/>{library ? groups.map(g => <section key={g.label}><h3>{g.label}</h3><div>{g.types.filter(t => `${deviceLabels[t]} ${t}`.includes(search)).map(t => <button key={t} onClick={() => add(t)}><NodeIcon type={t}/>{t === '电表' ? '电网侧电表' : deviceLabels[t]}</button>)}</div></section>) : <div className="node-list">{draft.devices.filter(n => `${n.code} ${n.name}`.toLowerCase().includes(search.toLowerCase())).map(n => <button key={n.id} aria-pressed={selected === n.id} onClick={() => setSelected(n.id)}>{n.code}<small>{n.name}</small></button>)}</div>}</aside>
-  <section className="unified-workspace"><div className="unified-toolbar">{[['select', '选择', () => { setConnect(false); setSource(''); }], ['connect', '连线', () => { setConnect(!connect); setSource(''); }], ['undo', '撤销', undo], ['redo', '重做', redo], ['layout', '整理布局', () => change(arrangeNodes(draft))]].map(([icon, label, action]) => <button key={String(icon)} title={String(label)} aria-label={String(label)} disabled={label === '撤销' ? !canUndo : label === '重做' ? !canRedo : false} onClick={action as () => void}><img src={`/figma/provision-v3/${icon}.svg`} alt=""/></button>)}{connect && <select aria-label="连线类型" value={kind} onChange={e => setKind(e.target.value as 'AC' | 'DC')}><option>AC</option><option>DC</option></select>}<button aria-label="显示通信标识" title="显示通信标识" aria-pressed={showCommunication} onClick={() => setShowCommunication(v => !v)}><img src="/figma/provision-v3/hierarchy.svg" alt=""/></button><span /><button aria-label="清空" onClick={onClear}><img src="/figma/provision-v3/delete.svg" alt=""/></button><button aria-label={expanded ? '收起画布' : '展开画布'} onClick={() => setExpanded(!expanded)}><img src="/figma/provision-v3/fullscreen.svg" alt=""/></button></div>
-   <div className="unified-viewport"><div className="unified-surface" style={{ width: `${zoom * 100}%`, height: `${zoom * 100}%` }} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); const id = e.dataTransfer.getData('text/plain'), rect = e.currentTarget.getBoundingClientRect(); change(moveNode(draft, id, { x: Math.min(92, Math.max(8, (e.clientX - rect.left) / rect.width * 100)), y: Math.min(88, Math.max(8, (e.clientY - rect.top) / rect.height * 100)) })); }}>
-    <p className="unified-caption">全站电气结构 · 设备内显示通信接入</p>
-    {draft.devices.filter(d => d.type === '标准柜').map((d, i) => { const p = position(d, i); return <div key={d.id} className="unified-cabinet" style={{ left: `${p.x}%`, top: `calc(${p.y}% - 90px)` }}><button draggable={!connect} onDragStart={e => e.dataTransfer.setData('text/plain', d.id)} onClick={() => setSelected(d.id)}>标准柜 · {d.code}</button></div>; })}
-    <svg className="unified-lines" width="100%" height="100%" aria-hidden="true">{draft.connections?.map(e => { const a = draft.devices.find(n => n.id === e.from), b = draft.devices.find(n => n.id === e.to); if (!a || !b || (a.type === '光伏 DC/DC' && !hasDcPv(a)) || (b.type === '光伏 DC/DC' && !hasDcPv(b)))
-        return null; const p = position(a, draft.devices.indexOf(a)), q = position(b, draft.devices.indexOf(b)), isBus = (n: Device) => n.type === '交流母线' || n.type === '直流母线'; return <line key={e.id} x1={`${isBus(a) ? q.x : p.x}%`} y1={`${p.y}%`} x2={`${isBus(b) ? p.x : q.x}%`} y2={`${q.y}%`} stroke={e.kind === 'AC' ? '#547787' : '#b78130'} strokeWidth="1.5"/>; })}</svg>
-    {draft.devices.filter(d => d.type !== '标准柜' && !(d.type === '光伏 DC/DC' && !hasDcPv(d))).map(node)}{!draft.devices.length && <div className="provision-empty">从左侧添加标准柜或独立设备</div>}
-   </div></div><footer><span>— AC连接　<span className="dc-legend">— DC连接</span></span><button onClick={() => setZoom(Math.max(.75, zoom - .25))} aria-label="缩小画布">−</button><button onClick={() => setZoom(1)}>{Math.round(zoom * 100)}%</button><button onClick={() => setZoom(Math.min(2, zoom + .25))} aria-label="放大画布">＋</button><button onClick={onExport}>导出</button></footer>{message && <p role="status">{message}</p>}
-  </section>
-  <aside className="unified-inspector"><h3>{checked ? '校验结果' : '设备配置'}</h3>{catalogLoading && <p role="status">正在读取型号目录…</p>}{catalogError && <div className="model-catalog-error"><p role="status">{catalogError}</p><button onClick={() => setCatalogRevision(n => n + 1)}>重试型号目录</button></div>}{checked ? <><strong className={issues.length ? 'station-danger' : 'station-accent'}>{issues.length ? `发现 ${issues.length} 项待完善` : '本地拓扑校验通过'}</strong>{issues.map((issue, i) => <section className="topology-issue" key={i}><p>{issue.message}</p><button className="station-text-button" onClick={() => locate(issue)}>定位设备与字段 →</button></section>)}<p>修正后重新校验；配置仍可保存为草稿。</p></> : device ? <>
-   {container ? <><h2>标准柜 · {container.code}</h2><div className="inspector-pair"><input aria-label="机柜编号" value={container.code ?? ''} onChange={e => patch(container.id, { code: e.target.value })}/><select aria-label="机柜所属 EMS" value={container.emsId ?? ''} onChange={e => { change(assignEms(draft, container.id, e.target.value)); }}><option value="">请选择 EMS</option>{draft.devices.filter(n => n.type === 'EMS').map(n => <option key={n.id} value={n.id}>{n.code}</option>)}</select></div>{draft.devices.filter(n => n.cabinetId === container.id && n.type !== '直流母线').map((n, i) => <details className="cabinet-config" key={n.id} open={n.id === selected || (device.type === '标准柜' && i === 0)}><summary>{n.code} · {deviceLabels[n.type]}</summary><DeviceInspector device={n} draft={draft} patch={patch} change={change} models={models}/></details>)}</> : <DeviceInspector device={device} draft={draft} patch={patch} change={change} models={models}/>}
-   <div className="node-actions"><button aria-label="拆分标准柜" title="拆分标准柜" disabled={!container} onClick={() => { if (container) {
-        change(splitCabinet(draft, container.id));
-        setSelected(draft.devices.find(n => n.cabinetId === container.id && n.type === 'PCS')?.id ?? '');
-    } }}>拆分标准柜</button><button onClick={duplicate}>复制节点</button><button onClick={() => { change(removeNode(draft, device.id)); setSelected(''); }}>删除节点</button></div><details className="unified-connections"><summary>编辑电气连接</summary>{draft.connections?.filter(e => e.from === device.id || e.to === device.id).map(e => <div key={e.id}>{e.kind} · {draft.devices.find(n => n.id === (e.from === device.id ? e.to : e.from))?.code}<button aria-label="删除连接" onClick={() => change({ connections: draft.connections?.filter(q => q.id !== e.id) })}>×</button></div>)}</details>
-  </> : <><h2>从节点库开始</h2><p>添加标准柜，或单独添加 PCS、电池系统和 DCDC。</p><button className="ui-button ui-button--primary" onClick={() => add('标准柜')}>添加标准柜</button></>}
-  {draft.devices.some(n => n.ports?.some(p => p.targets.length)) && <button className="station-text-button" onClick={() => setLegacy(true)}>编辑旧草稿通信端口</button>}</aside>
- </div>;
+    const controller = new AbortController()
+    setCatalogLoading(true)
+    setCatalogError("")
+    api<ProvisionModel[]>("/provision-models", { signal: controller.signal })
+      .then((rows) => {
+        if (!Array.isArray(rows)) throw new Error("型号目录响应无效")
+        if (!controller.signal.aborted) setModels(rows)
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted)
+          setCatalogError(
+            error instanceof Error ? error.message : "无法读取型号目录",
+          )
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setCatalogLoading(false)
+      })
+    return () => controller.abort()
+  }, [catalogRevision])
+  useEffect(() => {
+    if (!projected.devices.some((n) => n.id === selected))
+      setSelected(draft.devices[0]?.id ?? "")
+  }, [draft.devices, selected])
+  useEffect(() => {
+    if (validationTrigger) setChecked(true)
+  }, [validationTrigger])
+  useEffect(() => {
+    if (!expanded) return
+    lastActive.current = (document.activeElement as HTMLElement)
+    const before = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    const timer = setTimeout(
+      () =>
+        document
+          .querySelector<HTMLButtonElement>(
+            '.topology-studio-fullscreen [aria-label="退出全屏"]',
+          )
+          ?.focus(),
+      0,
+    )
+    return () => {
+      clearTimeout(timer)
+      document.body.style.overflow = before
+      fullButton.current?.focus()
+    }
+  }, [expanded])
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setExpanded(false)
+        return
+      }
+      const input = (e.target as HTMLElement)?.closest(
+        'input,textarea,select,[contenteditable="true"]',
+      )
+      if (!input && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+        e.preventDefault()
+        if (!readOnly) (e.shiftKey ? redo : undo)()
+      }
+    }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [undo, redo, readOnly])
+  const patch = (id: string, values: Partial<Device>) => {
+    if (!readOnly)
+      change(
+        persistCanvasPatch(draft, {
+          devices: projected.devices.map((d) =>
+            d.id === id ? { ...d, ...values } : d,
+          ),
+        }),
+      )
+  }
+  function add(type: DeviceType, p?: Point) {
+    if (readOnly) return
+    props.onDismissExport?.()
+    let number = draft.devices.filter((d) => d.type === type).length + 1
+    while (
+      draft.devices.some((d) => d.code === createDevice(type, number).code)
+    )
+      number++
+    if (type === "标准柜") {
+      const group = cabinetNodes(
+        number,
+        true,
+        draft.devices.find((n) => n.type === "EMS")?.id ?? "",
+      )
+      group.cabinet.x = p?.x ?? 48
+      group.cabinet.y = p?.y ?? 53
+      change({
+        devices: [...draft.devices, ...group.devices],
+        connections: [...(draft.connections ?? []), ...group.connections],
+      })
+      setSelected(group.cabinet.id)
+    } else {
+      const d = createDevice(type, number)
+      d.enabled = true
+      if (type === "光伏 DC/DC") d.dcPvConfigured = true
+      d.access = type === "光伏 DC/DC" ? "EMU" : "EMS"
+      d.emsId = draft.devices.find((n) => n.type === "EMS")?.id ?? ""
+      Object.assign(
+        d,
+        mode === "communication"
+          ? { commX: p?.x ?? 45, commY: p?.y ?? 45 }
+          : {
+              x: p?.x ?? 40 + (draft.devices.length % 3) * 15,
+              y: p?.y ?? 25 + (draft.devices.length % 3) * 20,
+            },
+      )
+      change({ devices: [...draft.devices, d] })
+      setSelected(d.id)
+    }
+    setChecked(false)
+  }
+  function connectionPort(e:NonNullable<ProvisionDraft['connections']>[number],side:'from'|'to') {
+    const endpoint=draft.devices.find(n=>n.id===e[side]),key=side==='from'?'fromPort':'toPort'
+    if(!endpoint)return null
+    return <label className="topo-connection-port">{side==='from'?'起点':'终点'} · {endpoint.code}<select disabled={readOnly} data-device-field={endpoint.id+':'+key} aria-label={'连接 '+e.id+' '+(side==='from'?'起点':'终点')+'端口'} value={e[key]??''} onChange={event=>change({connections:draft.connections?.map(n=>n.id===e.id?{...n,[key]:event.target.value}:n)})}><option value="">请选择明确端口</option>{electricalPorts(endpoint).filter(p=>p.kind===e.kind).map(p=><option key={p.id} value={p.id}>{p.id} · {p.label}</option>)}</select></label>
+  }
+  function locate(id: string) {
+    props.onDismissExport?.()
+    setSelected(id)
+    setFocusRevision((n) => n + 1)
+  }
+  function locateIssue(issue: TopologyIssue) {
+    setChecked(false)
+    if (issue.view)
+      setMode(issue.view === "communication" ? "communication" : "electrical")
+    locate(issue.targetNodeId ?? issue.nodeId)
+    requestAnimationFrame(() =>
+      document
+        .querySelector<HTMLElement>(
+          `[data-device-field="${issue.targetNodeId ?? issue.nodeId}:${issue.field}"]`,
+        )
+        ?.focus(),
+    )
+  }
+  if (legacy)
+    return (
+      <div>
+        <button
+          className="station-text-button"
+          onClick={() => setLegacy(false)}
+        >
+          返回统一拓扑画布
+        </button>
+        <LegacyTopologyEditor {...props} />
+      </div>
+    )
+  const action = (
+    label: string,
+    asset: string,
+    fn: () => void,
+    disabled = false,
+  ) => (
+    <button
+      key={label}
+      title={label}
+      aria-label={label}
+      disabled={disabled}
+      onClick={fn}
+    >
+      <img
+        src={`/figma/topology-current/figmaElectrical-${asset}.svg`}
+        alt=""
+      />
+    </button>
+  )
+  const content = (
+    <div
+      className={`topology-studio ${
+        expanded ? "topology-studio-fullscreen" : ""
+      }`}
+      data-design-node="3689:97748,3689:103565,3643:19627"
+      role={expanded ? "dialog" : undefined}
+      aria-modal={expanded ? true : undefined}
+      aria-label={expanded ? "拓扑全屏编辑" : undefined}
+      onKeyDown={(e) => {
+        if (!expanded || e.key !== "Tab") return
+        const elements = Array.from(
+          e.currentTarget.querySelectorAll<HTMLElement>(
+            'button:not(:disabled),input,select,[tabindex="0"]',
+          ),
+        ).filter((el) => el.offsetParent !== null)
+        const first = elements[0],
+          last = elements[elements.length - 1]
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault()
+          last?.focus()
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault()
+          first?.focus()
+        }
+      }}
+    >
+      {expanded && (
+        <header className="topo-full-header">
+          <strong>拓扑与设备</strong>
+          <span>{draft.name || "新建站点"}</span>
+          <button aria-label="退出全屏" onClick={() => setExpanded(false)}>
+            退出全屏　×
+          </button>
+        </header>
+      )}
+      <aside className="topo-library">
+        <nav aria-label="拓扑节点目录">
+          <button
+            aria-pressed={tab === "library"}
+            onClick={() => setTab("library")}
+          >
+            节点库
+          </button>
+          <button aria-pressed={tab === "list"} onClick={() => setTab("list")}>
+            设备列表
+          </button>
+        </nav>
+        <input
+          aria-label="搜索设备或结构"
+          placeholder="搜索节点名称"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        {tab === "library" ? (
+          groups.map((g) => (
+            <section key={g.label}>
+              <h3>{g.label}</h3>
+              <div>
+                {g.types
+                  .filter((t) =>
+                    `${deviceLabels[t]} ${t}`
+                      .toLowerCase()
+                      .includes(search.toLowerCase()),
+                  )
+                  .map((t) => (
+                    <button
+                      key={t}
+                      draggable={!readOnly}
+                      disabled={readOnly}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData("application/enerlution-node", t)
+                        e.dataTransfer.effectAllowed = "copy"
+                      }}
+                      onClick={() => add(t)}
+                      title={`拖入画布或点击添加${deviceLabels[t]}`}
+                    >
+                      <NodeIcon type={t} />
+                      <span>
+                        {t === "电表" ? "电网侧电表" : deviceLabels[t]}
+                      </span>
+                      <b>＋</b>
+                    </button>
+                  ))}
+              </div>
+            </section>
+          ))
+        ) : (
+          <div className="topo-device-list">
+            {projected.devices
+              .filter((n) =>
+                `${n.name} ${n.code}`
+                  .toLowerCase()
+                  .includes(search.toLowerCase()),
+              )
+              .map((n) => (
+                <button
+                  key={n.id}
+                  aria-pressed={selected === n.id}
+                  onClick={() => locate(n.id)}
+                >
+                  <NodeIcon type={n.type} />
+                  <span>
+                    {n.code}
+                    <small>{n.name}</small>
+                  </span>
+                  <span>⌖</span>
+                </button>
+              ))}
+            {!draft.devices.length && <p>暂无设备，从节点库添加</p>}
+          </div>
+        )}
+      </aside>
+      <section className="topo-workspace">
+        <header className="topo-toolbar">
+          <nav aria-label="拓扑视图">
+            <button
+              aria-pressed={mode === "electrical" && !checked}
+              onClick={() => {
+                props.onDismissExport?.()
+                setMode("electrical")
+                setChecked(false)
+              }}
+            >
+              电气拓扑
+            </button>
+            <button
+              aria-pressed={mode === "communication" && !checked}
+              onClick={() => {
+                props.onDismissExport?.()
+                setMode("communication")
+                setChecked(false)
+              }}
+            >
+              通信拓扑
+            </button>
+            <button
+              aria-pressed={checked}
+              onClick={() => {
+                props.onDismissExport?.()
+                setChecked(true)
+              }}
+            >
+              校验{checked && issues.length ? ` ${issues.length}` : ""}
+            </button>
+          </nav>
+          <div className="topo-actions">
+            {action("撤销", "imgIcon", undo, !canUndo || readOnly)}
+            {action("重做", "imgIcon1", redo, !canRedo || readOnly)}
+            {action(
+              "整理布局",
+              "imgIcon2",
+              () => {
+                change(
+                  mode === "electrical"
+                    ? arrangeNodes(draft)
+                    : arrangeCommunication(draft),
+                )
+                setFitRevision((n) => n + 1)
+              },
+              readOnly,
+            )}
+            {action("缩小画布", "imgIcon3", () =>
+              setZoom(Math.max(0.25, zoom - 0.1)),
+            )}
+            <button
+              aria-label="重置缩放"
+              onClick={() => setFitRevision((n) => n + 1)}
+            >
+              {Math.round(zoom * 100)}%
+            </button>
+            {action("放大画布", "imgIcon4", () =>
+              setZoom(Math.min(2.5, zoom + 0.1)),
+            )}
+            {action("适应画布", "imgIcon5", () => setFitRevision((n) => n + 1))}
+            <button
+              ref={fullButton}
+              title={expanded ? "退出全屏" : "展开画布"}
+              aria-label={expanded ? "收起画布" : "展开画布"}
+              onClick={() => setExpanded((v) => !v)}
+            >
+              <img
+                src="/figma/topology-current/figmaElectrical-imgIcon6.svg"
+                alt=""
+              />
+            </button>
+          </div>
+        </header>
+        <TopologyCanvas
+          draft={draft}
+          mode={mode}
+          selected={selected}
+          select={(id) => {
+            props.onDismissExport?.()
+            setSelected(id)
+          }}
+          change={change}
+          add={add}
+          focusRevision={focusRevision}
+          status={setMessage}
+          zoom={zoom}
+          setZoom={setZoom}
+          fitRevision={fitRevision}
+          readOnly={readOnly}
+        />
+        <footer className="topo-footer">
+          <small role="status">
+            {message || "拖入节点 · 拖动设备或端口 · 滚轮缩放 · 空白处平移"}
+          </small>
+          <button onClick={onExport}>生成 XML</button>
+          <button
+            disabled={readOnly || !draft.devices.length}
+            onClick={onClear}
+          >
+            清空
+          </button>
+        </footer>
+      </section>
+      <aside className="topo-inspector">
+        {props.exportPanel ?? (
+          <>
+            <header>
+              <h3>{checked ? "配置校验" : device?.name || "节点配置"}</h3>
+              {!checked && device && <small>{device.code}</small>}
+            </header>
+            {checked ? (
+              <>
+                <div
+                  className={`topo-validation-summary ${
+                    issues.length ? "pending" : ""
+                  }`}
+                >
+                  <strong>
+                    {issues.length
+                      ? `${issues.length} 项待完善`
+                      : "本地拓扑校验通过"}
+                  </strong>
+                  <p>校验电气结构与通信配置，修正后可重新校验。</p>
+                  <button onClick={() => setChecked(true)}>重新校验</button>
+                </div>
+                {issues.map((issue, i) => (
+                  <section
+                    className="topo-issue"
+                    key={`${issue.nodeId}:${issue.field}:${i}`}
+                  >
+                    <small>
+                      {draft.devices.find((n) => n.id === issue.nodeId)?.code ||
+                        "全站"}
+                    </small>
+                    <p>{issue.message}</p>
+                    <button onClick={() => locateIssue(issue)}>
+                      定位设备与字段 →
+                    </button>
+                  </section>
+                ))}
+              </>
+            ) : (
+              <>
+                {catalogLoading && <p role="status">正在读取型号目录…</p>}
+                {catalogError && (
+                  <div className="topo-catalog-error">
+                    <p>{catalogError}</p>
+                    <button onClick={() => setCatalogRevision((n) => n + 1)}>
+                      重试型号目录
+                    </button>
+                  </div>
+                )}
+                {device ? (
+                  <>
+                    <fieldset
+                      disabled={readOnly}
+                      className="topo-inspector-fields"
+                    >
+                      {device.type === "标准柜" && container ? (
+                        <>
+                          <label>
+                            机柜编号
+                            <input
+                              aria-label="机柜编号"
+                              value={container.nodeId ?? container.id}
+                              readOnly
+                            />
+                          </label>
+                          <label>柜号<input aria-label="柜号" data-device-field={container.id+':cabinetNumber'} value={container.cabinetNumber??''} onChange={e=>patch(container.id,{cabinetNumber:e.target.value})}/></label>
+                          <label>
+                            机柜名称
+                            <input
+                              aria-label="机柜名称"
+                              value={container.name}
+                              onChange={(e) =>
+                                patch(container.id, { name: e.target.value })
+                              }
+                            />
+                          </label>
+                          <label>
+                            所属 EMS
+                            <select
+                              aria-label="机柜所属 EMS"
+                              value={container.emsId ?? ""}
+                              onChange={(e) =>
+                                change(
+                                  assignEms(
+                                    draft,
+                                    container.id,
+                                    e.target.value,
+                                  ),
+                                )
+                              }
+                            >
+                              <option value="">请选择 EMS</option>
+                              {draft.devices
+                                .filter((n) => n.type === "EMS")
+                                .map((n) => (
+                                  <option key={n.id} value={n.id}>
+                                    {n.code}
+                                  </option>
+                                ))}
+                            </select>
+                          </label>
+                          <h3>柜内成员</h3>
+                          {draft.devices
+                            .filter((n) => n.cabinetId === container.id)
+                            .map((n) => (
+                              <button
+                                key={n.id}
+                                className="topo-member"
+                                onClick={() => locate(n.id)}
+                              >
+                                <NodeIcon type={n.type} />
+                                <span>
+                                  {n.code} · {n.name}
+                                </span>
+                                →
+                              </button>
+                            ))}
+                          <label>
+                            加入独立设备
+                            <select
+                              aria-label="加入机柜成员"
+                              value=""
+                              onChange={(e) => {
+                                if (e.target.value)
+                                  patch(e.target.value, {
+                                    cabinetId: container.id,
+                                    emsId: container.emsId,
+                                  })
+                              }}
+                            >
+                              <option value="">请选择可加入的设备</option>
+                              {draft.devices
+                                .filter(
+                                  (n) =>
+                                    !n.cabinetId &&
+                                    [
+                                      "PCS",
+                                      "电池 / BMS",
+                                      "光伏 DC/DC",
+                                    ].includes(n.type),
+                                )
+                                .map((n) => (
+                                  <option key={n.id} value={n.id}>
+                                    {n.code}
+                                  </option>
+                                ))}
+                            </select>
+                          </label>
+                        </>
+                      ) : (
+                        <DeviceInspector
+                          device={device}
+                          draft={projected}
+                          patch={patch}
+                          change={(values) =>
+                            change(persistCanvasPatch(draft, values))
+                          }
+                          models={models}
+                          mode={mode}
+                        />
+                      )}
+                    </fieldset>
+                    {!device.id.includes(":") && (
+                      <div className="topo-node-actions">
+                        {container && (
+                          <button
+                            disabled={readOnly}
+                            onClick={() => {
+                              change(splitCabinet(draft, container.id))
+                              setSelected(
+                                draft.devices.find(
+                                  (n) => n.cabinetId === container.id,
+                                )?.id ?? "",
+                              )
+                            }}
+                          >
+                            拆分标准柜
+                          </button>
+                        )}
+                        {device.cabinetId && (
+                          <button
+                            disabled={readOnly}
+                            onClick={() =>
+                              patch(device.id, { cabinetId: undefined })
+                            }
+                          >
+                            移出机柜
+                          </button>
+                        )}
+                        <button
+                          disabled={readOnly}
+                          onClick={() => {
+                            const { selectedId, ...values } = cloneNode(
+                              draft,
+                              device.id,
+                            )
+                            change(values)
+                            setSelected(selectedId)
+                          }}
+                        >
+                          复制节点
+                        </button>
+                        <button
+                          disabled={readOnly}
+                          onClick={() => {
+                            change(removeNode(draft, device.id))
+                            setSelected("")
+                          }}
+                        >
+                          删除节点
+                        </button>
+                      </div>
+                    )}
+                    <details className="topo-connections" open tabIndex={-1} data-device-field={device.id+':connections'}>
+                      <summary>
+                        {mode === "electrical" ? "电气连接" : "通信连接"}
+                      </summary>
+                      {mode === "electrical"
+                        ? (draft.connections ?? [])
+                            .filter(
+                              (e) => e.from === device.id || e.to === device.id,
+                            )
+                            .map((e) => (
+                              <div key={e.id} className="topo-electrical-connection">
+                                <span>
+                                  {e.kind} ·{" "}
+                                  {
+                                    draft.devices.find(
+                                      (n) =>
+                                        n.id ===
+                                        (e.from === device.id ? e.to : e.from),
+                                    )?.code
+                                  }
+                                </span>
+                                {connectionPort(e,'from')}{connectionPort(e,'to')}
+                                <button
+                                  disabled={readOnly}
+                                  aria-label="删除连接"
+                                  onClick={() =>
+                                    change({
+                                      connections: draft.connections?.filter(
+                                        (n) => n.id !== e.id,
+                                      ),
+                                    })
+                                  }
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))
+                        : communicationEdges(projected)
+                            .filter(
+                              (e) =>
+                                e.from.node === device.id ||
+                                e.to.node === device.id,
+                            )
+                            .map((e) => (
+                              <div key={e.id}>
+                                <span>
+                                  {e.from.port} →{" "}
+                                  {
+                                    draft.devices.find(
+                                      (n) => n.id === e.to.node,
+                                    )?.code
+                                  }
+                                  {e.legacy ? "（旧草稿）" : ""}
+                                </span>
+                                {!e.legacy && (
+                                  <button
+                                    disabled={readOnly}
+                                    aria-label="删除通信连接"
+                                    onClick={() =>
+                                      patch(e.to.node, {
+                                        access: "不接入",
+                                        emsId: undefined,
+                                        emuId: undefined,
+                                        forwardDeviceId: undefined,
+                                      })
+                                    }
+                                  >
+                                    ×
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                    </details>
+                  </>
+                ) : (
+                  <div className="topo-empty-inspector">
+                    <h2>选择节点开始配置</h2>
+                    <p>从左侧拖入节点，或选择画布中的设备。</p>
+                    <button disabled={readOnly} onClick={() => add("标准柜")}>
+                      添加标准柜
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+            {draft.devices.some((n) =>
+              n.ports?.some((p) => p.targets?.length),
+            ) && (
+              <button
+                className="station-text-button"
+                disabled={readOnly}
+                onClick={() => setLegacy(true)}
+              >
+                编辑旧草稿通信端口
+              </button>
+            )}
+          </>
+        )}
+      </aside>
+    </div>
+  )
+  return expanded ? createPortal(content, document.body) : content
 }

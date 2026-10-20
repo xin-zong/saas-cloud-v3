@@ -1,0 +1,10 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Library icon / ACCH01">
+<path id="charger body" d="M4 1.675H11C11.7318 1.675 12.325 2.26822 12.325 3V13C12.325 13.7318 11.7318 14.325 11 14.325H4C3.26822 14.325 2.675 13.7318 2.675 13V3C2.675 2.26822 3.26822 1.675 4 1.675Z" stroke-width="1.35" stroke="#58707B"/>
+<mask id="stroke0_0_345" fill="white">
+<path d="M4 3.7C4 3.3134 4.3134 3 4.7 3H10.3C10.6866 3 11 3.3134 11 3.7V5.3C11 5.6866 10.6866 6 10.3 6H4.7C4.3134 6 4 5.6866 4 5.3V3.7Z"/>
+</mask>
+<path id="screen" d="M4.7 6H10.3C10.6866 6 11 5.6866 11 5.3V3.7C11 3.3134 10.6866 3 10.3 3H4.7C4.3134 3 4 3.3134 4 3.7V5.3C4 5.6866 4.3134 6 4.7 6Z" stroke-width="1.6" stroke="#58707B" mask="url(#stroke0_0_345)"/>
+<path id="AC waveform" d="M3.5 10C4.5 8 5.5 8 6.5 10C7.5 12 8.5 12 9.5 10C10.5 8 11.5 8 12.5 10" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke="#58707B"/>
+</g>
+</svg>
