@@ -1,0 +1,10 @@
+.ems-agent-rail{position:fixed;right:0;top:46%;z-index:1200;width:46px;height:146px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #cbd8df;border-right:0;border-radius:9px 0 0 9px;background:#fff;color:#155f96;box-shadow:-7px 4px 22px #17232d20;cursor:pointer}
+.ems-agent-rail>svg{padding:4px;box-sizing:content-box;border-radius:6px;background:#edf5fa}
+.ems-agent-rail>span{writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;font-weight:650;letter-spacing:.3px}
+.ems-agent-rail:hover{background:#f0f7fa;color:#0d568d}
+.ems-agent-rail:focus-visible{outline:2px solid #1677c8;outline-offset:3px}
+.ems-agent-surface{position:fixed;inset:0;z-index:1500;background:#17232d0c}
+.ems-agent-surface iframe{width:100%;height:100%;border:0;display:block;background:transparent}
+.ems-agent-loading{position:absolute;right:0;top:0;bottom:0;width:min(480px,100%);display:flex;justify-content:center;align-items:center;gap:10px;background:#fff;color:#526875;font-size:13px}
+.ems-agent-loading button{position:absolute;top:16px;right:16px;background:transparent;border:0;cursor:pointer}
+@media(max-width:760px){.ems-agent-rail{top:auto;bottom:14px;right:12px;width:138px;height:42px;border:1px solid #cbd8df;border-radius:22px;flex-direction:row;gap:8px}.ems-agent-rail>span{writing-mode:horizontal-tb;transform:none}}

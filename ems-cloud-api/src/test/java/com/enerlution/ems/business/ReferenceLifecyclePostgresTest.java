@@ -23,7 +23,7 @@ class ReferenceLifecyclePostgresTest {
   db.execute("ALTER TABLE station ALTER COLUMN id RESTART WITH 900000000; ALTER TABLE device ALTER COLUMN id RESTART WITH 900000000");
   db.execute("ALTER TABLE station DROP COLUMN IF EXISTS lifecycle_version, DROP COLUMN IF EXISTS archived_at, DROP COLUMN IF EXISTS replica_visible; ALTER TABLE device DROP COLUMN IF EXISTS lifecycle_version, DROP COLUMN IF EXISTS archived_at"); db.execute(Files.readString(Path.of("src/main/resources/db/migration/V48__reference_asset_lifecycle.sql")));
   db.update("INSERT INTO app_user(id,account,display_name,password_hash,tenant_id,status) VALUES(900000000,'lifecycle-test@example.invalid','Test','unused',11,'active')");
-  access=mock(AccessControl.class);when(access.userId()).thenReturn(900000000L);when(access.context()).thenReturn(new TenantContext(900000000L,11L,"enterprise",true));when(access.hasPermission("asset.edit")).thenReturn(true);
+  access=mock(AccessControl.class);ScopeTestSupport.useStationIdStubs(access);when(access.userId()).thenReturn(900000000L);when(access.context()).thenReturn(new TenantContext(900000000L,11L,"enterprise",true));when(access.hasPermission("asset.edit")).thenReturn(true);
   grants=mock(TenantGrantService.class);service=new ReferenceLifecycleService(new DomainSupport(db,access),grants);
  }
  @AfterEach void cleanup(){if(outer!=null)manager.rollback(outer);}
@@ -82,3 +82,4 @@ class ReferenceLifecyclePostgresTest {
   assertEquals(1,((List<?>)directory.list(station,false).get("items")).size());assertEquals(0,db.queryForObject("SELECT count(*) FROM device_reference_import WHERE device_id=?",Integer.class,id));
   service.archiveDevice(id,Map.of("expectedVersion",0));assertTrue(((List<?>)directory.list(station,false).get("items")).isEmpty());
  }}
+

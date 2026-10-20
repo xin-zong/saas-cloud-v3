@@ -170,7 +170,7 @@ public class OperationsController {
   public record TariffPeriod(
       @Min(0) int startMinute,
       @Max(1440) int endMinute,
-      @Pattern(regexp = "peak|flat|valley|superPeak") @NotNull String band,
+      @Pattern(regexp = "peak|flat|valley|superPeak|deepValley") @NotNull String band,
       @NotNull BigDecimal pricePerKwh) {}
 
   public record Tariff(
@@ -219,3 +219,4 @@ public class OperationsController {
     return ApiResponse.ok(Map.of("id", id));
   }
 }
+

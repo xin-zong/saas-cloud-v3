@@ -10,6 +10,14 @@ import java.time.*;
 import java.util.*;
 import org.junit.jupiter.api.Test;
 class TariffTemplateServiceTest {
+  @Test void deepValleyKeepsItsDistinctBandAndExactUnitPrice() {
+    var config=TariffTemplateService.normalize("Deep valley","EUR","tou",List.of(
+      new TariffTemplateService.Period(0,360,"deepValley","-0.123456"),
+      new TariffTemplateService.Period(360,1440,"valley","0.25")));
+    assertEquals("deepValley",config.periods().getFirst().band());
+    assertEquals("-0.123456",config.periods().getFirst().pricePerKwh());
+    assertEquals("valley",config.periods().getLast().band());
+  }
   void bad(org.junit.jupiter.api.function.Executable call){assertEquals(400,assertThrows(BusinessException.class,call).status());}
   TariffTemplateService.Configuration fixed(String price){return TariffTemplateService.normalize(" Solar ","CNY","fixed",List.of(new TariffTemplateService.Period(0,1440,"flat",price)));}
   @Test void normalizesNamesAndExactNegativeZeroAndSixDecimalPricesWithoutRounding(){

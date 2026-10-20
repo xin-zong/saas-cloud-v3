@@ -1,8 +1,10 @@
-import { useEffect, useState, type FormEvent } from "react"
+import { useEffect, useRef, useState, type FormEvent } from "react"
 
 import LoginPage from "@/components/LoginPage"
 
-import { send } from "@/api/client"
+import { ApiError, send } from "@/api/client"
+import LoadingState from "@/components/LoadingState"
+import {PublicRequestGate,progressGuidance,type VerifiedApplicationIdentity} from "./publicApplicationFlow"
 
 import { Button, PageHeader, Badge } from "@/components/ui/Workspace"
 
@@ -15,6 +17,7 @@ import { Field, QueryState, useTenantQuery, date, statusLabel } from "./shared"
 import type { Row } from "./types"
 
 export default function PublicEntry() {
+  const [progressIdentity,setProgressIdentity]=useState<VerifiedApplicationIdentity|null>(null)
   const [route, setRoute] = useState(() => location.hash),
     [token] = useState(() =>
       new URLSearchParams(location.hash.slice(1)).get("activate"),
@@ -23,7 +26,7 @@ export default function PublicEntry() {
   useEffect(() => {
     if (token) history.replaceState(null, "", location.pathname)
 
-    const changed = () => setRoute(location.hash)
+    const changed = () => {setRoute(location.hash);if(location.hash!=="#application-progress")setProgressIdentity(null)}
 
     window.addEventListener("hashchange", changed)
 
@@ -32,9 +35,9 @@ export default function PublicEntry() {
 
   if (token) return <ActivationPage token={token} />
 
-  if (route === "#register") return <RegistrationPage />
+  if (route === "#register") return <RegistrationPage onProgress={identity=>{setProgressIdentity(identity);location.hash="application-progress"}}/>
 
-  if (route === "#application-progress") return <ApplicationProgressPage />
+  if (route === "#application-progress") return <ApplicationProgressPage initialIdentity={progressIdentity}/>
 
   return (
     <LoginPage
@@ -55,7 +58,7 @@ function PublicShell({
 }) {
   return (
     <main className="tenant-public">
-      <a href="#">Enerlution · 返回登录</a>
+      <a href="/">Enerlution · 返回登录</a>
       <h1>{title}</h1>
       <div className="tenant-card">{children}</div>
     </main>
@@ -63,20 +66,27 @@ function PublicShell({
 }
 
 export function EmailVerification({
-  onVerified,
+  onVerified, initialEmail="",
 }: {
   onVerified: (email: string, context: string) => void
+  initialEmail?:string
 }) {
   const { language } = useDisplayPreferences()
 
-  const [email, setEmail] = useState(""),
+  const [email, setEmail] = useState(initialEmail),
     [code, setCode] = useState(""),
     [challenge, setChallenge] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState("")
 
+  const gate=useRef(new PublicRequestGate())
+  const env=useTenantQuery<Row[]>("/public/environments")
+  const mailUnavailable=env.data?.some(row=>row.mailAvailable===false)===true
+
   async function request() {
+    if(mailUnavailable)return setError("邮件服务尚未配置，请联系平台管理员")
+    return gate.current.run(async()=>{
     setBusy(true)
 
     setError("")
@@ -92,16 +102,31 @@ export function EmailVerification({
 
       setChallenge(r.challengeId)
 
-      setNotice("验证码已加入邮件队列，请查收邮箱。")
+      setCode("");setNotice("验证码已加入邮件队列，尚不代表已送达。有效期10分钟，请查收邮箱。")
     } catch (e) {
       setError((e as Error).message)
     } finally {
       setBusy(false)
     }
+    })
+  }
+
+  async function deliveryStatus(){
+    return gate.current.run(async()=>{
+      setBusy(true);setError("")
+      try{
+        const result=await send<{mailStatus:string;expiresAt:string}>("/public/registration/email-challenges/status","POST",{challengeId:challenge,email})
+        const labels:Record<string,string>={pending:'验证码邮件正在排队投递。',sending:'验证码邮件正在投递中。',sent:'邮件服务器已接收，请查看收件箱或垃圾邮件。',failed:'验证码邮件投递失败，请联系管理员或稍后重发。',cancelled:'验证码邮件已取消，请重新发送。',expired:'验证码已过期，请重新发送。'}
+        setNotice(labels[result.mailStatus]??'邮件投递状态未知，请稍后重试。')
+        if(result.mailStatus==='expired'){setChallenge("");setCode("")}
+      }catch(cause){setError(cause instanceof Error?cause.message:'读取邮件投递状态失败')}
+      finally{setBusy(false)}
+    })
   }
 
   async function verify(e: FormEvent) {
     e.preventDefault()
+    return gate.current.run(async()=>{
 
     setBusy(true)
 
@@ -122,10 +147,14 @@ export function EmailVerification({
     } finally {
       setBusy(false)
     }
+    })
   }
 
   return (
     <form onSubmit={verify}>
+      {busy&&<LoadingState compact label="正在处理邮箱验证…"/>}
+      {env.loading&&<LoadingState compact label="正在检查邮件服务…"/>}
+      {mailUnavailable&&<p role="alert" className="api-inline-error">邮件服务尚未配置，请联系平台管理员。无法发送邮箱验证码。</p>}
       <div className="tenant-form-grid">
         <Field label="邮箱 *">
           <input
@@ -137,7 +166,7 @@ export function EmailVerification({
             onChange={(e) => {
               setEmail(e.target.value)
 
-              setChallenge("")
+              setChallenge("");setCode("");setError("")
 
               setNotice("")
             }}
@@ -145,11 +174,12 @@ export function EmailVerification({
         </Field>
         <div style={{ alignSelf: "end" }}>
           <Button
-            disabled={busy || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)}
+            disabled={busy || env.loading || mailUnavailable || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)}
             onClick={request}
           >
             {challenge ? "重发验证码" : "发送验证码"}
           </Button>
+          {challenge&&<Button disabled={busy} onClick={()=>void deliveryStatus()}>查询投递状态</Button>}
         </div>
         {challenge && (
           <Field label="邮箱验证码">
@@ -185,7 +215,7 @@ export function EmailVerification({
   )
 }
 
-export function RegistrationPage() {
+export function RegistrationPage({onProgress}:{onProgress?:(identity:VerifiedApplicationIdentity)=>void}={}) {
   const { language } = useDisplayPreferences()
 
   const env = useTenantQuery<Row[]>("/public/environments")
@@ -198,10 +228,14 @@ export function RegistrationPage() {
     [busy, setBusy] = useState(false),
     [result, setResult] = useState<Row | null>(null)
 
+  const gate=useRef(new PublicRequestGate())
+  const registrationUnavailable=env.data?.some(row=>row.available&&row.registrationAvailable===false)===true
   async function submit(e: FormEvent) {
     e.preventDefault()
+    return gate.current.run(async()=>{
 
     setError("")
+    if(registrationUnavailable)return setError("邮件服务尚未配置，暂时无法完成入驻申请，请联系平台管理员")
 
     if (!company.companyTypes.length || !company.businessScopes.length)
       return setError("请选择企业类型及储能业务范围")
@@ -232,13 +266,16 @@ export function RegistrationPage() {
       setStep(3)
     } catch (e) {
       setError((e as Error).message)
+      if(e instanceof ApiError&&e.status===401)setContext("")
     } finally {
       setBusy(false)
     }
+    })
   }
 
   return (
     <PublicShell title="企业入驻申请">
+      {busy&&<LoadingState label="正在提交企业申请…"/>}
       <div className="tenant-steps">
         {["企业资料", "联系人与邮箱验证", "提交成功"].map((s, i) => (
           <span key={s} aria-current={step === i + 1 ? "step" : undefined}>
@@ -255,7 +292,9 @@ export function RegistrationPage() {
           ))}
         </select>
       </Field>
-      <QueryState loading={env.loading} error={env.error} />
+      <QueryState loading={false} error={env.error} />
+      {env.loading&&<LoadingState compact label="正在读取数据中心…"/>}
+      {registrationUnavailable&&<p role="alert" className="api-inline-error">邮件服务尚未配置，暂时无法完成入驻申请。已填写的企业资料会保留，请联系平台管理员。</p>}
       {step < 3 ? (
         <>
           <form onSubmit={submit}>
@@ -267,7 +306,7 @@ export function RegistrationPage() {
               />
             ) : (
               <>
-                <p>申请邮箱：{email || "待验证"}</p>
+                <p>申请邮箱：{email || "待验证"} {context&&<Button disabled={busy} onClick={()=>setContext("")}>更换邮箱 / 重新验证</Button>}</p>
                 <p>企业：{company.name}</p>
                 <div className="tenant-form-grid">
                   {[
@@ -316,7 +355,7 @@ export function RegistrationPage() {
                 disabled={
                   busy ||
                   env.loading ||
-                  !env.data?.some((e) => e.available) ||
+                  !env.data?.some((e) => e.available) || registrationUnavailable ||
                   (step === 2 && !context)
                 }
               >
@@ -327,7 +366,7 @@ export function RegistrationPage() {
           {step === 2 && !context && (
             <section style={{ marginTop: 24 }}>
               <h2>验证申请邮箱</h2>
-              <EmailVerification
+              <EmailVerification initialEmail={email}
                 onVerified={(email, context) => {
                   setEmail(email)
 
@@ -344,87 +383,42 @@ export function RegistrationPage() {
             申请编号：{result?.number}
             。审批通过后，邮箱将收到一次性激活链接，届时由你设置登录密码。
           </p>
-          <a href="#application-progress">查看申请进度</a>
+          <Button onClick={()=>onProgress?onProgress({email,context}):location.hash="application-progress"}>查看申请进度</Button>
         </>
       )}
     </PublicShell>
   )
 }
 
-export function ApplicationProgressPage() {
-  const [identity, setIdentity] = useState<{
-      email: string
-
-      context: string
-    } | null>(null),
-    [rows, setRows] = useState<Row[]>([]),
-    [error, setError] = useState(""),
-    [loading, setLoading] = useState(false)
-
-  async function load(email: string, context: string) {
-    setIdentity({ email, context })
-
-    setLoading(true)
-
-    setError("")
-
-    try {
-      setRows(
-        await send<Row[]>("/public/company-applications/progress", "POST", {
-          email,
-
-          context,
-        }),
-      )
-    } catch (e) {
-      setError((e as Error).message)
-
-      setIdentity(null)
-    } finally {
-      setLoading(false)
-    }
+export function ApplicationProgressPage({initialIdentity=null}:{initialIdentity?:VerifiedApplicationIdentity|null}={}) {
+  const [identity,setIdentity]=useState<VerifiedApplicationIdentity|null>(initialIdentity),[rows,setRows]=useState<Row[]>([]),[error,setError]=useState(""),[loading,setLoading]=useState(false)
+  const gate=useRef(new PublicRequestGate()),alive=useRef(true)
+  useEffect(()=>{alive.current=true;return()=>{alive.current=false}},[])
+  async function load(email:string,context:string){
+    return gate.current.run(async()=>{
+      setIdentity({email,context});setLoading(true);setError("")
+      try{const result=await send<Row[]>("/public/company-applications/progress","POST",{email,context});if(!alive.current)return;setRows(result);setIdentity({email,context})}
+      catch(e){if(!alive.current)return;setError((e as Error).message);if(e instanceof ApiError&&e.status===401){setRows([]);setIdentity(null)}}
+      finally{if(alive.current)setLoading(false)}
+    })
   }
-
-  return (
-    <PublicShell title="企业申请进度">
-      {!identity ? (
-        <EmailVerification onVerified={load} />
-      ) : (
-        <>
-          <PageHeader
-            title={identity.email}
-            actions={
-              <Button onClick={() => load(identity.email, identity.context)}>
-                刷新进度
-              </Button>
-            }
-          />
-          {rows.map((row) => (
-            <article key={row.id} className="tenant-card">
-              <h2>
-                {row.number} · <Badge>{statusLabel(row.status)}</Badge>
-              </h2>
-              <p className="tenant-muted">提交时间 {date(row.submitted_at)}</p>
-              <ul className="tenant-timeline">
-                {row.events?.map((e: Row) => (
-                  <li key={e.id}>
-                    {statusLabel(e.action)}
-                    {e.reason && <p>{e.reason}</p>}
-                    <small>{date(e.occurred_at)}</small>
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
-        </>
-      )}
-      <QueryState
-        loading={loading}
-        error={error}
-        empty={!!identity && !rows.length}
-      />
-    </PublicShell>
-  )
+  useEffect(()=>{if(initialIdentity)void load(initialIdentity.email,initialIdentity.context)},[])
+  return <PublicShell title="企业申请进度">
+    {!identity?<EmailVerification onVerified={load}/>:<>
+      <PageHeader title={identity.email} actions={<><Button disabled={loading} onClick={()=>void load(identity.email,identity.context)}>刷新进度</Button><Button disabled={loading} onClick={()=>{setIdentity(null);setRows([]);setError("")}}>更换邮箱 / 重新验证</Button></>}/>
+      {rows.map(row=><article key={row.id} className="tenant-card">
+        <h2>{row.number} · <Badge>{statusLabel(row.status)}</Badge></h2>
+        {row.name&&<p>{row.name}</p>}
+        <p className="tenant-muted">提交时间 {date(row.submitted_at)}</p>
+        <ul className="tenant-timeline">{row.events?.map((event:Row)=><li key={event.id}>{statusLabel(event.action)}{event.reason&&<p>{event.reason}</p>}<small>{date(event.occurred_at)}</small></li>)}</ul>
+        <p role="status">{progressGuidance(row)}</p>
+        {(row.nextAction==='reapply'||row.status==='rejected')&&<a href="#register">补充资料重新申请</a>}
+        {row.nextAction==='sign_in'&&<a href="#">返回登录</a>}
+      </article>)}
+    </>}
+    {loading&&<LoadingState label="正在查询申请进度…"/>}
+    <QueryState loading={false} error={error} empty={!loading&&!!identity&&!rows.length}/>
+  </PublicShell>
 }
 
 export function ActivationPage({ token }: { token: string }) {
@@ -453,8 +447,10 @@ export function ActivationPage({ token }: { token: string }) {
     }
   }, [token])
 
+  const activationGate=useRef(new PublicRequestGate())
   async function submit(e: FormEvent) {
     e.preventDefault()
+    return activationGate.current.run(async()=>{
 
     setError("")
 
@@ -478,6 +474,7 @@ export function ActivationPage({ token }: { token: string }) {
     } finally {
       setBusy(false)
     }
+    })
   }
 
   return (

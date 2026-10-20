@@ -1,0 +1,5693 @@
+[
+  {
+    "id": "station-shell-001",
+    "module": "站点详情 / 头部与业务页签",
+    "name": "看板（Dashboard）",
+    "fields": [
+      "Dashboard"
+    ],
+    "actions": [
+      "切换相应业务区域"
+    ],
+    "rules": [],
+    "unknowns": [
+      "页签实际可用性受站点系统/权限影响",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-shell-002",
+    "module": "站点详情 / 头部与业务页签",
+    "name": "子站（Sub-site）",
+    "fields": [
+      "Sub-site"
+    ],
+    "actions": [
+      "切换相应业务区域"
+    ],
+    "rules": [],
+    "unknowns": [
+      "页签实际可用性受站点系统/权限影响",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-shell-003",
+    "module": "站点详情 / 头部与业务页签",
+    "name": "设备（Devices）",
+    "fields": [
+      "Devices"
+    ],
+    "actions": [
+      "切换相应业务区域"
+    ],
+    "rules": [],
+    "unknowns": [
+      "页签实际可用性受站点系统/权限影响",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-shell-004",
+    "module": "站点详情 / 头部与业务页签",
+    "name": "告警（Alerts）",
+    "fields": [
+      "Alerts"
+    ],
+    "actions": [
+      "切换相应业务区域"
+    ],
+    "rules": [],
+    "unknowns": [
+      "页签实际可用性受站点系统/权限影响",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-shell-005",
+    "module": "站点详情 / 头部与业务页签",
+    "name": "能量管理（Energy Management）",
+    "fields": [
+      "Energy Management"
+    ],
+    "actions": [
+      "切换相应业务区域"
+    ],
+    "rules": [],
+    "unknowns": [
+      "页签实际可用性受站点系统/权限影响",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-shell-006",
+    "module": "站点详情 / 头部与业务页签",
+    "name": "智能分析（Intelligent Analysis）",
+    "fields": [
+      "Intelligent Analysis"
+    ],
+    "actions": [
+      "切换相应业务区域"
+    ],
+    "rules": [],
+    "unknowns": [
+      "页签实际可用性受站点系统/权限影响",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-shell-007",
+    "module": "站点详情 / 头部与业务页签",
+    "name": "系统布局（Layout）",
+    "fields": [
+      "Layout"
+    ],
+    "actions": [
+      "切换相应业务区域"
+    ],
+    "rules": [],
+    "unknowns": [
+      "页签实际可用性受站点系统/权限影响",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-shell-008",
+    "module": "站点详情 / 头部与业务页签",
+    "name": "接线图（Wiring Diagram）",
+    "fields": [
+      "Wiring Diagram"
+    ],
+    "actions": [
+      "切换相应业务区域"
+    ],
+    "rules": [],
+    "unknowns": [
+      "页签实际可用性受站点系统/权限影响",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-shell-009",
+    "module": "站点详情 / 头部与业务页签",
+    "name": "日志（Logs）",
+    "fields": [
+      "Logs"
+    ],
+    "actions": [
+      "切换相应业务区域"
+    ],
+    "rules": [],
+    "unknowns": [
+      "页签实际可用性受站点系统/权限影响",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-shell-010",
+    "module": "站点详情 / 头部与业务页签",
+    "name": "设置（Settings）",
+    "fields": [
+      "Settings"
+    ],
+    "actions": [
+      "切换相应业务区域"
+    ],
+    "rules": [],
+    "unknowns": [
+      "页签实际可用性受站点系统/权限影响",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-shell-011",
+    "module": "站点详情 / 头部与业务页签",
+    "name": "编辑标签（Edit Tags）",
+    "fields": [
+      "站点标签"
+    ],
+    "actions": [
+      "打开标签编辑"
+    ],
+    "rules": [],
+    "unknowns": [
+      "实际保存未执行",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-shell-012",
+    "module": "站点详情 / 头部与业务页签",
+    "name": "站点标签定义新建、编辑、检索与删除",
+    "fields": [
+      "name maxlength50",
+      "description maxlength200",
+      "keyword",
+      "sort/page"
+    ],
+    "actions": [
+      "READ/local: list/Create/Edit draft；WRITE: modal Confirm和Delete confirm"
+    ],
+    "rules": [
+      "标签名required非空白maxlength50，描述optional maxlength200；创建/编辑都带adaptObjectTypeList:[1]",
+      "F22/A1列表、A2新增、A3编辑、A4删除；服务端唯一性/重名规则unknown"
+    ],
+    "unknowns": [
+      "Tag uniqueness, server validation, assignment/unassignment and assigned objects unknown. No tag saved/deleted."
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-001",
+    "module": "站点详情 / Dashboard",
+    "name": "站内看板类型选择、指标和策略状态自动隐藏",
+    "fields": [
+      "powerSystemType",
+      "geographyType",
+      "stationId",
+      "metric/date selections",
+      "strategy status/recordId"
+    ],
+    "actions": [
+      "AUTOMATIC POTENTIAL WRITE: status SUCCESS→hidden POST；READ: widgets/metrics；explicit activation not tested"
+    ],
+    "rules": [
+      "wrapper按系统/地域声明映射PV、储能、PV+储能组件；不可由样例卡片推断真实站点指标"
+    ],
+    "unknowns": [
+      "Actual automatic hidden occurrence during prior UI visits unverified. Provider metric formulas, widget permissions and all station-type branches not runtime tested."
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-002",
+    "module": "站点详情 / Dashboard",
+    "name": "Data Source",
+    "fields": [
+      "Data Source"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-003",
+    "module": "站点详情 / Dashboard",
+    "name": "光伏（Solar）",
+    "fields": [
+      "Solar"
+    ],
+    "actions": [
+      "切换本区域页签；具体是否立即读/写以源码流程为准"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-004",
+    "module": "站点详情 / Dashboard",
+    "name": "储能（Storage）",
+    "fields": [
+      "Storage"
+    ],
+    "actions": [
+      "切换本区域页签；具体是否立即读/写以源码流程为准"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-005",
+    "module": "站点详情 / Dashboard",
+    "name": "用电（Consumption）",
+    "fields": [
+      "Consumption"
+    ],
+    "actions": [
+      "切换本区域页签；具体是否立即读/写以源码流程为准"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-006",
+    "module": "站点详情 / Dashboard",
+    "name": "电网（Grid）",
+    "fields": [
+      "Grid"
+    ],
+    "actions": [
+      "切换本区域页签；具体是否立即读/写以源码流程为准"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-007",
+    "module": "站点详情 / Dashboard",
+    "name": "Site",
+    "fields": [
+      "Site"
+    ],
+    "actions": [
+      "切换本区域页签；具体是否立即读/写以源码流程为准"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-008",
+    "module": "站点详情 / Dashboard",
+    "name": "导出（Export）",
+    "fields": [
+      "Export"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-009",
+    "module": "站点详情 / Dashboard",
+    "name": "选择参数（Select Parameters）",
+    "fields": [
+      "Select Parameters"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-010",
+    "module": "站点详情 / Dashboard",
+    "name": "上一页/前一时段（left）",
+    "fields": [
+      "left"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-011",
+    "module": "站点详情 / Dashboard",
+    "name": "日期选择（YYYY-MM-DD）",
+    "fields": [
+      "日期选择（YYYY-MM-DD）"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-012",
+    "module": "站点详情 / Dashboard",
+    "name": "下一页/后一时段（right）",
+    "fields": [
+      "right"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-013",
+    "module": "站点详情 / Dashboard",
+    "name": "日（Day）",
+    "fields": [
+      "Day"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-014",
+    "module": "站点详情 / Dashboard",
+    "name": "月（Month）",
+    "fields": [
+      "Month"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-015",
+    "module": "站点详情 / Dashboard",
+    "name": "年（Year）",
+    "fields": [
+      "Year"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-016",
+    "module": "站点详情 / Dashboard",
+    "name": "总计（Total）",
+    "fields": [
+      "Total"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-017",
+    "module": "站点详情 / Dashboard",
+    "name": "列表列头",
+    "fields": [
+      "Inverter",
+      "PCS",
+      "Battery Stack",
+      "Battery Cluster",
+      "Environment",
+      "MPPT",
+      "Liquid Cooler",
+      "Smart Meter",
+      "Logger",
+      "EMS Controller",
+      "Status"
+    ],
+    "actions": [
+      "列头排序标记按原快照保留；行数据与客户值未纳入"
+    ],
+    "rules": [],
+    "unknowns": [
+      "分页全量、后台排序、权限裁剪及成功操作未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-018",
+    "module": "站点详情 / Dashboard",
+    "name": "无文字图标按钮（含按行重复操作）",
+    "fields": [],
+    "actions": [],
+    "rules": [],
+    "unknowns": [
+      "快照未给可访问名称；不能凭图标猜收藏/删除/控制语义，需对应handler映射",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-019",
+    "module": "站点详情 / Dashboard",
+    "name": "Preview",
+    "fields": [
+      "Preview"
+    ],
+    "actions": [
+      "展示当前接口返回值，缺数不推定为0"
+    ],
+    "rules": [],
+    "unknowns": [
+      "当前系统类型全部变体和后台公式未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-020",
+    "module": "站点详情 / Dashboard",
+    "name": "储能装机功率（Storage Installed Power）",
+    "fields": [
+      "Storage Installed Power"
+    ],
+    "actions": [
+      "展示当前接口返回值，缺数不推定为0"
+    ],
+    "rules": [],
+    "unknowns": [
+      "当前系统类型全部变体和后台公式未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-021",
+    "module": "站点详情 / Dashboard",
+    "name": "储能装机容量（Storage Installed Capacity）",
+    "fields": [
+      "Storage Installed Capacity"
+    ],
+    "actions": [
+      "展示当前接口返回值，缺数不推定为0"
+    ],
+    "rules": [],
+    "unknowns": [
+      "当前系统类型全部变体和后台公式未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-022",
+    "module": "站点详情 / Dashboard",
+    "name": "当日光伏发电量（Daily Solar Production）",
+    "fields": [
+      "Daily Solar Production"
+    ],
+    "actions": [
+      "展示当前接口返回值，缺数不推定为0"
+    ],
+    "rules": [],
+    "unknowns": [
+      "当前系统类型全部变体和后台公式未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-023",
+    "module": "站点详情 / Dashboard",
+    "name": "累计光伏发电量（Total Solar Production）",
+    "fields": [
+      "Total Solar Production"
+    ],
+    "actions": [
+      "展示当前接口返回值，缺数不推定为0"
+    ],
+    "rules": [],
+    "unknowns": [
+      "当前系统类型全部变体和后台公式未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-024",
+    "module": "站点详情 / Dashboard",
+    "name": "Self-Consumption",
+    "fields": [
+      "Self-Consumption"
+    ],
+    "actions": [
+      "展示当前接口返回值，缺数不推定为0"
+    ],
+    "rules": [],
+    "unknowns": [
+      "当前系统类型全部变体和后台公式未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-025",
+    "module": "站点详情 / Dashboard",
+    "name": "Grid Power",
+    "fields": [
+      "Grid Power"
+    ],
+    "actions": [
+      "展示当前接口返回值，缺数不推定为0"
+    ],
+    "rules": [],
+    "unknowns": [
+      "当前系统类型全部变体和后台公式未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-026",
+    "module": "站点详情 / Dashboard",
+    "name": "Daily Consumption",
+    "fields": [
+      "Daily Consumption"
+    ],
+    "actions": [
+      "展示当前接口返回值，缺数不推定为0"
+    ],
+    "rules": [],
+    "unknowns": [
+      "当前系统类型全部变体和后台公式未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-027",
+    "module": "站点详情 / Dashboard",
+    "name": "Self-Sufficiency",
+    "fields": [
+      "Self-Sufficiency"
+    ],
+    "actions": [
+      "展示当前接口返回值，缺数不推定为0"
+    ],
+    "rules": [],
+    "unknowns": [
+      "当前系统类型全部变体和后台公式未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-dashboard-028",
+    "module": "站点详情 / Dashboard",
+    "name": "Purchased Electricity",
+    "fields": [
+      "Purchased Electricity"
+    ],
+    "actions": [
+      "展示当前接口返回值，缺数不推定为0"
+    ],
+    "rules": [],
+    "unknowns": [
+      "当前系统类型全部变体和后台公式未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-subsystems-001",
+    "module": "站点详情 / Sub-site",
+    "name": "子站草稿、父容量约束与创建后设备关联",
+    "fields": [
+      "name maxlength50",
+      "requiredSystem pvSystem/storeSystem",
+      "optionalSystem chargeSystem/mpttSystem",
+      "installedCapacity kWp",
+      "batteryRatedPower kW/batteryRatedCapacity kWh",
+      "chargeInstalledPower",
+      "mpttInstalledCapacity kWp",
+      "PV azimuth/tilt",
+      "voltageLevelValue kV",
+      "roofType/pavedArea"
+    ],
+    "actions": [
+      "READ/local: 子站list filters/sort、Create/Edit draft、默认dashboard/detail；WRITE: Save create/update、设备关联Confirm、Delete confirm、选照片上传即写"
+    ],
+    "rules": [
+      "name及至少一requiredSystem必填；可选系统来源父站支持能力，MPPT须父支持+子储能；PV+储能强制surplus",
+      "PV/储能/充电/MPPT数值依所选系统required，使用absIntFloor2x；方位/倾角absFloor2x；完整regexp定义位于vendor，未下载/执行故不猜上限",
+      "子PV容量、储能功率/容量、充电功率、MPPT容量均不能超过父对应值；大值/部分整数触发确认提示，不等于保存前自动写",
+      "父站/子站上下文分别stationId/systemId；各子容量约束不证明子容量之和≤父容量，也不证明父子电量去重/求和计算",
+      "权限新增F1/A7、编辑F1/A8、删除F1/A9；子详情基本信息编辑F1/A4/删除F1/A6；继承授权细则与服务端校验unknown"
+    ],
+    "unknowns": [
+      "Backend parent-child meter aggregation/deduplication, cross-substation device assignment, authorization inheritance and API eligibility unknown. No substation saved/bound/deleted/photo uploaded."
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-subsystems-002",
+    "module": "站点详情 / Sub-site",
+    "name": "光伏字段（Solar Field）",
+    "fields": [
+      "Solar Field"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-subsystems-003",
+    "module": "站点详情 / Sub-site",
+    "name": "储能字段（Storage Field）",
+    "fields": [
+      "Storage Field"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-subsystems-004",
+    "module": "站点详情 / Sub-site",
+    "name": "Enter sub-site name",
+    "fields": [
+      "Enter sub-site name"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-subsystems-005",
+    "module": "站点详情 / Sub-site",
+    "name": "创建子站（Create Sub-site）",
+    "fields": [
+      "Create Sub-site"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-subsystems-006",
+    "module": "站点详情 / Sub-site",
+    "name": "上一页/前一时段（left）",
+    "fields": [
+      "left"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-subsystems-007",
+    "module": "站点详情 / Sub-site",
+    "name": "下一页/后一时段（right）",
+    "fields": [
+      "right"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-subsystems-008",
+    "module": "站点详情 / Sub-site",
+    "name": "列表列头",
+    "fields": [
+      "Com",
+      "Alerts",
+      "Solar Capacity",
+      "Solar Power",
+      "Power Normalization",
+      "Solar Trend",
+      "Daily Solar Production",
+      "Daily Peak Hour",
+      "PR Yesterday",
+      "Monthly Solar Production",
+      "Total Solar Production",
+      "Peak Hours (Last 7 Days)",
+      "Peak Hours (Current Month)",
+      "Peak Hours (Current Year)",
+      "PR (Last 7 Days)",
+      "PR (Current Month)",
+      "PR (Current Year)",
+      "Daily Feed-in",
+      "Daily Purchased",
+      "Daily Consumption",
+      "Updated",
+      "Subsite Name",
+      "Operation"
+    ],
+    "actions": [
+      "列头排序标记按原快照保留；行数据与客户值未纳入"
+    ],
+    "rules": [],
+    "unknowns": [
+      "分页全量、后台排序、权限裁剪及成功操作未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-subsystems-009",
+    "module": "站点详情 / Sub-site",
+    "name": "无文字图标按钮（含按行重复操作）",
+    "fields": [],
+    "actions": [],
+    "rules": [],
+    "unknowns": [
+      "快照未给可访问名称；不能凭图标猜收藏/删除/控制语义，需对应handler映射",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-001",
+    "module": "站点详情 / Settings",
+    "name": "编辑（Edit）",
+    "fields": [
+      "Edit"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-002",
+    "module": "站点详情 / Settings",
+    "name": "Delete",
+    "fields": [
+      "Delete"
+    ],
+    "actions": [
+      "提交/确认/删除入口；只登记，未执行；后端生效与失败状态未验证"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-003",
+    "module": "站点详情 / Settings",
+    "name": "更换封面照片（Change Photo Cover）",
+    "fields": [
+      "Change Photo Cover"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-004",
+    "module": "站点详情 / Settings",
+    "name": "无文字图标按钮（含按行重复操作）",
+    "fields": [],
+    "actions": [],
+    "rules": [],
+    "unknowns": [
+      "快照未给可访问名称；不能凭图标猜收藏/删除/控制语义，需对应handler映射",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-005",
+    "module": "站点详情 / Settings",
+    "name": "场站信息",
+    "fields": [
+      "/monitor/plant/plantDetail/:stationId/settings/stationInfo"
+    ],
+    "actions": [
+      "打开对应设置项"
+    ],
+    "rules": [],
+    "unknowns": [
+      "Data returned by backend",
+      "Account permission and enabled capabilities",
+      "Successful completion and downstream effects"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-006",
+    "module": "站点详情 / Settings",
+    "name": "基本电费",
+    "fields": [
+      "/monitor/plant/plantDetail/:stationId/settings/basicElectricityCharge"
+    ],
+    "actions": [
+      "打开对应设置项"
+    ],
+    "rules": [],
+    "unknowns": [
+      "Data returned by backend",
+      "Account permission and enabled capabilities",
+      "Successful completion and downstream effects"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-007",
+    "module": "站点详情 / Settings",
+    "name": "空间管理",
+    "fields": [
+      "/monitor/plant/plantDetail/:stationId/settings/spaceManagement"
+    ],
+    "actions": [
+      "打开对应设置项"
+    ],
+    "rules": [],
+    "unknowns": [
+      "Data returned by backend",
+      "Account permission and enabled capabilities",
+      "Successful completion and downstream effects"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-008",
+    "module": "站点详情 / Settings",
+    "name": "电价费率",
+    "fields": [
+      "/monitor/plant/plantDetail/:stationId/settings/priceTemplate"
+    ],
+    "actions": [
+      "打开对应设置项"
+    ],
+    "rules": [],
+    "unknowns": [
+      "Data returned by backend",
+      "Account permission and enabled capabilities",
+      "Successful completion and downstream effects"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-009",
+    "module": "站点详情 / Settings",
+    "name": "授权信息",
+    "fields": [
+      "/monitor/plant/plantDetail/:stationId/settings/authorize"
+    ],
+    "actions": [
+      "打开对应设置项"
+    ],
+    "rules": [],
+    "unknowns": [
+      "Data returned by backend",
+      "Account permission and enabled capabilities",
+      "Successful completion and downstream effects"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-010",
+    "module": "站点详情 / Settings",
+    "name": "数据源",
+    "fields": [
+      "/monitor/plant/plantDetail/:stationId/settings/dataSource"
+    ],
+    "actions": [
+      "打开对应设置项"
+    ],
+    "rules": [],
+    "unknowns": [
+      "Data returned by backend",
+      "Account permission and enabled capabilities",
+      "Successful completion and downstream effects"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-011",
+    "module": "站点详情 / Settings",
+    "name": "偏移量",
+    "fields": [
+      "/monitor/plant/plantDetail/:stationId/settings/offset"
+    ],
+    "actions": [
+      "打开对应设置项"
+    ],
+    "rules": [],
+    "unknowns": [
+      "Data returned by backend",
+      "Account permission and enabled capabilities",
+      "Successful completion and downstream effects"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-012",
+    "module": "站点详情 / Settings",
+    "name": "计划发电",
+    "fields": [
+      "/monitor/plant/plantDetail/:stationId/settings/generation"
+    ],
+    "actions": [
+      "打开对应设置项"
+    ],
+    "rules": [],
+    "unknowns": [
+      "Data returned by backend",
+      "Account permission and enabled capabilities",
+      "Successful completion and downstream effects"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-013",
+    "module": "站点详情 / Settings",
+    "name": "虚拟气象站",
+    "fields": [
+      "/monitor/plant/plantDetail/:stationId/settings/virtualWeatherStation"
+    ],
+    "actions": [
+      "打开对应设置项"
+    ],
+    "rules": [],
+    "unknowns": [
+      "Data returned by backend",
+      "Account permission and enabled capabilities",
+      "Successful completion and downstream effects"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-014",
+    "module": "站点详情 / Settings",
+    "name": "电能分析算法",
+    "fields": [
+      "/monitor/plant/plantDetail/:stationId/settings/powerAnalysisAlgorithm"
+    ],
+    "actions": [
+      "打开对应设置项"
+    ],
+    "rules": [],
+    "unknowns": [
+      "Data returned by backend",
+      "Account permission and enabled capabilities",
+      "Successful completion and downstream effects"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-015",
+    "module": "站点详情 / Settings",
+    "name": "实际需量",
+    "fields": [
+      "/monitor/plant/plantDetail/:stationId/settings/actualDemand"
+    ],
+    "actions": [
+      "打开对应设置项"
+    ],
+    "rules": [],
+    "unknowns": [
+      "Data returned by backend",
+      "Account permission and enabled capabilities",
+      "Successful completion and downstream effects"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-016",
+    "module": "站点详情 / Settings",
+    "name": "功率因数",
+    "fields": [
+      "/monitor/plant/plantDetail/:stationId/settings/powerFactor"
+    ],
+    "actions": [
+      "打开对应设置项"
+    ],
+    "rules": [],
+    "unknowns": [
+      "Data returned by backend",
+      "Account permission and enabled capabilities",
+      "Successful completion and downstream effects"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-017",
+    "module": "站点详情 / Settings",
+    "name": "收益",
+    "fields": [
+      "/monitor/plant/plantDetail/:stationId/settings/earnings"
+    ],
+    "actions": [
+      "打开对应设置项"
+    ],
+    "rules": [],
+    "unknowns": [
+      "Data returned by backend",
+      "Account permission and enabled capabilities",
+      "Successful completion and downstream effects"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-018",
+    "module": "站点详情 / Settings",
+    "name": "License管理",
+    "fields": [
+      "/monitor/plant/plantDetail/:stationId/settings/license"
+    ],
+    "actions": [
+      "打开对应设置项"
+    ],
+    "rules": [],
+    "unknowns": [
+      "Data returned by backend",
+      "Account permission and enabled capabilities",
+      "Successful completion and downstream effects"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-019",
+    "module": "站点详情 / Settings",
+    "name": "详细地址（Address）",
+    "fields": [
+      "Address"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-020",
+    "module": "站点详情 / Settings",
+    "name": "区域（Region）",
+    "fields": [
+      "Region"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-021",
+    "module": "站点详情 / Settings",
+    "name": "时区（Time Zone）",
+    "fields": [
+      "Time Zone"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-022",
+    "module": "站点详情 / Settings",
+    "name": "经纬度（Coordinates）",
+    "fields": [
+      "Coordinates"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-023",
+    "module": "站点详情 / Settings",
+    "name": "System Combination",
+    "fields": [
+      "System Combination"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-024",
+    "module": "站点详情 / Settings",
+    "name": "站点类型（Site Type）",
+    "fields": [
+      "Site Type"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-025",
+    "module": "站点详情 / Settings",
+    "name": "Solar Capacity",
+    "fields": [
+      "Solar Capacity"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-026",
+    "module": "站点详情 / Settings",
+    "name": "Voltage Level",
+    "fields": [
+      "Voltage Level"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-027",
+    "module": "站点详情 / Settings",
+    "name": "Module azimuth",
+    "fields": [
+      "Module azimuth"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-028",
+    "module": "站点详情 / Settings",
+    "name": "Module Tilt Angle",
+    "fields": [
+      "Module Tilt Angle"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-029",
+    "module": "站点详情 / Settings",
+    "name": "Account No.",
+    "fields": [
+      "Account No."
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-030",
+    "module": "站点详情 / Settings",
+    "name": "Solar Consumption Method",
+    "fields": [
+      "Solar Consumption Method"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-031",
+    "module": "站点详情 / Settings",
+    "name": "Production/On-grid Date",
+    "fields": [
+      "Production/On-grid Date"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-032",
+    "module": "站点详情 / Settings",
+    "name": "On-grid/production Status",
+    "fields": [
+      "On-grid/production Status"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-033",
+    "module": "站点详情 / Settings",
+    "name": "储能装机功率（Storage Installed Power）",
+    "fields": [
+      "Storage Installed Power"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-034",
+    "module": "站点详情 / Settings",
+    "name": "储能装机容量（Storage Installed Capacity）",
+    "fields": [
+      "Storage Installed Capacity"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-035",
+    "module": "站点详情 / Settings",
+    "name": "关联方类型（Related Party Type）",
+    "fields": [
+      "Related Party Type"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-036",
+    "module": "站点详情 / Settings",
+    "name": "联系人姓名（Contact Name）",
+    "fields": [
+      "Contact Name"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-037",
+    "module": "站点详情 / Settings",
+    "name": "联系人电话（Contact Phone Number）",
+    "fields": [
+      "Contact Phone Number"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-038",
+    "module": "站点详情 / Settings",
+    "name": "联系人电子邮箱（Contact E-mail）",
+    "fields": [
+      "Contact E-mail"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-settings-039",
+    "module": "站点详情 / Settings",
+    "name": "企业名称（Name of Enterprise）",
+    "fields": [
+      "Name of Enterprise"
+    ],
+    "actions": [
+      "展示已有配置；不纳入任何客户实际值"
+    ],
+    "rules": [],
+    "unknowns": [
+      "修改效果及动态可见条件见主档源码工作流",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-001",
+    "module": "站点详情 / 能量管理",
+    "name": "能量管理父容器轮询、成功记录自动隐藏与退出边界",
+    "fields": [],
+    "actions": [
+      "AUTOMATIC WRITE: SUCCESS record auto hidden POST；EXPLICIT WRITE: close/Allhidden、retry；READ: EMS/白名单/记录轮询",
+      "本轮父代理收到结论前已打开一次EnergyManagement，随后退出Dashboard；未勾设备/选命令/Send。自动hidden是否执行未核验，不重放/清除/调用接口核验"
+    ],
+    "rules": [
+      "EMS/策略/实时控制/日志tab可见性取决PV/energy/realTime产品白名单和EMS列表；不是所有站点都显示全部tabs",
+      "顶部状态条查询当日/明日isHidden0的记录；一次取1条，最多前5页轮转，记录id仅来源于query response，未读取实际值"
+    ],
+    "unknowns": [
+      "Actual status record, automatic POST occurrence, server mutation/audit effects and request cancellation unknown. Parent UI left to Monitor overview; no manual command or retry executed."
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-002",
+    "module": "站点详情 / 能量管理",
+    "name": "实时控制六类设备命令参数、验证与下发回执",
+    "fields": [
+      "device selection",
+      "command radio",
+      "liquid cooling wtcp/wthp/cd/hd",
+      "dehumidifier taul/tall/start/stop temperature/humidity",
+      "breaker releaseTimeType",
+      "operation verification captcha/code/password"
+    ],
+    "actions": [
+      "LOCAL: command options/device check/numeric draft；WRITE: verification code Send、最终verification Confirm→control；AUTOMATIC parent hidden risk",
+      "静态子任务无业务请求；父UI未选命令/设备/Send"
+    ],
+    "rules": [
+      "六动态组件：PCS46、液冷53、除湿54、Logger18_5000、EMS18_5001、断路器43；设备类型取command/device-types而非固定全部显示",
+      "radio/设备checkbox/数值输入本地draft；Send前须选命令、至少一台设备且选中设备deviceStatus不能3；F1/A11与demandInProgress控制按钮",
+      "PCS命令开关/故障复位/设置scene15/19/20；Logger/EMS急停10001、开关15、复位19、重启10002；断路器operate10003",
+      "液冷wtcp/wthp温度5..35℃precision1，cd/hd1..10℃precision1，wtcp validator要求大于wthp；除湿高温60..95℃/低温1..50℃，启停温度1..85℃，湿度25..98%RH，precision1",
+      "断路器releaseTimeType0同时/1顺序间隔1s是draft字段，真正执行时序为后端unknown",
+      "Send打开OperationVerificationModal，显示时读账户联系方式；验证码发送按钮会调用发送接口，captcha会加载外部SDK，勿作为纯UI测试点击",
+      "modal Confirm校验并要求captcha verifyParam，短信/邮件code或hash密码证明随confirm回调传入command；不等同审批工单，未见独立审批状态机"
+    ],
+    "unknowns": [
+      "Server approval/authorization, device command compatibility, control timing, timeout semantics and hardware acceptance/completion unknown. Numeric controls are schema constraints, not hardware safety limits."
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-003",
+    "module": "站点详情 / 能量管理",
+    "name": "下发日志、重试边界与执行收益/偏差读取",
+    "fields": [
+      "page/size",
+      "queryDate",
+      "selectedEMS",
+      "strategy record id"
+    ],
+    "actions": [
+      "READ: 查询/分页/日期/只读计划详情；IMMEDIATE WRITE: Retry；父AUTOMATIC hidden不能忽略"
+    ],
+    "rules": [
+      "日志默认最近一年，page1/size10；子站带systemId；columns emsSn/deviceType/publishType/createdName/publishTime，timezone格式化",
+      "状态SUCCESS/IN_PROGRESS/FAILED/PLAN_FAILED；retryCount<1且FAILED/PLAN_FAILED、F1/A11、非demandInProgress、类型排除solar/DEMAND_RESPONSE/INTELLIGENT_AI才能重试",
+      "METER_CONFIG/REAL_TIME_CONTROL/FOLLOW_EMS/solar类型无计划详情按钮，其它可只读detail；MIXED_MODE不同detail组件",
+      "execute默认站点时区lastUpdate前一天或昨日，未来日期不可选；选择日期/EMS仅重新查询"
+    ],
+    "unknowns": [
+      "Published status, actual command response detail/device ack beyond declared status fields, backend retry idempotency, execution/financial calculation and full AI preference write paths unknown."
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-004",
+    "module": "站点详情 / 能量管理",
+    "name": "能量管理装配、权限线索与自动单条隐藏边界",
+    "fields": [
+      "stationId/systemId",
+      "选中EMS",
+      "产品白名单/strategy-type/list",
+      "active EMS与demandInProgress"
+    ],
+    "actions": [
+      {
+        "method": "GET",
+        "endpoint": "/station-s/station/v2/{stationId}/ems/list",
+        "semantics": "查询",
+        "trigger": "挂载/入口检查",
+        "payload": []
+      },
+      {
+        "method": "GET",
+        "endpoint": "/station-s/station/v2/{stationId}/ems/active",
+        "semantics": "查询",
+        "trigger": "挂载/发布成功刷新",
+        "payload": []
+      },
+      {
+        "method": "GET",
+        "endpoint": "/station-s/station/v2/{stationId}/ems/{emsId}/strategy-type/list",
+        "semantics": "查询",
+        "trigger": "EMS切换",
+        "payload": []
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/strategy-record/{recordId}/hidden",
+        "semantics": "自动业务状态变更风险",
+        "trigger": "StatusBar SUCCESS轮询且当前站点匹配",
+        "payload": []
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/strategy-record/{emsId}/Allhidden",
+        "semantics": "另一独立隐藏操作；未证明自动触发",
+        "trigger": "明确handler H",
+        "payload": []
+      }
+    ],
+    "rules": [
+      "策略入口检查EMS列表非空；solar仅非子站且pv白名单；策略/执行/追踪电表依赖energy白名单；realTime独立白名单",
+      "strategy-type/list决定FOLLOW_EMS等9模式显示；前端授权F1/A11等只为线索，不证明服务端授权完整"
+    ],
+    "unknowns": [
+      "自动hidden是否实际发生未核验；保持businessWritesExecuted=null、intentionalBusinessWritesExecuted=false",
+      "当前账户白名单、完整服务端权限与自动隐藏审计/恢复语义未知"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-005",
+    "module": "站点详情 / 能量管理",
+    "name": "策略发布的验证码/密码操作验证",
+    "fields": [
+      "verifyType",
+      "验证码captcha/targetType或pwd摘要",
+      "图形验证verifyParam/scene"
+    ],
+    "actions": [
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/ems/{emsId}/strategy/publish",
+        "semantics": "业务发布/切换，非草稿保存",
+        "trigger": "OperationVerificationModal confirm",
+        "payload": [
+          "mode",
+          "strategyType",
+          "scheduleType(适用模式)",
+          "验证载荷",
+          "optional systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/strategy-record",
+        "semantics": "查询；POST方法不等于业务变更",
+        "trigger": "发布后每3秒轮询",
+        "payload": [
+          "page/size",
+          "req.id",
+          "optional systemId"
+        ]
+      }
+    ],
+    "rules": [
+      "验证码/密码form必填；验证码maxlength6、数字输入；没有verifyParam则阻止confirm",
+      "可发送邮箱/手机号依注册类型与格式；发送验证码是单独显式动作，60秒倒计时",
+      "密码路径构造摘要；不记录任何秘密、摘要值或当前用户联系方式"
+    ],
+    "unknowns": [
+      "服务端完整校验、并发幂等、审批策略、设备支持及真实执行/回执未核验；仅独立新库验收"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-006",
+    "module": "站点详情 / 能量管理",
+    "name": "光伏控制任务列表与限发/恢复详情",
+    "fields": [
+      "stationId",
+      "stationGroupId",
+      "month YYYYMM",
+      "page/size",
+      "controlPlanId"
+    ],
+    "actions": [
+      {
+        "method": "POST",
+        "endpoint": "/vpp-s/api/station/control/monitor/history/page",
+        "semantics": "任务历史查询",
+        "trigger": "挂载/分页/月份切换",
+        "payload": [
+          "stationId",
+          "stationGroupId",
+          "month",
+          "page",
+          "size"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/vpp-s/api/station/control/control/plan/detail",
+        "semantics": "详情查询",
+        "trigger": "预览/刷新",
+        "payload": [
+          "controlPlanId",
+          "stationGroupId",
+          "stationId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/strategy-record",
+        "semantics": "设备控制日志查询",
+        "trigger": "详情日志打开",
+        "payload": [
+          "req.emsId",
+          "types20..25",
+          "supportNotExec"
+        ]
+      }
+    ],
+    "rules": [
+      "月份切换重置页码；详情按任务id/当前组织/站点查询",
+      "目标ACTIVE_POWER_RATE为百分比、ACTIVE_POWER_LIMIT为kW，其他目标走枚举，不一概解释功率"
+    ],
+    "unknowns": [
+      "服务端完整校验、并发幂等、审批策略、设备支持及真实执行/回执未核验；仅独立新库验收"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-007",
+    "module": "站点详情 / 能量管理",
+    "name": "跟随EMS：验证后切换与发布回执",
+    "fields": [
+      "mode CUSTOM",
+      "strategyType FOLLOW_EMS",
+      "验证字段",
+      "optional systemId"
+    ],
+    "actions": [
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/ems/{emsId}/strategy/publish",
+        "semantics": "业务发布/切换，非草稿保存",
+        "trigger": "OperationVerificationModal confirm",
+        "payload": [
+          "mode",
+          "strategyType",
+          "scheduleType(适用模式)",
+          "验证载荷",
+          "optional systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/strategy-record",
+        "semantics": "查询；POST方法不等于业务变更",
+        "trigger": "发布后每3秒轮询",
+        "payload": [
+          "page/size",
+          "req.id",
+          "optional systemId"
+        ]
+      }
+    ],
+    "rules": [
+      "操作验证入口；demandInProgress/发送中显示disable class（非完整服务端互斥证明）"
+    ],
+    "unknowns": [
+      "服务端完整校验、并发幂等、审批策略、设备支持及真实执行/回执未核验；仅独立新库验收"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-008",
+    "module": "站点详情 / 能量管理",
+    "name": "策略模板CRUD及月/周/日期绑定独立于发布",
+    "fields": [
+      "模板name/id/type/stationId/emsId",
+      "details或模式参数+restrictionStrategy",
+      "scheduleType MONTH/WEEK/DATE；绑定载荷0月/1周/2日",
+      "templateType TEMPLATE/GROUP、time/times、optional systemId"
+    ],
+    "actions": [
+      {
+        "method": "POST",
+        "endpoint": "/station-s/strategy/template/save",
+        "semantics": "模板持久化",
+        "trigger": "模板校验通过后保存",
+        "payload": [
+          "templateStrategyDto",
+          "optional systemId",
+          "stationId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/strategy/template/bind",
+        "semantics": "绑定持久化",
+        "trigger": "选择模板确认/创建成功后绑定",
+        "payload": [
+          "stationId",
+          "deviceId",
+          "strategyType",
+          "scheduleType",
+          "time",
+          "templateType",
+          "templateId",
+          "systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/strategy/template/unbinding",
+        "semantics": "解绑",
+        "trigger": "删除日历绑定",
+        "payload": [
+          "stationId",
+          "deviceId",
+          "strategyType",
+          "scheduleType",
+          "times",
+          "systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/strategy/template/rename",
+        "semantics": "重命名",
+        "trigger": "确认",
+        "payload": [
+          "id",
+          "name",
+          "templateType"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/strategy/template/delete/{GROUP|TEMPLATE}",
+        "semantics": "删除模板",
+        "trigger": "二次确认",
+        "payload": [
+          "id list"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/strategy/template/page",
+        "semantics": "查询",
+        "trigger": "模板列表",
+        "payload": []
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/strategy/template/bind/list",
+        "semantics": "查询",
+        "trigger": "日历刷新",
+        "payload": []
+      }
+    ],
+    "rules": [
+      "模板名必填、maxlength50；已有模板编辑沿用name",
+      "CreateStrategy联合校验策略参数和限制参数；POWER_METER_POLICY_NOT_ISSUED错误引导追踪电表配置",
+      "日期批量绑定仅当前及未来fullDays；查看过去日期使用已发布/历史数据分支，不能编辑历史绑定"
+    ],
+    "unknowns": [
+      "服务端完整校验、并发幂等、审批策略、设备支持及真实执行/回执未核验；仅独立新库验收"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-009",
+    "module": "站点详情 / 能量管理",
+    "name": "策略公共限制：SOC、防逆流、防超需、变压器",
+    "fields": [
+      "soc/socUpperLimit/socLowerLimit",
+      "fnl/fvTriggerValue/fvLimitValues/fvResponse",
+      "xlcx/dlcTriggerValue/dlcLimitValues/dlcResponse",
+      "byq/oltcMaximumCapacity/oltcTriggerFactor/oltcLimitFactor/oltcResponse",
+      "financeConfig.priceType；兼容contractXlcx及contractDLC旧字段"
+    ],
+    "actions": [
+      {
+        "method": "POST",
+        "endpoint": "/station-s/strategy/template/save",
+        "semantics": "含限制字段模板持久化",
+        "trigger": "保存模板",
+        "payload": []
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/ems/{emsId}/strategy",
+        "semantics": "策略配置写入（需求响应草稿等）",
+        "trigger": "相应确认",
+        "payload": []
+      }
+    ],
+    "rules": [
+      "启用对应限制才必填；SOC下限<上限，输入范围0—100、精度2",
+      "防逆流限制值<触发值；防超需限制值>触发值；变压器限制系数>触发系数；响应方式必选",
+      "响应0/1区分达到限制时停止放/允许充、停止充/允许放；不能混为同一方向动作"
+    ],
+    "unknowns": [
+      "服务端完整校验、并发幂等、审批策略、设备支持及真实执行/回执未核验；仅独立新库验收"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-010",
+    "module": "站点详情 / 能量管理",
+    "name": "自定义充放：连续全天时段、动作与功率",
+    "fields": [
+      "MONTH/WEEK/DATE调度",
+      "details每段startTime/endTime/type/actionMode/generationPower",
+      "CHARGING/DISCHARGE/STATIC",
+      "固定功率与放电负荷跟踪"
+    ],
+    "actions": [
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/ems/{emsId}/strategy/publish",
+        "semantics": "业务发布/切换，非草稿保存",
+        "trigger": "OperationVerificationModal confirm",
+        "payload": [
+          "mode",
+          "strategyType",
+          "scheduleType(适用模式)",
+          "验证载荷",
+          "optional systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/strategy-record",
+        "semantics": "查询；POST方法不等于业务变更",
+        "trigger": "发布后每3秒轮询",
+        "payload": [
+          "page/size",
+          "req.id",
+          "optional systemId"
+        ]
+      }
+    ],
+    "rules": [
+      "时间候选97个15分钟点从00:00至24:00；首段初始化00:00，尾段必须24:00",
+      "每段start<end、相邻段首尾相等，必有type/start/end；actionMode=0时generationPower必填且允许0",
+      "普通最多96段，mixed类型20段；STATIC将power/actionMode置0；CHARGING只固定功率、放电允许负荷跟踪",
+      "基本费pricePolicy缺失时打开基本费编辑前置；取消返回follow，不得为调查保存该编辑器"
+    ],
+    "unknowns": [
+      "服务端完整校验、并发幂等、审批策略、设备支持及真实执行/回执未核验；仅独立新库验收"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-011",
+    "module": "站点详情 / 能量管理",
+    "name": "削峰填谷：费率前置、模板与发布",
+    "fields": [
+      "基本费pricePolicy",
+      "当前绑定电价模板/模板来源",
+      "Manual/Automatic候选查询字段模板名/priceType/chargeType/country/region/source/postal",
+      "有效起止日期、templateId/templateSource/energyCategory2",
+      "CUSTOM模式与MONTH/WEEK/DATE"
+    ],
+    "actions": [
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/ems/{emsId}/strategy/publish",
+        "semantics": "业务发布/切换，非草稿保存",
+        "trigger": "OperationVerificationModal confirm",
+        "payload": [
+          "mode",
+          "strategyType",
+          "scheduleType(适用模式)",
+          "验证载荷",
+          "optional systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/strategy-record",
+        "semantics": "查询；POST方法不等于业务变更",
+        "trigger": "发布后每3秒轮询",
+        "payload": [
+          "page/size",
+          "req.id",
+          "optional systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/manage/batchBindTemplate",
+        "semantics": "业务电价绑定",
+        "trigger": "picker confirm",
+        "payload": [
+          "stationId",
+          "batchTemplateInfoList(templateId,templateSource,energyCategory,startDate,endDate)"
+        ]
+      }
+    ],
+    "rules": [
+      "pricePolicy缺失先基本费编辑；电价绑定列表空则打开选择器",
+      "当前默认CUSTOM；不可由存在mode enum推断本route已实现自动计算全部分支",
+      "电价选择器type列表依source变化；只读候选查询与确认后绑定必须区分"
+    ],
+    "unknowns": [
+      "已有费率workflow可关联，不能把绑定模板等于策略发布",
+      "自动模式/缺价处理、完整动态价策略算法、收益与执行真实结果未知"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-012",
+    "module": "站点详情 / 能量管理",
+    "name": "需量管理：政策匹配与动作参数",
+    "fields": [
+      "chargeFactor/dischargeFactor",
+      "充放动作触发值",
+      "chargingMode/Power、dischargeMode/Power",
+      "合同/实际需量financeConfig",
+      "MONTH/WEEK/DATE",
+      "shared restrictionStrategy"
+    ],
+    "actions": [
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/ems/{emsId}/strategy/publish",
+        "semantics": "业务发布/切换，非草稿保存",
+        "trigger": "OperationVerificationModal confirm",
+        "payload": [
+          "mode",
+          "strategyType",
+          "scheduleType(适用模式)",
+          "验证载荷",
+          "optional systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/strategy-record",
+        "semantics": "查询；POST方法不等于业务变更",
+        "trigger": "发布后每3秒轮询",
+        "payload": [
+          "page/size",
+          "req.id",
+          "optional systemId"
+        ]
+      }
+    ],
+    "rules": [
+      "需两部制且需量缴费；pricePolicy=1或priceType=1给不匹配提示",
+      "修改基本费入口检查F1/A5；确认返回follow，取消可进入基本费编辑",
+      "通用充电系数<放电系数（当前validator以truthy值比较）；动作触发值不相等；需量/增容与新能源消纳的必填分支不同",
+      "固定功率/充电电网跟踪/放电负荷跟踪依类型选项；参数读/写千倍换算"
+    ],
+    "unknowns": [
+      "服务端完整校验、并发幂等、审批策略、设备支持及真实执行/回执未核验；仅独立新库验收"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-013",
+    "module": "站点详情 / 能量管理",
+    "name": "动态增容：政策匹配与动作参数",
+    "fields": [
+      "capacity(kVA)",
+      "chargeFactor/dischargeFactor",
+      "chargingMode/Power、dischargeMode/Power",
+      "MONTH/WEEK/DATE",
+      "shared restrictionStrategy"
+    ],
+    "actions": [
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/ems/{emsId}/strategy/publish",
+        "semantics": "业务发布/切换，非草稿保存",
+        "trigger": "OperationVerificationModal confirm",
+        "payload": [
+          "mode",
+          "strategyType",
+          "scheduleType(适用模式)",
+          "验证载荷",
+          "optional systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/strategy-record",
+        "semantics": "查询；POST方法不等于业务变更",
+        "trigger": "发布后每3秒轮询",
+        "payload": [
+          "page/size",
+          "req.id",
+          "optional systemId"
+        ]
+      }
+    ],
+    "rules": [
+      "需两部制容量缴费；pricePolicy=1或priceType=2/3给不匹配提示",
+      "修改基本费检查F1/A5；变压器容量必填",
+      "通用充电系数<放电系数（当前validator以truthy值比较）；动作触发值不相等；需量/增容与新能源消纳的必填分支不同",
+      "固定功率/充电电网跟踪/放电负荷跟踪依类型选项；参数读/写千倍换算"
+    ],
+    "unknowns": [
+      "服务端完整校验、并发幂等、审批策略、设备支持及真实执行/回执未核验；仅独立新库验收"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-014",
+    "module": "站点详情 / 能量管理",
+    "name": "新能源消纳：系统组合与装机容量前置",
+    "fields": [
+      "powerSystemType GEN_GRID_USE_BTR",
+      "installedCapacity(kWp)",
+      "基本费pricePolicy",
+      "MONTH/WEEK/DATE模板及共享动作/限制"
+    ],
+    "actions": [
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/ems/{emsId}/strategy/publish",
+        "semantics": "业务发布/切换，非草稿保存",
+        "trigger": "OperationVerificationModal confirm",
+        "payload": [
+          "mode",
+          "strategyType",
+          "scheduleType(适用模式)",
+          "验证载荷",
+          "optional systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/strategy-record",
+        "semantics": "查询；POST方法不等于业务变更",
+        "trigger": "发布后每3秒轮询",
+        "payload": [
+          "page/size",
+          "req.id",
+          "optional systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/config/updatePowerSystemType",
+        "semantics": "业务基本信息变更",
+        "trigger": "capacity form confirm",
+        "payload": [
+          "installedCapacity",
+          "stationId",
+          "powerSystemType"
+        ]
+      }
+    ],
+    "rules": [
+      "系统组合不匹配弹窗提示需要光伏+储能；返回follow或去站点settings",
+      "光伏装机容量不能空且>0；输入min0、精度2、上限999999999.99",
+      "基本费政策缺失另走编辑前置"
+    ],
+    "unknowns": [
+      "服务端完整校验、并发幂等、审批策略、设备支持及真实执行/回执未核验；仅独立新库验收"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-015",
+    "module": "站点详情 / 能量管理",
+    "name": "混合策略：3优先级半小时成员与策略类型约束",
+    "fields": [
+      "MONTH/WEEK/DATE调度",
+      "P0/P1/P2优先级",
+      "48个半小时单元",
+      "成员templateId/priority/startTime/endTime/name",
+      "可创建或选择子策略"
+    ],
+    "actions": [
+      {
+        "method": "POST",
+        "endpoint": "/station-s/strategy/template/group/add-group/{stationId}/{emsId}",
+        "semantics": "组持久化",
+        "trigger": "新建组保存",
+        "payload": [
+          "name",
+          "strategyGroupMemberDtos"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/strategy/template/group/update-group/{stationId}/{emsId}",
+        "semantics": "组修改",
+        "trigger": "已有组保存",
+        "payload": [
+          "id",
+          "name",
+          "strategyGroupMemberDtos"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/ems/{emsId}/strategy/publish",
+        "semantics": "业务发布/切换，非草稿保存",
+        "trigger": "OperationVerificationModal confirm",
+        "payload": [
+          "mode",
+          "strategyType",
+          "scheduleType(适用模式)",
+          "验证载荷",
+          "optional systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/strategy-record",
+        "semantics": "查询；POST方法不等于业务变更",
+        "trigger": "发布后每3秒轮询",
+        "payload": [
+          "page/size",
+          "req.id",
+          "optional systemId"
+        ]
+      }
+    ],
+    "rules": [
+      "同一优先级拖选格内检查重复占用；组内当前类型与其他层类型去重；不据此宣称跨优先级冲突后端已检查",
+      "子策略容量制需G=2且priceType=1，需量需G=2且priceType2/3，新能源消纳需GEN_GRID_USE_BTR",
+      "组名必填/50字符与模板共用；组保存前置基本费存在"
+    ],
+    "unknowns": [
+      "本下载源码局部事件引用pageType.value而setup定义q；仅静态可见标识不一致，运行可达性/构建映射未核验，不宣称运行故障",
+      "跨优先级覆盖/重复模板/并发编辑及执行仲裁规则未知"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-016",
+    "module": "站点详情 / 能量管理",
+    "name": "需求响应：邀约列表、约束草稿与实例发布",
+    "fields": [
+      "month",
+      "stationId/deviceId",
+      "instanceId",
+      "startTime/endTime",
+      "restrictionStrategy"
+    ],
+    "actions": [
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/{stationId}/demand-response/list",
+        "semantics": "查询",
+        "trigger": "挂载/月份分页",
+        "payload": [
+          "deviceId",
+          "stationId",
+          "startTime",
+          "endTime"
+        ]
+      },
+      {
+        "method": "GET",
+        "endpoint": "/station-s/station/{stationId}/demand-response/detail",
+        "semantics": "查询",
+        "trigger": "详情打开",
+        "payload": [
+          "instanceId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/ems/{emsId}/strategy",
+        "semantics": "EMS约束配置写入",
+        "trigger": "详情选择保存路径",
+        "payload": [
+          "type DEMAND_RESPONSE",
+          "strategy.restrictionStrategy",
+          "systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/{stationId}/demand-response/publish",
+        "semantics": "响应实例约束发布",
+        "trigger": "详情选择发布路径",
+        "payload": [
+          "instanceId",
+          "restrictionStrategy"
+        ]
+      }
+    ],
+    "rules": [
+      "列表按月边界和站点时区接收时间；响应中demandInProgress影响其他模式切换",
+      "详情约束联合校验SOC/防逆流/防超需/变压器；载荷功率容量千倍换算",
+      "未证明此route承担VPP交易邀约创建、价格签约或成交"
+    ],
+    "unknowns": [
+      "服务端完整校验、并发幂等、审批策略、设备支持及真实执行/回执未核验；仅独立新库验收"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-017",
+    "module": "站点详情 / 能量管理",
+    "name": "AI策略：许可、价差风险约束、训练生成与验证执行",
+    "fields": [
+      "licenseType4及active",
+      "历史7/14天区间，按站点lastUpdateTime/时区回溯",
+      "chargingDiffSetting(unit/value)",
+      "riskSetting(type/level)",
+      "SOC/反流/需量/变压器约束",
+      "充电桩整站/分组min/maxPower及HIGH/LOW",
+      "previewContent.orgStrategy"
+    ],
+    "actions": [
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/ems/{emsId}/strategy",
+        "semantics": "AI设置持久化",
+        "trigger": "Generate校验通过",
+        "payload": [
+          "type INTELLIGENT_AI",
+          "strategy.chargingDiffSetting",
+          "riskSetting",
+          "restrictionStrategy",
+          "systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/ai/model/train",
+        "semantics": "训练任务变更",
+        "trigger": "手动Generate",
+        "payload": [
+          "systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/ai/model/train/status",
+        "semantics": "训练状态查询",
+        "trigger": "每3秒轮询",
+        "payload": [
+          "pvTaskId",
+          "loadTaskId",
+          "systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/ems/{emsId}/generateStrategy/{stationId}",
+        "semantics": "生成策略",
+        "trigger": "两任务完成",
+        "payload": [
+          "strategyType INTELLIGENT_AI",
+          "systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/beforeCalculate/Simulate",
+        "semantics": "模拟计算请求；是否后台存状态未核验",
+        "trigger": "历史对比",
+        "payload": [
+          "startDay",
+          "endDay",
+          "systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/{stationId}/chargingStation/updatePileGroup",
+        "semantics": "即时业务配置写",
+        "trigger": "充电桩分组下拉onChange",
+        "payload": [
+          "chargePileGroup or null",
+          "deviceId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/ems/{emsId}/strategy/publish",
+        "semantics": "业务发布/切换，非草稿保存",
+        "trigger": "OperationVerificationModal confirm",
+        "payload": [
+          "mode",
+          "strategyType",
+          "scheduleType(适用模式)",
+          "验证载荷",
+          "optional systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/strategy-record",
+        "semantics": "查询；POST方法不等于业务变更",
+        "trigger": "发布后每3秒轮询",
+        "payload": [
+          "page/size",
+          "req.id",
+          "optional systemId"
+        ]
+      }
+    ],
+    "rules": [
+      "AI许可/白名单与历史数据检查决定引导/可用状态；前端F1/A11限制设置/执行",
+      "价缺失检查按GEN_GRID_USE_BTR需能源1+2、BTR_GRID_USE只2、其他1；当前有效价需priceType2且3或5之一",
+      "SOC下<上，反流limit<trigger，需量limit>trigger，变压器limitFactor>triggerFactor；启用才校验",
+      "桩整站/分组min<max，max不超过floor(demandLimit+batteryRatedPower+installedCapacity)当该上限>0；分组需实际HIGH/LOW设备数>0",
+      "train返回pvTaskId/loadTaskId必须非空；状态0失败、2继续轮询、1完成，其他缺失/非法失败"
+    ],
+    "unknowns": [
+      "预测模型、训练资源/超时/取消/重试、收益算法质量与价差阈值完整边界未知",
+      "新增AISettings dependency已静态下载，未执行；充电桩分组即时更新与策略生成的事务关系未知",
+      "实际auto-hidden仍unknown；本轮不做UI/业务请求，训练/生成/发布均未运行"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-018",
+    "module": "站点详情 / 能量管理",
+    "name": "追踪电表：配置候选与直接发送EMS",
+    "fields": [
+      "防逆流meterType0、防超需1、防超压2",
+      "meters[{id,sn,meterType}]",
+      "strategyReq mode CUSTOM/type METER_CONFIG/enable1",
+      "emsId与optional systemId"
+    ],
+    "actions": [
+      {
+        "method": "GET",
+        "endpoint": "/station-s/station/v2/{stationId}/strategy/published/now",
+        "semantics": "查询",
+        "trigger": "挂载",
+        "payload": [
+          "emsId",
+          "strategyType METER_CONFIG",
+          "systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/ems/{emsId}/strategy/execute",
+        "semantics": "发送/执行电表配置",
+        "trigger": "发送按钮确认本地form后",
+        "payload": [
+          "strategyReq.mode/type/enable/strategy.meters",
+          "systemId"
+        ]
+      },
+      {
+        "method": "POST",
+        "endpoint": "/station-s/station/v2/{stationId}/strategy-record",
+        "semantics": "执行状态查询",
+        "trigger": "每3秒轮询",
+        "payload": [
+          "req.id",
+          "systemId"
+        ]
+      }
+    ],
+    "rules": [
+      "meter0至少一项必填；0替换选择，1/2追加，界面各组已有一项后隐藏添加入口；不等于证明服务端数量上限",
+      "候选设备type5且configStatus有效；无合适电表可到设备?type=5配置；配置工具F2/A18",
+      "发送按钮F1/A11，sending或demandInProgress时disabled；此页不接OperationVerificationModal，不能误套所有策略验证"
+    ],
+    "unknowns": [
+      "服务端完整校验、并发幂等、审批策略、设备支持及真实执行/回执未核验；仅独立新库验收"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-019",
+    "module": "站点详情 / 能量管理",
+    "name": "Real-time Control",
+    "fields": [
+      "Real-time Control"
+    ],
+    "actions": [
+      "切换本区域页签；具体是否立即读/写以源码流程为准"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-020",
+    "module": "站点详情 / 能量管理",
+    "name": "Send Logs",
+    "fields": [
+      "Send Logs"
+    ],
+    "actions": [
+      "切换本区域页签；具体是否立即读/写以源码流程为准"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-021",
+    "module": "站点详情 / 能量管理",
+    "name": "无文字图标按钮（含按行重复操作）",
+    "fields": [],
+    "actions": [],
+    "rules": [],
+    "unknowns": [
+      "快照未给可访问名称；不能凭图标猜收藏/删除/控制语义，需对应handler映射",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-022",
+    "module": "站点详情 / 能量管理",
+    "name": "plus Add Planned Production",
+    "fields": [
+      "plus Add Planned Production"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-023",
+    "module": "站点详情 / 能量管理",
+    "name": "上一页/前一时段（left）",
+    "fields": [
+      "left"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-024",
+    "module": "站点详情 / 能量管理",
+    "name": "下一页/后一时段（right）",
+    "fields": [
+      "right"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-025",
+    "module": "站点详情 / 能量管理",
+    "name": "月份选择（YYYY-MM）",
+    "fields": [
+      "月份选择（YYYY-MM）"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-026",
+    "module": "站点详情 / 能量管理",
+    "name": "* January :",
+    "fields": [
+      "* January :"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-027",
+    "module": "站点详情 / 能量管理",
+    "name": "Optional",
+    "fields": [
+      "Optional"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-028",
+    "module": "站点详情 / 能量管理",
+    "name": "* February :",
+    "fields": [
+      "* February :"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-029",
+    "module": "站点详情 / 能量管理",
+    "name": "* March :",
+    "fields": [
+      "* March :"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-030",
+    "module": "站点详情 / 能量管理",
+    "name": "* April :",
+    "fields": [
+      "* April :"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-031",
+    "module": "站点详情 / 能量管理",
+    "name": "* May :",
+    "fields": [
+      "* May :"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-032",
+    "module": "站点详情 / 能量管理",
+    "name": "* June :",
+    "fields": [
+      "* June :"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-033",
+    "module": "站点详情 / 能量管理",
+    "name": "* July :",
+    "fields": [
+      "* July :"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-034",
+    "module": "站点详情 / 能量管理",
+    "name": "* August :",
+    "fields": [
+      "* August :"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-035",
+    "module": "站点详情 / 能量管理",
+    "name": "* September :",
+    "fields": [
+      "* September :"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-036",
+    "module": "站点详情 / 能量管理",
+    "name": "* October :",
+    "fields": [
+      "* October :"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-037",
+    "module": "站点详情 / 能量管理",
+    "name": "* November :",
+    "fields": [
+      "* November :"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-038",
+    "module": "站点详情 / 能量管理",
+    "name": "* December :",
+    "fields": [
+      "* December :"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-039",
+    "module": "站点详情 / 能量管理",
+    "name": "取消（Cancel）",
+    "fields": [
+      "Cancel"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-040",
+    "module": "站点详情 / 能量管理",
+    "name": "保存（Save）",
+    "fields": [
+      "Save"
+    ],
+    "actions": [
+      "提交/确认/删除入口；只登记，未执行；后端生效与失败状态未验证"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-energy-041",
+    "module": "站点详情 / 能量管理",
+    "name": "列表列头",
+    "fields": [
+      "Year",
+      "Yearly Basic Planned(kWh)",
+      "Yearly Superior Planned(kWh)",
+      "Operation"
+    ],
+    "actions": [
+      "列头排序标记按原快照保留；行数据与客户值未纳入"
+    ],
+    "rules": [],
+    "unknowns": [
+      "分页全量、后台排序、权限裁剪及成功操作未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-analysis-001",
+    "module": "站点详情 / 智能分析",
+    "name": "电池健康类别、寿命/性能图与理论值配置边界",
+    "fields": [
+      "battery packet selection",
+      "theory loopNum",
+      "theory soh",
+      "apply-to-all checked"
+    ],
+    "actions": [
+      "READ/local: 进入batteryHealth、选择健康/异常对象、详情、打开/取消理论值modal；WRITE: 理论配置OK（GET saveTheoryValue）",
+      "No default diagnostic execution found in retrieved analysis endpoints; background health computation remains unverified"
+    ],
+    "rules": [
+      "容器global=true当前强制导航batteryHealth；仅storeSystem列batteryHealth tab，不能据其它静态PV路由声称当前菜单展示",
+      "healthType0健康/1异常/-1未知；未知点击仅原因说明，不运行诊断",
+      "理论循环次数required1000..20000整数；理论SOH required0..100%、precision2；编辑checked用于省略deviceId、扩大到站点；firstSet也无deviceId",
+      "当前寿命/预计寿命cycleLifeHealthType映射类别，实际/预测/理论num-SOH曲线；性能3Dvol(V)/tem(℃)/rate(V/S)与errList差异电芯",
+      "本组件未发现生成报告/导出/启动分析任务按钮，不据图表存在推断报表生成"
+    ],
+    "unknowns": [
+      "Actual health evidence, backend model training/cadence, theoretical parameter impact on historical analysis, missing-source reasons and report export support unknown. No analysis task run or theory value saved."
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-analysis-002",
+    "module": "站点详情 / 智能分析",
+    "name": "站内PV健康、损失/清洗与设备指标读模型",
+    "fields": [
+      "month",
+      "loss view percent/kWh",
+      "history metric/date filters",
+      "health type1 efficiency/2 failure/3 recovery/4 availability",
+      "cleaning cost and unit energy income"
+    ],
+    "actions": [
+      "READ/local: 已存在结果tab/日期/月/指标筛选、清洗计算器；CURRENT ENTRY: 容器全局redirect限制保留",
+      "不点击Activate/Generate/Train/默认诊断或执行任务入口"
+    ],
+    "rules": [
+      "站内当前global容器只呈batteryHealth；PV这些叶源码已取但当前账号可见入口unknown，不强开隐藏菜单",
+      "PV健康文案契约0.3效率+0.2故障率+0.2恢复时间+0.3可用系数，统计近30天截至昨日，不验证后台原始分数单位/权重执行",
+      "healthIndicators日期默认前7天至昨日，禁今天及未来，任一边约束跨度<30day；指标类型单位1/2/4%、3min，排序avgDeviceHealthParam本地",
+      "DeviceHealth把healthScore降序绘制效率/恢复/可用/故障构成，<60突出，仅展示读取结果",
+      "损失按月查询lossMonth并用isPer切%/kWh；cleaning cost/income required 0..99999999 precision2，计算按钮只本地公式得收益/回本天数"
+    ],
+    "unknowns": [
+      "Backend PV diagnosis/forecast algorithms, report generation, current role/channel eligibility and real analysis values unknown."
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-analysis-003",
+    "module": "站点详情 / 智能分析",
+    "name": "Battery Health Problems",
+    "fields": [
+      "Battery Health Problems"
+    ],
+    "actions": [
+      "切换本区域页签；具体是否立即读/写以源码流程为准"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-analysis-004",
+    "module": "站点详情 / 智能分析",
+    "name": "无文字图标按钮（含按行重复操作）",
+    "fields": [],
+    "actions": [],
+    "rules": [],
+    "unknowns": [
+      "快照未给可访问名称；不能凭图标猜收藏/删除/控制语义，需对应handler映射",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-wrappers-001",
+    "module": "站点详情 / 用能控制与系统布局",
+    "name": "站内用能控制与系统布局iframe包装边界",
+    "fields": [
+      "stationId",
+      "locale",
+      "oURL",
+      "external web-code parameter names appKey/accessToken"
+    ],
+    "actions": [
+      "AUTOMATIC EXTERNAL REQUEST: getWebCode on mount, server effect unknown；layout wrapper reads/navigation only as observed statically；nested implementation blocked"
+    ],
+    "rules": [
+      "未复制凭证字面量、站点allowlist或实际站点值；不能为获取内部实现使用凭证/真实id"
+    ],
+    "unknowns": [
+      "External authentication/API semantics and both nested implementations unknown. No external request, iframe or source literal credential used."
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-wrappers-002",
+    "module": "站点详情 / 用能控制与系统布局",
+    "name": "系统布局iframe包装",
+    "fields": [],
+    "actions": [],
+    "rules": [
+      "不得猜URL或带凭据探测隐藏应用"
+    ],
+    "unknowns": [
+      "Declared iframe URL requires runtime stationId/locale/oURL; no complete unauthenticated static HTML entry declared. No invented URL or real station credential used."
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-wrappers-003",
+    "module": "站点详情 / 用能控制与系统布局",
+    "name": "用能控制外域包装",
+    "fields": [],
+    "actions": [],
+    "rules": [
+      "不得猜URL或带凭据探测隐藏应用"
+    ],
+    "unknowns": [
+      "Mount calls external web-code API with source literal credential parameters before login iframe. Forbidden to call/copy credentials; nested implementation not obtained."
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-wiring-001",
+    "module": "站点详情 / 接线图",
+    "name": "接线图读取、设备参数绑定及画布保存",
+    "fields": [
+      "nodes/lines/edges",
+      "deviceId/SN/type",
+      "param storageName",
+      "switch enum/status",
+      "position/size/rotation",
+      "text/color/font/alignment"
+    ],
+    "actions": [
+      "READ/local: panel/device/parameter query, canvas editing；WRITE: explicit Save add/update；view export为截图辅助"
+    ],
+    "rules": [
+      "字体控件12..99px；节点字段按元件subtype序列化；服务端图拓扑校验未知",
+      "设备/参数/枚举选择读query，本地画布绑定/解除不等于设备控制"
+    ],
+    "unknowns": [
+      "Full graph interaction library and switch execution semantics not runtime validated. No diagram saved or device command executed."
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-wiring-002",
+    "module": "站点详情 / 接线图",
+    "name": "全屏（Full Screen）",
+    "fields": [
+      "Full Screen"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-wiring-003",
+    "module": "站点详情 / 接线图",
+    "name": "编辑（Edit）",
+    "fields": [
+      "Edit"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-wiring-004",
+    "module": "站点详情 / 接线图",
+    "name": "无文字图标按钮（含按行重复操作）",
+    "fields": [],
+    "actions": [],
+    "rules": [],
+    "unknowns": [
+      "快照未给可访问名称；不能凭图标猜收藏/删除/控制语义，需对应handler映射",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-logs-001",
+    "module": "站点详情 / 操作日志",
+    "name": "站点操作日志分页、位置和全局跳转",
+    "fields": [
+      "page/size",
+      "operationContent",
+      "userName/userGroupName",
+      "channel/IP",
+      "stationName/time",
+      "location coordinates"
+    ],
+    "actions": [
+      "READ/local: log/query/map；TELEMETRY: global log navigation；无日志编辑/删除入口声明"
+    ],
+    "rules": [
+      "操作类型枚举和内容格式来自组件；UPDATE_LOC可打开坐标地图；不复制实际用户/IP/地点"
+    ],
+    "unknowns": [
+      "Backend audit generation, retention and access policy unknown. Map provider requests not executed."
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-logs-002",
+    "module": "站点详情 / 操作日志",
+    "name": "Click to view all site operation logs",
+    "fields": [
+      "Click to view all site operation logs"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-logs-003",
+    "module": "站点详情 / 操作日志",
+    "name": "上一页/前一时段（left）",
+    "fields": [
+      "left"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-logs-004",
+    "module": "站点详情 / 操作日志",
+    "name": "下一页/后一时段（right）",
+    "fields": [
+      "right"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-logs-005",
+    "module": "站点详情 / 操作日志",
+    "name": "列表列头",
+    "fields": [
+      "Users",
+      "Business Group",
+      "Operation Content",
+      "Operation Object",
+      "Operation Time",
+      "Endpoint",
+      "IP"
+    ],
+    "actions": [
+      "列头排序标记按原快照保留；行数据与客户值未纳入"
+    ],
+    "rules": [],
+    "unknowns": [
+      "分页全量、后台排序、权限裁剪及成功操作未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "station-logs-006",
+    "module": "站点详情 / 操作日志",
+    "name": "无文字图标按钮（含按行重复操作）",
+    "fields": [],
+    "actions": [],
+    "rules": [],
+    "unknowns": [
+      "快照未给可访问名称；不能凭图标猜收藏/删除/控制语义，需对应handler映射",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-inverter-001",
+    "module": "设备分类 / Inverter",
+    "name": "上一页/前一时段（left）",
+    "fields": [
+      "left"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-inverter-002",
+    "module": "设备分类 / Inverter",
+    "name": "下一页/后一时段（right）",
+    "fields": [
+      "right"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-inverter-003",
+    "module": "设备分类 / Inverter",
+    "name": "列表列头",
+    "fields": [
+      "Status",
+      "Site",
+      "Configuration Status",
+      "Architecture",
+      "String Current Dispersion(%)",
+      "Power(kW)",
+      "Solar Trend",
+      "Daily Solar Production(kWh)",
+      "Daily Peak Hour(h)",
+      "Total Solar Production(kWh)",
+      "Power Normalization(%)",
+      "Actual String Capacity(kWp)",
+      "Parent Device",
+      "Updated",
+      "Name/SN",
+      "Operation"
+    ],
+    "actions": [
+      "列头排序标记按原快照保留；行数据与客户值未纳入"
+    ],
+    "rules": [],
+    "unknowns": [
+      "分页全量、后台排序、权限裁剪及成功操作未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-inverter-004",
+    "module": "设备分类 / Inverter",
+    "name": "无文字图标按钮（含按行重复操作）",
+    "fields": [],
+    "actions": [],
+    "rules": [],
+    "unknowns": [
+      "快照未给可访问名称；不能凭图标猜收藏/删除/控制语义，需对应handler映射",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-inverter-005",
+    "module": "设备分类 / Inverter",
+    "name": "编辑（Edit）",
+    "fields": [
+      "Edit"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-inverter-006",
+    "module": "设备分类 / Inverter",
+    "name": "Export data current day",
+    "fields": [
+      "Export data current day"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-inverter-007",
+    "module": "设备分类 / Inverter",
+    "name": "Export data in the first 5 days",
+    "fields": [
+      "Export data in the first 5 days"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-inverter-008",
+    "module": "设备分类 / Inverter",
+    "name": "选择参数（Select Parameters）",
+    "fields": [
+      "Select Parameters"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-inverter-009",
+    "module": "设备分类 / Inverter",
+    "name": "日期选择（YYYY-MM-DD）",
+    "fields": [
+      "日期选择（YYYY-MM-DD）"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-inverter-010",
+    "module": "设备分类 / Inverter",
+    "name": "日（Day）",
+    "fields": [
+      "Day"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-inverter-011",
+    "module": "设备分类 / Inverter",
+    "name": "月（Month）",
+    "fields": [
+      "Month"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-inverter-012",
+    "module": "设备分类 / Inverter",
+    "name": "年（Year）",
+    "fields": [
+      "Year"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-inverter-013",
+    "module": "设备分类 / Inverter",
+    "name": "总计（Total）",
+    "fields": [
+      "Total"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-inverter-014",
+    "module": "设备分类 / Inverter",
+    "name": "列表列头",
+    "fields": [
+      "Status",
+      "Site",
+      "Configuration Status",
+      "Architecture",
+      "String Current Dispersion(%)",
+      "Power(kW)",
+      "Solar Trend",
+      "Daily Solar Production(kWh)",
+      "Daily Peak Hour(h)",
+      "Total Solar Production(kWh)",
+      "Power Normalization(%)",
+      "Actual String Capacity(kWp)",
+      "Parent Device",
+      "Updated",
+      "Name/SN",
+      "Operation",
+      "Type/SN"
+    ],
+    "actions": [
+      "列头排序标记按原快照保留；行数据与客户值未纳入"
+    ],
+    "rules": [],
+    "unknowns": [
+      "分页全量、后台排序、权限裁剪及成功操作未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-energy-storage-cabinet-001",
+    "module": "设备分类 / Energy Storage Cabinet",
+    "name": "上一页/前一时段（left）",
+    "fields": [
+      "left"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-energy-storage-cabinet-002",
+    "module": "设备分类 / Energy Storage Cabinet",
+    "name": "下一页/后一时段（right）",
+    "fields": [
+      "right"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-energy-storage-cabinet-003",
+    "module": "设备分类 / Energy Storage Cabinet",
+    "name": "列表列头",
+    "fields": [
+      "Status",
+      "Site",
+      "Charge-discharge Status",
+      "Battery Current（A）",
+      "Active Power (AC)（kW）",
+      "SOC(%)",
+      "SOH(%)",
+      "Parent Device",
+      "Updated",
+      "Name/SN",
+      "Operation"
+    ],
+    "actions": [
+      "列头排序标记按原快照保留；行数据与客户值未纳入"
+    ],
+    "rules": [],
+    "unknowns": [
+      "分页全量、后台排序、权限裁剪及成功操作未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-energy-storage-cabinet-004",
+    "module": "设备分类 / Energy Storage Cabinet",
+    "name": "无文字图标按钮（含按行重复操作）",
+    "fields": [],
+    "actions": [],
+    "rules": [],
+    "unknowns": [
+      "快照未给可访问名称；不能凭图标猜收藏/删除/控制语义，需对应handler映射",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-pcs-001",
+    "module": "设备分类 / PCS",
+    "name": "上一页/前一时段（left）",
+    "fields": [
+      "left"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-pcs-002",
+    "module": "设备分类 / PCS",
+    "name": "下一页/后一时段（right）",
+    "fields": [
+      "right"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-pcs-003",
+    "module": "设备分类 / PCS",
+    "name": "列表列头",
+    "fields": [
+      "Status",
+      "Site",
+      "Total DC Power（kW）",
+      "Total AC Active Power（kW）",
+      "Parent Device",
+      "Updated",
+      "Name/SN",
+      "Operation"
+    ],
+    "actions": [
+      "列头排序标记按原快照保留；行数据与客户值未纳入"
+    ],
+    "rules": [],
+    "unknowns": [
+      "分页全量、后台排序、权限裁剪及成功操作未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-pcs-004",
+    "module": "设备分类 / PCS",
+    "name": "无文字图标按钮（含按行重复操作）",
+    "fields": [],
+    "actions": [],
+    "rules": [],
+    "unknowns": [
+      "快照未给可访问名称；不能凭图标猜收藏/删除/控制语义，需对应handler映射",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-pcs-005",
+    "module": "设备分类 / PCS",
+    "name": "列表列头",
+    "fields": [
+      "Status",
+      "Site",
+      "Total DC Power（kW）",
+      "Total AC Active Power（kW）",
+      "Parent Device",
+      "Updated",
+      "Name/SN",
+      "Operation",
+      "AC",
+      "Active Power",
+      "Reactive Power",
+      "Apparent Power",
+      "Power Factor",
+      "Voltage",
+      "Current"
+    ],
+    "actions": [
+      "列头排序标记按原快照保留；行数据与客户值未纳入"
+    ],
+    "rules": [],
+    "unknowns": [
+      "分页全量、后台排序、权限裁剪及成功操作未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-pcs-006",
+    "module": "设备分类 / PCS",
+    "name": "Export data current day",
+    "fields": [
+      "Export data current day"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-pcs-007",
+    "module": "设备分类 / PCS",
+    "name": "Export data in the first 5 days",
+    "fields": [
+      "Export data in the first 5 days"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-pcs-008",
+    "module": "设备分类 / PCS",
+    "name": "选择参数（Select Parameters）",
+    "fields": [
+      "Select Parameters"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-pcs-009",
+    "module": "设备分类 / PCS",
+    "name": "日期选择（YYYY-MM-DD）",
+    "fields": [
+      "日期选择（YYYY-MM-DD）"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-pcs-010",
+    "module": "设备分类 / PCS",
+    "name": "日（Day）",
+    "fields": [
+      "Day"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-pcs-011",
+    "module": "设备分类 / PCS",
+    "name": "月（Month）",
+    "fields": [
+      "Month"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-pcs-012",
+    "module": "设备分类 / PCS",
+    "name": "年（Year）",
+    "fields": [
+      "Year"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-pcs-013",
+    "module": "设备分类 / PCS",
+    "name": "总计（Total）",
+    "fields": [
+      "Total"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-pcs-014",
+    "module": "设备分类 / PCS",
+    "name": "导出（Export）",
+    "fields": [
+      "Export"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-pcs-015",
+    "module": "设备分类 / PCS",
+    "name": "重置（Reset）",
+    "fields": [
+      "Reset"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-pcs-016",
+    "module": "设备分类 / PCS",
+    "name": "取消（Cancel）",
+    "fields": [
+      "Cancel"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-pcs-017",
+    "module": "设备分类 / PCS",
+    "name": "确认（Sure）",
+    "fields": [
+      "Sure"
+    ],
+    "actions": [
+      "提交/确认/删除入口；只登记，未执行；后端生效与失败状态未验证"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-pcs-018",
+    "module": "设备分类 / PCS",
+    "name": "列表列头",
+    "fields": [
+      "Status",
+      "Site",
+      "Total DC Power（kW）",
+      "Total AC Active Power（kW）",
+      "Parent Device",
+      "Updated",
+      "Name/SN",
+      "Operation",
+      "Alert Name",
+      "Alert",
+      "Importance",
+      "Opened Time",
+      "Closed Time"
+    ],
+    "actions": [
+      "列头排序标记按原快照保留；行数据与客户值未纳入"
+    ],
+    "rules": [],
+    "unknowns": [
+      "分页全量、后台排序、权限裁剪及成功操作未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-pcs-019",
+    "module": "设备分类 / PCS",
+    "name": "Basic Information",
+    "fields": [
+      "Basic Information"
+    ],
+    "actions": [
+      "切换本区域页签；具体是否立即读/写以源码流程为准"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-battery-cluster-001",
+    "module": "设备分类 / Battery Cluster",
+    "name": "上一页/前一时段（left）",
+    "fields": [
+      "left"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-battery-cluster-002",
+    "module": "设备分类 / Battery Cluster",
+    "name": "下一页/后一时段（right）",
+    "fields": [
+      "right"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-battery-cluster-003",
+    "module": "设备分类 / Battery Cluster",
+    "name": "列表列头",
+    "fields": [
+      "Status",
+      "Site",
+      "Charge-discharge Status",
+      "Storage Charge-discharge(kW)",
+      "SOC(%)",
+      "SOH(%)",
+      "Range Cell Voltage(V)",
+      "Single Maximum Voltage(V)",
+      "Single Minimum Voltage(V)",
+      "Cell Temp Extreme(℃)",
+      "Single Maximum Temp(℃)",
+      "Single Minimum Temp(℃)",
+      "Parent Device",
+      "Updated",
+      "Name/SN",
+      "Operation"
+    ],
+    "actions": [
+      "列头排序标记按原快照保留；行数据与客户值未纳入"
+    ],
+    "rules": [],
+    "unknowns": [
+      "分页全量、后台排序、权限裁剪及成功操作未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-battery-cluster-004",
+    "module": "设备分类 / Battery Cluster",
+    "name": "无文字图标按钮（含按行重复操作）",
+    "fields": [],
+    "actions": [],
+    "rules": [],
+    "unknowns": [
+      "快照未给可访问名称；不能凭图标猜收藏/删除/控制语义，需对应handler映射",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-battery-cluster-005",
+    "module": "设备分类 / Battery Cluster",
+    "name": "Voltage/V",
+    "fields": [
+      "Voltage/V"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-battery-cluster-006",
+    "module": "设备分类 / Battery Cluster",
+    "name": "Temp/℃",
+    "fields": [
+      "Temp/℃"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-battery-cluster-007",
+    "module": "设备分类 / Battery Cluster",
+    "name": "全电芯分析（Full Cell Analysis）",
+    "fields": [
+      "Full Cell Analysis"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-battery-stack-001",
+    "module": "设备分类 / Battery Stack",
+    "name": "上一页/前一时段（left）",
+    "fields": [
+      "left"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-battery-stack-002",
+    "module": "设备分类 / Battery Stack",
+    "name": "下一页/后一时段（right）",
+    "fields": [
+      "right"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-battery-stack-003",
+    "module": "设备分类 / Battery Stack",
+    "name": "列表列头",
+    "fields": [
+      "Status",
+      "Site",
+      "Charge-discharge Status",
+      "Storage Charge-discharge(kW)",
+      "SOC(%)",
+      "SOH(%)",
+      "Range Cell Voltage(V)",
+      "Average Cell Voltage(V)",
+      "Single Maximum Voltage(V)",
+      "Single Minimum Voltage(V)",
+      "Cell Temp Extreme(℃)",
+      "单体温度均值(℃)",
+      "Single Maximum Temp(℃)",
+      "Single Minimum Temp(℃)",
+      "Parent Device",
+      "Updated",
+      "Name/SN",
+      "Operation"
+    ],
+    "actions": [
+      "列头排序标记按原快照保留；行数据与客户值未纳入"
+    ],
+    "rules": [],
+    "unknowns": [
+      "分页全量、后台排序、权限裁剪及成功操作未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-battery-stack-004",
+    "module": "设备分类 / Battery Stack",
+    "name": "无文字图标按钮（含按行重复操作）",
+    "fields": [],
+    "actions": [],
+    "rules": [],
+    "unknowns": [
+      "快照未给可访问名称；不能凭图标猜收藏/删除/控制语义，需对应handler映射",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-battery-stack-005",
+    "module": "设备分类 / Battery Stack",
+    "name": "列表列头",
+    "fields": [
+      "Status",
+      "Site",
+      "Charge-discharge Status",
+      "Storage Charge-discharge(kW)",
+      "SOC(%)",
+      "SOH(%)",
+      "Range Cell Voltage(V)",
+      "Average Cell Voltage(V)",
+      "Single Maximum Voltage(V)",
+      "Single Minimum Voltage(V)",
+      "Cell Temp Extreme(℃)",
+      "单体温度均值(℃)",
+      "Single Maximum Temp(℃)",
+      "Single Minimum Temp(℃)",
+      "Parent Device",
+      "Updated",
+      "Name/SN",
+      "Operation",
+      "Storage Charge-discharge",
+      "SOC",
+      "SOH",
+      "Range Cell Voltage",
+      "Single Maximum Voltage",
+      "Single Minimum Voltage",
+      "Cell Temp Extreme",
+      "Single Maximum Temp",
+      "Single Minimum Temp",
+      "Device Info"
+    ],
+    "actions": [
+      "列头排序标记按原快照保留；行数据与客户值未纳入"
+    ],
+    "rules": [],
+    "unknowns": [
+      "分页全量、后台排序、权限裁剪及成功操作未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-air-conditioner-001",
+    "module": "设备分类 / Air Conditioner",
+    "name": "上一页/前一时段（left）",
+    "fields": [
+      "left"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-air-conditioner-002",
+    "module": "设备分类 / Air Conditioner",
+    "name": "下一页/后一时段（right）",
+    "fields": [
+      "right"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-air-conditioner-003",
+    "module": "设备分类 / Air Conditioner",
+    "name": "列表列头",
+    "fields": [
+      "Status",
+      "Site",
+      "Parent Device",
+      "Updated",
+      "Name/SN",
+      "Operation"
+    ],
+    "actions": [
+      "列头排序标记按原快照保留；行数据与客户值未纳入"
+    ],
+    "rules": [],
+    "unknowns": [
+      "分页全量、后台排序、权限裁剪及成功操作未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-air-conditioner-004",
+    "module": "设备分类 / Air Conditioner",
+    "name": "无文字图标按钮（含按行重复操作）",
+    "fields": [],
+    "actions": [],
+    "rules": [],
+    "unknowns": [
+      "快照未给可访问名称；不能凭图标猜收藏/删除/控制语义，需对应handler映射",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-smart-meter-001",
+    "module": "设备分类 / Smart Meter",
+    "name": "上一页/前一时段（left）",
+    "fields": [
+      "left"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-smart-meter-002",
+    "module": "设备分类 / Smart Meter",
+    "name": "下一页/后一时段（right）",
+    "fields": [
+      "right"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-smart-meter-003",
+    "module": "设备分类 / Smart Meter",
+    "name": "列表列头",
+    "fields": [
+      "Status",
+      "Site",
+      "Configuration Status",
+      "Apply to",
+      "Installation Site",
+      "Parent Device",
+      "Updated",
+      "Name/SN",
+      "Operation"
+    ],
+    "actions": [
+      "列头排序标记按原快照保留；行数据与客户值未纳入"
+    ],
+    "rules": [],
+    "unknowns": [
+      "分页全量、后台排序、权限裁剪及成功操作未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-smart-meter-004",
+    "module": "设备分类 / Smart Meter",
+    "name": "无文字图标按钮（含按行重复操作）",
+    "fields": [],
+    "actions": [],
+    "rules": [],
+    "unknowns": [
+      "快照未给可访问名称；不能凭图标猜收藏/删除/控制语义，需对应handler映射",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-smart-meter-005",
+    "module": "设备分类 / Smart Meter",
+    "name": "编辑（Edit）",
+    "fields": [
+      "Edit"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-smart-meter-006",
+    "module": "设备分类 / Smart Meter",
+    "name": "Positive Energy",
+    "fields": [
+      "Positive Energy"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-smart-meter-007",
+    "module": "设备分类 / Smart Meter",
+    "name": "Reverse energy",
+    "fields": [
+      "Reverse energy"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-smart-meter-008",
+    "module": "设备分类 / Smart Meter",
+    "name": "月份选择（YYYY-MM）",
+    "fields": [
+      "月份选择（YYYY-MM）"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-smart-meter-009",
+    "module": "设备分类 / Smart Meter",
+    "name": "列表列头",
+    "fields": [
+      "Status",
+      "Site",
+      "Configuration Status",
+      "Apply to",
+      "Installation Site",
+      "Parent Device",
+      "Updated",
+      "Name/SN",
+      "Operation",
+      "Positive Energy",
+      "Negative Energy",
+      "Current Ratio",
+      "Voltage Ratio",
+      "AC",
+      "Active Power",
+      "Reactive Power",
+      "Apparent Power",
+      "Power Factor",
+      "Voltage",
+      "Current",
+      "Classification",
+      "Role",
+      "Total",
+      "Sharp",
+      "Peak",
+      "Flat",
+      "Valley",
+      "Deep Valley",
+      "00:00~00:15",
+      "00:15~00:30",
+      "00:30~00:45",
+      "00:45~01:00",
+      "01:00~01:15",
+      "01:15~01:30",
+      "01:30~01:45",
+      "01:45~02:00"
+    ],
+    "actions": [
+      "列头排序标记按原快照保留；行数据与客户值未纳入"
+    ],
+    "rules": [],
+    "unknowns": [
+      "分页全量、后台排序、权限裁剪及成功操作未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-smart-meter-010",
+    "module": "设备分类 / Smart Meter",
+    "name": "Three-phase System",
+    "fields": [
+      "Three-phase System"
+    ],
+    "actions": [
+      "本控件输入/选择；未验证服务端结果"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-smart-meter-011",
+    "module": "设备分类 / Smart Meter",
+    "name": "Increase Value",
+    "fields": [
+      "Increase Value"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-smart-meter-012",
+    "module": "设备分类 / Smart Meter",
+    "name": "Decrease Value",
+    "fields": [
+      "Decrease Value"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-smart-meter-013",
+    "module": "设备分类 / Smart Meter",
+    "name": "取消（Cancel）",
+    "fields": [
+      "Cancel"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-smart-meter-014",
+    "module": "设备分类 / Smart Meter",
+    "name": "保存（Save）",
+    "fields": [
+      "Save"
+    ],
+    "actions": [
+      "提交/确认/删除入口；只登记，未执行；后端生效与失败状态未验证"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-logger-001",
+    "module": "设备分类 / Logger",
+    "name": "上一页/前一时段（left）",
+    "fields": [
+      "left"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-logger-002",
+    "module": "设备分类 / Logger",
+    "name": "下一页/后一时段（right）",
+    "fields": [
+      "right"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-logger-003",
+    "module": "设备分类 / Logger",
+    "name": "列表列头",
+    "fields": [
+      "Status",
+      "Site",
+      "Updated",
+      "Name/SN",
+      "Operation"
+    ],
+    "actions": [
+      "列头排序标记按原快照保留；行数据与客户值未纳入"
+    ],
+    "rules": [],
+    "unknowns": [
+      "分页全量、后台排序、权限裁剪及成功操作未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-logger-004",
+    "module": "设备分类 / Logger",
+    "name": "无文字图标按钮（含按行重复操作）",
+    "fields": [],
+    "actions": [],
+    "rules": [],
+    "unknowns": [
+      "快照未给可访问名称；不能凭图标猜收藏/删除/控制语义，需对应handler映射",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-ems-001",
+    "module": "设备分类 / EMS",
+    "name": "上一页/前一时段（left）",
+    "fields": [
+      "left"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-ems-002",
+    "module": "设备分类 / EMS",
+    "name": "下一页/后一时段（right）",
+    "fields": [
+      "right"
+    ],
+    "actions": [
+      "可见点击入口；未触发提交或业务写入，精确处理链见对应源码流程"
+    ],
+    "rules": [],
+    "unknowns": [
+      "控件可见不代表业务闭环已验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-ems-003",
+    "module": "设备分类 / EMS",
+    "name": "列表列头",
+    "fields": [
+      "Status",
+      "Site",
+      "Updated",
+      "Name/SN",
+      "Operation"
+    ],
+    "actions": [
+      "列头排序标记按原快照保留；行数据与客户值未纳入"
+    ],
+    "rules": [],
+    "unknowns": [
+      "分页全量、后台排序、权限裁剪及成功操作未验证",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-ems-004",
+    "module": "设备分类 / EMS",
+    "name": "无文字图标按钮（含按行重复操作）",
+    "fields": [],
+    "actions": [],
+    "rules": [],
+    "unknowns": [
+      "快照未给可访问名称；不能凭图标猜收藏/删除/控制语义，需对应handler映射",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-detail-001",
+    "module": "设备详情 / 类型差异",
+    "name": "设备详情与类型差异",
+    "fields": [
+      "deviceId",
+      "deviceName",
+      "deviceSn",
+      "selected device type",
+      "status/performance filters"
+    ],
+    "actions": [
+      "设备列表与详情、按设备类型渲染；不是所有设备共享完整字段"
+    ],
+    "rules": [
+      "逆变器属性额定功率/容量等依配置required；非负数/两位小数pattern声明"
+    ],
+    "unknowns": [
+      "Server-side validation, effective permission and successful execution were not tested.",
+      "Parent UI observed Full Cell Analysis on Battery Cluster real-time data. Only translation key nengrui-web_47709 is present in retrieved sources; invoking handler/dependency is unavailable, so read-versus-create-task behavior remains unknown and button was not clicked.",
+      "A declared nested device-detail source index-BN363xGh.js was fetched in the report pass. It contains battery/monomer display logic but no nengrui-web_47709 reference; Full Cell Analysis exact handler remains unknown, no task/analysis invocation inferred."
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-detail-002",
+    "module": "设备详情 / 类型差异",
+    "name": "看板（Dashboard）",
+    "fields": [
+      "Dashboard"
+    ],
+    "actions": [
+      "切换详情页签"
+    ],
+    "rules": [],
+    "unknowns": [
+      "不能套用为九类设备共享；systemLayoutDetail独立源码只声明四tabs，不含Settings",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-detail-003",
+    "module": "设备详情 / 类型差异",
+    "name": "历史图表（Historical Chart）",
+    "fields": [
+      "Historical Chart"
+    ],
+    "actions": [
+      "切换详情页签"
+    ],
+    "rules": [],
+    "unknowns": [
+      "不能套用为九类设备共享；systemLayoutDetail独立源码只声明四tabs，不含Settings",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-detail-004",
+    "module": "设备详情 / 类型差异",
+    "name": "告警（Alerts）",
+    "fields": [
+      "Alerts"
+    ],
+    "actions": [
+      "切换详情页签"
+    ],
+    "rules": [],
+    "unknowns": [
+      "不能套用为九类设备共享；systemLayoutDetail独立源码只声明四tabs，不含Settings",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-detail-005",
+    "module": "设备详情 / 类型差异",
+    "name": "连接（Connections）",
+    "fields": [
+      "Connections"
+    ],
+    "actions": [
+      "切换详情页签"
+    ],
+    "rules": [],
+    "unknowns": [
+      "不能套用为九类设备共享；systemLayoutDetail独立源码只声明四tabs，不含Settings",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-detail-006",
+    "module": "设备详情 / 类型差异",
+    "name": "设置（Settings）",
+    "fields": [
+      "Settings"
+    ],
+    "actions": [
+      "切换详情页签"
+    ],
+    "rules": [],
+    "unknowns": [
+      "不能套用为九类设备共享；systemLayoutDetail独立源码只声明四tabs，不含Settings",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  },
+  {
+    "id": "device-detail-007",
+    "module": "设备详情 / 类型差异",
+    "name": "全电芯分析（Full Cell Analysis）",
+    "fields": [],
+    "actions": [],
+    "rules": [],
+    "unknowns": [
+      "仅观察按钮与翻译key；精确handler缺失，可能建任务；未点击",
+      "runtimeVerified=false：未执行此控件的业务写入或验证真实服务端闭环"
+    ],
+    "evidenceStatus": "legacy-evidence-needs-screen-match",
+    "implementationStatus": "not-accepted",
+    "databaseMapping": null,
+    "apiMapping": null,
+    "uiEvidence": null
+  }
+]

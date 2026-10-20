@@ -1,0 +1,5 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript')
+const moduleExports={};new Function('exports',ts.transpileModule(fs.readFileSync(`${__dirname}/../src/data/regularReports.ts`,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText)(moduleExports)
+const {reportTaskPage}=moduleExports,rows=Array.from({length:21},(_,id)=>({id,name:`task${id}`}))
+test('deleting last task on page2 reveals remaining page1 records instead of false empty state',()=>{assert.equal(reportTaskPage(rows,1,20).items[0].id,20);const result=reportTaskPage(rows.slice(0,20),1,20);assert.equal(result.page,0);assert.equal(result.items.length,20)})
+test('editing last matching task out of filter clamps page and empty list remains page1',()=>{const result=reportTaskPage(rows.filter(r=>r.id<3),1,20);assert.equal(result.page,0);assert.equal(result.items.length,3);assert.deepEqual(reportTaskPage([],2,20),{page:0,items:[]})})

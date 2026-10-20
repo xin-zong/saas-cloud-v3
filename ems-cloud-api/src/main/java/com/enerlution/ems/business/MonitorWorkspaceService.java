@@ -13,7 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class MonitorWorkspaceService {
   private final DomainSupport s;private final ObjectMapper json;
   private final StationTelemetryService telemetry;
-  public MonitorWorkspaceService(DomainSupport s,ObjectMapper json,StationTelemetryService telemetry){this.s=s;this.json=json;this.telemetry=telemetry;}
+  private final StationBusinessGroupService businessGroups;
+  public MonitorWorkspaceService(DomainSupport s,ObjectMapper json,StationTelemetryService telemetry){this(s,json,telemetry,new StationBusinessGroupService(s));}
+  @org.springframework.beans.factory.annotation.Autowired
+  public MonitorWorkspaceService(DomainSupport s,ObjectMapper json,StationTelemetryService telemetry,StationBusinessGroupService businessGroups){this.s=s;this.json=json;this.telemetry=telemetry;this.businessGroups=businessGroups;}
   public record Preference(Map<String,Object> settings,List<String> watchedStationIds,long version) {}
   public record SavePreference(Map<String,Object> settings,List<String> watchedStationIds,Long expectedVersion) {}
   private Map<String,Object> object(Object raw){if(raw==null)return new LinkedHashMap<>();try{return json.readValue(raw.toString(),new TypeReference<LinkedHashMap<String,Object>>(){});}catch(Exception ex){throw new IllegalStateException("Invalid stored monitor data",ex);}}
@@ -47,8 +50,12 @@ public class MonitorWorkspaceService {
     s.audit("monitor.workspace.save",Map.of("watchedCount",ids.size(),"settings",settings.keySet()));return preferences();
   }
   public Map<String,Object> workspace(Map<String,String> parameters,boolean export){
+    var groupScope=businessGroups.stationScope(parameters.get("businessGroupId"));
+    var queryArgs=new ArrayList<Object>();queryArgs.add(s.access.userId());queryArgs.add(s.access.client());
+    String groupFilter="";if(groupScope!=null){if(groupScope.isEmpty())groupFilter=" AND FALSE";else{groupFilter=" AND st.id IN ("+String.join(",",Collections.nCopies(groupScope.size(),"?"))+")";queryArgs.addAll(groupScope);}}
     var q=MonitorWorkspaceRules.query(parameters);var preference=preferences();long user=s.access.userId();String client=s.access.client();
-    var assetScope=new HashSet<>(s.access.stationIds("asset.read"));var telemetryScope=new HashSet<>(s.access.stationIds("telemetry.read"));var alarmScope=new HashSet<>(s.access.stationIds("alarm.read"));
+    var scope=s.access.stationScopes(List.of("asset.read","telemetry.read","alarm.read"));
+    var assetScope=new HashSet<>(scope.get("asset.read"));var telemetryScope=new HashSet<>(scope.get("telemetry.read"));var alarmScope=new HashSet<>(scope.get("alarm.read"));
     // Expand the effective permission view once, rather than generating thousands
     // of JIT expressions for three correlated copies. Fresh scope checks remain below.
     var raw=s.db.queryForList("""
@@ -71,8 +78,7 @@ public class MonitorWorkspaceService {
        (SELECT count(*) FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN alarm_business_origin o ON o.alarm_id=a.id WHERE coalesce(o.station_id,d.station_id)=st.id AND a.deleted_at IS NULL AND a.closed_at IS NULL AND a.occurred_at<=now() AND (a.recovered_at IS NULL OR a.recovered_at>now())) AS alarm_count
       FROM station st JOIN permitted ON permitted.station_id=st.id LEFT JOIN station_profile sp ON sp.station_id=st.id
       LEFT JOIN LATERAL(SELECT * FROM monitor_station_capture c WHERE c.station_id=st.id ORDER BY c.captured_at DESC,c.id DESC LIMIT 1) cap ON true
-      WHERE permitted.asset AND st.archived_at IS NULL ORDER BY st.id LIMIT 2001
-      """,user,client);
+      WHERE permitted.asset AND st.archived_at IS NULL """+groupFilter+" ORDER BY st.id LIMIT 2001",queryArgs.toArray());
     if(raw.size()>2000)throw new BusinessException(413,"授权站点超过2000；请先缩小站点授权范围");
     var rows=new ArrayList<Map<String,Object>>();
     for(var r:raw){
@@ -117,7 +123,8 @@ public class MonitorWorkspaceService {
     int from=Math.min((int)q.get("offset"),filtered.size()),to=Math.min(from+(int)q.get("limit"),filtered.size());var page=new ArrayList<>(export?filtered:filtered.subList(from,to));
     var rules=ruleSummary(filtered);
     var dashboard="true".equals(parameters.get("includeDashboard"))?MonitorDashboardCapture.read(s,json,filtered,q):null;
-    var currentAssets=new HashSet<>(s.access.stationIds("asset.read"));var currentTelemetry=new HashSet<>(s.access.stationIds("telemetry.read"));var currentAlarms=new HashSet<>(s.access.stationIds("alarm.read"));
+    var currentScope=s.access.stationScopes(List.of("asset.read","telemetry.read","alarm.read"));
+    var currentAssets=new HashSet<>(currentScope.get("asset.read"));var currentTelemetry=new HashSet<>(currentScope.get("telemetry.read"));var currentAlarms=new HashSet<>(currentScope.get("alarm.read"));
     for(var row:rows){long id=Long.parseLong(row.get("id").toString());if(!currentAssets.contains(id)||Boolean.TRUE.equals(row.get("telemetryAllowed"))&&!currentTelemetry.contains(id)||Boolean.TRUE.equals(row.get("alarmAllowed"))&&!currentAlarms.contains(id))throw new BusinessException(403,"监控查询期间权限已变化，请刷新重试");if(export&&filtered.contains(row))s.access.requireStationPermission(id,"report.export");}
     var result=new LinkedHashMap<String,Object>();result.put("items",page);result.put("total",filtered.size());result.put("limit",q.get("limit"));result.put("offset",q.get("offset"));result.put("summary",summary(filtered));result.put("facets",facets);result.put("rules",rules);result.put("preferences",preference);result.put("options",options);result.put("sourceMode",q.get("sourceMode"));result.put("serverTime",Instant.now().toString());result.put("dashboardCapture",dashboard);return result;
   }
@@ -151,7 +158,7 @@ public class MonitorWorkspaceService {
   }
   @SuppressWarnings("unchecked") private void live(Map<String,Object> row){
     if(!Boolean.TRUE.equals(row.get("telemetryAllowed")))return;long id=Long.parseLong(row.get("id").toString());
-    var snapshot=telemetry.snapshot(id,List.of(),false);var values=(List<Map<String,Object>>)snapshot.get("items");
+    var snapshot=telemetry.monitorSnapshot(id);var values=(List<Map<String,Object>>)snapshot.get("items");
     if(values==null)return;var metrics=(Map<String,Object>)row.get("metrics");var counts=(Map<String,Long>)snapshot.getOrDefault("mappingCounts",Map.of());
     Long newest=null;
     for(var entry:Map.of(20107L,"pvPower",20018L,"storageSoc").entrySet()){
@@ -166,3 +173,4 @@ public class MonitorWorkspaceService {
     if(newest!=null)row.put("updatedAt",Instant.ofEpochMilli(newest).toString());
   }
 }
+

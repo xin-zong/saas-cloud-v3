@@ -6,6 +6,6 @@ import org.springframework.web.bind.annotation.*;
 public class ReferenceDeviceListController {
  private final ReferenceDeviceListService service;
  public ReferenceDeviceListController(ReferenceDeviceListService service){this.service=service;}
- @GetMapping public ApiResponse<?> list(@RequestParam(required=false) Long stationId){return ApiResponse.ok(service.list(stationId,false));}
- @GetMapping("/export-data") public ApiResponse<?> export(@RequestParam(required=false) Long stationId,@RequestParam(required=false) java.util.List<Long> deviceIds){return ApiResponse.ok(service.list(stationId,true,deviceIds));}
+ @GetMapping public ApiResponse<?> list(@RequestParam(required=false) Long stationId,@RequestParam(required=false) String businessGroupId){return ApiResponse.ok(service.list(stationId,false,null,businessGroupId));}
+ @GetMapping("/export-data") public ApiResponse<?> export(@RequestParam(required=false) Long stationId,@RequestParam(required=false) java.util.List<Long> deviceIds,@RequestParam(required=false) String businessGroupId){return ApiResponse.ok(service.list(stationId,true,deviceIds,businessGroupId));}
 }

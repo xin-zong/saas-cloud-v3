@@ -11,7 +11,7 @@ const ignoreChange = () => {};
 type EditTool = "move" | "connect";
 
 export interface DeviceConfig { id: string; type: DeviceType; pos: [number, number, number]; }
-export interface EdgeConfig   { id: string; from: string; to: string; }
+export interface EdgeConfig   { id: string; from: string; to: string; animate?: boolean; }
 
 export const META: Record<DeviceType, { label: string; emoji: string; color: string; labelY: number }> = {
   tower:   { label: "电网", emoji: "⚡", color: "#1f7a68", labelY: 5.0  },
@@ -497,7 +497,7 @@ function EnergyScene(p: SceneProps) {
         const midV = V((fV.x+tV.x)/2, (fV.y+tV.y)/2 + 0.55, (fV.z+tV.z)/2);
         return (
           <group key={edge.id}>
-            <EnergyTube from={fV} to={tV} color={color} animate={false} />
+            <EnergyTube from={fV} to={tV} color={color} animate={edge.animate === true} />
 
             {/* Delete button — visible in any edit mode tool */}
             {editMode && (

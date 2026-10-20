@@ -1,0 +1,20 @@
+import type {DashboardFlow,DashboardPanel} from '@/api/stationDashboard'
+import type {EnergyMetrics} from '@/components/EnergyFlow3D'
+export const dashboardNumber=(value:number|null|undefined)=>value==null||!Number.isFinite(value)?'—':new Intl.NumberFormat('zh-CN',{maximumFractionDigits:5,useGrouping:false}).format(value)
+export function dashboardMetric(panel:DashboardPanel|undefined,key:string,allowed:boolean):number|null{const value=allowed?panel?.metrics.find(m=>m.key===key)?.value:null;return typeof value==='number'&&Number.isFinite(value)?value:null}
+export function dashboardPanels(panels:DashboardPanel[],scene:string){if(scene==='grid')return ['grid','load'].flatMap(key=>panels.filter(p=>p.key===key));if(scene==='solar'||scene==='pv')return panels.filter(p=>['solar','pv','load','grid'].includes(p.key));if(scene==='storage'&&panels.some(p=>p.key==='storage'))return panels.filter(p=>p.key==='storage');return panels}
+/** The frozen 3D renderer accepts formatted values in their stated unit, unlike the
+ * frozen 2D diagram which synthesizes grid/battery power from an energy model.
+ * Do not feed that model measured power and present its derived values as readings. */
+export function dashboardFlowMetrics(flow:DashboardFlow|null|undefined,allowed:boolean):EnergyMetrics{const v=(value:number|null|undefined)=>({value:dashboardNumber(allowed?value:null),unit:'kW'});return {tower:v(flow?.gridKw),factory:v(flow?.loadKw),pcs:v(flow?.pcsKw),solar:v(flow?.mpptKw),battery:v(flow?.batteryKw)}}
+export const dashboardSceneNames:Record<string,string>={storage:'储能',grid:'电网',overall:'整体',solar:'光伏',pv:'光伏'}
+export const dashboardEquipmentNames:Record<string,string>={'air-conditioner':'空调',other:'其他',cabinet:'储能一体柜','battery-cluster':'电池簇','battery-stack':'电池堆','battery cluster':'电池簇','battery stack':'电池堆','smart meter':'智能电表',inverter:'逆变器',pcs:'PCS',battery_stack:'电池堆',battery_cluster:'电池簇',battery:'电池',bms:'电池',environment:'环境',mppt:'MPPT',liquid_cooler:'液冷机','liquid-cooler':'液冷机',meter:'智能电表',smart_meter:'智能电表',logger:'采集器',ems:'EMS控制器',controller:'EMS控制器'}
+
+export type DashboardDeviceFilter={stationId:string;type?:string;status?:string;substationId?:string;deviceIds:string[]}
+export function dashboardDeviceCategory(type:string|undefined):import('./referenceDevices').ReferenceDeviceCategory|undefined{const types:Record<string,import('./referenceDevices').ReferenceDeviceCategory>={inverter:'inverter',pcs:'pcs','battery stack':'battery-stack','battery_stack':'battery-stack','battery-stack':'battery-stack','battery cluster':'battery-cluster','battery_cluster':'battery-cluster','battery-cluster':'battery-cluster','smart meter':'meter',smart_meter:'meter',meter:'meter',logger:'logger',ems:'ems',environment:'environment',mppt:'mppt','liquid-cooler':'liquid-cooler',cabinet:'cabinet','air conditioner':'air-conditioner','air-conditioner':'air-conditioner'};return types[type?.toLowerCase()??'']}
+export function dashboardDeviceRows<T extends {id:string;stationId:string}>(rows:T[],filter:DashboardDeviceFilter|undefined):T[]{return filter?rows.filter(row=>String(row.stationId)===filter.stationId&&filter.deviceIds.includes(String(row.id))):rows}
+export function dashboardEquipmentTypes(rows:{type:string}[]){const order=['inverter','pcs','battery-stack','battery-cluster','environment','mppt','liquid-cooler','meter','logger','ems'];const index=(type:string)=>{const n=order.indexOf(dashboardDeviceCategory(type)??type.toLowerCase().replace(/[_ ]/g,'-'));return n<0?order.length:n};return [...new Set(rows.map(row=>row.type))].sort((a,b)=>index(a)-index(b)||a.localeCompare(b))}
+
+export function dashboardEquipmentCell(rows:import('@/api/stationDashboard').DashboardEquipment[],type:string,status:string,alarms?:import('@/api/stationDashboard').DashboardEquipment[]){if(status==='alarm'&&!alarms)return null;const cells=(status==='alarm'?alarms!:rows).filter(e=>e.type===type&&(status==='total'||status==='alarm'||e.status===status));return {count:cells.reduce((sum,e)=>sum+e.count,0),deviceIds:cells.flatMap(e=>e.deviceIds)}}
+
+

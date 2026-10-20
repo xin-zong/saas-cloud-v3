@@ -1,0 +1,4 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
+const exports_={};new Function('exports',ts.transpileModule(fs.readFileSync('src/data/stationLocation.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(exports_);
+test('coordinates preserve zero and reject missing or out of range locations',()=>{assert.deepEqual(exports_.locationCoordinates('0',0),{lng:0,lat:0});for(const pair of [['',0],[null,0],[181,0],[0,-91],['NaN','12']])assert.equal(exports_.locationCoordinates(...pair),null)});
+test('DMS matches stored HONGOS coordinates and carries rounded seconds',()=>{assert.equal(exports_.locationDegrees(-2.0685083),'-2°4′6.63″');assert.equal(exports_.locationDegrees(42.3263444),'42°19′34.84″');assert.equal(exports_.locationDegrees(1.99999999),'2°0′0.00″')});

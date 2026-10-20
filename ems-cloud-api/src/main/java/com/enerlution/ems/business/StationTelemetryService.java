@@ -17,11 +17,18 @@ public class StationTelemetryService {
 
  /** Caller must validate current user/session before AND after this bounded read. */
  Map<String,Object> snapshot(long station,List<Long> selected,boolean includePresence) {
+   return snapshot(station,selected,includePresence,false);
+ }
+ /** Only the native cabinet semantics consumed by the monitoring workspace. */
+ Map<String,Object> monitorSnapshot(long station) {
+   return snapshot(station,List.of(),false,true);
+ }
+ private Map<String,Object> snapshot(long station,List<Long> selected,boolean includePresence,boolean monitorOnly) {
    if(!selected.isEmpty()) {
      var owned=s.db.queryForList("SELECT mp.id FROM measurement_point mp JOIN device d ON d.id=mp.device_id WHERE d.station_id=? AND mp.id IN ("+EmsTelemetryQueries.ids(selected)+")",Long.class,station);
      if(owned.size()!=selected.size())throw new BusinessException(403,"测点不属于当前授权站点");
    }
-   var mappings=s.db.queryForList("""
+   String mappingSql="""
      SELECT pb.measurement_point_id,d.device_id,d.binding_period_id,pd.source_id,pd.namespace,pd.value_type,pd.aggregation,
        d.role AS subsystem,c.reachable,greatest(p.valid_from,d.valid_from,pb.valid_from) AS valid_from
      FROM point_binding pb JOIN device_binding d ON d.id=pb.device_binding_id
@@ -30,19 +37,27 @@ public class StationTelemetryService {
      LEFT JOIN ems_connection_read c ON c.ems_uuid=p.ems_uuid
      WHERE p.station_id=? AND p.valid_to IS NULL AND d.valid_to IS NULL AND pb.valid_to IS NULL
        AND greatest(p.valid_from,d.valid_from,pb.valid_from)<=clock_timestamp()
-     """+ (selected.isEmpty()?"":" AND pb.measurement_point_id IN ("+EmsTelemetryQueries.ids(selected)+")")
-       +" ORDER BY pb.measurement_point_id LIMIT 2001",station);
+     """+ (selected.isEmpty()?"":" AND pb.measurement_point_id IN ("+EmsTelemetryQueries.ids(selected)+")");
+   if(monitorOnly) {
+     // Restrict point IDs, not mappings: another source may legally bind the same point.
+     // It must still make that point ambiguous, even if its source is not a target metric.
+     mappingSql="WITH current_mappings AS MATERIALIZED ("+mappingSql+") SELECT * FROM current_mappings WHERE measurement_point_id IN (SELECT measurement_point_id FROM current_mappings WHERE namespace='cabinet' AND source_id IN (20107,20018))";
+   }
+   var mappings=s.db.queryForList(mappingSql+" ORDER BY measurement_point_id LIMIT 2001",station);
    if(mappings.size()>2000)throw new BusinessException(413,"实时测点超过2000，请缩小站点设备范围");
    var periods=mappings.stream().map(m->((Number)m.get("binding_period_id")).longValue()).distinct().toList();
    var points=mappings.stream().map(m->((Number)m.get("measurement_point_id")).longValue()).distinct().toList();
-   var saved=stored==null?List.<Map<String,Object>>of():stored.latest(station,selected);
+   // Stored samples use namespace=device; they cannot satisfy native cabinet semantics.
+   var saved=monitorOnly||stored==null?List.<Map<String,Object>>of():stored.latest(station,selected);
    var values=new ArrayList<Map<String,Object>>();boolean nativeUnavailable=false;
-   try{values.addAll(telemetry.latest(periods,points));}catch(BusinessException ex){
+   try{if(!monitorOnly||!points.isEmpty())values.addAll(telemetry.latest(periods,points));}catch(BusinessException ex){
      if(ex.status()!=503||saved.isEmpty())throw ex;nativeUnavailable=true;
    }
    long now=Instant.now().toEpochMilli();
+   var mappingsByPoint=new HashMap<String,List<Map<String,Object>>>();
+   for(var mapping:mappings)mappingsByPoint.computeIfAbsent(mapping.get("measurement_point_id").toString(),key->new ArrayList<>()).add(mapping);
    for(var value:values) {
-     var matching=mappings.stream().filter(m->m.get("measurement_point_id").toString().equals(value.get("pointId"))).toList();
+     var matching=mappingsByPoint.getOrDefault(value.get("pointId"),List.of());
      if(matching.size()!=1){value.put("staleReason","ambiguous_mapping");continue;}
      var m=matching.getFirst();
      value.put("deviceId",m.get("device_id").toString());value.put("sourceId",m.get("source_id"));

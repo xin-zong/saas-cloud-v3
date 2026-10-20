@@ -2,8 +2,8 @@ import {deviceColumns,type DeviceColumn,type ReferenceDeviceCategory} from '@/da
 // The station navigation differs from the global device navigation.
 export const STATION_DEVICE_CATEGORIES:{key:ReferenceDeviceCategory|null;label:string}[]=[
  {key:'inverter',label:'逆变器'},{key:'pcs',label:'PCS'},{key:'battery-stack',label:'电池堆'},
- {key:'battery-cluster',label:'电池簇'},{key:null,label:'动环'},{key:null,label:'MPPT'},
- {key:null,label:'液冷机'},{key:'meter',label:'电表'},{key:'logger',label:'采集器'},{key:'ems',label:'EMS控制器'},
+ {key:'battery-cluster',label:'电池簇'},{key:'environment',label:'动环'},{key:'mppt',label:'MPPT'},
+ {key:'liquid-cooler',label:'液冷机'},{key:'meter',label:'电表'},{key:'logger',label:'采集器'},{key:'ems',label:'EMS控制器'},
 ]
 export function stationDeviceColumns(category:ReferenceDeviceCategory):DeviceColumn[]{
  const columns=deviceColumns(category).filter(c=>c.key!=='stationName')

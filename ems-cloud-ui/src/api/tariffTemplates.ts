@@ -1,11 +1,11 @@
 import { api, send } from './client'
 
-export type TariffBand = 'peak' | 'flat' | 'valley' | 'superPeak'
+export type TariffBand = 'peak' | 'flat' | 'valley' | 'superPeak' | 'deepValley'
 export type TariffPricingMode = 'fixed' | 'tou'
 export type ServerTariffPeriod = { startMinute: number; endMinute: number; band: TariffBand; pricePerKwh: string }
 export type ServerTariffTemplate = { id: string; name: string; currency: string; pricingMode: TariffPricingMode; periods: ServerTariffPeriod[]; version: number }
 export type TariffBinding = { id: string; stationId: string; templateId: string | null; templateVersion: number | null; name: string; currency: string; pricingMode: TariffPricingMode | null; periods: ServerTariffPeriod[]; validFrom: string; validUntil: string; active: boolean; version: number; modifiable: boolean }
-export const TARIFF_BANDS: { value: TariffBand; label: string }[] = [{ value: 'peak', label: '峰' }, { value: 'flat', label: '平' }, { value: 'valley', label: '谷' }, { value: 'superPeak', label: '尖峰' }]
+export const TARIFF_BANDS: { value: TariffBand; label: string }[] = [{ value: 'peak', label: '峰' }, { value: 'flat', label: '平' }, { value: 'valley', label: '谷' }, { value: 'superPeak', label: '尖峰' }, { value: 'deepValley', label: '深谷' }]
 export function normalizeTariffPrice(value: string): string {
   if (typeof value !== 'string' || value.length > 64 || !/^-?\d+(?:\.\d{1,6})?$/.test(value)) throw new Error('价格须为最多六位小数的十进制字符串，可为零或负价。')
   const negative = value.startsWith('-'), [whole, fraction = ''] = value.replace(/^-/, '').split('.')
@@ -72,3 +72,4 @@ export function removeTariffBinding(binding: Pick<TariffBinding, 'stationId' | '
   return send<TariffBinding>(`${bindingPath(binding)}?expectedVersion=${binding.version}`, 'DELETE')
 }
 export const loadTariffBindingHistory = (binding: Pick<TariffBinding, 'stationId' | 'id'>) => api<TariffBinding[]>(`${bindingPath(binding)}/history`)
+

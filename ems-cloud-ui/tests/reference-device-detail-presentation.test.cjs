@@ -1,0 +1,14 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
+function load(){const exports={};new Function('exports',ts.transpileModule(fs.readFileSync(`${__dirname}/../src/data/referenceDeviceDetail.ts`,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(exports);return exports}
+test('verified device dashboards retain distinct fixed fields and section order',()=>{const d=load();assert.equal(d.deviceDashboard('pcs')[0].fields[0],'总直流电压');assert.ok(d.deviceDashboard('inverter')[0].fields.includes('直流输入总功率'));assert.ok(d.deviceDashboard('logger').some(s=>s.title==='版本信息'));assert.equal(d.deviceDashboard('ems')[0].title,'铭牌定值');assert.deepEqual(d.deviceDashboard('cabinet'),[]);assert.deepEqual(d.deviceDashboard('other'),[])});
+test('detail-only exact labels win and ambiguous samples never supply a value',()=>{const d=load(),points=[{id:1,name:'发电功率'},{id:2,name:'详情 · 发电功率'}];assert.equal(d.dashboardPoint(points,'发电功率').id,2);assert.equal(d.dashboardPoint([{id:1,name:'SOC'},{id:2,name:'SOC'}],'SOC'),undefined);assert.equal(d.dashboardPoint([{id:1,name:'总交流有功功率'}],'交流输出总功率'),undefined)});
+
+test('stack parent requires verified device type and rejects arbitrary upstream peers',()=>{const d=load();assert.equal(d.isStackParent({direction:'upstream',type:'logger'}),false);assert.equal(d.isStackParent({direction:'upstream',type:'other'}),false);assert.equal(d.isStackParent({direction:'upstream',type:'battery-stack'}),true);assert.equal(d.isStackParent({direction:'downstream',type:'battery-stack'}),false);});
+
+test('three station-only dashboards preserve known read-only fields and avoid telemetry aliasing',()=>{const d=load();assert.deepEqual(d.deviceDashboard('environment').map(s=>s.title),['基础信息','状态']);assert.ok(d.deviceDashboard('mppt').some(s=>s.fields.includes('光伏-耦合当日发电量')));assert.ok(d.deviceDashboard('liquid-cooler').some(s=>s.fields.includes('回水温度')));assert.equal(d.deviceDashboard('liquid-cooler').at(-1).title,'报警');});
+test('saved charge state spelling variant resolves without accepting ambiguous bindings',()=>{const d=load();assert.equal(d.dashboardPoint([{id:1,name:'详情 · 电池充放电状态'}],'充放电状态').id,1);assert.equal(d.dashboardPoint([{id:1,name:'详情 · 充放电状态'},{id:2,name:'详情 · 电池充放电状态'}],'充放电状态'),undefined)});
+test('MPPT fields follow registered sparse source numbers, never the declared channel count',()=>{
+ const d=load(),points=['实际直流路数','直流输入电流1','直流输入电压10','直流输入电压2','直流输入电压1','直流输入电压2'].map(name=>({name:`详情 · ${name}`}));
+ assert.deepEqual(d.deviceDashboard('mppt',points)[1].fields,['实际直流路数','光伏-耦合有功总功率','光伏-耦合当日发电量','光伏-耦合累计发电量','直流输入电压1','直流输入电压2','直流输入电压10','直流输入电流1']);
+ assert.deepEqual(d.deviceDashboard('mppt',[])[1].fields,['实际直流路数','光伏-耦合有功总功率','光伏-耦合当日发电量','光伏-耦合累计发电量']);
+});

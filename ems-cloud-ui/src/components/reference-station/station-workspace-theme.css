@@ -114,16 +114,16 @@
 .station-workspace-theme .rq-modal>header,.station-workspace-theme .rq-modal>footer{padding:20px 24px}
 .station-workspace-theme .rq-modal-body{padding:24px}
 .station-workspace-theme .rs-substation-drawer>.rs-modal{border-radius:14px 0 0 14px;padding:26px}
-.station-workspace-theme .rd-detail-drawer{width:min(1080px,calc(100% - 180px));border-radius:14px 0 0 14px;border-left:1px solid var(--sw-border);box-shadow:-18px 0 70px #14251d20;overflow:auto;background:var(--sw-bg)}
-.station-workspace-theme .rd-device-detail .rs-header{height:64px;padding:0 24px}
-.station-workspace-theme .rd-device-detail .rs-header>strong{font-size:16px;font-weight:600}
-.station-workspace-theme .rd-device-detail .rs-body{padding:20px}
-.station-workspace-theme .rd-detail-grid{gap:16px}
-.station-workspace-theme .rd-detail-grid>.rs-panel{padding:20px;border-radius:10px;border:1px solid var(--sw-border);box-shadow:var(--sw-shadow)}
-.station-workspace-theme .rd-device-detail h3{font-size:14px;padding-bottom:14px;margin-bottom:16px;border-color:var(--sw-border)}
-.station-workspace-theme .rd-device-detail .rs-point-grid{gap:10px}
-.station-workspace-theme .rd-device-detail .rs-point-grid>div{padding:12px;background:#f8faf9;border:1px solid #edf1ee;border-radius:7px}
-.station-workspace-theme .rd-device-detail .rs-point-grid strong{font-size:16px;color:#2c4c3b}
+.station-workspace-theme .rd-detail-drawer{width:calc(100% - 240px);border-radius:14px 0 0 14px;border-left:1px solid var(--sw-border);box-shadow:-18px 0 70px #14251d20;overflow:auto;background:var(--sw-bg)}
+.station-workspace-theme .rd-device-detail .rs-header{height:48px;padding:0 20px}
+.station-workspace-theme .rd-device-detail .rs-header>strong{font-size:13px;font-weight:600}
+.station-workspace-theme .rd-device-detail .rs-body{padding:12px 28px}
+.station-workspace-theme .rd-detail-grid{gap:10px}
+.station-workspace-theme .rd-detail-grid>.rs-panel{padding:12px;margin:0;border-radius:4px;border:1px solid var(--sw-border);box-shadow:var(--sw-shadow)}
+.station-workspace-theme .rd-device-detail h3{font-size:13px;padding-bottom:12px;margin-bottom:12px;border-color:var(--sw-border)}
+.station-workspace-theme .rd-device-detail .rs-point-grid{gap:12px}
+.station-workspace-theme .rd-device-detail .rs-point-grid>div{padding:6px 0;background:transparent;border:0;border-radius:0}
+.station-workspace-theme .rd-device-detail .rs-point-grid strong{font-size:13px;color:#2c4c3b}
 .station-workspace-theme .rd-device-detail .rs-stat-grid{padding:4px 0;gap:18px 12px}
 @media(max-width:1100px){.station-workspace-theme .rs-body{padding:18px}.station-workspace-theme .rs-tabs{padding-left:18px;padding-right:18px}.station-workspace-theme .rs-tabs button{padding:8px 10px}.station-workspace-theme .rd-station-devices .rd-search{width:200px}.station-workspace-theme .rd-station-devices .rd-toolbar h1{display:none}.station-workspace-theme .rq-settings{gap:14px}.station-workspace-theme .rq-settings>nav{width:155px}}
 @media(max-width:760px){.station-workspace-theme .rs-body{padding:12px}.station-workspace-theme .rs-station-header{padding:18px;gap:10px}.station-workspace-theme .rs-station-header>strong{font-size:20px}.station-workspace-theme .rs-header-actions{margin-left:0}.station-workspace-theme .rq-settings{flex-direction:column}.station-workspace-theme .rq-settings>nav{width:100%;display:flex;overflow:auto;white-space:nowrap;padding:6px}.station-workspace-theme .rq-settings>nav button{width:auto;flex-shrink:0;margin:0 3px}.station-workspace-theme .rq-info{grid-template-columns:1fr 1fr}.station-workspace-theme .rd-station-devices .rd-toolbar{margin-left:132px;padding:0 10px}.station-workspace-theme .rd-station-devices .rd-category-rail{width:132px;padding:14px 6px}.station-workspace-theme .rd-station-devices .rd-search{width:150px}.station-workspace-theme .rd-toolbar>.rd-add{font-size:11px;padding:0 8px}.station-workspace-theme .rd-station-devices .rd-facets{padding:12px;flex-wrap:wrap}.station-workspace-theme .rd-detail-drawer{width:100%;border-radius:0}.station-workspace-theme .rd-device-detail .rs-header>strong{font-size:13px}.station-workspace-theme .rd-detail-grid{grid-template-columns:1fr}}
@@ -143,3 +143,15 @@
 .station-workspace-theme .ref-lifecycle-overlay.is-full{background:var(--sw-bg);padding:18px}
 .station-workspace-theme .is-full .ref-lifecycle-panel{border-radius:12px;height:100%}
 .station-workspace-theme .is-full .ref-lifecycle-body{padding:22px;background:var(--sw-bg)}
+/* Preserve verified device-drawer geometry against shared station-shell rules. */
+.station-workspace-theme .rd-detail-drawer .rd-device-detail{padding:0}
+.station-workspace-theme .rd-detail-drawer .rd-device-detail .rs-tabs{height:42px;min-height:42px;padding:0 40px;gap:18px}
+.station-workspace-theme .rd-detail-drawer .rd-device-detail .rs-tabs button{padding:10px 0;min-height:0;border-radius:0}
+.station-workspace-theme .rd-detail-drawer .rd-device-detail h3{min-height:28px;font-size:13px}
+.station-workspace-theme .rd-detail-drawer .rd-device-detail h3 button{min-height:24px;height:24px}
+.station-workspace-theme .rd-detail-drawer .rd-device-detail .rs-empty{min-height:200px}
+.station-workspace-theme .rd-detail-drawer .rd-device-detail .rd-battery-summary .rs-point-grid>div{padding:14px;border:1px solid var(--sw-border);border-radius:4px}
+.station-workspace-theme .rd-detail-drawer .rd-dashboard-pcs .rd-metrics .rs-point-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:850px){.station-workspace-theme .rd-detail-drawer .rd-device-detail .rs-tabs{padding:0 12px}.station-workspace-theme .rd-detail-drawer .rd-dashboard-pcs .rd-metrics .rs-point-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.station-workspace-theme .rd-detail-drawer .rd-device-detail .rs-empty{padding:20px}
+.station-workspace-theme .rd-detail-drawer .rd-device-detail .rd-basic h3{padding-bottom:0;border-bottom:0;min-height:20px}

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import {Download, RefreshCw, FileSearch} from "lucide-react"
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react"
 
 import type { Station } from "@/App"
 
@@ -8,6 +9,9 @@ import { hasStationPermission } from "@/auth/apiPermissions"
 
 import {
   alarmDetail,
+  alarmSummary,
+  exportAlarmRows,
+  exportAlarmTrend,
   handleAlarm,
   markAlarmsRead,
   queryAlarms,
@@ -16,13 +20,42 @@ import {
 
 import { send } from "@/api/client"
 
-import { formatDate } from "@/preferences/date"
+import {getPreferences,subscribePreferences} from "@/preferences/store"
+import { dateKey, formatDate } from "@/preferences/date"
 
+import {
+  alarmColumns,
+  alarmExportValues,
+  alarmDuration,
+  alarmTimeRange,
+  alarmRealtimeExportRange,
+  alarmTrendData,
+  alarmNameDistribution,
+  alarmCsv,
+} from "@/data/alarmPresentation"
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from "recharts"
+import type { RegisterLeaveGuard } from "./useEditorLeaveGuard"
 import AlarmRulesPage from "./AlarmRulesPage"
 
 import "./alarm-workspace.css"
 
-const levels = { critical: "严重", warning: "重要", info: "一般" }
+const levels = {
+  critical: "紧急",
+  warning: "重要",
+  minor: "次要",
+  info: "提示",
+}
 
 const lifecycle = { active: "未恢复", recovered: "已恢复", closed: "人工关闭" }
 
@@ -41,15 +74,47 @@ export default function AlarmWorkspacePage({
   stationId,
   stations = [],
   onRefresh,
+  view,
+  registerLeaveGuard,
 }: {
   stationId?: string
   stations?: Station[]
+  view?: "live" | "history" | "rules"
+  registerLeaveGuard?: RegisterLeaveGuard
   onRefresh?: () => void
 }) {
   const { user } = useAuth()
-  const [tab, setTab] = useState("live")
+  const {timezone}=useSyncExternalStore(subscribePreferences,getPreferences,getPreferences)
+  const rulesLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
+  const registerRulesLeaveGuard = useCallback<RegisterLeaveGuard>(
+    (guard) => {
+      rulesLeaveGuard.current = guard
+      registerLeaveGuard?.(guard)
+    },
+    [registerLeaveGuard],
+  )
+  const [localTab, setTab] = useState("live")
+  const tab = view ?? localTab
+  const [advanced, setAdvanced] = useState(false)
+  const [sort, setSort] = useState<"asc" | "desc">("desc")
+  const [pageSize, setPageSize] = useState(50)
+  const [month, setMonth] = useState(() => dateKey(new Date()).slice(0,7))
+  const [historyMode,setHistoryMode]=useState<"month"|"year">("month")
+  const [year,setYear]=useState(()=>dateKey(new Date()).slice(0,4))
+  const historyPeriod=historyMode==="month"?month:year
+  const granularity=historyMode==="month"?"DAY":"MONTH"
+  const [exporting,setExporting]=useState(false)
+  const exportController=useRef<AbortController|null>(null)
+  const [summary, setSummary] = useState<{
+    name: string
+    severity: string
+    day: string
+    count: number
+  }[]>([])
+  const [summaryLoading, setSummaryLoading] = useState(false)
+  const [summaryError, setSummaryError] = useState("")
   const [scope, setScope] = useState(stationId ?? "")
-  const [source, setSource] = useState("")
+  const [source, setSource] = useState("rule")
   const [severity, setSeverity] = useState("")
   const [readFlag, setReadFlag] = useState("")
   const [device, setDevice] = useState("")
@@ -74,6 +139,22 @@ export default function AlarmWorkspacePage({
   const detailRequest = useRef(0)
   const mutationContext = useRef(0)
 
+  const canExport=scope?hasStationPermission(user,scope,"report.export"):stations.some(station=>hasStationPermission(user,station.id,"alarm.read")&&hasStationPermission(user,station.id,"report.export"))
+  useEffect(()=>{exportController.current?.abort();setExporting(false);return()=>exportController.current?.abort()},[scope,tab,source,severity,device,readFlag,query,start,end,page,pageSize,sort,historyPeriod,granularity,timezone,user])
+  async function exportFile(trend=false){
+    if(!canExport||exporting)return
+    const controller=new AbortController();exportController.current?.abort();exportController.current=controller;setExporting(true);setError("")
+    try{
+      const range=tab==="live"?alarmRealtimeExportRange(new Date(),timezone):alarmTimeRange(historyPeriod,start,end,timezone,granularity)
+      const params={stationId:scope||undefined,view:tab,source,severity,deviceId:device,readFlag,query,...range,limit:pageSize,offset:page*pageSize,sort}
+      let csv:string
+      if(trend){const data=await exportAlarmTrend({...params,timezone,granularity},controller.signal);csv=alarmCsv([granularity==="DAY"?"日期":"月份","报警数量"],alarmTrendData(data,historyPeriod,granularity,severity).map(row=>[row.period,row.count]))}
+      else{const result=await exportAlarmRows(params,controller.signal);csv=alarmCsv(alarmColumns(source,tab).slice(0,-1),result.items.map(row=>alarmExportValues(row,source,tab,levels[row.severity],lifecycle[row.lifecycle])))}
+      if(controller.signal.aborted)return
+      const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"})),link=document.createElement("a");link.href=url;link.download=trend?`报警趋势-${historyPeriod}-${granularity}.csv`:`报警列表-${tab}-第${page+1}页.csv`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
+    }catch(cause){if(!controller.signal.aborted)setError(cause instanceof Error?cause.message:"报警导出失败")}
+    finally{if(!controller.signal.aborted)setExporting(false)}
+  }
   const canHandle =
     !!detail && hasStationPermission(user, detail.station_id, "alarm.handle")
 
@@ -87,13 +168,13 @@ export default function AlarmWorkspacePage({
         view: tab === "rules" ? "all" : tab,
         source,
         severity,
+        sort,
         deviceId: device,
         readFlag,
         query,
-        start: start ? new Date(start).toISOString() : undefined,
-        end: end ? new Date(end).toISOString() : undefined,
-        limit: 20,
-        offset: page * 20,
+        ...alarmTimeRange(tab === "history" ? historyPeriod : undefined, start, end, timezone,granularity),
+        limit: pageSize,
+        offset: page * pageSize,
       })
       if (seq === revision.current) {
         setItems(result.items)
@@ -114,13 +195,75 @@ export default function AlarmWorkspacePage({
     tab,
     source,
     severity,
+    sort,
     device,
     readFlag,
     query,
     start,
     end,
     page,
+    pageSize,
+    month,
+    historyPeriod,
+    granularity,
+    timezone,
     user,
+  ])
+
+  useEffect(() => {
+    let current = true
+    setSummary([])
+    setSummaryError("")
+    setSummaryLoading(true)
+    if (tab !== "rules") {
+      Promise.resolve()
+        .then(() =>
+          alarmSummary({
+            stationId: scope || undefined,
+            view: tab,
+            source,
+            deviceId: device,
+            readFlag,
+            query,
+            ...alarmTimeRange(
+              tab === "history" ? historyPeriod : undefined,
+              start,
+              end,
+              timezone,
+              granularity,
+            ),
+            timezone,
+            granularity,
+          }),
+        )
+        .then((rows) => {
+          if (current) setSummary(rows)
+        })
+        .catch((e) => {
+          if (current) setSummaryError(e.message)
+        })
+        .finally(() => {
+          if (current) setSummaryLoading(false)
+        })
+    } else setSummaryLoading(false)
+    return () => {
+      current = false
+    }
+  }, [
+    tab,
+    scope,
+    source,
+    month,
+    historyPeriod,
+    granularity,
+    timezone,
+    user,
+    start,
+    end,
+    device,
+    readFlag,
+    query,
+    items,
   ])
 
   useEffect(() => {
@@ -144,7 +287,10 @@ export default function AlarmWorkspacePage({
     setPending(null)
     setNote("")
     setOrderDraft(null)
-    return () => { detailRequest.current++; mutationContext.current++ }
+    return () => {
+      detailRequest.current++
+      mutationContext.current++
+    }
   }, [stationId, scope, tab, user])
 
   async function open(id: number) {
@@ -217,139 +363,288 @@ export default function AlarmWorkspacePage({
   }
 
   return (
-    <section
-      className="alarm-business-workspace"
-      data-figma-node={stationId ? "2572:2990" : "1036:820"}
-    >
-      <div className="alarm-business-workspace-tabs">
-        {[
-          ["live", "实时告警"],
-          ["history", "历史告警"],
-          ["all", "全部事件"],
-          ["rules", "规则管理"],
-        ].map(([key, label]) => (
-          <button
-            key={key}
-            aria-pressed={tab === key}
-            onClick={() =>
-              filter(() => {
-                setTab(key)
-                setDetail(null)
-              })
-            }
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+    <section className="alarm-business-workspace" data-alarm-view={tab}>
+      {!view && (
+        <div className="alarm-business-workspace-tabs">
+          {[
+            ["live", "实时报警"],
+            ["history", "报警历史"],
+            ["rules", "报警规则"],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              aria-pressed={tab === key}
+              onClick={async () => {
+                if (
+                  rulesLeaveGuard.current &&
+                  !(await rulesLeaveGuard.current())
+                )
+                  return
+                filter(() => {
+                  setTab(key)
+                  setPage(0)
+                  setDetail(null)
+                })
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
       {tab === "rules" ? (
-        <AlarmRulesPage stationId={stationId} stations={stations} />
+        <AlarmRulesPage
+          stationId={stationId}
+          stations={stations}
+          registerLeaveGuard={registerRulesLeaveGuard}
+        />
       ) : (
         <>
-          <div className="alarm-business-workspace-filters">
-            {!stationId && (
-              <select
-                aria-label="告警站点"
-                value={scope}
-                onChange={(e) => filter(() => setScope(e.target.value))}
+          <div className="alarm-page-heading">
+            <strong>{tab === "history" ? "报警历史" : "实时报警"}</strong>
+            {tab === "history" && (<div className="alarm-business-workspace-tabs alarm-source-tabs">
+            {[
+              ["rule", "规则报警"],
+              ["device", "设备报警"],
+            ].map(([key, label]) => (
+              <button
+                key={key}
+                aria-pressed={source === key}
+                onClick={() => filter(() => setSource(key))}
               >
-                <option value="">全部授权站点</option>
-                {stations
-                  .filter((s) => hasStationPermission(user, s.id, "alarm.read"))
-                  .map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-              </select>
-            )}
-            <select
-              aria-label="告警来源"
-              value={source}
-              onChange={(e) => filter(() => setSource(e.target.value))}
-            >
-              <option value="">全部来源</option>
-              <option value="device">设备告警</option>
-              <option value="rule">规则告警</option>
-            </select>
-            <select
-              aria-label="告警等级"
-              value={severity}
-              onChange={(e) => filter(() => setSeverity(e.target.value))}
-            >
-              <option value="">全部等级</option>
-              {Object.entries(levels).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </select>
-            <select
-              aria-label="个人阅读状态"
-              value={readFlag}
-              onChange={(e) => filter(() => setReadFlag(e.target.value))}
-            >
-              <option value="">全部阅读状态</option>
-              <option value="unread">未读</option>
-              <option value="read">已读</option>
-            </select>
-            <input
-              aria-label="设备ID筛选"
-              inputMode="numeric"
-              type="number"
-              min="1"
-              placeholder="设备ID"
-              value={device}
-              onChange={(e) => filter(() => setDevice(e.target.value))}
-            />
-            <input
-              aria-label="告警起始时间"
-              type="datetime-local"
-              value={start}
-              onChange={(e) => filter(() => setStart(e.target.value))}
-            />
-            <span>至</span>
-            <input
-              aria-label="告警结束时间（不含）"
-              type="datetime-local"
-              value={end}
-              onChange={(e) => filter(() => setEnd(e.target.value))}
-            />
-            <input
-              aria-label="搜索告警"
-              placeholder="名称 / 代码 / 设备"
+                {label}
+              </button>
+            ))}
+          </div>)}
+            <div className="alarm-heading-controls">
+            {tab === "live" && <>            <input
+              aria-label="搜索报警名称"
+              placeholder="请输入报警名称"
               value={query}
               onChange={(e) => filter(() => setQuery(e.target.value))}
             />
-            <button disabled={busy || loading} onClick={() => void load()}>
-              刷新
-            </button>
-            <button
-              onClick={() =>
-                filter(() => {
-                  setSource("")
-                  setSeverity("")
-                  setReadFlag("")
-                  setDevice("")
-                  setQuery("")
-                  setStart("")
-                  setEnd("")
-                  setScope(stationId ?? "")
-                })
-              }
-            >
-              重置
-            </button>
+ <button className="alarm-icon-button" aria-label="导出报警列表" disabled={!canExport||busy||loading||exporting} title="导出当前筛选/排序/分页；实时最近30个自然日，历史所选周期；本系统CSV格式" onClick={()=>void exportFile()}><Download size={15}/></button><button className="alarm-icon-button" aria-label="刷新报警" title="刷新报警" disabled={busy||loading} onClick={()=>void load()}><RefreshCw size={15}/></button><span className="alarm-refresh-selector" title="自动刷新间隔选项尚未核验，当前关闭；可使用左侧手动刷新"><select aria-label="自动刷新间隔" value="off" disabled><option value="off">关闭</option></select></span></>}
+
+          {tab === "history" && <><select aria-label="报警历史统计范围" value={historyMode} onChange={e=>filter(()=>{setHistoryMode(e.target.value as "month"|"year");setStart("");setEnd("")})}><option value="month">月</option><option value="year">年</option></select>{historyMode==="month"?<input aria-label="历史报警月份" type="month" value={month} onChange={e=>{if(e.target.value)filter(()=>{setMonth(e.target.value);setStart("");setEnd("")})}}/>:<input aria-label="历史报警年份" type="number" min="2000" max="2100" value={year} onChange={e=>{if(/^\d{0,4}$/.test(e.target.value))filter(()=>{setYear(e.target.value);setStart("");setEnd("")})}}/>}</>}
+            </div>
           </div>
-          <div className="alarm-business-workspace-heading">
-            <span>共 {total} 条告警 · 打开详情计个人已读，确认独立执行</span>
+          {tab === "history" &&
+            (summaryLoading ? (
+              <p>正在读取报警统计…</p>
+            ) : summaryError ? (
+              <p role="alert">{summaryError}</p>
+            ) : (
+              <div className="alarm-history-charts">
+                <div>
+                  <h3>报警分布</h3>
+                  {summaryError ? (
+                    <p role="alert">{summaryError}</p>
+                  ) : summary.length ? (
+                    <ResponsiveContainer width="100%" height={205}>
+                      <PieChart>
+                        <Pie
+                          data={alarmNameDistribution(summary)}
+                          dataKey="count"
+                          innerRadius={44}
+                          outerRadius={62}
+                        >
+                          {alarmNameDistribution(summary).map((group,index) => <Cell key={group.name} fill={["#2c9a7e", "#569acb", "#e9c652", "#de9a3b", "#9b83c8", "#9ba7ab"][index%6]} />)}
+                        </Pie>
+                        {summary.length > 0 && <Tooltip />}
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : <div className="alarm-empty-donut" role="img" aria-label="暂无报警，0条"/>}
+                  <ul aria-label="按报警名称分布">{alarmNameDistribution(summary).map(group=><li key={group.name}>{group.name || "—"}：{group.count} 条（{group.percent}%）</li>)}</ul>
+                  <span>
+                    {summary.reduce((a, b) => a + Number(b.count), 0)}
+                  </span>
+                </div>
+                <div>
+                  <h3>报警趋势 <button className="alarm-icon-button" aria-label="导出趋势CSV" title="按所选周期汇总，导出本系统CSV格式" disabled={!canExport||summaryLoading||exporting} onClick={()=>void exportFile(true)}><Download size={15}/></button></h3>
+                  <ResponsiveContainer width="100%" height={225}>
+                    <LineChart
+                      data={alarmTrendData(summary,historyPeriod,granularity,severity)}
+                    >
+                      <CartesianGrid stroke="#edf0ef" />
+                      <XAxis dataKey="day" interval={granularity==="DAY"?1:0} tickLine={false} axisLine={false} />
+                      <YAxis width={32} tickLine={false} axisLine={false} domain={[0,(maximum:number)=>Math.max(1,maximum)]} tickCount={6}/>
+                      <Tooltip />
+                      <Line
+                        dataKey="count"
+                        name={granularity==="DAY"?"当日报警总数":"当月报警总数"}
+                        stroke="#2c9a7e"
+                        dot={false}
+                        strokeOpacity={summary.length ? 1 : 0}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                  <div className="alarm-trend-legend"><i/>{granularity==="DAY"?"当日报警总数":"当月报警总数"}</div>
+                </div>
+              </div>
+            ))}
+          <div className="alarm-list-card">
+          {tab === "live" && (<div className="alarm-business-workspace-tabs alarm-source-tabs">
+            {[
+              ["rule", "规则报警"],
+              ["device", "设备报警"],
+            ].map(([key, label]) => (
+              <button
+                key={key}
+                aria-pressed={source === key}
+                onClick={() => filter(() => setSource(key))}
+              >
+                {label}
+              </button>
+            ))}
+          </div>)}
+          <div className="alarm-business-workspace-filters">
+            <button
+              aria-pressed={!severity}
+              onClick={() => filter(() => setSeverity(""))}
+            >
+              全部(
+              {summaryError || summaryLoading
+                ? "—"
+                : summary.reduce((a, b) => a + Number(b.count), 0)}
+              )
+            </button>
+            {Object.entries(levels).map(([key, label]) => (
+              <button
+                key={key}
+                aria-pressed={severity === key}
+                onClick={() => filter(() => setSeverity(key))}
+              >
+                {label}(
+                {summaryError || summaryLoading
+                  ? "—"
+                  : summary
+                      .filter((row) => row.severity === key)
+                      .reduce((a, b) => a + Number(b.count), 0)}
+                )
+              </button>
+            ))}
+            <button
+              aria-expanded={advanced}
+              onClick={() => setAdvanced(!advanced)}
+            >
+              高级筛选
+            </button>
+            {tab === "history" && <div className="alarm-list-tools">            <input
+              aria-label="搜索报警名称"
+              placeholder="请输入报警名称"
+              value={query}
+              onChange={(e) => filter(() => setQuery(e.target.value))}
+            />
+ <button className="alarm-icon-button" aria-label="导出报警列表" disabled={!canExport||busy||loading||exporting} title="导出当前筛选/排序/分页；实时最近30个自然日，历史所选周期；本系统CSV格式" onClick={()=>void exportFile()}><Download size={15}/></button></div>}
+          </div>
+          {summaryError && tab === "live" && <p role="alert">{summaryError}</p>}
+          {advanced && (
+            <div className="alarm-business-workspace-filters">
+              {!stationId && (
+                <select
+                  aria-label="告警站点"
+                  value={scope}
+                  onChange={(e) => filter(() => setScope(e.target.value))}
+                >
+                  <option value="">全部授权站点</option>
+                  {stations
+                    .filter((s) =>
+                      hasStationPermission(user, s.id, "alarm.read"),
+                    )
+                    .map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                </select>
+              )}
+              <select
+                aria-label="告警来源"
+                value={source}
+                onChange={(e) => filter(() => setSource(e.target.value))}
+              >
+                <option value="device">设备告警</option>
+                <option value="rule">规则告警</option>
+              </select>
+              <select
+                aria-label="告警等级"
+                value={severity}
+                onChange={(e) => filter(() => setSeverity(e.target.value))}
+              >
+                <option value="">全部等级</option>
+                {Object.entries(levels).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="个人阅读状态"
+                value={readFlag}
+                onChange={(e) => filter(() => setReadFlag(e.target.value))}
+              >
+                <option value="">全部阅读状态</option>
+                <option value="unread">未读</option>
+                <option value="read">已读</option>
+              </select>
+              <input
+                aria-label="设备ID筛选"
+                inputMode="numeric"
+                type="number"
+                min="1"
+                placeholder="设备ID"
+                value={device}
+                onChange={(e) => filter(() => setDevice(e.target.value))}
+              />
+              <input
+                aria-label="告警起始时间"
+                type="datetime-local"
+                value={start}
+                onChange={(e) => filter(() => setStart(e.target.value))}
+              />
+              <span>至</span>
+              <input
+                aria-label="告警结束时间（不含）"
+                type="datetime-local"
+                value={end}
+                onChange={(e) => filter(() => setEnd(e.target.value))}
+              />
+              <input
+                aria-label="搜索告警"
+                placeholder="名称 / 代码 / 设备"
+                value={query}
+                onChange={(e) => filter(() => setQuery(e.target.value))}
+              />
+              <button disabled={busy || loading} onClick={() => void load()}>
+                刷新
+              </button>
+              <button
+                onClick={() =>
+                  filter(() => {
+                    setSource("rule")
+                    setSeverity("")
+                    setReadFlag("")
+                    setDevice("")
+                    setQuery("")
+                    setStart("")
+                    setEnd("")
+                    setScope(stationId ?? "")
+                  })
+                }
+              >
+                重置
+              </button>
+            </div>
+          )}
+          {tab === "live" && advanced && <div className="alarm-business-workspace-heading">
+            <span>共 {total} 条报警</span>
             <button
               disabled={busy || !selected.length}
               onClick={() => void read(selected)}
             >
               批量标为已读（{selected.length}）
             </button>
-          </div>
+          </div>}
           {error && (
             <p role="alert" className="alarm-business-workspace-error">
               {error}
@@ -359,7 +654,7 @@ export default function AlarmWorkspacePage({
             <table>
               <thead>
                 <tr>
-                  <th>
+                  {tab === "live" && advanced && <th>
                     <input
                       type="checkbox"
                       aria-label="选择本页告警"
@@ -372,25 +667,39 @@ export default function AlarmWorkspacePage({
                         )
                       }
                     />
-                  </th>
-                  {[
-                    "告警名称",
-                    "所属站点 / 设备",
-                    "发生时间",
-                    "恢复状态",
-                    "处理状态",
-                    "等级",
-                    "来源 / 阅读",
-                    "操作",
-                  ].map((x) => (
-                    <th key={x}>{x}</th>
+                  </th>}
+                  {alarmColumns(source, tab).map((x) => (
+                    <th
+                      key={x}
+                      aria-sort={
+                        x === "报警开始时间"
+                          ? sort === "desc"
+                            ? "descending"
+                            : "ascending"
+                          : undefined
+                      }
+                    >
+                      {x === "报警开始时间" ? (
+                        <button
+                          onClick={() =>
+                            filter(() =>
+                              setSort(sort === "desc" ? "asc" : "desc"),
+                            )
+                          }
+                        >
+                          {x} {sort === "desc" ? "↓" : "↑"}
+                        </button>
+                      ) : (
+                        x
+                      )}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {items.map((a) => (
                   <tr key={a.id}>
-                    <td>
+                    {tab === "live" && advanced && <td>
                       <input
                         type="checkbox"
                         aria-label={`选择告警${a.id}`}
@@ -403,31 +712,36 @@ export default function AlarmWorkspacePage({
                           )
                         }
                       />
-                    </td>
+                    </td>}
                     <td>
                       {a.title}
                       <small>{a.code}</small>
                     </td>
-                    <td>
-                      {a.station_name}
-                      <small>
-                        {a.device_name} · ID {a.device_id}
-                      </small>
-                    </td>
-                    <td>{stamp(a.occurred_at)}</td>
-                    <td>{lifecycle[a.lifecycle]}</td>
-                    <td>{a.acknowledged_at ? "已确认" : "待确认"}</td>
-                    <td>
+                    {tab === "live" && (<td>
                       <span
                         className={`alarm-business-workspace-level ${a.severity}`}
                       >
                         {levels[a.severity]}
                       </span>
-                    </td>
+                    </td>)}
+                    {source === "rule" && <td>{a.trigger_indicator || "—"}</td>}
+                    <td>{lifecycle[a.lifecycle]}</td>
+                    {tab === "history" && (<td>
+                      <span
+                        className={`alarm-business-workspace-level ${a.severity}`}
+                      >
+                        {levels[a.severity]}
+                      </span>
+                    </td>)}
                     <td>
-                      {a.source === "rule" ? "规则" : "设备"} /{" "}
-                      {a.read_flag ? "已读" : "未读"}
+                      {a.object_type === "STATION"
+                        ? "场站"
+                        : a.device_name || "—"}
                     </td>
+                    <td>{a.station_name}</td>
+                    <td>{stamp(a.occurred_at)}</td>
+                    <td>{stamp(a.effective_recovered_at)}</td>
+                    {tab === "live" && <td>{alarmDuration(a)}</td>}
                     <td>
                       <button onClick={() => void open(a.id)}>
                         事件详情 →
@@ -438,11 +752,14 @@ export default function AlarmWorkspacePage({
               </tbody>
             </table>
             {!items.length && (
-              <p className="alarm-business-workspace-empty">
-                {loading ? "正在读取告警…" : "当前条件下暂无告警"}
-              </p>
+              <div className="alarm-business-workspace-empty"><FileSearch aria-hidden="true" className="alarm-empty-icon" size={66} strokeWidth={1}/>{loading ? "正在读取告警…" : "暂无数据"}</div>
             )}
           </div>
+          {tab === "live" && (
+            <p className="alarm-business-workspace-muted">
+              展示当前发生中的报警，已恢复报警请在历史报警中查看
+            </p>
+          )}
           <div className="alarm-business-workspace-pagination">
             <button
               disabled={!page || loading}
@@ -450,13 +767,29 @@ export default function AlarmWorkspacePage({
             >
               上一页
             </button>
-            <span>第 {page + 1} 页</span>
+            <span>
+              共{total}条 · 第 {page + 1} 页
+            </span>
+            <select
+              aria-label="报警每页条数"
+              value={pageSize}
+              onChange={(e) =>
+                filter(() => setPageSize(Number(e.target.value)))
+              }
+            >
+              {[20, 50, 100].map((n) => (
+                <option key={n} value={n}>
+                  {n} 条/页
+                </option>
+              ))}
+            </select>
             <button
-              disabled={(page + 1) * 20 >= total || loading}
+              disabled={(page + 1) * pageSize >= total || loading}
               onClick={() => setPage(page + 1)}
             >
               下一页
             </button>
+          </div>
           </div>
           {detail && (
             <div
@@ -587,8 +920,13 @@ export default function AlarmWorkspacePage({
                       title: orderDraft.title,
                       description: orderDraft.description,
                       alarmId: detail.id,
-                      ...(hasStationPermission(user, detail.station_id, "workorder.handle")
-                        ? { assignedTo: Number(user?.id) } : {}),
+                      ...(hasStationPermission(
+                        user,
+                        detail.station_id,
+                        "workorder.handle",
+                      )
+                        ? { assignedTo: Number(user?.id) }
+                        : {}),
                     })
                       .then(() => {
                         if (context !== mutationContext.current) return
@@ -597,7 +935,8 @@ export default function AlarmWorkspacePage({
                         onRefresh?.()
                       })
                       .catch((e) => {
-                        if (context === mutationContext.current) setError(e.message)
+                        if (context === mutationContext.current)
+                          setError(e.message)
                       })
                       .finally(() => {
                         if (context === mutationContext.current) setBusy(false)

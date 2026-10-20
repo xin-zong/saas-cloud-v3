@@ -1,3 +1,4 @@
+import {useBusinessGroupScope} from './BusinessGroupScope'
 import {useCallback,useEffect,useRef,useState} from 'react'
 import {loadWorkspace,loadWorkspacePreferences,saveWorkspacePreferences,type WorkspaceData,type WorkspacePreference,type WorkspaceQuery} from '@/api/monitorWorkspace'
 
@@ -11,7 +12,8 @@ export function useMonitorPreferences(userKey:string){
 }
 export function useMonitorWorkspace(userKey:string,query:WorkspaceQuery,enabled:boolean,refreshMinutes:number){
  const [data,setData]=useState<WorkspaceData|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[revision,setRevision]=useState(0)
- const key=JSON.stringify(query)
+ const {businessGroupId}=useBusinessGroupScope()
+ const key=JSON.stringify({...query,...businessGroupId?{businessGroupId}:{}})
  useEffect(()=>{if(!enabled)return;const controller=new AbortController();setData(null);setBusy(true);setError('');loadWorkspace(JSON.parse(key),controller.signal).then(value=>{if(!value||!Array.isArray(value.items)||!value.summary||!value.rules)throw new Error('监控服务未返回有效数据');if(!controller.signal.aborted)setData(value)}).catch(e=>{if(!controller.signal.aborted)setError(e.message)}).finally(()=>{if(!controller.signal.aborted)setBusy(false)});return()=>controller.abort()},[userKey,key,enabled,revision])
  useEffect(()=>{if(!enabled||!refreshMinutes)return;const timer=window.setInterval(()=>setRevision(n=>n+1),refreshMinutes*60000);return()=>window.clearInterval(timer)},[enabled,refreshMinutes])
  return {data,busy,error,refresh:()=>setRevision(n=>n+1)}

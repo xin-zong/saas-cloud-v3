@@ -48,6 +48,7 @@ class TariffTemplatePostgresTest {
     db.execute("ALTER TABLE app_user ADD COLUMN display_name text");
     db.execute(Files.readString(Path.of("src/main/resources/db/migration/V44__station_operation_logs.sql")));
     db.execute(Files.readString(Path.of("src/main/resources/db/migration/V31__tariff_templates_and_bindings.sql")));
+    db.execute(Files.readString(Path.of("src/main/resources/db/migration/V56__tariff_deep_valley_band.sql")));
     access=mock(AccessControl.class);actor(7,11);support=new DomainSupport(db,access);templates=new TariffTemplateService(support);bindings=new TariffBindingService(support,clock);
   }
   static String required(String key){return Objects.requireNonNull(System.getenv(key),key+" must be explicitly configured");}
@@ -56,6 +57,18 @@ class TariffTemplatePostgresTest {
   List<TariffTemplateService.Period> periods(String price){return List.of(new TariffTemplateService.Period(0,1440,"flat",price));}
   TariffTemplateService.Template create(String name,String price){return templates.create(new TariffTemplateService.CreateRequest(name,"CNY","fixed",periods(price)));}
   UUID id(TariffTemplateService.Template template){return UUID.fromString(template.id());}
+  @Test void distinctDeepValleySurvivesPublishBindingAndHistoryWithoutChangingLegacyPrices(){
+    var template=templates.create(new TariffTemplateService.CreateRequest("Deep valley","EUR","tou",List.of(
+      new TariffTemplateService.Period(0,360,"deepValley","-0.123456"),
+      new TariffTemplateService.Period(360,1440,"valley","0.250000"))));
+    var binding=bind(102,template,tomorrow,tomorrow.plusDays(2));
+    assertEquals("deepValley",binding.periods().getFirst().band());
+    assertEquals("-0.123456",binding.periods().getFirst().pricePerKwh());
+    assertEquals("valley",binding.periods().getLast().band());
+    assertEquals("deepValley",bindings.history(102,Long.parseLong(binding.id())).getFirst().periods().getFirst().band());
+    assertEquals("flat",db.queryForObject("SELECT band FROM tariff_period WHERE tariff_id=501",String.class));
+    assertEquals(new BigDecimal("-0.123456"),db.queryForObject("SELECT price_per_kwh FROM tariff_period WHERE tariff_id=501",BigDecimal.class));
+  }
   TariffBindingService.Binding bind(long station,TariffTemplateService.Template template,LocalDate from,LocalDate until){return bindings.create(station,new TariffBindingService.CreateRequest(id(template),template.version(),from,until));}
   void failure(int status,Runnable call){var savepoint=manager.getTransaction(new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_NESTED));try{assertEquals(status,assertThrows(BusinessException.class,call::run).status());}finally{manager.rollback(savepoint);}}
   void constraint(Runnable call){var savepoint=manager.getTransaction(new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_NESTED));try{assertThrows(org.springframework.dao.DataIntegrityViolationException.class,call::run);}finally{manager.rollback(savepoint);}}

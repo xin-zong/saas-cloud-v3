@@ -13,3 +13,5 @@
 
 .reference-page-body:has(.reference-dashboard),.reference-page-body:has(.reference-sites),.reference-page-body:has(.reference-devices){padding:0}
 .reference-sites{flex:1;height:100%;min-height:0}
+
+.reference-page-title.reference-report-title{height:38px;min-height:38px;padding-inline:16px}.reference-report-title h1{font-size:14px}

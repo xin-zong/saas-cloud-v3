@@ -65,3 +65,12 @@ test('overview resolves canonical battery voltage/current while retaining native
  assert.equal(d.deviceMetricPoint({...battery,points:[voltage,{...voltage,id:'902'}]},'dcVoltage'),undefined);
  assert.equal(d.deviceMetricPoint({sourceType:'Smart Meter',points:[voltage]},'dcVoltage'),undefined);
 })
+
+test('device alarm query preserves station/device scope while filtering recovered, severity, name and dates',async()=>{
+ const exports={},calls=[];const code=ts.transpileModule(fs.readFileSync(`${__dirname}/../src/api/deviceDetails.ts`,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
+ new Function('exports','require',code)(exports,()=>({api:async path=>{calls.push(path);return {items:[],total:0}}}));
+ await exports.loadDeviceAlarms('12','4',50,undefined,{view:'recovered',limit:50,query:'低电压',severity:'warning',start:'2026-10-01T00:00:00Z',end:'2026-10-19T23:59:59Z',sort:'asc'});const p=new URL(calls[0],'http://local').searchParams;
+ assert.equal(p.get('deviceId'),'4');assert.equal(p.get('stationId'),'12');assert.equal(p.get('view'),'recovered');assert.equal(p.get('limit'),'50');assert.equal(p.get('severity'),'warning');assert.equal(p.get('query'),'低电压');assert.equal(p.get('sort'),'asc');
+});
+
+test('verified station-only numeric type IDs have separate read-only schemas',()=>{const d=load();assert.equal(d.deviceTypeFromSource('9'),'environment');assert.equal(d.deviceTypeFromSource('60'),'mppt');assert.equal(d.deviceTypeFromSource('53'),'liquid-cooler');assert.equal(d.deviceTypeFromSource('61'),'ems');assert.equal(d.DEVICE_TYPES.length,9);assert.ok(d.DEVICE_SCHEMAS['liquid-cooler'].sections.includes('压力'))});

@@ -93,6 +93,27 @@ public class TenantAuthorization {
         client());
   }
 
+  /** Fresh multi-permission read; callers must take another snapshot after bounded loading. */
+  public Map<String, List<Long>> stationScopes(Collection<String> codes) {
+    var requested = new LinkedHashSet<>(Objects.requireNonNull(codes));
+    requested.forEach(Objects::requireNonNull);
+    long user = userId();
+    var result = new LinkedHashMap<String, List<Long>>();
+    for (String code : requested) result.put(code, new ArrayList<>());
+    if (requested.isEmpty()) return result;
+    var args = new ArrayList<Object>();
+    args.add(user);
+    args.add(client());
+    args.addAll(requested);
+    for (var row : db.queryForList(
+        "select station_id,permission_code from saas_effective_station_permission where user_id=? and client=? and permission_code IN ("
+            + String.join(",", Collections.nCopies(requested.size(), "?"))
+            + ") order by station_id,permission_code", args.toArray())) {
+      result.get(row.get("permission_code").toString()).add(((Number) row.get("station_id")).longValue());
+    }
+    return result;
+  }
+
   public void requireTenantPermission(long target, String code) {
     TenantContext actor = context();
     requirePermission(code);

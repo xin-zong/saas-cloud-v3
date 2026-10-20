@@ -1,0 +1,13 @@
+.rd-detail-drawer.rd-pack-drawer,.station-workspace-theme .rd-detail-drawer.rd-pack-drawer{width:min(800px,95vw);min-width:0;overflow:hidden}
+.rd-pack-drawer>.rd-device-detail{display:flex;flex-direction:column;height:100%;min-height:0;overflow:hidden}
+.rd-pack-drawer>.rd-device-detail>.rs-header,.rd-pack-drawer>.rd-device-detail>.rs-tabs{flex-shrink:0}
+.rd-pack-drawer>.rd-device-detail>.rs-body{display:flex;flex-direction:column;gap:16px;flex:1;min-height:0;overflow:auto}
+.rd-pack-drawer>.rd-device-detail>.rs-body>*{flex:none}
+.rd-pack-drawer .rs-panel{padding:16px}
+.rd-pack-drawer h3{margin:0 0 20px;font-size:14px}
+.rd-pack-drawer dl{margin:0}.rd-pack-drawer dt{color:var(--rs-muted,#808b94);font-size:12px}.rd-pack-drawer dd{margin:5px 0 0;font-size:13px;overflow-wrap:anywhere}
+.rd-pack-basic{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.rd-pack-values{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px 16px}
+.rd-pack-values small{display:block;font-size:10px;color:var(--rs-muted,#808b94);overflow-wrap:anywhere;margin-top:5px}
+.rd-pack-evidence{font-size:12px;color:var(--rs-muted,#808b94);margin:0}
+@media(max-width:600px){.rd-pack-values{grid-template-columns:repeat(2,minmax(0,1fr))}.rd-pack-basic{grid-template-columns:1fr}}

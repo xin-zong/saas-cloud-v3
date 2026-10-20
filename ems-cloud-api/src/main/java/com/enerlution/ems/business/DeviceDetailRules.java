@@ -16,7 +16,10 @@ final class DeviceDetailRules {
       case "airconditioner","6" -> "air-conditioner";
       case "smartmeter","meter","5" -> "meter";
       case "logger","18","185000" -> "logger";
-      case "ems","185001" -> "ems";
+      case "ems","185001","61" -> "ems";
+      case "environment","9" -> "environment";
+      case "mppt","60" -> "mppt";
+      case "liquidcooler","53" -> "liquid-cooler";
       default -> switch(Objects.toString(category,"")) {
         case "PV" -> "inverter"; case "BESS" -> "cabinet"; case "PCS" -> "pcs";
         case "HVAC" -> "air-conditioner"; case "MTR" -> "meter"; default -> "other";

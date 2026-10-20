@@ -1,0 +1,4 @@
+Derived from the user-provided 拓扑编辑器 · 交付包1 (V1, 2026-09-29).
+Only HTML/CSS/JavaScript source assets are included. No service script or executable is used.
+Integration changes: empty initial document, server-only persistence, authenticated host bridge,
+real station registry associations, readonly mode, no simulated discovery/submission/control.

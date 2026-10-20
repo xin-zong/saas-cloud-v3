@@ -1,0 +1,24 @@
+[Unit]
+Description=EMS Toyingzhen isolated API loopback 18091
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ems-cloud-toyingzhen
+Group=ems-cloud-toyingzhen
+EnvironmentFile=/etc/ems-cloud-toyingzhen/runtime.env
+ExecStart=/usr/lib/jvm/java-21-openjdk-amd64/bin/java -Xms128m -Xmx512m -jar /opt/ems-cloud-toyingzhen/current/ems-cloud-api.jar
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=45
+SuccessExitStatus=143
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

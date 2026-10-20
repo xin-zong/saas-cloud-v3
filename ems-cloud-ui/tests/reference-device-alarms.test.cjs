@@ -1,0 +1,9 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
+const exportsForTest={};new Function('exports',ts.transpileModule(fs.readFileSync(`${__dirname}/../src/data/referenceDevices.ts`,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(exportsForTest);
+const m=exportsForTest;
+const row=(extra={})=>({id:'1',stationId:'s',stationName:'Station',name:'PCS',serial:'SN1',type:'pcs',status:'online',fields:{},updatedAt:null,telemetryAllowed:true,exportAllowed:true,alarmAllowed:true,hasAlarm:true,activeAlarmCount:2,...extra});
+const query={category:'pcs',stationId:'s',search:'',status:'alarm'};
+test('online device with active device alarms remains online and matches alarm facet/filter/export',()=>{const r=m.adaptReferenceDevice(row());assert.equal(r.status,'online');assert.equal(m.deviceFacets([r]).online,1);assert.equal(m.deviceFacets([r]).alarm,1);assert.equal(m.filterDevices([r],query).length,1);assert.match(m.devicesCsv([r],m.deviceColumns('pcs')),/在线.*报警/);});
+test('recovered alarm count zero excludes device from alarm filter',()=>{const r=row({hasAlarm:false,activeAlarmCount:0});assert.equal(m.filterDevices([r],query).length,0);assert.equal(m.deviceFacets([r]).alarm,0);});
+test('unknown alarm permission never implies zero or exposes supplied alarm metadata',()=>{const r=m.adaptReferenceDevice(row({alarmAllowed:false}));assert.equal(r.hasAlarm,null);assert.equal(r.activeAlarmCount,null);assert.equal(m.deviceFacets([r]).alarm,null);assert.equal(m.filterDevices([r],query).length,0);assert.match(m.deviceCell(r,'status'),/报警未知/);});
+test('alarm permission works without telemetry and partial scope hides total',()=>{const r=row({telemetryAllowed:false,status:'unknown'});assert.equal(m.filterDevices([r],query).length,1);assert.equal(m.deviceFacets([r,row({id:'2',alarmAllowed:false})]).alarm,null);});

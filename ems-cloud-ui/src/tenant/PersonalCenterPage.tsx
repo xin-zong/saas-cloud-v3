@@ -6,6 +6,7 @@ import { useAuth } from "@/auth/AuthContext"
 
 import { Button, Badge } from "@/components/ui/Workspace"
 import SettingsDialog from "@/components/SettingsDialog"
+import LoadingState from "@/components/LoadingState"
 import { useEditorLeaveGuard, type RegisterLeaveGuard } from "@/components/useEditorLeaveGuard"
 
 import { Field, QueryState, useTenantQuery } from "./shared"
@@ -96,7 +97,7 @@ function PersonalProfileEditor({ registerLeaveGuard }: { registerLeaveGuard?: Re
   return (
     <section className="tenant-card">
       <h2>账户资料</h2>
-      <QueryState loading={loading} error={loadError} />
+      {loading ? <LoadingState label="正在加载账户资料…" /> : <QueryState loading={false} error={loadError} />}
       {loadError && <Button disabled={busy || loading} onClick={() => setLoadVersion(version => version + 1)}>重试读取账户资料</Button>}
       <form onSubmit={save}>
         <div className="tenant-form-grid">
@@ -144,7 +145,7 @@ function PersonalProfileEditor({ registerLeaveGuard }: { registerLeaveGuard?: Re
   )
 }
 
-export function PersonalSecurity() {
+export function PersonalSecurity({ registerLeaveGuard }: { registerLeaveGuard?: RegisterLeaveGuard } = {}) {
   const { logout } = useAuth(),
     profile = useTenantQuery<Row>("/me/profile")
 
@@ -153,9 +154,32 @@ export function PersonalSecurity() {
     [confirmation, setConfirmation] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("")
+  const [leaving, setLeaving] = useState(false)
+  const busyRef = useRef(false)
+  const dirty = !!(current || password || confirmation)
+  const { requestLeave: requestDraftLeave, settleLeave } = useEditorLeaveGuard({
+    dirty, onConfirm: () => setLeaving(true), onCancel: () => setLeaving(false),
+  })
+  const requestLeave = useCallback(async () => {
+    if (busyRef.current) { setError("正在提交密码变更，请等待完成后再离开。"); return false }
+    return requestDraftLeave()
+  }, [requestDraftLeave])
+  useEffect(() => { registerLeaveGuard?.(requestLeave); return () => registerLeaveGuard?.(null) }, [registerLeaveGuard, requestLeave])
+  useEffect(() => {
+    if (!dirty && !busy) return
+    const prevent = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = "" }
+    window.addEventListener("beforeunload", prevent)
+    return () => window.removeEventListener("beforeunload", prevent)
+  }, [dirty, busy])
+  function decideLeave(allow: boolean) {
+    if (allow && busyRef.current) return
+    if (allow) { setCurrent(""); setPassword(""); setConfirmation(""); setError("") }
+    setLeaving(false); settleLeave(allow)
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault()
+    if (busyRef.current) return
 
     setError("")
 
@@ -164,7 +188,7 @@ export function PersonalSecurity() {
     if (new TextEncoder().encode(password).length > 72)
       return setError("密码不能超过 72 字节")
 
-    setBusy(true)
+    busyRef.current = true; setBusy(true)
 
     try {
       await send("/me/password", "PUT", {
@@ -183,7 +207,7 @@ export function PersonalSecurity() {
     } catch (e) {
       setError((e as Error).message)
     } finally {
-      setBusy(false)
+      busyRef.current = false; setBusy(false)
     }
   }
 
@@ -200,6 +224,7 @@ export function PersonalSecurity() {
             <input
               required
               type="password"
+              disabled={busy}
               autoComplete="current-password"
               value={current}
               onChange={(e) => setCurrent(e.target.value)}
@@ -209,6 +234,7 @@ export function PersonalSecurity() {
             <input
               required
               type="password"
+              disabled={busy}
               autoComplete="new-password"
               minLength={8}
               maxLength={72}
@@ -221,6 +247,7 @@ export function PersonalSecurity() {
             <input
               required
               type="password"
+              disabled={busy}
               autoComplete="new-password"
               value={confirmation}
               onChange={(e) => setConfirmation(e.target.value)}
@@ -240,6 +267,10 @@ export function PersonalSecurity() {
           {busy ? "正在提交…" : "修改密码并退出全部设备"}
         </Button>
       </form>
+      {leaving && <SettingsDialog title="未保存的安全输入" onClose={() => decideLeave(false)}>
+        <p>离开将清空本次密码输入，不会提交密码变更。</p>
+        <footer><Button onClick={() => decideLeave(false)}>继续编辑</Button><Button variant="primary" onClick={() => decideLeave(true)}>放弃修改</Button></footer>
+      </SettingsDialog>}
     </section>
   )
 }

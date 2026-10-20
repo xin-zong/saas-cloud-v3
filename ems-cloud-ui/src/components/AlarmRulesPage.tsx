@@ -1,3 +1,8 @@
+import {SquarePen, Trash2} from "lucide-react"
+import {
+  useEditorLeaveGuard,
+  type RegisterLeaveGuard,
+} from "./useEditorLeaveGuard"
 import { loadPoints, type MeasurementPoint } from "./apiAnalytics"
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { Station } from "@/App"
@@ -24,7 +29,12 @@ const toMinute = (text: string) => {
   const [h, m] = text.split(":").map(Number)
   return h * 60 + m
 }
-const levels = { critical: "严重", warning: "重要", info: "一般" }
+const levels = {
+  critical: "紧急",
+  warning: "重要",
+  minor: "次要",
+  info: "提示",
+}
 const evaluationLabels: Record<string, string> = {
   ready: "待检测",
   disabled: "检测停用",
@@ -35,7 +45,9 @@ const evaluationLabels: Record<string, string> = {
   unknown: "无法判定",
 }
 const evaluationLabel = (status: string) =>
-  Object.prototype.hasOwnProperty.call(evaluationLabels, status) ? evaluationLabels[status] : "检测状态未知"
+  Object.prototype.hasOwnProperty.call(evaluationLabels, status)
+    ? evaluationLabels[status]
+    : "检测状态未知"
 const deliveryLabel = (status: string) =>
   status === "not_connected" ? "通知未接通" : "通知状态未知"
 function draftOf(row: AlarmRuleRow): AlarmRuleDraft {
@@ -48,6 +60,7 @@ function draftOf(row: AlarmRuleRow): AlarmRuleDraft {
     conditions: row.conditions,
     effectiveStart: row.effective_start,
     effectiveEnd: row.effective_end,
+    autoRecoveryDuration: row.auto_recovery_duration_hours ?? 48,
     recoveryDuration: row.recovery_duration,
     solution: row.solution,
     notification: row.notification,
@@ -57,18 +70,44 @@ function draftOf(row: AlarmRuleRow): AlarmRuleDraft {
 export default function AlarmRulesPage({
   stationId,
   stations = [],
+  registerLeaveGuard,
 }: {
   stationId?: string
   stations?: Station[]
+  registerLeaveGuard?: RegisterLeaveGuard
 }) {
   const { user } = useAuth()
+  const [updatedDescending, setUpdatedDescending] = useState(true)
+  const [search, setSearch] = useState("")
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(50)
+  const filtered = (items: AlarmRuleRow[]) =>
+    items
+      .filter((row) =>
+        row.name
+          .toLocaleLowerCase()
+          .includes(search.trim().toLocaleLowerCase()),
+      )
+      .sort((a, b) => {
+        const difference =
+          (new Date(a.updated_at ?? 0).getTime() || 0) -
+          (new Date(b.updated_at ?? 0).getTime() || 0)
+        return updatedDescending ? -difference : difference
+      })
   const [rows, setRows] = useState<AlarmRuleRow[]>([])
+  const visibleRows = filtered(rows)
+  const pageCount = Math.max(1,Math.ceil(visibleRows.length/pageSize))
+  const currentPage = Math.max(0,Math.min(page,pageCount-1))
+  useEffect(()=>{if(page!==currentPage)setPage(currentPage)},[page,currentPage])
   const [scope, setScope] = useState(stationId ?? "")
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
   const [draft, setDraft] = useState<AlarmRuleDraft | null>(null)
-  const [pointOptions,setPointOptions]=useState<MeasurementPoint[]>([])
-  const [pointError,setPointError]=useState("")
+  const [leaveConfirm, setLeaveConfirm] = useState(false)
+  const [conditionDraft, setConditionDraft] = useState<Condition | null>(null)
+  const [conditionIndex, setConditionIndex] = useState<number | null>(null)
+  const [pointOptions, setPointOptions] = useState<MeasurementPoint[]>([])
+  const [pointError, setPointError] = useState("")
   const [editing, setEditing] = useState<number | undefined>()
   const [detail, setDetail] = useState<AlarmRuleRow | null>(null)
   const [history, setHistory] = useState<{
@@ -92,16 +131,64 @@ export default function AlarmRulesPage({
   const historyRequest = useRef(0)
   const optionsRequest = useRef(0)
   const contextRequest = useRef(0)
+  const mutationActive = useRef(false)
+  const clearDraft = () => {
+    setDraft(null)
+    setConditionDraft(null)
+    setConditionIndex(null)
+    setEditing(undefined)
+  }
+  const { requestLeave, settleLeave } = useEditorLeaveGuard({
+    dirty: !!draft || busy,
+    enabled:
+      !!draft && hasStationPermission(user, draft.stationId, "alarm.handle"),
+    registerLeaveGuard,
+    onConfirm: () => setLeaveConfirm(true),
+    onCancel: () => setLeaveConfirm(false),
+  })
+  const closeDraft = async () => {
+    if (await requestLeave()) clearDraft()
+  }
+  useEffect(() => {
+    if (!draft) return
+    const before = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ""
+    }
+    window.addEventListener("beforeunload", before)
+    return () => window.removeEventListener("beforeunload", before)
+  }, [draft])
   const eligible = stations.filter((s) =>
     hasStationPermission(user, s.id, "alarm.handle"),
   )
-  useEffect(()=>{
-    const controller=new AbortController();setPointOptions([]);setPointError('')
-    if(draft?.stationId&&draft.objectType==='DEVICE'&&draft.deviceId&&hasStationPermission(user,draft.stationId,'telemetry.read')){
-      loadPoints(String(draft.stationId),controller.signal).then(points=>{if(!controller.signal.aborted)setPointOptions(points.filter(point=>point.device_id===String(draft.deviceId)&&point.code!==undefined))}).catch(e=>{if(!controller.signal.aborted)setPointError(e instanceof Error?e.message:'测点加载失败')})
+  useEffect(() => {
+    const controller = new AbortController()
+    setPointOptions([])
+    setPointError("")
+    if (
+      draft?.stationId &&
+      draft.objectType === "DEVICE" &&
+      draft.deviceId &&
+      hasStationPermission(user, draft.stationId, "telemetry.read")
+    ) {
+      loadPoints(String(draft.stationId), controller.signal)
+        .then((points) => {
+          if (!controller.signal.aborted)
+            setPointOptions(
+              points.filter(
+                (point) =>
+                  point.device_id === String(draft.deviceId) &&
+                  point.code !== undefined,
+              ),
+            )
+        })
+        .catch((e) => {
+          if (!controller.signal.aborted)
+            setPointError(e instanceof Error ? e.message : "测点加载失败")
+        })
     }
-    return ()=>controller.abort()
-  },[draft?.stationId,draft?.deviceId,draft?.objectType,user])
+    return () => controller.abort()
+  }, [draft?.stationId, draft?.deviceId, draft?.objectType, user])
   const load = useCallback(async () => {
     const seq = ++listRequest.current
     setError("")
@@ -115,11 +202,18 @@ export default function AlarmRulesPage({
       }
     }
   }, [scope, user])
-  useEffect(() => { setScope(stationId ?? "") }, [stationId])
+  useEffect(() => {
+    setScope(stationId ?? "")
+  }, [stationId])
+  useEffect(() => {
+    setPage(0)
+  }, [scope])
   useEffect(() => {
     setRows([])
     void load()
-    return () => { listRequest.current++ }
+    return () => {
+      listRequest.current++
+    }
   }, [load])
   useEffect(() => {
     contextRequest.current++
@@ -127,11 +221,13 @@ export default function AlarmRulesPage({
     optionsRequest.current++
     setDetail(null)
     setDraft(null)
+    setConditionDraft(null)
     setEditing(undefined)
     setConfirmDelete(null)
     setHistory([])
-    setOptions({devices: [], recipients: []})
+    setOptions({ devices: [], recipients: [] })
     setBusy(false)
+    mutationActive.current = false
     return () => {
       contextRequest.current++
       historyRequest.current++
@@ -140,48 +236,70 @@ export default function AlarmRulesPage({
   }, [scope, stationId, user])
   useEffect(() => {
     const seq = ++optionsRequest.current
-    setOptions({devices: [], recipients: []})
-    if (draft?.stationId && hasStationPermission(user, draft.stationId, "alarm.handle")) {
-      alarmRuleOptions(draft.stationId).then(result => {
-        if (seq === optionsRequest.current) setOptions(result)
-      }).catch(e => {
-        if (seq === optionsRequest.current) setError(e.message)
-      })
+    setOptions({ devices: [], recipients: [] })
+    if (
+      draft?.stationId &&
+      hasStationPermission(user, draft.stationId, "alarm.handle")
+    ) {
+      alarmRuleOptions(draft.stationId)
+        .then((result) => {
+          if (seq === optionsRequest.current) setOptions(result)
+        })
+        .catch((e) => {
+          if (seq === optionsRequest.current) setError(e.message)
+        })
     }
-    return () => { optionsRequest.current++ }
+    return () => {
+      optionsRequest.current++
+    }
   }, [draft?.stationId, user])
   const update = (patch: Partial<AlarmRuleDraft>) =>
     setDraft((d) => (d ? { ...d, ...patch } : d))
-  const condition = (index: number, patch: Partial<Condition>) =>
-    setDraft((d) =>
-      d
-        ? {
-            ...d,
-            conditions: d.conditions.map((c, i) =>
-              i === index ? { ...c, ...patch } : c,
-            ),
-          }
-        : d,
-    )
+  const condition = (_index: number, patch: Partial<Condition>) =>
+    setConditionDraft((c) => (c ? { ...c, ...patch } : c))
+  function saveCondition() {
+    if (!conditionDraft || !draft) return
+    if (
+      conditionDraft.fields.some((field) => !field.code.trim()) ||
+      (conditionDraft.fields[0]?.code === "deviceStatus"
+        ? !conditionDraft.statusValue
+        : !conditionDraft.extend1 && conditionDraft.lower === null)
+    ) {
+      setError("请完整填写报警指标及阈值")
+      return
+    }
+    const conditions =
+      conditionIndex === null
+        ? [...draft.conditions, conditionDraft]
+        : draft.conditions.map((c, i) =>
+            i === conditionIndex ? conditionDraft : c,
+          )
+    update({ conditions })
+    setConditionDraft(null)
+    setError("")
+  }
   function create() {
     const id = Number(stationId || scope || eligible[0]?.id)
     if (!id) return
+    setConditionDraft(null)
+    setConditionIndex(null)
     setEditing(undefined)
     setError("")
     setDraft({
       stationId: id,
       name: "",
-      objectType: "DEVICE",
+      objectType: "STATION",
       deviceId: null,
-      severity: "warning",
-      conditions: [emptyCondition()],
+      severity: "info",
+      conditions: [],
       effectiveStart: 0,
       effectiveEnd: 1440,
+      autoRecoveryDuration: 48,
       recoveryDuration: 0,
       solution: "",
       notification: {
         needed: false,
-        maxCount: 1,
+        maxCount: 10,
         channels: [],
         recipients: [],
         recoveryNotice: false,
@@ -190,7 +308,12 @@ export default function AlarmRulesPage({
     })
   }
   async function perform(work: () => Promise<unknown>, onSuccess?: () => void) {
+    if (mutationActive.current) return
+    mutationActive.current = true
     const context = contextRequest.current
+    historyRequest.current++
+    setDetail(null)
+    setHistory([])
     setBusy(true)
     setError("")
     try {
@@ -201,28 +324,70 @@ export default function AlarmRulesPage({
     } catch (e) {
       if (context === contextRequest.current) setError((e as Error).message)
     } finally {
-      if (context === contextRequest.current) setBusy(false)
+      if (context === contextRequest.current) {
+        mutationActive.current = false
+        setBusy(false)
+      }
     }
   }
   return (
     <div>
-      <div className="alarm-business-workspace-heading">
-        <div>
-          <h3>告警规则</h3>
-          <p className="alarm-business-workspace-muted">
-            检测状态与原因以服务端实际执行结果为准；启用配置不代表已触发，外部通知尚未接通。
+      {leaveConfirm && (
+        <div
+          className="alarm-business-workspace-dialog alarm-leave-confirm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="放弃报警规则草稿"
+        >
+          <h2>放弃报警规则草稿</h2>
+          <p>
+            {busy
+              ? "正在提交，请等待请求完成。"
+              : "离开会丢失未提交的规则和条件，是否放弃修改？"}
           </p>
+          <button
+            onClick={() => {
+              setLeaveConfirm(false)
+              settleLeave(false)
+            }}
+          >
+            继续编辑
+          </button>
+          <button
+            disabled={busy}
+            onClick={() => {
+              clearDraft()
+              setLeaveConfirm(false)
+              settleLeave(true)
+            }}
+          >
+            放弃修改
+          </button>
         </div>
+      )}
+      <div className="alarm-page-heading alarm-rules-heading">
+        <strong title="检测状态以服务端结果为准；外部通知尚未接通">报警规则</strong>
+        <input
+          aria-label="报警规则名称搜索"
+          placeholder="请输入报警规则名称"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value)
+            setPage(0)
+          }}
+        />
         <button disabled={busy || !eligible.length} onClick={create}>
-          新增规则
+          + 新增报警规则
         </button>
-      </div>
       {!stationId && (
-        <div className="alarm-business-workspace-filters">
+        <details className="alarm-rules-scope"><summary>筛选</summary><div>
           <select
             aria-label="规则站点筛选"
             value={scope}
-            onChange={(e) => setScope(e.target.value)}
+            onChange={async (e) => {
+              const value = e.target.value
+              if (await requestLeave()) setScope(value)
+            }}
           >
             <option value="">全部授权站点</option>
             {stations
@@ -234,102 +399,186 @@ export default function AlarmRulesPage({
               ))}
           </select>
           <button onClick={() => void load()}>刷新规则</button>
-        </div>
+        </div></details>
       )}
+      </div>
       {error && (
         <p role="alert" className="alarm-business-workspace-error">
           {error}
         </p>
       )}
-      <div className="alarm-business-workspace-table">
+      <div className="alarm-list-card alarm-rules-list"><div className="alarm-business-workspace-table">
         <table>
           <thead>
             <tr>
               {[
-                "规则名称",
-                "站点 / 对象",
-                "等级",
-                "有效时段（UTC）",
-                "配置状态",
-                "版本",
+                "启用状态",
+                "报警规则名称",
+                "条件",
+                "报警等级",
+                "报警对象",
+                "生效时间（UTC）",
+                "最后更新时间",
+                "最后更新用户",
                 "操作",
               ].map((x) => (
-                <th key={x}>{x}</th>
+                <th
+                  key={x}
+                  aria-sort={
+                    x === "最后更新时间"
+                      ? updatedDescending
+                        ? "descending"
+                        : "ascending"
+                      : undefined
+                  }
+                >
+                  {x === "最后更新时间" ? (
+                    <button
+                      onClick={() => {
+                        setUpdatedDescending(!updatedDescending)
+                        setPage(0)
+                      }}
+                    >
+                      {x} {updatedDescending ? "↓" : "↑"}
+                    </button>
+                  ) : (
+                    x
+                  )}
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
-              <tr key={r.id}>
-                <td>{r.name}</td>
-                <td>
-                  {r.station_name}
-                  <small>
-                    {r.object_type === "DEVICE"
-                      ? `设备 ${r.device_id}`
-                      : "站点"}
-                  </small>
-                </td>
-                <td>{levels[(r.severity as keyof typeof levels)]}</td>
-                <td>
-                  {timeLabel(r.effective_start)}–{timeLabel(r.effective_end)}
-                </td>
-                <td>
-                  {r.enabled ? "已启用配置" : "已停用配置"}
-                  <small>
-                    检测：{evaluationLabel(r.evaluationStatus)} · {r.evaluationReason || "暂无检测说明"} / {deliveryLabel(r.deliveryStatus)}
-                  </small>
-                </td>
-                <td>{r.version}</td>
-                <td>
-                  <button
-                    onClick={() => {
-                      const seq = ++historyRequest.current
-                      setDetail(r)
-                      setHistory([])
-                      alarmRuleHistory(r.id).then(result => {
-                        if (seq === historyRequest.current) setHistory(result)
-                      }).catch(e => {
-                        if (seq === historyRequest.current) setError(e.message)
-                      })
-                    }}
-                  >
-                    详情
-                  </button>
-                  {hasStationPermission(user, r.station_id, "alarm.handle") && (
-                    <>
-                      <button
-                        disabled={busy}
-                        onClick={() => {
-                          setEditing(r.id)
-                          setDraft(draftOf(r))
-                          setError("")
-                        }}
-                      >
-                        编辑
-                      </button>
-                      <button
-                        disabled={busy}
-                        onClick={() => void perform(() => toggleAlarmRule(r))}
-                      >
-                        {r.enabled ? "停用" : "启用"}
-                      </button>
-                      <button
-                        disabled={busy}
-                        onClick={() => setConfirmDelete(r)}
-                      >
-                        删除
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
+            {visibleRows
+              .slice(currentPage * pageSize, (currentPage + 1) * pageSize)
+              .map((r) => (
+                <tr key={r.id}>
+                  <td>
+                    <button
+                      role="switch"
+                      aria-label={`启用规则 ${r.name}`}
+                      aria-checked={r.enabled}
+                      disabled={
+                        busy ||
+                        !hasStationPermission(
+                          user,
+                          r.station_id,
+                          "alarm.handle",
+                        )
+                      }
+                      onClick={() => void perform(() => toggleAlarmRule(r))}
+                    >
+                      <span className="alarm-switch-knob" />
+                    </button>
+                  </td>
+                  <td><button
+                      disabled={busy}
+                      onClick={() => {
+                        if (mutationActive.current) return
+                        const seq = ++historyRequest.current
+                        setDetail(r)
+                        setHistory([])
+                        alarmRuleHistory(r.id)
+                          .then((result) => {
+                            if (seq === historyRequest.current)
+                              setHistory(result)
+                          })
+                          .catch((e) => {
+                            if (seq === historyRequest.current)
+                              setError(e.message)
+                          })
+                      }}
+                    >
+                      {r.name}
+                    </button></td>
+                  <td className="alarm-rule-condition-summary">
+                    {r.conditions.map((c, i) => (
+                      <div key={i}>
+                        {i + 1}、{c.fields.map((f) => f.code).join(" / ")} ·
+                        连续{c.period}个周期 · {conditionOperators[c.operator]}{" "}
+                        {c.statusValue ?? c.lower ?? "—"} {c.fields[0]?.unit}
+                      </div>
+                    ))}
+                  </td>
+                  <td><span className={`alarm-business-workspace-level ${r.severity}`}>{levels[(r.severity as keyof typeof levels)]}</span></td>
+                  <td>
+                    {r.object_type === "STATION" ? "场站" : "设备"}
+                    <small>{r.station_name}</small>
+                  </td>
+                  <td>
+                    每天{timeLabel(r.effective_start)} ~{" "}
+                    {timeLabel(r.effective_end)}
+                  </td>
+                  <td>
+                    {r.updated_at
+                      ? new Date(r.updated_at).toLocaleString()
+                      : "—"}
+                  </td>
+                  <td>{r.updated_by_name || "—"}</td>
+                  <td>
+
+                    {hasStationPermission(
+                      user,
+                      r.station_id,
+                      "alarm.handle",
+                    ) && (
+                      <>
+                        <button
+                          disabled={busy}
+                          onClick={() => {
+                            setConditionDraft(null)
+                            setConditionIndex(null)
+                            setEditing(r.id)
+                            setDraft(draftOf(r))
+                            setError("")
+                          }}
+                        >
+                          <SquarePen size={14} aria-label="编辑"/>
+                        </button>
+                        <button
+                          disabled={busy}
+                          onClick={() => setConfirmDelete(r)}
+                        >
+                          <Trash2 size={14} aria-label="删除"/>
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
-        {!rows.length && (
+        {!visibleRows.length && (
           <p className="alarm-business-workspace-empty">暂无告警规则</p>
         )}
+      </div>
+      <div className="alarm-business-workspace-pagination">
+        <span>共{visibleRows.length}条</span>
+        <button disabled={!currentPage} onClick={() => setPage(currentPage - 1)}>
+          上一页
+        </button>
+        <span>{currentPage + 1}</span>
+        <button
+          disabled={currentPage + 1 >= pageCount}
+          onClick={() => setPage(currentPage + 1)}
+        >
+          下一页
+        </button>
+        <select
+          aria-label="规则每页条数"
+          value={pageSize}
+          onChange={(e) => {
+            setPageSize(Number(e.target.value))
+            setPage(0)
+          }}
+        >
+          {[20, 50, 100].map((n) => (
+            <option key={n} value={n}>
+              {n} 条/页
+            </option>
+          ))}
+        </select>
+      </div>
       </div>
       {confirmDelete && (
         <div
@@ -343,7 +592,10 @@ export default function AlarmRulesPage({
           <button
             disabled={busy}
             onClick={() =>
-              void perform(() => deleteAlarmRule(confirmDelete), () => setConfirmDelete(null))
+              void perform(
+                () => deleteAlarmRule(confirmDelete),
+                () => setConfirmDelete(null),
+              )
             }
           >
             确认删除
@@ -363,13 +615,22 @@ export default function AlarmRulesPage({
         >
           <div className="alarm-business-workspace-dialog-head">
             <h2>{detail.name}</h2>
-            <button onClick={() => { historyRequest.current++; setDetail(null); setHistory([]) }}>关闭详情</button>
+            <button
+              onClick={() => {
+                historyRequest.current++
+                setDetail(null)
+                setHistory([])
+              }}
+            >
+              关闭详情
+            </button>
           </div>
           <p>
-            <span>检测：{evaluationLabel(detail.evaluationStatus)}</span> · <span>{detail.evaluationReason || "暂无检测说明"}</span>
+            <span>检测：{evaluationLabel(detail.evaluationStatus)}</span> ·{" "}
+            <span>{detail.evaluationReason || "暂无检测说明"}</span>
           </p>
           <p>
-            恢复持续时间 {detail.recovery_duration} 秒 ·{" "}
+            默认恢复周期 {detail.auto_recovery_duration_hours ?? 48} 小时（执行未接通）；连续正常采样恢复时长 {detail.recovery_duration} 秒 ·{" "}
             {detail.notification.needed ? "已配置通知" : "未配置通知"} ·
             {deliveryLabel(detail.deliveryStatus)}
           </p>
@@ -397,26 +658,33 @@ export default function AlarmRulesPage({
           className="alarm-business-workspace-dialog"
           role="dialog"
           aria-modal="true"
-          aria-label={editing ? "编辑告警规则" : "新增告警规则"}
+          aria-label={editing ? "编辑报警规则" : "创建报警规则"}
         >
           <div className="alarm-business-workspace-dialog-head">
             <h2>{editing ? "编辑告警规则" : "新增告警规则"}</h2>
-            <button disabled={busy} onClick={() => setDraft(null)}>
+            <button disabled={busy} onClick={() => void closeDraft()}>
               取消
             </button>
           </div>
           <p className="alarm-business-workspace-muted">
-            条件编辑仅修改当前草稿，点击保存后写入服务器。保存会保留原启用状态。
+            条件编辑仅修改当前草稿，提交规则后保存。
           </p>
           <form
             onSubmit={(e) => {
               e.preventDefault()
-              void perform(() => saveAlarmRule(draft, editing), () => setDraft(null))
+              if (conditionDraft) {
+                saveCondition()
+                return
+              }
+              void perform(
+                () => saveAlarmRule(draft, editing),
+                () => setDraft(null),
+              )
             }}
           >
-            <div className="alarm-business-workspace-form">
+            <fieldset disabled={busy} className="alarm-business-workspace-form" style={{border:0,padding:0,margin:0}}>
               <label>
-                规则名称
+                报警规则名称
                 <input
                   required
                   maxLength={120}
@@ -445,7 +713,7 @@ export default function AlarmRulesPage({
                 </select>
               </label>
               <label>
-                规则对象
+                报警对象
                 <select
                   value={draft.objectType}
                   onChange={(e) => {
@@ -458,7 +726,7 @@ export default function AlarmRulesPage({
                   }}
                 >
                   <option value="DEVICE">设备</option>
-                  <option value="STATION">站点</option>
+                  <option value="STATION">场站</option>
                 </select>
               </label>
               {draft.objectType === "DEVICE" && (
@@ -527,8 +795,9 @@ export default function AlarmRulesPage({
                   )}
                 </select>
               </label>
+              <label>默认恢复周期（小时）<input type="number" min="1" max="72" step="1" required aria-label="默认恢复周期（小时）" value={draft.autoRecoveryDuration} onChange={e=>update({autoRecoveryDuration:Number(e.target.value)})}/><small>保存配置；按时长自动恢复的执行服务尚未接通。</small></label>
               <label>
-                自动恢复持续时间（秒）
+                连续正常采样恢复时长（秒）
                 <input
                   type="number"
                   min="0"
@@ -541,264 +810,395 @@ export default function AlarmRulesPage({
                 />
               </label>
               <div className="full">
-                <h3>条件配置</h3>
+                <h3>条件（所有条件都触发后将生成规则报警）</h3>
+                {!draft.conditions.length && (
+                  <p className="alarm-business-workspace-empty">暂无数据</p>
+                )}
                 <p className="alarm-business-workspace-muted">
-                  当前仅执行设备即时单指标的直接数值比较或区间判断。填写本设备唯一测点代码或已映射的 EMS 协议 ID，单位须一致。按 UTC 完整 1 分钟采样桶检测，连续周期按连续完整分钟计，同一规则各条件连续周期须一致，多条件需同时满足（AND）。缺样、无效采样或映射不唯一会中断累计；生效时段按 UTC。自动恢复须连续正常采样达到所设秒数，缺样不会恢复；其他算法保留配置并显示暂不支持。
+                  条件保存后按检测服务支持范围执行。场站指标及非即时算法暂未接通，实际检测状态见规则详情。
                 </p>
-                {pointError&&<p role="alert">{pointError}</p>}
-                {draft.conditions.map((c, i) => (
-                  <div key={i} className="alarm-business-workspace-condition">
-                    {c.fields.map((f, j) => (
-                      <label key={j}>
-                        指标 {j + 1}
-                        {!!pointOptions.length&&<select aria-label={`条件${i+1}指标${j+1}已登记测点`} value={pointOptions.some(point=>point.code===f.code)?f.code:""} onChange={e=>{const point=pointOptions.find(point=>point.code===e.target.value);if(point)condition(i,{fields:c.fields.map((field,k)=>k===j?{...field,code:point.code!,unit:point.unit,cycleType:"INSTANT"}:field),operator:"eq",lower:null,upper:null,statusValue:null})}}><option value="">选择已登记测点 / 自定义代码</option>{pointOptions.map(point=><option key={point.id} value={point.code}>{point.name} · {point.unit||"无单位"} · {point.code}</option>)}</select>}
-                        <input
-                          required
-                          maxLength={120}
-                          aria-label={`条件${i + 1}指标${j + 1}`}
-                          placeholder="指标代码"
-                          value={f.code}
-                          onChange={(e) => {
-                            const fields = c.fields.map((field, k) =>
-                              k === j
-                                ? { ...field, code: e.target.value }
-                                : field,
-                            )
-                            condition(i, {
-                              fields,
-                              operator: "eq",
-                              lower: null,
-                              upper: null,
-                              statusValue: null,
-                            })
-                          }}
-                        />
-                        <input
-                          aria-label={`条件${i + 1}指标${j + 1}单位`}
-                          placeholder="单位"
-                          value={f.unit}
-                          onChange={(e) =>
-                            condition(i, {
-                              fields: c.fields.map((field, k) =>
-                                k === j
-                                  ? { ...field, unit: e.target.value }
-                                  : field,
-                              ),
-                            })
-                          }
-                        />
-                        <select
-                          aria-label={`条件${i + 1}指标${j + 1}周期`}
-                          value={f.cycleType}
-                          onChange={(e) =>
-                            condition(i, {
-                              fields: c.fields.map((field, k) =>
-                                k === j
-                                  ? { ...field, cycleType: e.target.value }
-                                  : field,
-                              ),
-                            })
-                          }
-                        >
-                          <option value="INSTANT">即时指标</option>
-                          <option value="DAY_00">日指标</option>
-                          <option value="YEAR_EARLY">年初累计</option>
-                        </select>
-                      </label>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        condition(
-                          i,
-                          c.fields.length === 1
-                            ? {
-                                fields: [
-                                  ...c.fields,
-                                  {
-                                    code: "",
-                                    unit: c.fields[0].unit,
-                                    cycleType: c.fields[0].cycleType,
-                                    objectType: draft.objectType,
-                                  },
-                                ],
-                                algorithm: "dpc_rate",
-                                operator: "eq",
-                                lower: null,
-                                upper: null,
+                {pointError && <p role="alert">{pointError}</p>}
+                {!!draft.conditions.length && (
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>条件描述</th>
+                        <th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {draft.conditions.map((c, i) => (
+                        <tr key={i}>
+                          <td>
+                            {c.fields.map((f) => f.code).join(" / ")} · 连续
+                            {c.period}个周期 · {conditionOperators[c.operator]}{" "}
+                            {c.statusValue ?? c.lower ?? "—"}
+                            {c.upper !== null ? ` ~ ${c.upper}` : ""}{" "}
+                            {c.fields[0]?.unit}
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setConditionIndex(i)
+                                setConditionDraft(structuredClone(c))
+                                setError("")
+                              }}
+                            >
+                              编辑
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                update({
+                                  conditions: draft.conditions.filter(
+                                    (_, index) => index !== i,
+                                  ),
+                                })
                               }
-                            : {
-                                fields: [c.fields[0]],
-                                algorithm: "self",
-                                operator: "eq",
-                                lower: null,
-                                upper: null,
-                              },
-                        )
-                      }
-                    >
-                      {c.fields.length === 1 ? "增加第二指标" : "单指标"}
-                    </button>
-                    <label>
-                      连续周期
-                      <select
-                        value={c.period}
-                        onChange={(e) =>
-                          condition(i, { period: Number(e.target.value) })
-                        }
+                            >
+                              删除
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+                {conditionDraft && (
+                  <div
+                    className="alarm-condition-backdrop"
+                    onClick={() => setConditionDraft(null)}
+                  />
+                )}
+                {conditionDraft && (
+                  <div
+                    className="alarm-condition-editor"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="添加条件"
+                  >
+                    <div className="alarm-business-workspace-dialog-head">
+                      <h2>
+                        {conditionIndex === null ? "添加条件" : "编辑条件"}
+                      </h2>
+                      <button
+                        type="button"
+                        onClick={() => setConditionDraft(null)}
                       >
-                        {[1, 3, 5, 7, 9, 11].map((n) => (
-                          <option key={n}>{n}</option>
-                        ))}
-                      </select>
-                    </label>
+                        关闭
+                      </button>
+                    </div>
                     <label>
-                      比较
-                      <select
-                        value={c.operator}
-                        onChange={(e) =>
-                          condition(i, {
-                            operator: e.target.value,
-                            lower: null,
-                            upper: null,
-                          })
-                        }
-                      >
-                        {Object.entries(conditionOperators).map(
-                          ([key, label]) => (
-                            <option key={key} value={key}>
-                              {label}
-                            </option>
-                          ),
-                        )}
-                      </select>
+                      条件描述
+                      <textarea
+                        disabled
+                        value={`${conditionDraft.fields.map((f) => f.code).join(" / ")} · 连续${conditionDraft.period}个周期 · ${conditionOperators[conditionDraft.operator]} ${conditionDraft.statusValue ?? conditionDraft.lower ?? "—"}`}
+                      />
                     </label>
-                    {c.fields[0].code === "deviceStatus" ? (
-                      <label>
-                        通信状态
-                        <select
-                          required
-                          value={c.statusValue ?? ""}
-                          onChange={(e) =>
-                            condition(i, { statusValue: e.target.value })
-                          }
-                        >
-                          <option value="">请选择</option>
-                          <option value="online">在线</option>
-                          <option value="offline">离线</option>
-                        </select>
-                      </label>
-                    ) : (
-                      <>
-                        <label>
-                          阈值 / 下界
-                          <input
-                            type="number"
-                            step="0.01"
-                            disabled={c.extend1}
-                            value={c.lower ?? ""}
-                            onChange={(e) =>
-                              condition(i, {
-                                lower:
-                                  e.target.value === ""
-                                    ? null
-                                    : Number(e.target.value),
-                              })
-                            }
-                          />
-                        </label>
-                        {[
-                          "bet",
-                          "nbet",
-                          "mom_up",
-                          "mom_down",
-                          "yoy_up",
-                          "yoy_down",
-                        ].includes(c.operator) && (
-                          <label>
-                            上界
+                    {[conditionDraft].map((c, i) => (
+                      <div
+                        key={i}
+                        className="alarm-business-workspace-condition"
+                      >
+                        {c.fields.map((f, j) => (
+                          <label key={j}>
+                            指标 {j + 1}
+                            {!!pointOptions.length && (
+                              <select
+                                aria-label={`条件${i + 1}指标${j + 1}已登记测点`}
+                                value={
+                                  pointOptions.some(
+                                    (point) => point.code === f.code,
+                                  )
+                                    ? f.code
+                                    : ""
+                                }
+                                onChange={(e) => {
+                                  const point = pointOptions.find(
+                                    (point) => point.code === e.target.value,
+                                  )
+                                  if (point)
+                                    condition(i, {
+                                      fields: c.fields.map((field, k) =>
+                                        k === j
+                                          ? {
+                                              ...field,
+                                              code: point.code!,
+                                              unit: point.unit,
+                                              cycleType: "INSTANT",
+                                            }
+                                          : field,
+                                      ),
+                                      operator: "eq",
+                                      lower: null,
+                                      upper: null,
+                                      statusValue: null,
+                                    })
+                                }}
+                              >
+                                <option value="">
+                                  选择已登记测点 / 自定义代码
+                                </option>
+                                {pointOptions.map((point) => (
+                                  <option key={point.id} value={point.code}>
+                                    {point.name} · {point.unit || "无单位"} ·{" "}
+                                    {point.code}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
                             <input
-                              type="number"
-                              step="0.01"
-                              value={c.upper ?? ""}
+                              required
+                              maxLength={120}
+                              aria-label={`条件${i + 1}指标${j + 1}`}
+                              placeholder="指标代码"
+                              value={f.code}
+                              onChange={(e) => {
+                                const fields = c.fields.map((field, k) =>
+                                  k === j
+                                    ? { ...field, code: e.target.value }
+                                    : field,
+                                )
+                                condition(i, {
+                                  fields,
+                                  operator: "eq",
+                                  lower: null,
+                                  upper: null,
+                                  statusValue: null,
+                                })
+                              }}
+                            />
+                            <input
+                              aria-label={`条件${i + 1}指标${j + 1}单位`}
+                              placeholder="单位"
+                              value={f.unit}
                               onChange={(e) =>
                                 condition(i, {
-                                  upper:
-                                    e.target.value === ""
-                                      ? null
-                                      : Number(e.target.value),
+                                  fields: c.fields.map((field, k) =>
+                                    k === j
+                                      ? { ...field, unit: e.target.value }
+                                      : field,
+                                  ),
                                 })
                               }
                             />
+                            <select
+                              aria-label={`条件${i + 1}指标${j + 1}周期`}
+                              value={f.cycleType}
+                              onChange={(e) =>
+                                condition(i, {
+                                  fields: c.fields.map((field, k) =>
+                                    k === j
+                                      ? { ...field, cycleType: e.target.value }
+                                      : field,
+                                  ),
+                                })
+                              }
+                            >
+                              <option value="INSTANT">即时指标</option>
+                              <option value="DAY_00">日指标</option>
+                              <option value="YEAR_EARLY">年初累计</option>
+                            </select>
                           </label>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            condition(
+                              i,
+                              c.fields.length === 1
+                                ? {
+                                    fields: [
+                                      ...c.fields,
+                                      {
+                                        code: "",
+                                        unit: c.fields[0].unit,
+                                        cycleType: c.fields[0].cycleType,
+                                        objectType: draft.objectType,
+                                      },
+                                    ],
+                                    algorithm: "dpc_rate",
+                                    operator: "eq",
+                                    lower: null,
+                                    upper: null,
+                                  }
+                                : {
+                                    fields: [c.fields[0]],
+                                    algorithm: "self",
+                                    operator: "eq",
+                                    lower: null,
+                                    upper: null,
+                                  },
+                            )
+                          }
+                        >
+                          {c.fields.length === 1 ? "增加第二指标" : "单指标"}
+                        </button>
+                        <label>
+                          检索周期
+                          <select
+                            value={c.period}
+                            onChange={(e) =>
+                              condition(i, { period: Number(e.target.value) })
+                            }
+                          >
+                            {[1, 3, 5, 7, 9, 11].map((n) => (
+                              <option key={n} value={n}>
+                                连续{n}个周期（
+                                {c.fields[0]?.cycleType === "DAY_00"
+                                  ? "一个周期=每天23:59"
+                                  : "一个周期=完整分钟"}
+                                ）
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label>
+                          比较
+                          <select
+                            value={c.operator}
+                            onChange={(e) =>
+                              condition(i, {
+                                operator: e.target.value,
+                                lower: null,
+                                upper: null,
+                              })
+                            }
+                          >
+                            {Object.entries(conditionOperators).map(
+                              ([key, label]) => (
+                                <option key={key} value={key}>
+                                  {label}
+                                </option>
+                              ),
+                            )}
+                          </select>
+                        </label>
+                        {c.fields[0].code === "deviceStatus" ? (
+                          <label>
+                            通信状态
+                            <select
+                              required
+                              value={c.statusValue ?? ""}
+                              onChange={(e) =>
+                                condition(i, { statusValue: e.target.value })
+                              }
+                            >
+                              <option value="">请选择</option>
+                              <option value="online">在线</option>
+                              <option value="offline">离线</option>
+                            </select>
+                          </label>
+                        ) : (
+                          <>
+                            <label>
+                              阈值 / 下界
+                              <input
+                                type="number"
+                                step="0.01"
+                                disabled={c.extend1}
+                                value={c.lower ?? ""}
+                                onChange={(e) =>
+                                  condition(i, {
+                                    lower:
+                                      e.target.value === ""
+                                        ? null
+                                        : Number(e.target.value),
+                                  })
+                                }
+                              />
+                            </label>
+                            {[
+                              "bet",
+                              "nbet",
+                              "mom_up",
+                              "mom_down",
+                              "yoy_up",
+                              "yoy_down",
+                            ].includes(c.operator) && (
+                              <label>
+                                上界
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={c.upper ?? ""}
+                                  onChange={(e) =>
+                                    condition(i, {
+                                      upper:
+                                        e.target.value === ""
+                                          ? null
+                                          : Number(e.target.value),
+                                    })
+                                  }
+                                />
+                              </label>
+                            )}
+                          </>
                         )}
-                      </>
-                    )}
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={c.includeLower}
-                        onChange={(e) =>
-                          condition(i, { includeLower: e.target.checked })
-                        }
-                      />
-                      包含下界
-                    </label>
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={c.includeUpper}
-                        onChange={(e) =>
-                          condition(i, { includeUpper: e.target.checked })
-                        }
-                      />
-                      包含上界
-                    </label>
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={c.extend1}
-                        onChange={(e) =>
-                          condition(i, {
-                            extend1: e.target.checked,
-                            lower: null,
-                          })
-                        }
-                      />
-                      扩展条件
-                    </label>
-                    <button
-                      type="button"
-                      disabled={draft.conditions.length === 1}
-                      onClick={() =>
-                        update({
-                          conditions: draft.conditions.filter(
-                            (_, index) => index !== i,
-                          ),
-                        })
-                      }
-                    >
-                      移除条件
-                    </button>
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={c.includeLower}
+                            onChange={(e) =>
+                              condition(i, { includeLower: e.target.checked })
+                            }
+                          />
+                          包含下界
+                        </label>
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={c.includeUpper}
+                            onChange={(e) =>
+                              condition(i, { includeUpper: e.target.checked })
+                            }
+                          />
+                          包含上界
+                        </label>
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={c.extend1}
+                            onChange={(e) =>
+                              condition(i, {
+                                extend1: e.target.checked,
+                                lower: null,
+                              })
+                            }
+                          />
+                          扩展条件
+                        </label>
+                      </div>
+                    ))}
+                    <div className="alarm-business-workspace-actions">
+                      <button type="button" onClick={saveCondition}>
+                        提交条件
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConditionDraft(null)}
+                      >
+                        取消
+                      </button>
+                    </div>
+                    {error && <p role="alert">{error}</p>}
                   </div>
-                ))}
+                )}
                 <button
                   type="button"
                   disabled={draft.conditions.length >= 10}
-                  onClick={() =>
-                    update({
-                      conditions: [
-                        ...draft.conditions,
-                        emptyCondition(draft.objectType),
-                      ],
-                    })
-                  }
+                  onClick={() => {
+                    setConditionIndex(null)
+                    setConditionDraft(emptyCondition(draft.objectType))
+                    setError("")
+                  }}
                 >
-                  增加条件
+                  + 添加条件
                 </button>
               </div>
               <label className="full">
-                处置方案
+                解决方案
                 <textarea
                   maxLength={4000}
                   value={draft.solution}
@@ -821,14 +1221,11 @@ export default function AlarmRulesPage({
                         })
                       }
                     />
-                    需要通知
+                    是否需要通知
                   </label>
                   <label>
-                    次数上限
-                    <input
-                      type="number"
-                      min="1"
-                      max="100"
+                    每日通知上限
+                    <select
                       value={draft.notification.maxCount}
                       onChange={(e) =>
                         update({
@@ -838,7 +1235,18 @@ export default function AlarmRulesPage({
                           },
                         })
                       }
-                    />
+                    >
+                      {![2, 10, 20, 50].includes(
+                        draft.notification.maxCount,
+                      ) && (
+                        <option value={draft.notification.maxCount}>
+                          {draft.notification.maxCount}（已有配置）
+                        </option>
+                      )}
+                      {[2, 10, 20, 50].map((n) => (
+                        <option key={n}>{n}</option>
+                      ))}
+                    </select>
                   </label>
                   <label>
                     <input
@@ -859,6 +1267,7 @@ export default function AlarmRulesPage({
                     ["in_app", "站内"],
                     ["email", "邮件"],
                     ["sms", "短信"],
+                    ["app_push", "APP推送"],
                   ].map(([key, label]) => (
                     <label key={key}>
                       <input
@@ -911,7 +1320,7 @@ export default function AlarmRulesPage({
                   <p>暂无同企业且有此站告警阅读权限的收件人</p>
                 )}
               </div>
-            </div>
+            </fieldset>
             {error && (
               <p role="alert" className="alarm-business-workspace-error">
                 {error}
@@ -925,12 +1334,12 @@ export default function AlarmRulesPage({
                   !hasStationPermission(user, draft.stationId, "alarm.handle")
                 }
               >
-                {busy ? "正在保存…" : "保存规则"}
+                {busy ? "正在保存…" : "提交"}
               </button>
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => setDraft(null)}
+                onClick={() => void closeDraft()}
               >
                 取消
               </button>

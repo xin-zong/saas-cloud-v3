@@ -1,3 +1,4 @@
+import {isReferenceManagementPage,managementRoutes} from '@/tenant/referenceManagement'
 import type { AuthUser } from '@/auth/roles'
 
 export type ReferencePage = { id: string; label: string; permissions?: string[]; entitlements?: string[]; children?: ReferencePage[] }
@@ -28,18 +29,19 @@ export const referenceSections: ReferenceSection[] = [
   { id: 'screen', label: '大屏', items: [{ id: 'screen-default', label: '系统默认大屏', entitlements: ['overview'] }] },
   { id: 'openapi', label: 'OpenAPI', items: [{ id: 'openapi-init', label: '初始化开通', entitlements: ['overview'] }] },
   { id: 'system', label: '管理', items: [
-    { id: 'company', label: '企业信息管理', entitlements: ['company.profile'] },
+    { id: 'company', label: '企业信息管理', entitlements: ['company.profile','platform.approvals','platform.companies'] },
     { id: 'saas', label: 'SaaS管理', children: [
-      { id: 'saas-account', label: '账户中心', entitlements: ['company.profile'] },
-      { id: 'saas-service', label: '场站服务管理', permissions: ['asset.read'], entitlements: ['company.profile'] },
+      { id: 'saas-account', label: '账户中心', entitlements: ['company.profile','platform.packages','platform.menus','platform.templates'] },
+      { id: 'saas-service', label: '场站服务管理', entitlements: ['company.grants'] },
     ] },
-    { id: 'organization', label: '内部组织管理', entitlements: ['company.people','company.grants','platform.people'] },
+    { id: 'organization', label: '内部组织管理', entitlements: ['company.people','platform.people'] },
     { id: 'roles', label: '角色管理', entitlements: ['company.roles','platform.roles'] },
-    { id: 'logs', label: '平台日志', permissions: ['audit.read'], entitlements: ['company.audit','platform.audit'] },
+    { id: 'logs', label: '平台日志', permissions: ['audit.read'], entitlements: ['platform.audit'] },
   ] },
 ]
 export const referencePages = referenceSections.flatMap(s => s.items.flatMap(p => p.children ?? [p]))
 export function canOpenReferencePage(page: ReferencePage, user: Pick<AuthUser,'permissions'|'tenant'|'menus'>): boolean {
+  if(isReferenceManagementPage(page.id))return managementRoutes(page.id,user).length>0
   if (page.permissions?.some(p => !user.permissions.includes(p))) return false
   if (!user.tenant) return !['company','organization','roles','saas-account','saas-service'].includes(page.id)
   const paths = (nodes: NonNullable<AuthUser['menus']>): string[] => nodes.flatMap(n => [...(n.path ? [n.path] : []), ...paths(n.children ?? [])])

@@ -1,0 +1,16 @@
+package com.enerlution.ems.business;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
+import java.util.*;
+import com.enerlution.ems.auth.AccessControl;
+import com.enerlution.ems.common.BusinessException;
+import java.time.OffsetDateTime;
+import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
+class AlarmExportTest {
+ @Test void scopedExportCannotQueryWithoutExportGrant(){var access=mock(AccessControl.class);var db=mock(JdbcTemplate.class);doThrow(new BusinessException(403,"denied")).when(access).requireStationPermission(9,"report.export");var service=new AlarmWorkspaceService(new DomainSupport(db,access));var from=OffsetDateTime.parse("2026-10-01T00:00:00Z");assertThrows(BusinessException.class,()->service.exportRows(9L,"live","rule",null,null,null,null,from,from.plusDays(30),50,0,"desc"));verifyNoInteractions(db);assertThrows(BusinessException.class,()->service.summary(9L,"history","rule",null,null,null,from,from.plusDays(30),"UTC","DAY",true));verifyNoInteractions(db);}
+ @Test void invalidExportRangeOrGranularityCannotQuery(){var db=mock(JdbcTemplate.class);var service=new AlarmWorkspaceService(new DomainSupport(db,mock(AccessControl.class)));var from=OffsetDateTime.parse("2026-10-01T00:00:00Z");assertThrows(BusinessException.class,()->service.exportRows(null,"live","device",null,null,null,null,from,from.plusDays(40),50,0,"desc"));assertThrows(BusinessException.class,()->service.summary(null,"history","device",null,null,null,from,from.plusDays(30),"UTC","YEAR",true));verifyNoInteractions(db);}
+ @Test void currentPageExportPreservesFiltersSortAndChecksEveryReturnedStation(){var access=mock(AccessControl.class);var service=spy(new AlarmWorkspaceService(new DomainSupport(mock(JdbcTemplate.class),access)));var from=OffsetDateTime.parse("2026-10-01T00:00:00Z");doReturn(Map.of("items",List.of(Map.of("station_id",9L)))).when(service).list(null,"live","rule","minor",19L,"unread","threshold",from,from.plusDays(30),20,40,"asc");doThrow(new BusinessException(403,"denied")).when(access).requireStationPermission(9,"report.export");assertThrows(BusinessException.class,()->service.exportRows(null,"live","rule","minor",19L,"unread","threshold",from,from.plusDays(30),20,40,"asc"));verify(access).requireStationPermission(9,"alarm.read");}
+ @Test void trendExportChecksStationGrantBeforeReturningAggregate(){var access=mock(AccessControl.class);var db=mock(JdbcTemplate.class);when(access.userId()).thenReturn(7L);when(access.stationPermissionTable()).thenReturn("saas_effective_station_permission");when(db.queryForList(startsWith("SELECT DISTINCT st.id"),eq(Long.class),any(Object[].class))).thenReturn(List.of(9L));doThrow(new BusinessException(403,"denied")).when(access).requireStationPermission(9,"report.export");var service=new AlarmWorkspaceService(new DomainSupport(db,access));var from=OffsetDateTime.parse("2026-01-01T00:00:00Z");assertThrows(BusinessException.class,()->service.summary(null,"history","rule",null,null,null,from,from.plusYears(1),"UTC","MONTH",true,"minor"));verify(db,never()).queryForList(startsWith("SELECT a.severity"),any(Object[].class));}
+}

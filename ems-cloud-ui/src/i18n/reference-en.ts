@@ -1,0 +1,21 @@
+/** Product navigation and energy terminology take precedence over machine output. */
+export const referenceEnglish: Record<string, string> = {
+  '管理':'Management', '监控':'Monitoring', '大屏':'Large screen', '系统默认大屏':'Default display',
+  '通知':'Notifications', '账户':'Account', '帮助':'Help', '语言':'Language', '语言与显示':'Language & display',
+  '数据看板':'Dashboard', '场站':'Sites', '设备':'Devices', '报警':'Alarms',
+  '实时报警':'Active alarms', '报警历史':'Alarm history', '报警规则':'Alarm rules',
+  '报表':'Reports', '常规报表':'Standard reports', '生产运行报表':'Operations reports',
+  'AI智能分析':'AI analysis', '对比':'Comparison', '服务应用':'Applications',
+  '场站标签':'Site tags', '电价费率':'Electricity tariffs', '初始化开通':'Activate API access',
+  '企业信息管理':'Company information', 'SaaS管理':'SaaS management', '账户中心':'Account center',
+  '场站服务管理':'Site services', '内部组织管理':'Organization', '角色管理':'Roles', '平台日志':'Platform logs',
+  '光储场站':'Solar + storage sites', '光伏场站':'Solar sites', '储能场站':'Storage sites',
+  '有报警场站':'Sites with alarms', '全部场站':'All sites', '在线场站':'Online sites', '离线场站':'Offline sites',
+  '场站总数':'Total sites', '报警场站':'Sites with alarms', '报警数量':'Alarm count',
+  '光储融合':'Solar & storage', '光伏':'Solar', '储能':'Energy storage',
+  '总光伏装机容量':'Total solar capacity', '总储能装机功率':'Total storage power', '总储能装机容量':'Total storage capacity',
+  '接入中场站':'Sites connecting', '部分设备离线场站':'Sites with some devices offline', '全部设备离线场站':'Sites with all devices offline',
+  '发电量':'Generation', '用电量':'Consumption', '充电量':'Charge energy', '放电量':'Discharge energy',
+  '数据来源':'Data source', '装机容量':'Installed capacity', '储能容量':'Storage capacity',
+  '满发小时':'Full-load hours', '计划完成率':'Generation plan completion',
+}

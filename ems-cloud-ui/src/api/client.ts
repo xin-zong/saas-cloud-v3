@@ -28,7 +28,8 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   let body: { code: number; msg?: string; data: T }
   try { body = await response.json() } catch { throw new ApiError('服务器返回了无效响应。', response.status) }
   if (getToken() !== token || getSessionVersion() !== version) throw new ApiError('会话已变化，请重新操作。', 401)
-  if (response.status === 401 || body.code === 401) {
+  // Public 401s describe email/activation credentials, not the signed-in app session.
+  if (!path.startsWith('/public/') && (response.status === 401 || body.code === 401)) {
     // A late response from a previous session must not clear a newer session.
     if (getToken() === token) { setToken(null); window.dispatchEvent(new Event('enerlution:unauthorized')) }
   }

@@ -1,0 +1,91 @@
+.communication-mode{grid-template-columns:216px minmax(360px,1fr) 348px}.communication-mode .canvas-legend{display:none}.communication-mode .inspector-content{padding:17px 20px}.communication-mode .field{margin-bottom:13px}.communication-mode .inspector .section-label{margin-top:18px}.communication-mode .inspector input,.communication-mode .inspector select{font-size:11px}.comm-help{display:block;color:#91a0aa;font-size:10px;line-height:1.8;margin-top:6px}.comm-parent-link{font-size:10px;text-align:left;margin:0 0 5px;padding:0}.comm-inherited{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:11px 0;display:flex;justify-content:space-between;font-size:10px;color:#8b9ca5}.comm-inherited b{font:11px Consolas,monospace;color:#547969}.comm-validation{font-size:11px;line-height:1.9;border-top:1px solid #dce9e2;padding-top:12px;color:var(--green);margin-top:18px}.comm-validation.invalid{color:#ac7334;border-top-color:#eadcc4}.comm-port-list{display:flex;flex-direction:column;margin-bottom:17px}.comm-port-list button{display:flex;justify-content:space-between;align-items:center;padding:11px 7px;border:0;border-bottom:1px solid var(--line);border-radius:0;font-size:11px}.comm-port-list button.active{background:#eef6f1;color:var(--green)}.comm-port-list b{font:12px Consolas,monospace;width:65px;text-align:left}.comm-port-list span{color:#829aa7}.comm-port-list small{font-size:10px;color:#99a6ad}.comm-add-ports{display:flex;gap:5px}.comm-add-ports button{font-size:10px;padding:6px}.comm-edge-label{fill:#7c98a9;font:11px Consolas,'Microsoft YaHei',sans-serif}.comm-endpoint{fill:#6c8796;font:11px Consolas,monospace}.communication-mode .canvas-context span{max-width:310px;line-height:1.6}@media(max-width:1250px){.communication-mode{grid-template-columns:174px minmax(300px,1fr) 320px}.communication-mode .inspector-content{padding:14px}.communication-mode .toolgroup .divider{margin:0 2px}}@media(max-width:1050px){.communication-mode{grid-template-columns:174px minmax(270px,1fr) 290px}.communication-mode .tools{flex-wrap:wrap;height:auto;min-height:45px}}@media(max-width:950px){.communication-mode{grid-template-columns:150px minmax(300px,1fr)}.communication-mode .inspector-content{display:block}.communication-mode .inspector{grid-column:1/-1}.communication-mode .drawing{min-height:700px}}@media(max-width:600px){.communication-mode{display:flex}.communication-mode .inspector-content{padding:16px}}
+.catalog-fields{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:0 0 12px;margin:12px 0 16px}.catalog-fields .section-label{margin-top:13px}.catalog-badge{font-size:9px;color:#8a9ba4;font-weight:400;margin-left:auto}.catalog-match{font-size:10px;color:var(--green);line-height:1.8}
+.communication-mode .canvas-legend{display:flex;gap:12px}.bms-local{border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:18px}.bms-local input[type=checkbox]{width:auto;min-height:0;display:inline}.communication-mode .canvas-context span{max-width:none}
+.device-binding-bottom{border-top:1px solid var(--line);margin-top:24px;padding-top:6px}.port-mapping{border-bottom:1px solid var(--line);margin-bottom:16px;padding-bottom:10px}[data-ems-channel]{cursor:pointer}[data-ems-channel]:hover rect{fill:#dcf0e5;stroke-width:2}
+.communication-mode .canvas-wrap,.communication-mode #canvas{min-height:520px}
+.comm-port-badge{cursor:pointer}.comm-port-badge rect{fill:#fff;stroke:#64748b;stroke-width:1.5}.comm-port-badge text{fill:#334155;font:600 13px Consolas,monospace;pointer-events:none}.comm-port-badge:hover rect,.comm-port-badge:focus rect{fill:#eef2ff;stroke:#2563eb;stroke-width:2}.communication-control{border-top:1px solid var(--line);padding-top:12px;margin-top:18px}.communication-control input[type=checkbox]{width:auto;min-height:0}.communication-control>label{font-size:12px}.communication-mode .canvas-legend .line{width:24px;height:3px}
+.pf-port-list{display:flex;flex-direction:column;gap:5px}.pf-port-list button{display:flex;align-items:center;gap:12px;padding:10px;text-align:left}.pf-port-list button.active{background:#eef3fa;border-color:#93afd2}.pf-port-list small{margin-left:auto;font-size:10px}.pf-link-row{display:flex;align-items:center;justify-content:space-between;font-size:12px}.pf-wire{pointer-events:stroke}.communication-mode .section-label button{margin-left:auto}
+.pf-device-summary{display:flex;align-items:center;justify-content:space-between;font-size:11px;border-bottom:1px solid var(--line);padding-bottom:12px;gap:8px}
+.pf-port-list{gap:0}.pf-port-item{border-bottom:1px solid var(--line)}.pf-port-list .pf-port-heading{width:100%;border:0;border-radius:0;gap:8px;padding:12px 4px}.pf-port-heading small{font-size:9px}.pf-chevron{font-size:10px;white-space:nowrap;color:#65758a}.pf-port-detail{padding:0 8px 18px;border-left:2px solid #9ab2c8}.pf-port-detail>button{display:inline-block}.pf-port-detail .section-label{margin-top:16px}.pf-port-list .pf-port-detail button{padding:7px 9px}.pf-port-list .pf-link-row button{margin-left:auto}
+.pf-port-detail{border-left:0;padding:14px 4px 18px}.pf-connections-label{font-size:11px;color:#74828b;margin:18px 0 6px}
+.pf-fields-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px 10px}.communication-mode .pf-fields-grid .field{margin:0;min-width:0}.pf-fields-grid .field>span{margin-bottom:4px;font-size:10px}.communication-mode .pf-fields-grid input,.communication-mode .pf-fields-grid select{width:100%;min-width:0;height:32px;min-height:32px;padding:5px 7px;font-size:11px}.pf-port-detail{padding:10px 4px 12px}.pf-port-detail>button{margin-top:9px}.pf-connections-label{margin:12px 0 4px}.pf-link-row{min-height:29px}.pf-port-list .pf-port-heading{padding:9px 4px}.communication-mode .inspector-content{padding-top:12px}.pf-device-summary{padding-bottom:8px}
+.pf-target-heading{display:flex;align-items:center;justify-content:space-between;margin:10px 0 4px;color:#74828b;font-size:11px}.pf-port-list .pf-target-add{font-size:19px;padding:0 7px;line-height:26px}.pf-target-row{display:flex;align-items:center;gap:6px;margin:6px 0}.communication-mode .pf-target-row select{flex:1;min-width:0;height:32px;padding:4px 6px;font-size:11px}.pf-port-list .pf-target-row button{flex:none;padding:5px;font-size:11px}
+.pf-port-actions{display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--line);padding-top:10px;margin-top:12px}.pf-port-list .pf-port-actions button{display:inline-flex;justify-content:center;min-width:62px;padding:7px 13px}
+.pf-port-detail .pf-target-heading{margin:6px 0 2px;min-height:20px;line-height:20px}.pf-port-list .pf-target-heading .pf-target-add{padding:0;width:24px;height:20px;min-height:20px;line-height:20px;margin:0}.pf-port-detail .pf-target-row{margin:3px 0}.pf-target-heading+.pf-target-row{margin-top:0}
+.device-binding-bottom button{font-size:11px;line-height:1.5;padding:6px 10px}
+.communication-mode .catalog-fields{border-bottom:0;padding-bottom:0;margin-bottom:4px}.communication-mode .catalog-fields .field{margin-bottom:0}.communication-mode .catalog-fields+.section-label{margin-top:8px}.communication-mode .pf-device-summary{border-bottom:0;padding-bottom:0}.communication-mode .pf-device-summary+.section-label{margin-top:8px}
+
+@media(min-width:1700px){.communication-mode{grid-template-columns:236px minmax(400px,1fr) 348px}}
+
+/* Shared frame prevents layout shifts when switching topology views. */
+.workbench,.workbench.communication-mode{grid-template-columns:216px minmax(360px,1fr) 348px}
+.workbench .viewbar{flex-shrink:0;min-height:48px;height:48px;flex-wrap:nowrap}
+.workbench .view-tabs{flex-shrink:0;white-space:nowrap}
+.workbench .catalog-fields{border:0;padding-bottom:0;margin-bottom:4px}
+.workbench .catalog-fields .field{margin-bottom:0}
+.workbench .catalog-fields+.section-label{margin-top:8px}
+.device-binding-bottom{border-top:0;margin-top:18px;padding-top:0}
+.device-binding-bottom button[data-action="binding"]{font-size:11px;line-height:1.5;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)}
+@media(min-width:1700px){.workbench,.workbench.communication-mode{grid-template-columns:236px minmax(400px,1fr) 348px}}
+@media(max-width:1250px){.workbench,.workbench.communication-mode{grid-template-columns:174px minmax(300px,1fr) 320px}}
+@media(max-width:1050px){.workbench,.workbench.communication-mode{grid-template-columns:174px minmax(270px,1fr) 290px}}
+@media(max-width:950px){.workbench,.workbench.communication-mode{grid-template-columns:150px minmax(300px,1fr)}}
+
+/* Keep the inspector frame and usable content width stable across views. */
+.workbench .inspector{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.workbench .inspector-head{flex:0 0 48px}
+.workbench .inspector-content{flex:1;min-height:0;overflow:auto;scrollbar-gutter:stable;padding:16px 18px;display:block}
+.workbench .inspector .section-label{margin-top:18px}
+.workbench .inspector .catalog-fields+.section-label,.workbench .inspector .pf-device-summary+.section-label{margin-top:8px}
+@media(max-width:1250px){.workbench .inspector-content{padding:14px}}
+@media(max-width:950px){.workbench .inspector{max-height:620px;min-height:360px}}
+
+.workbench .tools{height:45px;min-height:45px;flex:0 0 45px;flex-wrap:nowrap}
+.workbench .toolgroup{flex-shrink:0;white-space:nowrap}
+.workbench .toolgroup .divider{margin:0 5px}
+.workbench .canvas-wrap,.workbench #canvas{min-height:430px}
+
+html{scrollbar-gutter:stable}
+
+.workbench .canvas-context{display:none}
+
+.pf-port-actions{gap:6px;padding-top:6px;margin-top:8px;border-top:0}
+.workbench .pf-port-list .pf-port-actions button{min-width:44px;height:26px;padding:3px 8px;font-size:11px;font-weight:400;line-height:18px;border-radius:4px}
+.workbench .pf-port-actions button.primary{background:#f0f6f3;border-color:#d9e7df;color:var(--green)}
+.workbench .pf-port-actions button.primary:hover{background:#e5f0e9;border-color:#aac9b8}
+.workbench .pf-port-actions button.danger{background:transparent;border-color:transparent;color:#92716d}
+.workbench .pf-port-actions button.danger:hover{background:#fbefed;color:var(--red)}
+
+
+.library-heading{height:48px;flex:0 0 48px;display:flex;align-items:center;padding:0 17px;border-bottom:1px solid var(--line);font-size:12px;font-weight:600;color:var(--green)}
+
+
+#device-type-filter{font-size:11px;height:32px;padding:4px 7px;margin-bottom:10px}.device-list-row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:10px 7px;border:0;border-bottom:1px solid #edf1f3;border-radius:4px;background:transparent}.device-list-row.active{background:var(--green-soft);color:var(--green)}.device-list-row>svg{width:21px;height:21px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.5}.device-list-name{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}.device-list-name b{font-size:11px;font-weight:500}.device-list-name>span{font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.device-list-state{display:flex;gap:5px;align-items:center}.binding-dot{width:6px;height:6px;border:1px solid #b69a64;border-radius:50%}.binding-dot.bound{background:#57967b;border-color:#57967b}.device-list-warning{font-size:10px;color:#ae7c32}
+
+#canvas .node.selected .node-box{fill:#e0f2e8;stroke:#287b5f;stroke-width:2}#canvas .node.selected .node-label{fill:#205940}#canvas .node.selected .node-subtitle{fill:#557c6a}
+
+/* Electrical media use the same distinct colors on wires, ports and legend. */
+.workbench:not(.communication-mode){--ac-color:#2563eb;--dc-color:#d97706}
+.workbench:not(.communication-mode) .edge.ac .edge-line{stroke:var(--ac-color)}
+.workbench:not(.communication-mode) .edge.dc .edge-line{stroke:var(--dc-color)}
+.workbench:not(.communication-mode) .edge.selected .edge-line{stroke-width:4}
+.workbench:not(.communication-mode) .edge.dc .edge-label{fill:var(--dc-color)}
+.workbench:not(.communication-mode) .port{stroke:var(--ac-color)}
+.workbench:not(.communication-mode) .port.dc{stroke:var(--dc-color)}
+.workbench:not(.communication-mode) .port-dot{background:var(--ac-color)}
+.workbench:not(.communication-mode) .port-dot.dc{background:var(--dc-color)}
+.workbench:not(.communication-mode) .canvas-legend .line{width:24px;height:3px}
+.workbench:not(.communication-mode) .canvas-legend .line.ac{background:var(--ac-color)}
+.workbench:not(.communication-mode) .canvas-legend .line.dc{background:var(--dc-color)}
+.workbench:not(.communication-mode) .canvas-legend{color:#526778}
+
+.workbench:not(.communication-mode){--ac-color:#6a8fbd;--dc-color:#bf925c}
+.workbench:not(.communication-mode) .edge .edge-line{stroke-width:1.6}
+.workbench:not(.communication-mode) .edge.selected .edge-line{stroke-width:3}
+.workbench:not(.communication-mode) #canvas .node .bus-bar{fill:#55718e;stroke:#48627c;stroke-width:1;filter:none}
+.workbench:not(.communication-mode) #canvas .node.selected .bus-bar{fill:#287b5f;stroke:#205940;stroke-width:2}
+.workbench:not(.communication-mode) .bus-label{fill:#435c72;font-weight:600}
+
+#canvas .node:not(.selected) .node-box:not(.bus-bar){stroke:#87969f}
+
+.node-resize{cursor:nwse-resize;outline:none}.node-resize:focus-visible rect:last-child{fill:#cce8da;stroke-width:2}

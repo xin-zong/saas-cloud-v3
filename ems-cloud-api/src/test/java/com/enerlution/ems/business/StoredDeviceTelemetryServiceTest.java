@@ -10,6 +10,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 class StoredDeviceTelemetryServiceTest {
+  @Test void batchHistoryKeepsPointAndSourceWinnerOrderingInOneQuery(){
+    when(jdbc.queryForList(anyString(),any(Object[].class))).thenReturn(List.of(sample("observed","0","0",1000,1500)));
+    var rows=service.historyRows(List.of(7L,8L),1000,2000);assertEquals("0",rows.get(0).path("number_exact").asText());
+    verify(jdbc).queryForList(argThat((String sql)->sql.contains("DISTINCT ON (b.measurement_point_id,s.source_at)")&&sql.contains("measurement_point_id IN (7,8)")&&sql.contains("s.captured_at DESC,s.id DESC")&&sql.contains("LIMIT 20001")),eq(java.sql.Timestamp.from(Instant.ofEpochMilli(1000))),eq(java.sql.Timestamp.from(Instant.ofEpochMilli(2000))));
+  }
+  @Test void batchHistoryRejectsWholeBatchRatherThanTruncate(){
+    when(jdbc.queryForList(anyString(),any(Object[].class))).thenReturn(Collections.nCopies(20001,sample("observed","1","1",1000,1500)));
+    assertThrows(com.enerlution.ems.common.BusinessException.class,()->service.historyRows(List.of(7L,8L),1000,2000));
+  }
   final JdbcTemplate jdbc=mock(JdbcTemplate.class);
   final ObjectMapper json=new ObjectMapper();
   final StoredDeviceTelemetryService service=new StoredDeviceTelemetryService(jdbc,json,
@@ -79,6 +88,18 @@ class StoredDeviceTelemetryServiceTest {
     assertTrue(service.latest(4,List.of()).isEmpty());
     verify(jdbc).queryForList(argThat((String sql)->sql.contains("WHERE b.station_id=?")
         &&sql.contains("d.station_id=b.station_id")&&!sql.contains("measurement_point_id IN")),eq(4L));
+  }
+  @Test void explicitDeviceScopeKeepsOriginalStationAndLatestNullEvidence() {
+    var missing=sample("missing",null,"--",199000,199999);
+    when(jdbc.queryForList(anyString(),eq(4L))).thenReturn(List.of(missing));
+    var values=service.latestForDevices(4,List.of(3L));
+    assertEquals(1,values.size());assertNull(values.getFirst().get("value"));
+    assertEquals("invalid",values.getFirst().get("quality"));
+    verify(jdbc).queryForList(argThat((String sql)->sql.contains("WHERE b.station_id=?")&&sql.contains("d.station_id=b.station_id")
+        &&sql.contains("d.id IN (3)")&&sql.contains("ORDER BY s.source_at DESC,s.captured_at DESC,s.id DESC LIMIT 1")),eq(4L));
+  }
+  @Test void emptyDeviceScopeDoesNotExpandToAllStationPoints() {
+    assertTrue(service.latestForDevices(4,List.of()).isEmpty());verifyNoInteractions(jdbc);
   }
   @Test void historyUsesHalfOpenRangeAndLatestReceiptForSameSourceTime() {
     when(jdbc.queryForList(anyString(),any(Object[].class))).thenReturn(List.of(sample("text",null,"ready",1000,1500)));

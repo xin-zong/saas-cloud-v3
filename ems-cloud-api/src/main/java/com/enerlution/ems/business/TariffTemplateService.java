@@ -65,7 +65,7 @@ public class TariffTemplateService {
     if(periods==null || periods.isEmpty() || periods.size()>96 || periods.stream().anyMatch(p->p==null || p.startMinute()==null || p.endMinute()==null))throw invalid("请填写1–96个有效时段");
     var sorted=periods.stream().sorted(Comparator.comparingInt(Period::startMinute)).toList();var result=new ArrayList<Period>();int end=0;
     for(var period:sorted){
-      if(period.startMinute()!=end || period.endMinute()<=period.startMinute() || period.endMinute()>1440 || period.band()==null || !Set.of("peak","flat","valley","superPeak").contains(period.band()))throw invalid("时段须无缝覆盖全天且使用有效类型");
+      if(period.startMinute()!=end || period.endMinute()<=period.startMinute() || period.endMinute()>1440 || period.band()==null || !Set.of("peak","flat","valley","superPeak","deepValley").contains(period.band()))throw invalid("时段须无缝覆盖全天且使用有效类型");
       String text=period.pricePerKwh();
       if(text==null || text.length()>64 || !text.matches("-?[0-9]+(?:\\.[0-9]{1,6})?"))throw invalid("电价须为最多六位小数的十进制字符串");
       BigDecimal price=new BigDecimal(text);
@@ -125,3 +125,4 @@ public class TariffTemplateService {
   private void audit(String action,UUID id,long version){s.audit("tariff-template."+action,Map.of("templateId",id,"version",version));}
   static BusinessException invalid(String message){return new BusinessException(400,message);}
 }
+

@@ -1,5 +1,6 @@
+import type { StationFlowModel } from "@/data/stationFlow";
 import type { Station } from "@/App";
-import type { DeviceConfig, EdgeConfig } from "./EnergyFlow3D";
+import type { DeviceConfig, EdgeConfig, DeviceType } from "./EnergyFlow3D";
 
 const VB_W = 1063;
 const VB_H = 582;
@@ -9,6 +10,10 @@ const INK = "#151b27";
 
 interface Props {
   station: Station;
+  /** Supplied even for missing data: bypasses all legacy synthetic power allocations. */
+  measured?: StationFlowModel;
+  selectedType?: DeviceType;
+  onDeviceSelect?: (type:DeviceType)=>void;
   devices?: DeviceConfig[];
   edges?: EdgeConfig[];
 }
@@ -39,6 +44,7 @@ function PowerText({
   x,
   y,
   mw,
+  metric,
   size = 30,
   unitSize = 17,
   weight = 760,
@@ -48,13 +54,14 @@ function PowerText({
   x: number;
   y: number;
   mw: number;
+  metric?: {value:string;unit:string};
   size?: number;
   unitSize?: number;
   weight?: number;
   anchor?: "start" | "middle" | "end";
   fill?: string;
 }) {
-  const parts = powerParts(mw);
+  const parts = metric ?? powerParts(mw);
   return (
     <text x={x} y={y} textAnchor={anchor} fontSize={size} fontWeight={weight} fill={fill}>
       <tspan>{parts.value}</tspan>
@@ -66,18 +73,22 @@ function PowerText({
 }
 
 function FlowPath({
+  id,
   baseD,
   activeD,
   active,
+  animate = false,
   width,
 }: {
+  id: string;
   baseD: string;
   activeD: string;
   active: boolean;
+  animate?: boolean;
   width: number;
 }) {
   return (
-    <g>
+    <g data-flow={id} data-active={active}>
       <path
         d={baseD}
         fill="none"
@@ -97,6 +108,9 @@ function FlowPath({
         opacity={active ? 1 : 0}
         className="energy-flow-segment"
       />
+      {active && animate && <circle r="4" fill={FLOW_BLUE} className="energy-flow-particle">
+        <animateMotion key={activeD} path={activeD} dur="2s" repeatCount="indefinite" />
+      </circle>}
     </g>
   );
 }
@@ -179,8 +193,8 @@ function SolarPanel() {
   );
 }
 
-function BatteryStatusIcon({ soc }: { soc: number }) {
-  const normalized = clamp(soc, 0, 100);
+function BatteryStatusIcon({ soc }: { soc: number | null }) {
+  const normalized = soc === null ? 0 : clamp(soc, 0, 100);
   const fillWidth = 37 * normalized / 100;
   return (
     <g transform="translate(89 418)">
@@ -192,8 +206,8 @@ function BatteryStatusIcon({ soc }: { soc: number }) {
   );
 }
 
-function BatteryStack({ soc }: { soc: number }) {
-  const activeLayers = Math.max(1, Math.round(clamp(soc, 0, 100) / 20));
+function BatteryStack({ soc }: { soc: number | null }) {
+  const activeLayers = soc === null ? 0 : Math.max(1, Math.round(clamp(soc, 0, 100) / 20));
   return (
     <g transform="translate(184 377)" filter="url(#device-shadow)">
       <ellipse cx="41" cy="102" rx="43" ry="7" fill="#d6dae0" opacity=".6" />
@@ -303,24 +317,26 @@ function GridTower() {
   );
 }
 
-export default function EnergyFlowDiagram({ station }: Props) {
-  const loadMw = Math.max(0, station.activePower / 1000);
-  const pvMw = Math.max(0, station.pvOutput);
+export default function EnergyFlowDiagram({ station, measured,selectedType,onDeviceSelect,devices }: Props) {
+  if(Boolean(measured))return <MeasuredFlowDiagram station={station} measured={measured!} selectedType={selectedType} onDeviceSelect={onDeviceSelect} devices={devices}/>;
+  const displaySoc = measured ? measured.batterySoc : station.soc;
+  const loadMw = measured ? (measured.values.loadKw ?? 0) / 1000 : Math.max(0, station.activePower / 1000);
+  const pvMw = measured ? (measured.values.mpptKw ?? 0) / 1000 : Math.max(0, station.pvOutput);
   const batteryEnergyMwh = Math.max(0, station.storageCapacity * station.soc / 100);
-  const pvToLoadMw = Math.max(0, Math.min(pvMw, loadMw));
+  const pvToLoadMw = measured ? Math.abs(pvMw) : Math.max(0, Math.min(pvMw, loadMw));
   const pvSurplusMw = Math.max(0, pvMw - loadMw);
   const loadDeficitMw = Math.max(0, loadMw - pvMw);
   const chargeRoomMwh = Math.max(0, station.storageCapacity - batteryEnergyMwh);
   const batteryChargeLimitMw = Math.max(0, Math.min(station.storageCapacity * 0.35, chargeRoomMwh * 0.7));
   const batteryDischargeLimitMw = Math.max(0, Math.min(station.storageCapacity * 0.35, batteryEnergyMwh * 0.35));
-  const pvToBatteryMw = Math.min(pvSurplusMw, batteryChargeLimitMw);
-  const batteryPowerMw = Math.min(loadDeficitMw, batteryDischargeLimitMw);
-  const gridImportMw = Math.max(0, loadDeficitMw - batteryPowerMw);
-  const gridExportMw = Math.max(0, pvSurplusMw - pvToBatteryMw);
+  const pvToBatteryMw = measured ? 0 : Math.min(pvSurplusMw, batteryChargeLimitMw);
+  const batteryPowerMw = measured ? Math.abs(measured.values.batteryKw ?? 0) / 1000 : Math.min(loadDeficitMw, batteryDischargeLimitMw);
+  const gridImportMw = measured ? Math.max(0, measured.values.gridKw ?? 0) / 1000 : Math.max(0, loadDeficitMw - batteryPowerMw);
+  const gridExportMw = measured ? Math.max(0, -(measured.values.gridKw ?? 0)) / 1000 : Math.max(0, pvSurplusMw - pvToBatteryMw);
   const batteryDisplayMw = pvToBatteryMw > 0 ? pvToBatteryMw : batteryPowerMw;
   const gridDisplayMw = gridImportMw > 0 ? gridImportMw : gridExportMw;
   const realtimeMw = Math.max(loadMw, pvMw + gridImportMw + batteryPowerMw);
-  const auxiliaryLoadMw = Math.max(0, Math.min(loadMw, loadMw * 0.08));
+  const auxiliaryLoadMw = measured ? 0 : Math.max(0, Math.min(loadMw, loadMw * 0.08));
   const maxFlowMw = Math.max(0.05, pvToLoadMw, pvToBatteryMw, batteryPowerMw, gridDisplayMw);
   const flowWidth = (mw: number) => Number((3.6 + clamp(mw / maxFlowMw, 0, 1) * 1.4).toFixed(2));
   const statusLabel = station.status === "online" ? "Normal" : station.runStatus || "Normal";
@@ -356,6 +372,7 @@ export default function EnergyFlowDiagram({ station }: Props) {
           transition: stroke-width 180ms ease-out, opacity 180ms ease-out;
         }
         @media (prefers-reduced-motion: reduce) {
+          .energy-flow-particle { display: none; }
           .energy-flow-segment {
             transition: none;
           }
@@ -368,7 +385,7 @@ export default function EnergyFlowDiagram({ station }: Props) {
         role="img"
         aria-label={`${station.name} 能源流向图`}
       >
-        <title>{station.name} 实时能源流向</title>
+        <title>{`${station.name} 实时能源流向`}</title>
         <defs>
           <filter id="device-shadow" x="-25%" y="-25%" width="150%" height="160%">
             <feDropShadow dx="0" dy="3" stdDeviation="3.5" floodColor="#76808d" floodOpacity=".22" />
@@ -381,27 +398,34 @@ export default function EnergyFlowDiagram({ station }: Props) {
         <rect width={VB_W} height={VB_H} fill="#fff" />
 
         <FlowPath
+          id="pv-battery"
           baseD="M384 127 H247 Q223 127 223 151 V359"
           activeD="M384 127 H247 Q223 127 223 151 V359"
           active={pvToBatteryMw > 0.000001}
           width={flowWidth(pvToBatteryMw)}
         />
         <FlowPath
+          id="solar"
+          animate={!!measured}
           baseD="M456 168 V240"
           activeD="M456 168 V240"
-          active={pvToLoadMw > 0.000001}
+          active={measured ? measured.solarDirection === "forward" : pvToLoadMw > 0.000001}
           width={flowWidth(pvToLoadMw)}
         />
         <FlowPath
+          id="battery"
+          animate={!!measured}
           baseD="M299 449 H414 Q441 449 441 422 V394"
-          activeD="M299 449 H414 Q441 449 441 422 V394"
-          active={batteryPowerMw > 0.000001}
+          activeD={measured?.batteryDirection === "forward" ? "M441 394 V422 Q441 449 414 449 H299" : "M299 449 H414 Q441 449 441 422 V394"}
+          active={measured ? ["forward","reverse"].includes(measured.batteryDirection) : batteryPowerMw > 0.000001}
           width={flowWidth(batteryPowerMw)}
         />
         <FlowPath
+          id="grid"
+          animate={!!measured}
           baseD="M470 394 V427 Q470 449 492 449 H611"
           activeD={gridActiveD}
-          active={gridDisplayMw > 0.000001}
+          active={measured ? ["forward","reverse"].includes(measured.gridDirection) : gridDisplayMw > 0.000001}
           width={flowWidth(gridDisplayMw)}
         />
         <path
@@ -425,43 +449,65 @@ export default function EnergyFlowDiagram({ station }: Props) {
 
           <SunIcon />
           <circle cx="72" cy="92" r="3" fill={INK} />
-          <text x="80" y="99" fontSize="19" fontWeight="760" fill={INK}>32°</text>
+          <text x="80" y="99" fontSize="19" fontWeight="760" fill={INK}>{measured ? "—" : "32°"}</text>
           <LightningIcon x={746} y={92} />
         </g>
 
         <SolarPanel />
         <HouseScene />
-        <BatteryStatusIcon soc={station.soc} />
-        <BatteryStack soc={station.soc} />
+        <BatteryStatusIcon soc={displaySoc} />
+        <BatteryStack soc={displaySoc} />
         <GridTower />
 
         <g fontFamily="Inter, Noto Sans SC, system-ui, sans-serif">
-          <PowerText x={543} y={106} mw={pvMw} size={31} unitSize={17} />
-          <PowerText x={537} y={292} mw={loadMw} size={31} unitSize={17} />
+          <PowerText x={543} y={106} mw={pvMw} metric={measured?.metrics.solar} size={31} unitSize={17} />
+          <PowerText x={537} y={292} mw={loadMw} metric={measured?.metrics.factory} size={31} unitSize={17} />
 
           <text x="235" y="171" fontSize="20" fontWeight="650" fill={INK}>
-            {formatPower(pvToBatteryMw)}
+            {measured ? "—" : formatPower(pvToBatteryMw)}
           </text>
           <text x="467" y="221" fontSize="20" fontWeight="650" fill="#303746">
-            {formatPower(pvToLoadMw)}
+            {measured ? `${measured.metrics.solar.value} kW` : formatPower(pvToLoadMw)}
           </text>
           <text x="284" y="385" fontSize="19" fontWeight="650" fill="#303746">
-            {formatPower(auxiliaryLoadMw)}
+            {measured ? "—" : formatPower(auxiliaryLoadMw)}
           </text>
           <text x="483" y="427" fontSize="19" fontWeight="650" fill="#303746">
-            {formatPower(gridDisplayMw)}
+            {measured ? `${measured.metrics.tower.value} kW` : formatPower(gridDisplayMw)}
           </text>
 
           <text x="89" y="471" fontSize="21" fontWeight="650" fill="#3e4654">
-            {clamp(station.soc, 0, 100).toFixed(0)}%
+            {displaySoc === null ? "—" : `${clamp(displaySoc, 0, 100).toFixed(0)}%`}
           </text>
-          <PowerText x={186} y={526} mw={batteryDisplayMw} size={31} unitSize={17} />
-          <PowerText x={669} y={526} mw={gridDisplayMw} size={31} unitSize={17} />
+          <PowerText x={186} y={526} mw={batteryDisplayMw} metric={measured?.metrics.battery} size={31} unitSize={17} />
+          <PowerText x={669} y={526} mw={gridDisplayMw} metric={measured?.metrics.tower} size={31} unitSize={17} />
 
-          <text x="907" y="263" fontSize="22" fontWeight="520" fill="#7b8493">Build-in Power</text>
-          <PowerText x={907} y={310} mw={realtimeMw} size={35} unitSize={18} />
+          <text x="907" y="263" fontSize="22" fontWeight="520" fill="#7b8493">{measured ? "PCS Power" : "Build-in Power"}</text>
+          <PowerText x={907} y={310} mw={realtimeMw} metric={measured?.metrics.pcs} size={35} unitSize={18} />
         </g>
       </svg>
     </div>
   );
+}
+
+export const flowDeviceNames:Record<DeviceType,string>={tower:'电网',factory:'工厂负荷',pcs:'PCS',solar:'光伏',battery:'电池'}
+/** Uses the repository's original 2D tower, building and PV artwork; cabinets are native SVG. */
+export function StationFlowDeviceArtwork({type,width=130,height=120}:{type:DeviceType;width?:number|string;height?:number|string}){
+ const box=type==='tower'?'625 330 140 170':type==='factory'?'318 235 250 153':type==='solar'?'390 60 145 115':'0 0 150 160'
+ return <svg viewBox={box} width={width} height={height} preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false" className="station-flow-device-artwork">{type==='tower'?<GridTower/>:type==='factory'?<HouseScene/>:type==='solar'?<SolarPanel/>:type==='pcs'?<g><ellipse cx="75" cy="150" rx="58" ry="7" fill="#dce5e9"/><path d="M24 18 81 9 106 25 49 35Z" fill="#90a6b4"/><path d="M24 18 49 35V146L24 130Z" fill="#637b8d"/><path d="M49 35 106 25V136L49 146Z" fill="#344e61"/><path d="M56 42 98 35V130L56 137Z" fill="#425e70" stroke="#8aa0ad"/><path d="M62 52 91 47V68L62 73Z" fill="#a2c8d7" stroke="#213d51" strokeWidth="3"/>{[0,1,2,3,4].map(n=><path key={n} d={`M62 ${86+n*5} 91 ${81+n*5}`} stroke="#1e394b" strokeWidth="2"/>)}<path d="M89 100V114" stroke="#bacbd2" strokeWidth="3"/><path d="M107 62 128 58 139 67 118 72Z" fill="#99acb9"/><path d="M107 62 118 72V141L107 135Z" fill="#6d8494"/><path d="M118 72 139 67V134L118 141Z" fill="#3c586a"/><circle cx="128" cy="94" r="5" fill="#a8bfcb"/><circle cx="128" cy="111" r="5" fill="#a8bfcb"/></g>:<g><ellipse cx="75" cy="151" rx="61" ry="7" fill="#dce5e9"/><path d="M18 34 63 15 129 30 84 51Z" fill="#e8eef0" stroke="#acbdc7"/><path d="M18 34 84 51V145L18 126Z" fill="#c8d6de" stroke="#99aebc"/><path d="M84 51 129 30V123L84 145Z" fill="#e4ebef" stroke="#a5b8c4"/>{[0,1,2,3,4,5,6].map(n=><path key={n} d={`M${25+n*8} ${39+n*2}V${121+n*2}`} stroke="#a5b8c4" strokeWidth="2"/>)}<path d="M93 58 120 45V116L93 130Z" fill="#d8e3e9" stroke="#a0b5c2"/><path d="M100 74 114 67V86L100 93Z" fill="#9cbdca" stroke="#8ca9b8"/><path d="M103 104V116" stroke="#718d9f" strokeWidth="3"/><path d="M24 126 84 144 126 125" fill="none" stroke="#5f7e91" strokeWidth="3"/></g>}</svg>
+}
+export function activateFlowDevice(type:DeviceType,onSelect:((type:DeviceType)=>void)|undefined,event?:{key:string;preventDefault:()=>void}){if(event&&!['Enter',' '].includes(event.key))return;if(!onSelect)return;event?.preventDefault();onSelect(type)}
+const measuredBranches=[
+ {id:'grid',base:'M320 150 H385 Q415 150 415 180 V270 H430',reverse:'M430 270 H415 V180 Q415 150 385 150 H320',direction:'gridDirection'},
+ {id:'solar',base:'M320 432 H385 Q415 432 415 402 V310 H430',reverse:'',direction:'solarDirection'},
+ {id:'load',base:'M635 270 H665 Q695 270 695 240 V150 H743',reverse:'',direction:'loadDirection'},
+ {id:'battery',base:'M635 310 H665 Q695 310 695 340 V432 H743',reverse:'M743 432 H695 V340 Q695 310 665 310 H635',direction:'batteryDirection'},
+] as const
+function MeasuredFlowDiagram({station,measured,selectedType,onDeviceSelect,devices}:Props&{measured:StationFlowModel}){
+ const visible=(type:DeviceType)=>!devices||devices.some(device=>device.type===type)
+ const nodes:Array<{type:DeviceType;x:number;y:number;width:number;height:number}>=[{type:'tower',x:60,y:60,width:260,height:180},{type:'factory',x:743,y:60,width:260,height:180},{type:'solar',x:60,y:342,width:260,height:180},{type:'battery',x:743,y:342,width:260,height:180},{type:'pcs',x:430,y:196,width:205,height:192}]
+ const state=(type:DeviceType)=>{const dir=type==='tower'?measured.gridDirection:type==='battery'?measured.batteryDirection:type==='solar'?measured.solarDirection:type==='factory'?measured.loadDirection:null;return dir==='unknown'?'方向未知':dir==='idle'?'无功率交换':type==='tower'?(dir==='forward'?'购电入站':'并网出站'):type==='battery'?(dir==='forward'?'充电':'放电'):type==='solar'?'发电出端':type==='factory'?'负荷消耗':'公共母线'}
+ return <div className="energy-flow-diagram energy-flow-measured"><style>{`
+ .energy-flow-measured{width:100%;height:100%;min-height:270px;overflow:hidden;background:#fff}.energy-flow-measured>svg{display:block;width:100%;height:100%;font-family:Inter,"Microsoft YaHei",sans-serif}.energy-flow-device{cursor:pointer;outline:none}.energy-flow-device-frame{fill:#fff;stroke:#e2eae6;stroke-width:1.5;transition:fill .16s,stroke .16s,filter .16s}.energy-flow-device:hover .energy-flow-device-frame{fill:#f5faf7;stroke:#a4d3bd;filter:drop-shadow(0 3px 5px #214f3712)}.energy-flow-device:focus-visible .energy-flow-device-frame{stroke:#278d6b;stroke-width:3}.energy-flow-device[data-selected=true] .energy-flow-device-frame{fill:#eef8f1;stroke:#36a77e;stroke-width:2.5}.energy-flow-device[aria-disabled=true]{cursor:default}.energy-flow-measured text{font-variant-numeric:tabular-nums}.energy-flow-particle{pointer-events:none}@media(prefers-reduced-motion:reduce){.energy-flow-particle{display:none}.energy-flow-device-frame{transition:none}}
+ `}</style><svg viewBox={`0 0 ${VB_W} ${VB_H}`} role="group" aria-label={`${station.name} 能源流向图`}><title>{`${station.name} 场站公共母线能流`}</title><defs><filter id="device-shadow" x="-25%" y="-25%" width="150%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="3.5" floodColor="#76808d" floodOpacity=".15"/></filter><marker id="flow-arrow" viewBox="0 0 10 10" refX="8.4" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 10 5 0 10Z" fill={FLOW_BLUE}/></marker></defs><text x="65" y="30" fill="#8a9b91" fontSize="14">点击元件查看对应指标</text>{measuredBranches.filter(branch=>visible(branch.id==='grid'?'tower':branch.id==='load'?'factory':branch.id)).map(branch=>{const dir=measured[branch.direction];return <FlowPath key={branch.id} id={branch.id} baseD={branch.base} activeD={dir==='reverse'&&branch.reverse?branch.reverse:branch.base} active={dir==='forward'||dir==='reverse'} animate width={4}/>})}{nodes.filter(node=>visible(node.type)).map(node=>{const metric=measured.metrics[node.type],pcs=node.type==='pcs',labelX=node.x+(pcs?116:150);return <g key={node.type} className="energy-flow-device" data-device={node.type} role="button" tabIndex={onDeviceSelect?0:-1} aria-pressed={selectedType===node.type} aria-disabled={!onDeviceSelect} aria-label={`${flowDeviceNames[node.type]}，功率 ${metric.value} ${metric.unit}，查看对应指标`} data-selected={selectedType===node.type} onClick={()=>activateFlowDevice(node.type,onDeviceSelect)} onKeyDown={event=>activateFlowDevice(node.type,onDeviceSelect,event)}><rect className="energy-flow-device-frame" x={node.x} y={node.y} width={node.width} height={node.height} rx="16"/><svg x={node.x+12} y={node.y+20} width={pcs?98:132} height="130" viewBox="0 0 150 160"><StationFlowDeviceArtwork type={node.type} width="150" height="160"/></svg><text x={labelX} y={node.y+48} fill="#586d60" fontSize={pcs?18:20} fontWeight="500">{flowDeviceNames[node.type]}</text><PowerText x={labelX} y={node.y+83} mw={0} metric={metric} size={pcs?21:24} unitSize={13} weight={550}/><text x={labelX} y={node.y+111} fill="#91a296" fontSize="13">{state(node.type)}</text>{node.type==='battery'&&<text x={labelX} y={node.y+137} fill="#799184" fontSize="13">SOC {measured.batterySoc===null?'—':`${measured.batterySoc}%`}</text>}</g>})}<text x="532" y="563" textAnchor="middle" fill="#9aaba1" fontSize="13">能量流向根据采样功率显示</text></svg></div>
 }

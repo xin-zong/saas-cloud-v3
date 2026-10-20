@@ -11,13 +11,17 @@ public class AlarmWorkspaceService {
   private final DomainSupport s;
   public AlarmWorkspaceService(DomainSupport s) { this.s=s; }
   private static final String FROM=" FROM alarm a JOIN device d ON d.id=a.device_id LEFT JOIN alarm_business_origin o ON o.alarm_id=a.id JOIN station st ON st.id=COALESCE(o.station_id,d.station_id) ";
-  private static final String COLUMNS="a.id,a.device_id,a.code,a.title,a.severity,a.source,a.version,a.occurred_at,CASE WHEN a.recovered_at<=now() THEN a.recovered_at END AS recovered_at,a.acknowledged_by,a.acknowledged_at,a.sla_due_at,a.closed_by,a.closed_at,COALESCE(o.station_id,d.station_id) AS station_id,d.name AS device_name,st.name AS station_name,CASE WHEN a.recovered_at<=now() THEN a.recovered_at END AS effective_recovered_at,CASE WHEN a.closed_at IS NOT NULL THEN 'closed' WHEN a.recovered_at<=now() THEN 'recovered' ELSE 'active' END AS lifecycle";
+  private static final String COLUMNS="(SELECT occ.rule_snapshot->>'object_type' FROM alarm_rule_occurrence occ WHERE occ.alarm_id=a.id) AS object_type,(SELECT string_agg(f->>'code',', ') FROM alarm_rule_occurrence occ CROSS JOIN LATERAL jsonb_array_elements(occ.rule_snapshot->'conditions') c CROSS JOIN LATERAL jsonb_array_elements(c->'fields') f WHERE occ.alarm_id=a.id) AS trigger_indicator,a.id,a.device_id,a.code,a.title,a.severity,a.source,a.version,a.occurred_at,CASE WHEN a.recovered_at<=now() THEN a.recovered_at END AS recovered_at,a.acknowledged_by,a.acknowledged_at,a.sla_due_at,a.closed_by,a.closed_at,COALESCE(o.station_id,d.station_id) AS station_id,d.name AS device_name,st.name AS station_name,CASE WHEN a.recovered_at<=now() THEN a.recovered_at END AS effective_recovered_at,CASE WHEN a.closed_at IS NOT NULL THEN 'closed' WHEN a.recovered_at<=now() THEN 'recovered' ELSE 'active' END AS lifecycle";
   public Map<String,Object> list(Long stationId,String view,String source,String severity,Long deviceId,String readFlag,String query,OffsetDateTime start,OffsetDateTime end,int limit,int offset) {
+    return list(stationId,view,source,severity,deviceId,readFlag,query,start,end,limit,offset,"desc");
+  }
+  public Map<String,Object> list(Long stationId,String view,String source,String severity,Long deviceId,String readFlag,String query,OffsetDateTime start,OffsetDateTime end,int limit,int offset,String sort) {
     s.limit(limit);s.offset(offset);
+    if(!Set.of("asc","desc").contains(sort))AlarmRules.bad("排序无效");
     if(stationId!=null) s.access.requireStationPermission(stationId,"alarm.read");
-    if(!Set.of("all","live","history").contains(view)) AlarmRules.bad("告警视图无效");
+    if(!Set.of("all","live","history","recovered").contains(view)) AlarmRules.bad("告警视图无效");
     if(source!=null&&!Set.of("device","rule").contains(source)) AlarmRules.bad("告警来源无效");
-    if(severity!=null&&!Set.of("critical","warning","info").contains(severity)) AlarmRules.bad("告警等级无效");
+    if(severity!=null&&!Set.of("critical","warning","minor","info").contains(severity)) AlarmRules.bad("告警等级无效");
     if(readFlag!=null&&!Set.of("read","unread").contains(readFlag)) AlarmRules.bad("阅读状态无效");
     if(start!=null&&end!=null&&!end.isAfter(start)) AlarmRules.bad("结束时间须晚于开始时间");
     if(query!=null&&query.length()>200) AlarmRules.bad("搜索内容过长");
@@ -25,6 +29,7 @@ public class AlarmWorkspaceService {
     List<Object> args=new ArrayList<>();args.add(s.access.userId());
     if(stationId!=null){where.append(" AND st.id=?");args.add(stationId);}
     if("live".equals(view)) where.append(" AND a.closed_at IS NULL AND (a.recovered_at IS NULL OR a.recovered_at>now())");
+    if("recovered".equals(view)) where.append(" AND a.closed_at IS NULL AND a.recovered_at<=now()");
     if("history".equals(view)) where.append(" AND (a.closed_at IS NOT NULL OR a.recovered_at<=now())");
     if(source!=null){where.append(" AND a.source=?");args.add(source);}
     if(severity!=null){where.append(" AND a.severity=?");args.add(severity);}
@@ -36,8 +41,55 @@ public class AlarmWorkspaceService {
     if(readFlag!=null)where.append(" AND "+("unread".equals(readFlag)?"NOT ":"")+read);
     long total=s.db.queryForObject("SELECT count(*)"+FROM+where,Long.class,args.toArray());
     args.add(limit);args.add(offset);
-    var rows=s.db.queryForList("SELECT "+COLUMNS+","+read+" AS read_flag"+FROM+where+" ORDER BY a.occurred_at DESC,a.id DESC LIMIT ? OFFSET ?",args.toArray());
+    var rows=s.db.queryForList("SELECT "+COLUMNS+","+read+" AS read_flag"+FROM+where+" ORDER BY a.occurred_at "+("asc".equals(sort)?"ASC":"DESC")+",a.id "+("asc".equals(sort)?"ASC":"DESC")+" LIMIT ? OFFSET ?",args.toArray());
     return Map.of("items",rows,"total",total,"limit",limit,"offset",offset);
+  }
+  public Map<String,Object> exportRows(Long stationId,String view,String source,String severity,Long deviceId,String readFlag,String query,OffsetDateTime start,OffsetDateTime end,int limit,int offset,String sort) {
+    if(!Set.of("live","history").contains(view)||start==null||end==null||!end.isAfter(start)||java.time.Duration.between(start,end).toDays()>("live".equals(view)?31:367))AlarmRules.bad("导出范围无效");
+    if(stationId!=null)s.access.requireStationPermission(stationId,"report.export");
+    var result=list(stationId,view,source,severity,deviceId,readFlag,query,start,end,limit,offset,sort);
+    @SuppressWarnings("unchecked") var rows=(List<Map<String,Object>>)result.get("items");
+    for(var row:rows){s.access.requireStationPermission(s.number(row,"station_id"),"alarm.read");s.access.requireStationPermission(s.number(row,"station_id"),"report.export");}
+    return result;
+  }
+  public List<Map<String,Object>> summary(Long stationId,String source,OffsetDateTime start,OffsetDateTime end,String timezone) {
+    return summary(stationId,"history",source,null,null,null,start,end,timezone);
+  }
+  public List<Map<String,Object>> summary(Long stationId,String view,String source,Long deviceId,String readFlag,String query,OffsetDateTime start,OffsetDateTime end,String timezone) {
+    return summary(stationId,view,source,deviceId,readFlag,query,start,end,timezone,"DAY",false);
+  }
+  public List<Map<String,Object>> summary(Long stationId,String view,String source,Long deviceId,String readFlag,String query,OffsetDateTime start,OffsetDateTime end,String timezone,String granularity,boolean exporting) {
+    return summary(stationId,view,source,deviceId,readFlag,query,start,end,timezone,granularity,exporting,null);
+  }
+  public List<Map<String,Object>> summary(Long stationId,String view,String source,Long deviceId,String readFlag,String query,OffsetDateTime start,OffsetDateTime end,String timezone,String granularity,boolean exporting,String severity) {
+    if(stationId!=null)s.access.requireStationPermission(stationId,"alarm.read");
+    if(severity!=null&&!Set.of("critical","warning","minor","info").contains(severity))AlarmRules.bad("告警等级无效");
+    if(!Set.of("DAY","MONTH").contains(granularity))AlarmRules.bad("统计粒度无效");
+    if(exporting&&stationId!=null)s.access.requireStationPermission(stationId,"report.export");
+    if(source==null||!Set.of("device","rule").contains(source))AlarmRules.bad("告警来源无效");
+    if(!Set.of("live","history").contains(view))AlarmRules.bad("告警视图无效");
+    if("history".equals(view)&&(start==null||end==null))AlarmRules.bad("请选择统计月份");
+    if(start!=null&&end!=null&&(!end.isAfter(start)||java.time.Duration.between(start,end).toDays()>("MONTH".equals(granularity)?367:32)))AlarmRules.bad("统计时间范围无效");
+    if(readFlag!=null&&!Set.of("read","unread").contains(readFlag))AlarmRules.bad("阅读状态无效");
+    if(query!=null&&query.length()>200)AlarmRules.bad("搜索内容过长");
+    try { java.time.ZoneId.of(timezone); } catch(Exception ex) { AlarmRules.bad("时区无效"); }
+    var where=new StringBuilder(" WHERE a.deleted_at IS NULL AND a.occurred_at<=now() AND a.source=? AND (?::bigint IS NULL OR st.id=?) AND EXISTS(SELECT 1 FROM "+s.access.stationPermissionTable()+" p WHERE p.user_id=? AND p.station_id=st.id AND p.permission_code='alarm.read')");
+    var args=new ArrayList<Object>();args.add(timezone);args.add(source);args.add(stationId);args.add(stationId);args.add(s.access.userId());
+    if("live".equals(view))where.append(" AND a.closed_at IS NULL AND (a.recovered_at IS NULL OR a.recovered_at>now())");
+    else where.append(" AND (a.closed_at IS NOT NULL OR a.recovered_at<=now())");
+    if(start!=null){where.append(" AND a.occurred_at>=?");args.add(start);}
+    if(end!=null){where.append(" AND a.occurred_at<?");args.add(end);}
+    if(deviceId!=null){where.append(" AND a.device_id=?");args.add(deviceId);}
+    if(readFlag!=null){where.append(" AND "+("unread".equals(readFlag)?"NOT ":"")+"EXISTS(SELECT 1 FROM alarm_read_receipt rr WHERE rr.alarm_id=a.id AND rr.user_id=?)");args.add(s.access.userId());}
+    if(query!=null&&!query.isBlank()){where.append(" AND (a.title ILIKE ? OR a.code ILIKE ? OR d.name ILIKE ?)");for(int i=0;i<3;i++)args.add("%"+query+"%");}
+    if(severity!=null){where.append(" AND a.severity=?");args.add(severity);}
+    List<Long> exportStations=exporting?s.db.queryForList("SELECT DISTINCT st.id"+FROM+where,Long.class,args.subList(1,args.size()).toArray()):List.of();
+    for(long station:exportStations){s.access.requireStationPermission(station,"alarm.read");s.access.requireStationPermission(station,"report.export");}
+    String exportScope=exporting?" AND EXISTS(SELECT 1 FROM "+s.access.stationPermissionTable()+" ep WHERE ep.user_id=? AND ep.station_id=st.id AND ep.permission_code='report.export')":"";
+    var resultArgs=new ArrayList<>(args);if(exporting)resultArgs.add(s.access.userId());
+    var result=s.db.queryForList("SELECT a.severity,a.title AS name,to_char(a.occurred_at AT TIME ZONE ?, '"+("MONTH".equals(granularity)?"YYYY-MM":"YYYY-MM-DD")+"') AS day,count(*) AS count"+FROM+where+exportScope+" GROUP BY a.severity,a.title,day ORDER BY day,a.severity,a.title",resultArgs.toArray());
+    for(long station:exportStations){s.access.requireStationPermission(station,"alarm.read");s.access.requireStationPermission(station,"report.export");}
+    return result;
   }
   Map<String,Object> authorized(long id,String permission,boolean lock) {
     var a=s.one("SELECT "+COLUMNS+FROM+" WHERE a.id=? AND a.deleted_at IS NULL AND a.occurred_at<=now()"+(lock?" FOR UPDATE OF a":""),id);

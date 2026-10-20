@@ -1,0 +1,21 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
+const source=fs.readFileSync(`${__dirname}/../src/components/MonitorReportsWorkspace.tsx`,'utf8');
+const exportsUnderTest={};new Function('exports','require',ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2020}}).outputText)(exportsUnderTest,id=>id==='react'?require('react'):id==='react/jsx-runtime'?require(id):{});
+test('monthly and yearly edits normalize to valid full dates before switching to daily or total',()=>{assert.equal(exportsUnderTest.normalizeReportPeriod('2026-10','2026-06-20'),'2026-10-01');assert.equal(exportsUnderTest.normalizeReportPeriod('2026','2026-06-20'),'2026-01-01');assert.equal(exportsUnderTest.normalizeReportPeriod('2024-02-29','2026-06-20'),'2024-02-29')});
+test('cleared or invalid periods use a valid fallback on template switch',()=>{for(const value of ['', '20', '2026-13', '2026-02-30'])assert.equal(exportsUnderTest.normalizeReportPeriod(value,'2026-06-20'),'2026-06-20')});
+test('manual template switches normalize both endpoints and keep a single period field',()=>{
+ const React=require('react'),slots=[];let cursor=0;
+ const hooks={...React,useState(initial){const i=cursor++;if(!(i in slots))slots[i]=typeof initial==='function'?initial():initial;return [slots[i],value=>{slots[i]=typeof value==='function'?value(slots[i]):value}]},useRef(value){const i=cursor++;return slots[i]||(slots[i]={current:value})},useEffect(){}};
+ const templates=['monthly','yearly','daily','total'].map(type=>({id:type,category:'template',name:type,type,version:1,payload:{name:type,type,fields:['Site Name']}}));
+ const moduleExports={};new Function('exports','require',ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2020}}).outputText)(moduleExports,id=>id==='./useConfigurationLeaveGuard'?{useConfigurationLeaveGuard:({onClose})=>({close:onClose,confirmation:null})}:id==='./useRegularReportJobs'?{useRegularReportJobs:()=>({records:[],total:0,page:0,size:50,loading:false,busy:false,error:'',active:null,refresh:()=>{}})}:id==='@/data/regularReports'?(()=>{const data={};new Function('exports',ts.transpileModule(fs.readFileSync(`${__dirname}/../src/data/regularReports.ts`,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText)(data);return data})():id==='react'?hooks:id==='react/jsx-runtime'?require(id):id==='@/auth/AuthContext'?{useAuth:()=>({user:{id:'7'}})}:id==='@/auth/apiPermissions'?{hasStationPermission:()=>true}:id==='@/api/regularReports'?{REGULAR_REPORT_TYPES:{daily:'日级',monthly:'月级',yearly:'年级',total:'累计'}}:{});
+ const component=moduleExports.default({stations:[{id:'1',name:'Station'}]}).type;
+ function render(){cursor=0;return component({stations:[{id:'1',name:'Station'}],production:false})}
+ function all(tree){if(!tree||typeof tree!=='object')return [];if(Array.isArray(tree))return tree.flatMap(all);return [tree,...all(tree.props?.children)]}
+ render();slots[1]=templates;slots[3]={};slots[5]=false;
+ let tree=render();all(tree).find(n=>n.props?.className==='mr-primary mr-create').props.onClick();
+ // Locate by the selected template id rather than coupling event lookup to hook positions.
+ function select(id){tree=render();const dropdown=all(tree).find(n=>n.type==='select'&&templates.some(t=>t.id===n.props.value));dropdown.props.onChange({target:{value:id}})}
+ tree=render();all(tree).find(n=>n.props?.['aria-label']==='开始周期').props.onChange({target:{value:'2026-10'}});all(tree).find(n=>n.props?.['aria-label']==='结束周期').props.onChange({target:{value:'2026-11'}});
+ select('daily');tree=render();assert.equal(all(tree).find(n=>n.props?.['aria-label']==='开始周期').props.value,'2026-10-01');assert.equal(all(tree).find(n=>n.props?.['aria-label']==='结束周期').props.value,'2026-11-01');assert.equal(all(tree).filter(n=>n.props?.label==='选择周期').length,1);assert.equal(all(tree).filter(n=>n.props?.label==='结束周期').length,0);
+ select('yearly');tree=render();all(tree).find(n=>n.props?.['aria-label']==='开始周期').props.onChange({target:{value:'2025'}});select('total');tree=render();assert.equal(all(tree).find(n=>n.props?.label==='期初时间（导出该日第一条数据）').props.children.props.value,'2025-01-01');
+});

@@ -12,7 +12,11 @@ import type { SettlementRecord } from "../data/stationSettlement"
 
 import type { StationDevice } from "../data/stationDevices"
 
-export async function loadStations(user: AuthUser, signal?: AbortSignal) {
+export type StationLoadMode = 'directory' | 'full'
+
+// Reference workspaces own their business queries; legacy pages may still request
+// the complete Station aggregate explicitly (the default for existing callers).
+export async function loadStations(user: AuthUser, signal?: AbortSignal, mode: StationLoadMode = 'full') {
   const records = user.permissions.includes("asset.read") ? await allRows("/stations", signal) : []
   // Independent operations need only authorized names, never synthetic asset measurements.
   const contextCodes = ["workorder.read", "workorder.create", "inspection.manage", "approval.read", "strategy.read", "alarm.read", "telemetry.read", "market.read", "revenue.read", "tariff.manage", "ems.read", "ems.manage", "ems.query"]
@@ -21,6 +25,10 @@ export async function loadStations(user: AuthUser, signal?: AbortSignal) {
   ).map(code => api<ApiRow[]>(`/stations/options?permission=${encodeURIComponent(code)}`, {signal})))
   const contexts = new Map(records.map(record => [String(record.id), record]))
   for (const identity of identities.flat()) if (!contexts.has(String(identity.id))) contexts.set(String(identity.id), identity)
+
+  if (mode === 'directory') return [...contexts.values()]
+    .filter(row => canAccessStation(user, String(row.id)))
+    .map(adaptStation)
 
   const orders = user.permissions.includes("workorder.read")
     ? await allRows("/work-orders", signal)
@@ -143,7 +151,7 @@ export async function loadStations(user: AuthUser, signal?: AbortSignal) {
             id: text(row.id),
             title: text(row.title),
             device: text(row.device_name),
-            severity: row.severity as "critical" | "warning" | "info",
+            severity: row.severity as "critical" | "warning" | "minor" | "info",
             status: row.closed_at ? "closed" : row.recovered_at ? "recovered" : "active",
             occurredAt: text(row.occurred_at),
             recoveredAt: text(row.recovered_at),

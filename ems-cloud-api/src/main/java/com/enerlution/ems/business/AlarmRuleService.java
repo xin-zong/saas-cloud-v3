@@ -15,30 +15,35 @@ public class AlarmRuleService {
   @org.springframework.beans.factory.annotation.Autowired
   public AlarmRuleService(DomainSupport s,AlarmDetectionEngine engine){this.s=s;this.engine=engine;}
   public record Notification(boolean needed,int maxCount,List<String> channels,List<Long> recipients,boolean recoveryNotice){}
-  public record Draft(long stationId,String name,String objectType,Long deviceId,String severity,List<AlarmRules.Condition> conditions,int effectiveStart,int effectiveEnd,int recoveryDuration,String solution,Notification notification,long expectedVersion){}
+  public record Draft(long stationId,String name,String objectType,Long deviceId,String severity,List<AlarmRules.Condition> conditions,int effectiveStart,int effectiveEnd,int recoveryDuration,String solution,Notification notification,long expectedVersion,@com.fasterxml.jackson.databind.annotation.JsonDeserialize(using=TariffTemplateService.StrictInteger.class) Integer autoRecoveryDuration){
+    public Draft { if(autoRecoveryDuration==null)autoRecoveryDuration=48; }
+    public Draft(long stationId,String name,String objectType,Long deviceId,String severity,List<AlarmRules.Condition> conditions,int effectiveStart,int effectiveEnd,int recoveryDuration,String solution,Notification notification,long expectedVersion){this(stationId,name,objectType,deviceId,severity,conditions,effectiveStart,effectiveEnd,recoveryDuration,solution,notification,expectedVersion,48);}
+  }
   public static void validate(Draft d){
     if(d==null||d.stationId()<1||d.name()==null||d.name().isBlank()||d.name().length()>120)AlarmRules.bad("规则名称必填且不超过120字");
     if(!Set.of("STATION","DEVICE").contains(Objects.toString(d.objectType(),""))||("DEVICE".equals(d.objectType())!=(d.deviceId()!=null)))AlarmRules.bad("请选择规则对象及设备");
-    if(!Set.of("critical","warning","info").contains(Objects.toString(d.severity(),"")))AlarmRules.bad("告警等级无效");
+    if(!Set.of("critical","warning","minor","info").contains(Objects.toString(d.severity(),"")))AlarmRules.bad("告警等级无效");
     if(d.conditions()==null||d.conditions().isEmpty()||d.conditions().size()>10)AlarmRules.bad("规则需要1–10个条件");
     for(var c:d.conditions()){AlarmRules.validate(c);for(var field:c.fields())if(!d.objectType().equals(field.objectType()))AlarmRules.bad("条件指标对象与规则不一致");}
     if(d.effectiveStart()<0||d.effectiveEnd()>1440||d.effectiveStart()%15!=0||d.effectiveEnd()%15!=0||d.effectiveEnd()<=d.effectiveStart())AlarmRules.bad("有效时段须为15分钟整数且结束晚于开始");
+    if(d.autoRecoveryDuration()<1||d.autoRecoveryDuration()>72)AlarmRules.bad("默认恢复周期须为1–72整数小时");
     if(d.recoveryDuration()<0||d.recoveryDuration()>86400)AlarmRules.bad("恢复持续时间须为0–86400秒");
     if(d.solution()==null||d.solution().length()>4000)AlarmRules.bad("处置方案最多4000字");
     var n=d.notification();if(n==null||n.channels()==null||n.recipients()==null||n.maxCount()<1||n.maxCount()>100||n.recipients().size()>100)AlarmRules.bad("通知配置无效，次数须为1–100");
-    if(n.channels().stream().anyMatch(c->c==null||!Set.of("in_app","email","sms").contains(c))||n.recipients().stream().anyMatch(Objects::isNull)||new HashSet<>(n.recipients()).size()!=n.recipients().size()||new HashSet<>(n.channels()).size()!=n.channels().size())AlarmRules.bad("通知渠道或收件人无效");
+    if(n.channels().stream().anyMatch(c->c==null||!Set.of("in_app","email","sms","app_push").contains(c))||n.recipients().stream().anyMatch(Objects::isNull)||new HashSet<>(n.recipients()).size()!=n.recipients().size()||new HashSet<>(n.channels()).size()!=n.channels().size())AlarmRules.bad("通知渠道或收件人无效");
     if(n.needed()&&(n.channels().isEmpty()||n.recipients().isEmpty()))AlarmRules.bad("开启通知须选择渠道及收件人");
   }
   private String encode(Object value){try{return json.writeValueAsString(value);}catch(Exception e){throw new IllegalStateException(e);}}
   private Map<String,Object> decode(Map<String,Object> row){
     try{row.put("conditions",json.readValue(row.get("conditions").toString(),new TypeReference<List<Object>>(){}));row.put("notification",json.readValue(row.get("notification").toString(),new TypeReference<Map<String,Object>>(){}));}catch(Exception e){throw new IllegalStateException(e);}
+    row.put("autoRecoveryExecutionStatus","not_connected");
     if(engine!=null)engine.describe(row);
     else {row.put("evaluationStatus","disabled");row.put("evaluationReason","隔离告警检测服务未启用");row.put("deliveryStatus","not_connected");}
     return row;
   }
   public List<Map<String,Object>> list(Long stationId){
     if(stationId!=null)s.access.requireStationPermission(stationId,"alarm.read");
-    var rows=s.db.queryForList("SELECT r.*,st.name AS station_name FROM alarm_rule_config r JOIN station st ON st.id=r.station_id WHERE r.deleted_at IS NULL AND (?::bigint IS NULL OR r.station_id=?) AND EXISTS(SELECT 1 FROM "+s.access.stationPermissionTable()+" p WHERE p.user_id=? AND p.station_id=r.station_id AND p.permission_code='alarm.read') ORDER BY r.id DESC",stationId,stationId,s.access.userId());
+    var rows=s.db.queryForList("SELECT r.*,st.name AS station_name,u.display_name AS updated_by_name FROM alarm_rule_config r JOIN station st ON st.id=r.station_id LEFT JOIN app_user u ON u.id=r.updated_by WHERE r.deleted_at IS NULL AND (?::bigint IS NULL OR r.station_id=?) AND EXISTS(SELECT 1 FROM "+s.access.stationPermissionTable()+" p WHERE p.user_id=? AND p.station_id=r.station_id AND p.permission_code='alarm.read') ORDER BY r.id DESC",stationId,stationId,s.access.userId());
     return rows.stream().map(this::decode).toList();
   }
   private Map<String,Object> authorized(long id,String permission,boolean lock){var row=s.one("SELECT * FROM alarm_rule_config WHERE id=? AND deleted_at IS NULL"+(lock?" FOR UPDATE":""),id);s.access.requireStationPermission(s.number(row,"station_id"),permission);return row;}
@@ -62,14 +67,14 @@ public class AlarmRuleService {
   }
   @Transactional public Map<String,Object> create(Draft d){
     validate(d);s.access.requireStationPermission(d.stationId(),"alarm.handle");validateReferences(d);
-    long id=s.db.queryForObject("INSERT INTO alarm_rule_config(station_id,name,object_type,device_id,severity,conditions,effective_start,effective_end,recovery_duration,solution,notification,created_by,updated_by) VALUES(?,?,?,?,?,?::jsonb,?,?,?,?,?::jsonb,?,?) RETURNING id",Long.class,d.stationId(),d.name().trim(),d.objectType(),d.deviceId(),d.severity(),encode(d.conditions()),d.effectiveStart(),d.effectiveEnd(),d.recoveryDuration(),d.solution(),encode(d.notification()),s.access.userId(),s.access.userId());
+    long id=s.db.queryForObject("INSERT INTO alarm_rule_config(station_id,name,object_type,device_id,severity,conditions,effective_start,effective_end,recovery_duration,solution,notification,created_by,updated_by,auto_recovery_duration_hours) VALUES(?,?,?,?,?,?::jsonb,?,?,?,?,?::jsonb,?,?,?) RETURNING id",Long.class,d.stationId(),d.name().trim(),d.objectType(),d.deviceId(),d.severity(),encode(d.conditions()),d.effectiveStart(),d.effectiveEnd(),d.recoveryDuration(),d.solution(),encode(d.notification()),s.access.userId(),s.access.userId(),d.autoRecoveryDuration());
     revision(id,"create",d.stationId());return detail(id);
   }
   @Transactional public Map<String,Object> update(long id,Draft d){
     validate(d);var old=authorized(id,"alarm.handle",true);
     if(s.number(old,"station_id")!=d.stationId())AlarmRules.bad("规则不能转移站点");
     version(old,d.expectedVersion());validateReferences(d);
-    s.db.update("UPDATE alarm_rule_config SET name=?,object_type=?,device_id=?,severity=?,conditions=?::jsonb,effective_start=?,effective_end=?,recovery_duration=?,solution=?,notification=?::jsonb,version=version+1,updated_at=now(),updated_by=? WHERE id=?",d.name().trim(),d.objectType(),d.deviceId(),d.severity(),encode(d.conditions()),d.effectiveStart(),d.effectiveEnd(),d.recoveryDuration(),d.solution(),encode(d.notification()),s.access.userId(),id);
+    s.db.update("UPDATE alarm_rule_config SET name=?,object_type=?,device_id=?,severity=?,conditions=?::jsonb,effective_start=?,effective_end=?,recovery_duration=?,solution=?,notification=?::jsonb,version=version+1,updated_at=now(),updated_by=?,auto_recovery_duration_hours=? WHERE id=?",d.name().trim(),d.objectType(),d.deviceId(),d.severity(),encode(d.conditions()),d.effectiveStart(),d.effectiveEnd(),d.recoveryDuration(),d.solution(),encode(d.notification()),s.access.userId(),d.autoRecoveryDuration(),id);
     revision(id,"update",d.stationId());return detail(id);
   }
   private void version(Map<String,Object> row,long expected){if(s.number(row,"version")!=expected)throw new BusinessException(409,"规则已被其他人更新，请刷新");}

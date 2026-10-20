@@ -6,7 +6,7 @@ export type MaintenanceAlarm = {
   title: string
   device: string
   category?: string
-  severity: "critical" | "warning" | "info"
+  severity: "critical" | "warning" | "minor" | "info"
   status: "active" | "recovered" | "closed"
   occurredAt?: string
   closedAt?: string
@@ -75,6 +75,7 @@ export type MaintenanceData = {
 export const MAINTENANCE_SEVERITY = {
   critical: { label: "严重", color: "#ae4852", fill: "#efc5c7" },
   warning: { label: "重要", color: "#a46b22", fill: "#e5c48e" },
+  minor: { label: "次要", color: "#b29535", fill: "#f0e1ad" },
   info: { label: "一般", color: "#647672", fill: "#b8c6c2" },
 }
 export const WORK_ORDER_STATUS = {
@@ -306,7 +307,7 @@ export function buildMaintenanceStation(station: Station, now = new Date()) {
   const alarms = unique<MaintenanceAlarm>(alarmInput)
     .filter(
       (alarm) =>
-        ["critical", "warning", "info"].includes(alarm.severity) &&
+        ["critical", "warning", "minor", "info"].includes(alarm.severity) &&
         ["active", "recovered", "closed"].includes(alarm.status) &&
         (alarm.occurredAt === undefined ||
           (maintenanceTime(alarm.occurredAt) !== null &&
@@ -488,6 +489,7 @@ export function maintenanceTrend(rows: MaintenanceStation[], now = new Date()) {
     time: start + index * 7200000,
     critical: 0,
     warning: 0,
+    minor: 0,
     info: 0,
   }))
   const devices = new Map<string, number>([
@@ -518,16 +520,17 @@ export function maintenanceTrend(rows: MaintenanceStation[], now = new Date()) {
                 : "其他"
       devices.set(name, (devices.get(name) ?? 0) + 1)
     })
-  const counts = { critical: 0, warning: 0, info: 0 }
+  const counts = { critical: 0, warning: 0, minor: 0, info: 0 }
   bins.forEach((bin) => {
     counts.critical += bin.critical
     counts.warning += bin.warning
+    counts.minor += bin.minor
     counts.info += bin.info
   })
   const peak = bins.reduce(
     (best, bin) =>
-      bin.critical + bin.warning + bin.info >
-      best.critical + best.warning + best.info
+      bin.critical + bin.warning + bin.minor + bin.info >
+      best.critical + best.warning + best.minor + best.info
         ? bin
         : best,
     bins[0],
@@ -539,7 +542,7 @@ export function maintenanceTrend(rows: MaintenanceStation[], now = new Date()) {
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value),
     covered: known.length,
-    total: counts.critical + counts.warning + counts.info,
+    total: counts.critical + counts.warning + counts.minor + counts.info,
     peak,
   }
 }
@@ -549,7 +552,7 @@ export type MaintenanceQueueItem = {
   title: string
   kind: "alarm" | "order"
   id: string
-  severity: "critical" | "warning" | "info" | "order"
+  severity: "critical" | "warning" | "minor" | "info" | "order"
   dueAt: number | null
   owner: string
 }
@@ -578,7 +581,7 @@ export function maintenanceQueue(rows: MaintenanceStation[], risk: string) {
       owner: order.owner || row.station.manager,
     })),
   ])
-  const rank = { critical: 0, warning: 1, order: 2, info: 3 }
+  const rank = { critical: 0, warning: 1, minor: 2, order: 3, info: 4 }
   return items.sort((a, b) =>
     risk === "sla"
       ? (a.dueAt ?? Infinity) - (b.dueAt ?? Infinity) ||

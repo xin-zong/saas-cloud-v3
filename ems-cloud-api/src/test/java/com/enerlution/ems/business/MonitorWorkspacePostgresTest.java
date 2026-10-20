@@ -28,11 +28,11 @@ class MonitorWorkspacePostgresTest {
   db.update("INSERT INTO station_profile(station_id,solar_capacity_kw,commissioned_on,details) VALUES(?,100,current_date,'{\"siteType\":\"commercial\"}')",a);
   db.update("INSERT INTO monitor_station_capture(station_id,captured_at,source_updated_at,communication,charge_status,metrics,source_host,source_fingerprint) VALUES(?,now(),now()-interval '1 day','online','charging','{\"pvPower\":0,\"pvTotal\":12,\"storageTotalCharged\":100,\"storageTotalDischarged\":80}','ess-cloud-login.qudeox.com',repeat('a',64))",a);
   db.update("INSERT INTO monitor_station_capture(station_id,captured_at,source_updated_at,communication,metrics,source_host,source_fingerprint) VALUES(?,now(),now()-interval '1 day','offline','{\"storageTotalCharged\":200}','ess-cloud-login.qudeox.com',repeat('b',64))",b);
-  access=mock(AccessControl.class);when(access.userId()).thenReturn(2L);when(access.client()).thenReturn("web");when(access.context()).thenReturn(new TenantContext(2,2,"enterprise",true));when(access.hasStationPermission(eq(2L),anyLong(),anyString(),eq("web"))).thenReturn(true);
+  access=mock(AccessControl.class);ScopeTestSupport.useStationIdStubs(access);when(access.userId()).thenReturn(2L);when(access.client()).thenReturn("web");when(access.context()).thenReturn(new TenantContext(2,2,"enterprise",true));when(access.hasStationPermission(eq(2L),anyLong(),anyString(),eq("web"))).thenReturn(true);
   for(String code:List.of("asset.read","telemetry.read","alarm.read"))when(access.stationIds(code)).thenReturn(List.of(a,b));
   domain=new DomainSupport(db,access);service=create();
  }
- MonitorWorkspaceService create(){var telemetry=mock(StationTelemetryService.class);when(telemetry.snapshot(anyLong(),anyList(),anyBoolean())).thenReturn(Map.of("items",List.of()));return new MonitorWorkspaceService(domain,new ObjectMapper(),telemetry);}
+ MonitorWorkspaceService create(){var telemetry=mock(StationTelemetryService.class);when(telemetry.monitorSnapshot(anyLong())).thenReturn(Map.of("items",List.of()));return new MonitorWorkspaceService(domain,new ObjectMapper(),telemetry);}
  @AfterEach void rollback(){if(transaction!=null)manager.rollback(transaction);}
  @SuppressWarnings("unchecked") List<Map<String,Object>> items(Map<String,Object> data){return (List<Map<String,Object>>)data.get("items");}
  Map<String,String> query(){return Map.of("search",prefix,"sourceMode","capture");}
@@ -68,7 +68,7 @@ class MonitorWorkspacePostgresTest {
   var revoked=new java.util.concurrent.atomic.AtomicBoolean(false);
   when(access.stationIds("asset.read")).thenAnswer(invocation->revoked.get()?List.of():List.of(a,b));
   when(access.stationIds("telemetry.read")).thenReturn(List.of(a,b));when(access.stationIds("alarm.read")).thenReturn(List.of(a,b));
-  var telemetry=mock(StationTelemetryService.class);when(telemetry.snapshot(anyLong(),anyList(),anyBoolean())).thenAnswer(invocation->{revoked.set(true);return Map.of("items",List.of());});
+  var telemetry=mock(StationTelemetryService.class);when(telemetry.monitorSnapshot(anyLong())).thenAnswer(invocation->{revoked.set(true);return Map.of("items",List.of());});
   var reader=new MonitorWorkspaceService(domain,new ObjectMapper(),telemetry);
   assertEquals(403,assertThrows(BusinessException.class,()->reader.workspace(Map.of("sourceMode","current","stationId",Long.toString(a)),false)).status());
  }
@@ -78,8 +78,8 @@ class MonitorWorkspacePostgresTest {
  @Test void liveValuesKeepCatalogUnitsAndSortBeforePaginationAndExport(){
   var telemetry=mock(StationTelemetryService.class);long now=System.currentTimeMillis();
   var counts=Map.of("cabinet:20107",1L,"cabinet:20018",1L);
-  when(telemetry.snapshot(eq(a),anyList(),anyBoolean())).thenReturn(Map.of("mappingCounts",counts,"items",List.of(sample(20107,BigDecimal.ZERO,now-1000,false),sample(20018,20,now-1000,false))));
-  when(telemetry.snapshot(eq(b),anyList(),anyBoolean())).thenReturn(Map.of("mappingCounts",counts,"items",List.of(sample(20107,new BigDecimal("125.5"),now,false),sample(20018,80,now,false))));
+  when(telemetry.monitorSnapshot(eq(a))).thenReturn(Map.of("mappingCounts",counts,"items",List.of(sample(20107,BigDecimal.ZERO,now-1000,false),sample(20018,20,now-1000,false))));
+  when(telemetry.monitorSnapshot(eq(b))).thenReturn(Map.of("mappingCounts",counts,"items",List.of(sample(20107,new BigDecimal("125.5"),now,false),sample(20018,80,now,false))));
   var reader=new MonitorWorkspaceService(domain,new ObjectMapper(),telemetry);
   for(String key:List.of("pvPower","storageSoc","updatedAt")){
    var result=items(reader.workspace(Map.of("search",prefix,"sourceMode","current","sort",key,"direction","DESC","limit","1"),false));
@@ -91,15 +91,30 @@ class MonitorWorkspacePostgresTest {
  }
  @Test void ambiguousCabinetMappingCannotBecomeStationPowerWhenOneValueIsStale(){
   var telemetry=mock(StationTelemetryService.class);long now=System.currentTimeMillis();
-  when(telemetry.snapshot(eq(a),anyList(),anyBoolean())).thenReturn(Map.of("mappingCounts",Map.of("cabinet:20107",2L),"items",List.of(sample(20107,125,now,false),sample(20107,40,now-900000,true))));
+  when(telemetry.monitorSnapshot(eq(a))).thenReturn(Map.of("mappingCounts",Map.of("cabinet:20107",2L),"items",List.of(sample(20107,125,now,false),sample(20107,40,now-900000,true))));
   var reader=new MonitorWorkspaceService(domain,new ObjectMapper(),telemetry);
   var row=items(reader.workspace(Map.of("stationId",Long.toString(a),"sourceMode","current"),false)).getFirst();
   assertFalse(((Map<?,?>)row.get("metrics")).containsKey("pvPower"));assertNull(row.get("updatedAt"));
-  when(telemetry.snapshot(eq(a),anyList(),anyBoolean())).thenReturn(Map.of("mappingCounts",Map.of("cabinet:20107",2L),"items",List.of(sample(20107,125,now,false))));
+  when(telemetry.monitorSnapshot(eq(a))).thenReturn(Map.of("mappingCounts",Map.of("cabinet:20107",2L),"items",List.of(sample(20107,125,now,false))));
   assertFalse(((Map<?,?>)items(reader.workspace(Map.of("stationId",Long.toString(a),"sourceMode","current"),false)).getFirst().get("metrics")).containsKey("pvPower"));
  }
  @Test void replicaIncludesExplicitLocalSitesWithoutPretendingTheyWereImportedAndHidesArchives(){
   db.update("UPDATE station SET replica_visible=true WHERE id=?",a);
   var params=Map.of("search",prefix,"scope","replica");var rows=items(service.workspace(params,false));assertEquals(1,rows.size());assertEquals(Long.toString(a),rows.getFirst().get("id"));assertEquals(false,rows.getFirst().get("imported"));
   db.update("UPDATE station SET archived_at=now() WHERE id=?",a);assertTrue(items(service.workspace(params,false)).isEmpty());
- }}
+ } @Test void businessGroupScopeAppliesBeforeSummaryFacetsPaginationAndExport(){
+  var groups=mock(StationBusinessGroupService.class);
+  when(groups.stationScope("group:a")).thenReturn(List.of(a));when(groups.stationScope("group:empty")).thenReturn(List.of());
+  var telemetry=mock(StationTelemetryService.class);
+  var scoped=new MonitorWorkspaceService(domain,new ObjectMapper(),telemetry,groups);
+  var response=scoped.workspace(Map.of("search",prefix,"businessGroupId","group:a","limit","1"),false);
+  assertEquals(1,response.get("total"));assertEquals(Long.toString(a),items(response).getFirst().get("id"));
+  assertEquals(1,((Map<?,?>)response.get("summary")).get("total"));
+  assertEquals(0,scoped.workspace(Map.of("businessGroupId","group:empty"),false).get("total"));
+  var exported=scoped.workspace(Map.of("search",prefix,"businessGroupId","group:a"),true);
+  assertEquals(1,items(exported).size());verify(access).requireStationPermission(a,"report.export");
+  verify(access,never()).requireStationPermission(b,"report.export");
+ }
+}
+
+

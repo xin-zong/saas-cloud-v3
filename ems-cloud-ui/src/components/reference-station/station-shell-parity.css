@@ -1,0 +1,28 @@
+/* Station content follows the verified reference; shared navigation stays fixed across list and detail. */
+.reference-page-body:has(.station-shell-parity){padding:0}
+
+.station-workspace-theme .rs-page.station-shell-parity{padding:0;border-radius:0;min-height:100%;background:#f4f4f8;color:#454956}
+.station-workspace-theme .station-shell-parity>.rs-workspace-tabs{height:48px;padding:0;gap:0;background:#f4f4f8;border-bottom:0;font-size:18px}
+.station-workspace-theme .station-shell-parity>.rs-workspace-tabs>button{height:48px;min-height:48px;width:58px;background:#fff;border:1px solid #e8e9ed;border-radius:0}
+.station-workspace-theme .station-shell-parity>.rs-workspace-tabs>span{height:48px;padding:0 18px;border-radius:0;color:#169f96;font-size:18px;gap:12px}
+.station-workspace-theme .station-shell-parity>.rs-station-header{height:66px;min-height:66px;padding:0 24px;gap:14px;flex-wrap:nowrap}
+.station-workspace-theme .station-shell-parity>.rs-station-header>strong{font-size:20px;letter-spacing:0;font-weight:650;color:#303b47;white-space:nowrap}
+.station-workspace-theme .station-shell-parity .rs-header-tags .rs-tag-edit{font-size:16px;padding:0 6px;color:#959aa5;min-height:32px;background:transparent}
+.station-workspace-theme .station-shell-parity .rs-header-actions{gap:10px}
+.station-workspace-theme .station-shell-parity .rs-header-actions>button{width:34px;border:0;background:transparent;box-shadow:none}
+.station-workspace-theme .station-shell-parity .rs-header-actions>button svg{width:24px;height:24px}
+.station-workspace-theme .station-shell-parity .rs-refresh-controls{border:1px solid #dadde3;border-radius:5px;height:44px}
+.station-workspace-theme .station-shell-parity .rs-refresh-controls button{height:40px;width:44px;box-shadow:none;border-right:1px solid #e4e6ea!important;border-radius:0}
+.station-workspace-theme .station-shell-parity .rs-refresh-controls button svg{width:20px;height:20px}
+.station-workspace-theme .station-shell-parity .rs-refresh-controls select{font-size:16px;width:120px;max-width:120px;height:40px;padding:0 14px}
+.station-shell-parity .rs-communication{display:flex;color:#9299a1}
+.station-shell-parity .rs-communication.online,.station-shell-parity .rs-status-normal{color:#08a514}
+.station-shell-parity .rs-communication.offline,.station-shell-parity .rs-status-alarm{color:#e65555}
+.station-shell-parity .rs-module-row{display:flex;align-items:stretch;background:#fff;border-bottom:1px solid #e7e8ec;min-height:57px;padding:0 24px;gap:20px}
+.station-workspace-theme .station-shell-parity>.rs-module-row>.rs-tabs{gap:46px;padding:0;min-width:0;border:0;flex:0 1 auto;overflow-x:auto}
+.station-workspace-theme .station-shell-parity>.rs-module-row>.rs-tabs button{font-size:16px;font-weight:400;padding:13px 0 18px;min-height:56px;border:0;border-bottom:3px solid transparent;border-radius:0;background:transparent;box-shadow:none;color:#626974;flex-shrink:0}
+.station-workspace-theme .station-shell-parity>.rs-module-row>.rs-tabs button[aria-selected=true]{border-bottom-color:#159f90;color:#159f90;background:transparent;font-weight:500}
+.station-shell-parity .rs-source-time{margin-left:auto;align-self:center;white-space:nowrap;color:#969ca8;font-size:14px}
+.station-workspace-theme .station-shell-parity>.rs-body{padding:18px;min-height:calc(100vh - 171px)}
+@media(max-width:1700px){.station-workspace-theme .station-shell-parity>.rs-module-row>.rs-tabs{gap:26px}.station-shell-parity .rs-source-time{font-size:12px}.station-shell-parity .rs-module-row{flex-wrap:wrap;gap:0}.station-shell-parity .rs-source-time{padding-bottom:8px}}
+@media(max-width:1200px){.station-workspace-theme .station-shell-parity>.rs-station-header{height:auto;min-height:66px;flex-wrap:wrap;padding:12px 18px}.station-shell-parity .rs-module-row{padding:0 18px}.station-workspace-theme .station-shell-parity>.rs-module-row>.rs-tabs{width:100%;flex:auto;gap:24px}.station-shell-parity .rs-source-time{margin-left:0}.station-workspace-theme .station-shell-parity .rs-header-tags .rs-tag-edit{font-size:13px}}

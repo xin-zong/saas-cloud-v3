@@ -35,4 +35,12 @@ class DeviceDetailRulesTest {
     assertDoesNotThrow(()->DeviceDetailRules.units(List.of(1L,2L,3L,4L,6L),units));
     assertThrows(BusinessException.class,()->DeviceDetailRules.units(List.of(1L,2L,3L,4L,5L),units));
   }
+
+  @Test void verifiedStationOnlyNumericTypesAreDistinct(){
+    assertEquals("environment",DeviceDetailRules.type("9","OTHER"));
+    assertEquals("mppt",DeviceDetailRules.type("60","OTHER"));
+    assertEquals("liquid-cooler",DeviceDetailRules.type("53","HVAC"));
+    assertEquals("ems",DeviceDetailRules.type("61","OTHER"));
+    assertEquals("air-conditioner",DeviceDetailRules.type("6","HVAC"));
+  }
 }

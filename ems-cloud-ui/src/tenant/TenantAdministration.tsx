@@ -31,13 +31,13 @@ const permissionRoutes = [
   "platform.templates",
 ]
 
-export default function TenantAdministration({section='all'}:{section?:'all'|'company'|'permissions'}) {
+export default function TenantAdministration({section='all',routeScope}:{section?:'all'|'company'|'permissions';routeScope?:readonly string[]}) {
   const { user } = useAuth()
   const { menuLabel } = usePermissionLabels()
   const routeName = (path: string) => menuLabel({ id: 0, client: 'web', parent_id: null, route_path: path, name_key: `page.${path}` })
 
   const routes = menuRoutes(user?.menus ?? []).filter(
-    (r) => (r.startsWith("company.") || r.startsWith("platform.")) && (section==='all'||(section==='permissions'?permissionRoutes.includes(r):!permissionRoutes.includes(r))),
+    (r) => (r.startsWith("company.") || r.startsWith("platform.")) && (!routeScope||routeScope.includes(r)) && (section==='all'||(section==='permissions'?permissionRoutes.includes(r):!permissionRoutes.includes(r))),
   )
 
   const [page, setPage] = useState(routes[0] ?? "")

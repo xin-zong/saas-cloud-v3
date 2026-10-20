@@ -105,6 +105,7 @@ const ALARM_CHART_SERIES = [
     fill: "var(--ui-chart-secondary)",
   },
 
+  {key:"minor",label:MAINTENANCE_SEVERITY.minor.label,fill:"#d4bc65"},
   {
     key: "info",
 
@@ -1320,7 +1321,7 @@ export default function MaintenanceCenterPage({
     selectedAlarmResolvedKey,
   )
 
-  const peakCount = trend.peak.critical + trend.peak.warning + trend.peak.info
+  const peakCount = trend.peak.critical + trend.peak.warning + trend.peak.minor + trend.peak.info
 
   const newest = rows
 

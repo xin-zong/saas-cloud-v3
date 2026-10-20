@@ -14,9 +14,9 @@ SKIP = {'', '名称/SN', '状态', '所属场站', '所属父设备', '数据更
 
 def parse_value(raw, unit):
     raw = raw.strip()
-    if (raw == unit and bool(unit)) or raw in ('', '--', '—', '-', '暂无数据') or re.fullmatch(r'--(?:MΩ|kΩ|Ω|kWh|MWh|kW|W|V|A|%|℃|h)',raw):
+    if (raw == unit and bool(unit)) or raw in ('', '--', '—', '-', '暂无数据') or re.fullmatch(r'--(?:MΩ|kΩ|Ω|kWh|MWh|kW|W|V|A|%|℃|Bar|h)',raw):
         return None, 'missing'
-    match = re.fullmatch(r'([-+]?\d+(?:\.\d+)?)\s*(MΩ|kΩ|Ω|kWh|MWh|GWh|Wh|kvarh|MVar|kVar|Var|kvar|kVA|VA|kW|MW|W|mV|V|A|%|℃|°C|Hz|h)?', raw)
+    match = re.fullmatch(r'([-+]?\d+(?:\.\d+)?)\s*(MΩ|kΩ|Ω|kWh|MWh|GWh|Wh|kvarh|MVar|kVar|Var|kvar|kVA|VA|kW|MW|W|mV|V|A|%|℃|°C|Hz|Bar|h)?', raw)
     if not match:
         if unit:
             raise ValueError('Unrecognized numeric cell: '+raw)
@@ -55,7 +55,7 @@ def read_capture(path):
 
 def read_detail(path):
     body=path.read_bytes();doc=json.loads(body)
-    if doc['url']!='https://'+HOST+'/monitor/device/list':raise ValueError('Unexpected source URL')
+    if doc['url']!='https://'+HOST+'/monitor/device/list' and not re.fullmatch(r'https://'+re.escape(HOST)+r'/monitor/plant/plantDetail/[0-9]+/device\?type=[0-9_]+&childSystemId=[0-9]+',doc['url']):raise ValueError('Unexpected source URL')
     text=doc['text'];serial=text.splitlines()[0].split('：')[-1].strip()
     timestamp=re.search(r'\d{4}-\d\d-\d\d \d\d:\d\d:\d\d UTC[+-]\d\d:\d\d',text)
     if not timestamp:raise ValueError('Detail has no source timestamp')
@@ -71,7 +71,7 @@ def read_detail(path):
         if len(pair)!=2:continue
         name,raw=(s.strip() for s in pair)
         if raw in ('组串电流离散率','组串电流平均值','组串电压离散率','组串电压平均值'):name,raw=raw,name
-        match=re.search(r'(MΩ|kΩ|Ω|GWh|MWh|kWh|Wh|kvarh|MVar|kVar|Var|kvar|kVA|VA|kW|MW|W|mV|V|A|%|℃|°C|Hz|h)$',raw)
+        match=re.search(r'(MΩ|kΩ|Ω|GWh|MWh|kWh|Wh|kvarh|MVar|kVar|Var|kvar|kVA|VA|kW|MW|W|mV|V|A|%|℃|°C|Hz|Bar|h)$',raw)
         unit=match[0] if match else ''
         # Normalize changing display scales without changing the measured quantity.
         unit={'W':'kW','MW':'kW','Wh':'kWh','MWh':'kWh','GWh':'kWh','Ω':'MΩ','kΩ':'MΩ','MVar':'kVar','Var':'kVar','VA':'kVA'}.get(unit,unit)
@@ -110,6 +110,59 @@ def read_detail(path):
             add(f"电池包 {pack_sn} · {'电压' if unit=='V' else '温度'} {index}",unit,raw)
     return result
 
+def validate_station_mapping(rows, station_mappings):
+    for row in rows:
+        if row[0] not in station_mappings:
+            raise ValueError('Unknown source device')
+        if row[8] == 'https://'+HOST+'/monitor/device/list':
+            continue
+        match = re.fullmatch(r'https://'+re.escape(HOST)+r'/monitor/plant/plantDetail/([0-9]+)/device\?type=[0-9_]+&childSystemId=([0-9]+)', row[8])
+        if not match or any(source_id != station_mappings[row[0]] for source_id in match.groups()):
+            raise ValueError('Source station does not match imported device station')
+
+def ensure_stored_bindings(cur, reference_ids):
+    """Bind only this batch's points, preserving immutable ownership and existing semantics."""
+    reference_ids=sorted(set(reference_ids))
+    if not reference_ids:return
+    # Lock and verify complete existing batches in one round trip. Missing or
+    # conflicting identities fall through to the same strict per-point guards.
+    cur.execute("""SELECT p.id FROM reference_device_point p
+        JOIN device d ON d.id=p.device_id
+        JOIN stored_device_point_binding b ON b.reference_point_id=p.id
+        JOIN measurement_point mp ON mp.id=b.measurement_point_id
+        JOIN measurement_kind k ON k.code='stored_device_'||p.id
+        WHERE p.id=ANY(%s) AND p.source_host=%s
+        AND length(p.name)<=120 AND length(p.unit)<=30
+        AND k.name=p.name AND k.unit=p.unit
+        AND mp.device_id=p.device_id AND b.station_id=d.station_id
+        AND mp.code='stored_device_'||p.id AND mp.kind_code=k.code
+        ORDER BY p.id FOR UPDATE OF p,d,b,mp,k""",(reference_ids,HOST))
+    if {row[0] for row in cur.fetchall()}==set(reference_ids):return
+    for reference_id in reference_ids:
+        cur.execute('SELECT p.device_id,p.name,p.unit,d.station_id,p.source_host FROM reference_device_point p JOIN device d ON d.id=p.device_id WHERE p.id=%s FOR UPDATE OF p,d',(reference_id,))
+        source=cur.fetchone()
+        if not source or source[4]!=HOST or len(source[1])>120 or len(source[2])>30:
+            raise ValueError('Invalid canonical source point')
+        device_id,name,unit,station_id,_=source
+        code='stored_device_'+str(reference_id)
+        cur.execute('SELECT name,unit FROM measurement_kind WHERE code=%s FOR UPDATE',(code,))
+        kind=cur.fetchone()
+        if kind is not None and kind!=(name,unit):raise ValueError('Canonical stored kind collision')
+        if kind is None:
+            cur.execute('INSERT INTO measurement_kind(code,name,unit) VALUES(%s,%s,%s)',(code,name,unit))
+        cur.execute('SELECT id,kind_code FROM measurement_point WHERE device_id=%s AND code=%s FOR UPDATE',(device_id,code))
+        point=cur.fetchone()
+        if point is not None and point[1]!=code:raise ValueError('Canonical stored point collision')
+        if point is None:
+            cur.execute('INSERT INTO measurement_point(device_id,kind_code,code) VALUES(%s,%s,%s)',(device_id,code,code))
+        cur.execute('SELECT id FROM measurement_point WHERE device_id=%s AND code=%s',(device_id,code))
+        measurement_id=cur.fetchone()[0]
+        cur.execute('SELECT measurement_point_id,station_id FROM stored_device_point_binding WHERE reference_point_id=%s FOR UPDATE',(reference_id,))
+        binding=cur.fetchone()
+        if binding is not None and binding!=(measurement_id,station_id):raise ValueError('Canonical stored binding ownership collision')
+        if binding is None:
+            cur.execute('INSERT INTO stored_device_point_binding(measurement_point_id,reference_point_id,station_id,semantic_key) VALUES(%s,%s,%s,NULL)',(measurement_id,reference_id,station_id))
+
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--env-file',required=True);parser.add_argument('--input-dir',required=True);parser.add_argument('--apply',action='store_true')
     args=parser.parse_args();config={}
@@ -126,17 +179,19 @@ def main():
         with conn.cursor() as cur:
             cur.execute('select current_database(),current_user')
             assert cur.fetchone()==('ems_cloud_saas_toyingzhen','ems_toyingzhen_owner')
-            cur.execute('select d.serial_number,d.id from device d join device_reference_import r on r.device_id=d.id')
-            mappings={}
-            for serial,device in cur.fetchall():
+            cur.execute('select d.serial_number,d.id,r.station_source_id from device d join device_reference_import r on r.device_id=d.id where r.source_host=%s',(HOST,))
+            mappings={};station_mappings={}
+            for serial,device,station_source_id in cur.fetchall():
                 if serial in mappings:raise ValueError('Ambiguous device serial')
                 mappings[serial]=device
-            if any(r[0] not in mappings for r in rows):raise ValueError('Unknown source device')
+                station_mappings[serial]=station_source_id
+            validate_station_mapping(rows,station_mappings)
             if args.apply:
                 points=list(dict.fromkeys((mappings[r[0]],r[1],r[2],HOST) for r in rows))
                 cur.executemany('INSERT INTO reference_device_point(device_id,name,unit,source_host) VALUES(%s,%s,%s,%s) ON CONFLICT(device_id,name,unit) DO NOTHING',points)
                 cur.execute('SELECT device_id,name,unit,id FROM reference_device_point')
                 point_ids={(d,n,u):i for d,n,u,i in cur.fetchall()}
+                ensure_stored_bindings(cur,[point_ids[(device,name,unit)] for device,name,unit,_ in points])
                 samples=[(point_ids[(mappings[serial],name,unit)],source,captured,value,raw,quality,url,sha) for serial,name,unit,source,captured,value,raw,quality,url,sha in rows]
                 cur.executemany('INSERT INTO reference_device_sample(point_id,source_at,captured_at,value,raw_value,quality,source_url,evidence_sha256) VALUES(%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING',samples)
     print(json.dumps({'apply':args.apply,'files':len(files),'devicesWithFields':len({r[0] for r in rows}),'observations':len(rows),'numeric':sum(r[7]=='observed' for r in rows),'missing':sum(r[7]=='missing' for r in rows),'text':sum(r[7]=='text' for r in rows)}))

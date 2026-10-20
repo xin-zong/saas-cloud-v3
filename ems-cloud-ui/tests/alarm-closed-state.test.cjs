@@ -54,3 +54,4 @@ test("manually closed alarm stays historical without invented recovery and no ac
   assert.equal(row.active.length, 0)
   assert.equal(row.critical, 0)
 })
+test('minor alarms remain visible in maintenance counts, trend bins and queue',()=>{const m=load('data/stationMaintenance'),now=new Date('2026-10-19T12:00:00Z');const row=m.buildMaintenanceStation({id:'9',name:'Station',manager:'Owner',maintenance:{source:'connected',alarms:[{id:'minor-1',title:'Minor',device:'PCS',severity:'minor',status:'active',occurredAt:'2026-10-19T11:00:00Z'}]}},now);assert.equal(row.active.length,1);assert.equal(row.alarms[0].severity,'minor');const trend=m.maintenanceTrend([row],now);assert.equal(trend.counts.minor,1);assert.equal(trend.total,1);assert.equal(trend.peak.minor,1);assert.equal(m.maintenanceQueue([row],'combined')[0].severity,'minor')});

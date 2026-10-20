@@ -35,7 +35,13 @@ public class MailDeliveryService {
   }
 
   public boolean available() {
-    return sender.getIfAvailable() != null && !from.isBlank() && !publicUrl.isBlank();
+    if (sender.getIfAvailable() == null || from.isBlank() || publicUrl.isBlank()) return false;
+    try {
+      activationUrl("");
+      return true;
+    } catch (BusinessException error) {
+      return false;
+    }
   }
 
   public void requireAvailable() {
@@ -62,7 +68,8 @@ public class MailDeliveryService {
     try {
       String encrypted = codec.encrypt(json.writeValueAsString(payload));
       db.update(
-          "INSERT INTO mail_delivery(event_key,recipient,language,template,payload_ciphertext) VALUES(?,?,?,?,?) ON CONFLICT(event_key) DO NOTHING",
+          "INSERT INTO mail_delivery(event_key,recipient,language,template,payload_ciphertext)"
+              + " VALUES(?,?,?,?,?) ON CONFLICT(event_key) DO NOTHING",
           key,
           recipient,
           "zh-CN".equals(language) ? "zh-CN" : "en",
@@ -75,7 +82,8 @@ public class MailDeliveryService {
 
   public void cancelActivationMails(long user) {
     db.update(
-        "UPDATE mail_delivery SET status='cancelled' WHERE event_key LIKE ? AND status IN ('pending','sending')",
+        "UPDATE mail_delivery SET status='cancelled' WHERE event_key LIKE ? AND status IN"
+            + " ('pending','sending')",
         "activation:" + user + ":%");
   }
 
@@ -83,11 +91,17 @@ public class MailDeliveryService {
   public void deliverPending() {
     if (!available()) return;
     db.update(
-        "UPDATE mail_delivery SET status='failed',last_error='DeliveryLeaseExpired' WHERE status='sending' AND attempts>=5 AND next_attempt_at<=now()");
+        "UPDATE mail_delivery SET status='failed',last_error='DeliveryLeaseExpired' WHERE"
+            + " status='sending' AND attempts>=5 AND next_attempt_at<=now()");
     for (int i = 0; i < 10; i++) {
       var rows =
           db.queryForList(
-              "UPDATE mail_delivery SET status='sending',attempts=attempts+1,next_attempt_at=now()+interval '2 minutes' WHERE id=(SELECT id FROM mail_delivery WHERE status IN ('pending','sending') AND next_attempt_at<=now() AND attempts<5 ORDER BY next_attempt_at,id FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING id,recipient,language,template,payload_ciphertext,attempts");
+              "UPDATE mail_delivery SET"
+                  + " status='sending',attempts=attempts+1,next_attempt_at=now()+interval '2"
+                  + " minutes' WHERE id=(SELECT id FROM mail_delivery WHERE status IN"
+                  + " ('pending','sending') AND next_attempt_at<=now() AND attempts<5 ORDER BY"
+                  + " next_attempt_at,id FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING"
+                  + " id,event_key,recipient,language,template,payload_ciphertext,attempts");
       if (rows.isEmpty()) return;
       var row = rows.getFirst();
       try {
@@ -96,6 +110,14 @@ public class MailDeliveryService {
                 codec.decrypt((String) row.get("payload_ciphertext")), new TypeReference<>() {});
         boolean zh = "zh-CN".equals(row.get("language"));
         String template = (String) row.get("template");
+        if (!eligible(row, payload)) {
+          db.update(
+              "UPDATE mail_delivery SET status='cancelled',last_error=? WHERE id=? AND"
+                  + " status='sending'",
+              "ExpiredOrRevoked",
+              row.get("id"));
+          continue;
+        }
         var message = new SimpleMailMessage();
         message.setFrom(from);
         message.setTo((String) row.get("recipient"));
@@ -123,7 +145,9 @@ public class MailDeliveryService {
             });
         Objects.requireNonNull(sender.getIfAvailable()).send(message);
         db.update(
-            "UPDATE mail_delivery SET status='sent',sent_at=now(),last_error=NULL,payload_ciphertext=? WHERE id=? AND status='sending'",
+            "UPDATE mail_delivery SET"
+                + " status='sent',sent_at=now(),last_error=NULL,payload_ciphertext=? WHERE id=? AND"
+                + " status='sending'",
             codec.encrypt("{}"),
             row.get("id"));
       } catch (Exception error) {
@@ -131,12 +155,57 @@ public class MailDeliveryService {
         // Provider messages can contain credentials or the activation link; retain only the error
         // class.
         db.update(
-            "UPDATE mail_delivery SET status=?,last_error=?,next_attempt_at=now()+(? * interval '1 second') WHERE id=? AND status='sending'",
+            "UPDATE mail_delivery SET status=?,last_error=?,next_attempt_at=now()+(? * interval '1"
+                + " second') WHERE id=? AND status='sending'",
             attempts >= 5 ? "failed" : "pending",
             error.getClass().getSimpleName(),
             Math.min(3600, 30 * (1 << attempts)),
             row.get("id"));
       }
     }
+  }
+
+  private boolean eligible(Map<String, Object> row, Map<String, Object> payload) {
+    String template = Objects.toString(row.get("template")),
+        key = Objects.toString(row.get("event_key"));
+    if ("email-code".equals(template)) {
+      if (!key.startsWith("email-code:")) return false;
+      UUID id;
+      try {
+        id = UUID.fromString(key.substring(11));
+      } catch (IllegalArgumentException error) {
+        return false;
+      }
+      return Boolean.TRUE.equals(
+          db.queryForObject(
+              "SELECT EXISTS(SELECT 1 FROM email_challenge WHERE id=? AND email=? AND code_hash=?"
+                  + " AND expires_at>now() AND attempts<5 AND context_hash IS NULL)",
+              Boolean.class,
+              id,
+              row.get("recipient"),
+              SecureTokens.hash(id + ":" + payload.get("code"))));
+    }
+    if ("activation".equals(template)) {
+      String url = Objects.toString(payload.get("url"), "");
+      String fragment;
+      try {
+        fragment = URI.create(url).getFragment();
+      } catch (IllegalArgumentException error) {
+        return false;
+      }
+      if (fragment == null || !fragment.matches("activate=[A-Za-z0-9_-]{43}")) return false;
+      String token = fragment.substring(9);
+      if (!activationUrl(token).equals(url)) return false;
+      return Boolean.TRUE.equals(
+          db.queryForObject(
+              "SELECT EXISTS(SELECT 1 FROM account_activation a JOIN app_user u ON u.id=a.user_id"
+                  + " JOIN tenant t ON t.id=u.tenant_id WHERE a.token_hash=? AND a.consumed_at IS"
+                  + " NULL AND a.revoked_at IS NULL AND a.expires_at>now() AND u.status='invited'"
+                  + " AND t.enabled AND u.account=?)",
+              Boolean.class,
+              SecureTokens.hash(token),
+              row.get("recipient")));
+    }
+    return true;
   }
 }

@@ -1,7 +1,7 @@
 export type TariffPeriod = {
   start: string
   end: string
-  band: 'peak' | 'flat' | 'valley' | 'superPeak'
+  band: 'peak' | 'flat' | 'valley' | 'superPeak' | 'deepValley'
   price: string
 }
 export type TariffTemplate = {
@@ -29,7 +29,7 @@ export type TariffWorkspace = {
   templates: TariffTemplate[]
   assignments: Record<string, string>
 }
-export const bands = { valley: '谷', flat: '平', peak: '峰', superPeak: '尖峰' }
+export const bands = { valley: '谷', flat: '平', peak: '峰', superPeak: '尖峰', deepValley: '深谷' }
 export const modeNames = { fixed: '固定', tou: '分时', dynamic: '动态' }
 export function minute(value: string) {
   return /^(?:[01]\d|2[0-3]):[0-5]\d$|^24:00$/.test(value)
@@ -82,3 +82,4 @@ export function validateTemplate(template: TariffTemplate) {
   // An unknown selling price remains an explicit unfinished local rule.
   return template.sell.every(row=>!row.price.trim()) ? '' : validatePeriods(template.sell)
 }
+

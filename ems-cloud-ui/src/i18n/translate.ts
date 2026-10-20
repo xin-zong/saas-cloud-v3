@@ -3,11 +3,14 @@ import { shellEnglish } from './shell-en'
 import { businessEnglish } from './business-en'
 import { knownName } from '../tenant/permissionLabels'
 import { tenantEnglish } from './tenant-en'
-const dictionary={...businessEnglish,...english,...shellEnglish,...tenantEnglish}
+import { accountEnglish } from './account-en'
+import { referenceEnglish } from './reference-en'
+const dictionary={...businessEnglish,...english,...shellEnglish,...tenantEnglish,...accountEnglish,...referenceEnglish}
 export function translate(text:string,language:string):string {
   if(language!=='English')return text
   const match=text.match(/^(\s*)(.*?)(\s*)$/s);if(!match)return text
   const [,before,body,after]=match
+  if(referenceEnglish[body])return before+referenceEnglish[body]+after
   const domainName=knownName(body,language)
   if(domainName)return before+domainName+after
   if(dictionary[body])return before+dictionary[body]+after

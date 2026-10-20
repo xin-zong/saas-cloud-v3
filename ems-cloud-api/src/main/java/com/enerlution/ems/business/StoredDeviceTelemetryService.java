@@ -42,11 +42,19 @@ public class StoredDeviceTelemetryService {
   }
   /** null or an empty list selects all points in the specified station. */
   public List<Map<String,Object>> latest(long station,List<Long> selected) {
+    return latestFiltered(station,selection(selected));
+  }
+  /** Explicit directory scope: an empty device selection never expands to a whole station. */
+  public List<Map<String,Object>> latestForDevices(long station,List<Long> devices) {
+    if(devices==null||devices.isEmpty())return List.of();
+    return latestFiltered(station," AND d.id IN ("+EmsTelemetryQueries.ids(devices.stream().distinct().toList())+")");
+  }
+  private List<Map<String,Object>> latestFiltered(long station,String filter) {
     var rows=db.queryForList("SELECT "+METADATA+SAMPLE+JOINS+"""
         JOIN LATERAL (SELECT * FROM reference_device_sample s WHERE s.point_id=b.reference_point_id
           ORDER BY s.source_at DESC,s.captured_at DESC,s.id DESC LIMIT 1) s ON true
         WHERE b.station_id=?
-        """+selection(selected)+" ORDER BY mp.id LIMIT "+(EmsTelemetryQueries.MAX_ROWS+1),station);
+        """+filter+" ORDER BY mp.id LIMIT "+(EmsTelemetryQueries.MAX_ROWS+1),station);
     bounded(rows);
     return rows.stream().map(this::observation).toList();
   }
@@ -72,6 +80,16 @@ public class StoredDeviceTelemetryService {
         WHERE b.measurement_point_id=? AND s.source_at>=? AND s.source_at<?
         ORDER BY s.source_at,s.captured_at DESC,s.id DESC) chosen ORDER BY source_at_ms LIMIT
         """+(EmsTelemetryQueries.MAX_ROWS+1),point,Timestamp.from(Instant.ofEpochMilli(fromMs)),Timestamp.from(Instant.ofEpochMilli(toMs)));
+    bounded(rows);var out=json.createArrayNode();rows.forEach(row->out.add(rawRow(row)));return out;
+  }
+  /** Whole-batch bounds: never return a truncated point or silently drop another point. */
+  public JsonNode historyRows(List<Long> points,long fromMs,long toMs) {
+    if(points==null||points.isEmpty()||points.size()>StoredHistoryBatch.MAX_POINTS)throw new BusinessException(413,"历史测点数量超出范围");
+    if(fromMs>=toMs)throw new BusinessException(400,"查询结束时间必须晚于开始时间");
+    var rows=db.queryForList("SELECT * FROM (SELECT DISTINCT ON (b.measurement_point_id,s.source_at) "+METADATA+SAMPLE+JOINS+"""
+        JOIN reference_device_sample s ON s.point_id=b.reference_point_id
+        WHERE s.source_at>=? AND s.source_at<?
+        """+selection(points)+" ORDER BY b.measurement_point_id,s.source_at,s.captured_at DESC,s.id DESC) chosen ORDER BY point_id,source_at_ms LIMIT "+(EmsTelemetryQueries.MAX_ROWS+1),Timestamp.from(Instant.ofEpochMilli(fromMs)),Timestamp.from(Instant.ofEpochMilli(toMs)));
     bounded(rows);var out=json.createArrayNode();rows.forEach(row->out.add(rawRow(row)));return out;
   }
   private static String selection(List<Long> points) {

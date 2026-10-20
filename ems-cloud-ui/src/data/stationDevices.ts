@@ -51,9 +51,9 @@ export type StationDevice = {
 };
 
 export const DEVICE_TYPES = ['inverter','cabinet','pcs','battery-cluster','battery-stack','air-conditioner','meter','logger','ems'] as const;
-export type DeviceType = typeof DEVICE_TYPES[number] | 'other';
+export type DeviceType = typeof DEVICE_TYPES[number] | 'environment' | 'mppt' | 'liquid-cooler' | 'other';
 export function deviceTypeFromSource(source?:string,category?:string):DeviceType {
-  const names:Record<string,DeviceType>={inverter:'inverter','1':'inverter',energystoragecabinet:'cabinet','66':'cabinet',pcs:'pcs','46':'pcs',batterycluster:'battery-cluster','31001':'battery-cluster',batterystack:'battery-stack','31002':'battery-stack',airconditioner:'air-conditioner','6':'air-conditioner',smartmeter:'meter',meter:'meter','5':'meter',logger:'logger','18':'logger','185000':'logger',ems:'ems','185001':'ems'};
+  const names:Record<string,DeviceType>={inverter:'inverter','1':'inverter',energystoragecabinet:'cabinet','66':'cabinet',pcs:'pcs','46':'pcs',batterycluster:'battery-cluster','31001':'battery-cluster',batterystack:'battery-stack','31002':'battery-stack',airconditioner:'air-conditioner','6':'air-conditioner',smartmeter:'meter',meter:'meter','5':'meter',logger:'logger','18':'logger','185000':'logger',ems:'ems','185001':'ems','61':'ems',environment:'environment','9':'environment',mppt:'mppt','60':'mppt',liquidcooler:'liquid-cooler','53':'liquid-cooler'};
   return names[(source??'').toLowerCase().replace(/[ _-]/g,'')]??({PV:'inverter',BESS:'cabinet',PCS:'pcs',HVAC:'air-conditioner',MTR:'meter'} as Record<string,DeviceType>)[category??'']??'other';
 }
 export const DEVICE_SCHEMAS: Record<DeviceType, {label:string; sections:string[]; match:RegExp[]}> = {
@@ -66,6 +66,9 @@ export const DEVICE_SCHEMAS: Record<DeviceType, {label:string; sections:string[]
   meter: {label:'智能电表',sections:['三相电气量','电能计量'],match:[/功率|电压|电流|频率|因数|power|voltage|current|frequency|factor/i,/电量|电能|energy|import|export/i]},
   logger: {label:'采集器',sections:['通信与采集','系统状态'],match:[/通信|采集|在线|网络|延迟|communication|network|latency|collect/i,/状态|版本|时间|state|version|time/i]},
   ems: {label:'EMS',sections:['能量管理','网关与系统'],match:[/功率|能量|策略|SOC|power|energy|strategy/i,/通信|网关|版本|状态|communication|gateway|version|state/i]},
+  environment:{label:'动环',sections:['基础信息','状态'],match:[/^序列号$/,/^(急停状态|消防状态|水浸状态)$/]},
+  mppt:{label:'MPPT',sections:['铭牌定值','发电','电网','状态','自定义参数'],match:[/^(SN|设备类型|最大直流路数)$/,/^(实际直流路数|光伏-耦合|直流输入)/,/^电网/,/^设备状态$/,/^自定义参数/]},
+  'liquid-cooler':{label:'液冷机',sections:['铭牌定值','设置参数','温度','压力','基础信息','状态','版本信息','报警'],match:[/^SN$/,/^(控制温度选择|制冷设定温度|制热设定温度|制冷回差|加热回差|ID)$/,/^(出水温度|回水温度)$/,/^(进水压力|出水压力)$/,/^系统时间$/,/状态|频率/,/^软件主版本号$/,/^报警代码/]},
   other: {label:'其他设备',sections:['已登记测点'],match:[/.*/]},
 };
 export type DeviceConfiguration = {version:number;selectedPointIds:number[];theoryValues:Record<string,number>};
@@ -103,7 +106,7 @@ export function pointValue(point?: DevicePoint) {
 }
 
 export function formatPoint(point?: DevicePoint) {
-  if(point?.lastKnownValue!==undefined && point.staleReason)return [point.lastKnownValue, point.unit].filter(Boolean).join(' ')+'（最后采样 · 已过期）';
+  if(point?.lastKnownValue!==undefined && point.staleReason)return [point.lastKnownValue, point.unit].filter(Boolean).join(' ');
   if(point?.quality==='good'&&point.textValue!==undefined)return point.textValue;
   const value = pointValue(point);
   if (point?.quality === 'good' && point.exactValue !== undefined) return `${point.exactValue} ${point.unit}`.trim();
@@ -209,4 +212,38 @@ export function deviceMetricPoint(device: StationDevice | undefined, metric: str
   const key=dcDevice?({dcVoltage:'voltage',dcCurrent:'current'} as Record<string,string>)[metric]??metric:metric;
   const matches=device.points.filter(point=>point.semanticKey===key||metric==='power'&&['pcsPower','batteryPower','gridPower','loadPower','pvPower'].includes(point.semanticKey??''));
   return matches.length===1?matches[0]:undefined;
+}
+
+export type BatteryCell = {index:number;value:string|null;pointId?:string;sourceTime:number|null;stale:boolean};
+export type BatteryCellPack = {slot:string;name:string;source:'canonical'|'stored';cells:BatteryCell[]};
+export function batteryCellPacks(kind:'voltage'|'temperature',canonical:{known:boolean;values:Record<string,unknown>[]} | null | undefined,points:Record<string,unknown>[],observations:Record<string,unknown>[]):BatteryCellPack[]{
+ const time=(v:unknown)=>typeof v==='number'&&Number.isFinite(v)?v:null;
+ const number=(v:unknown)=>v!==null&&v!==undefined&&v!==''&&(typeof v==='number'||typeof v==='string')&&Number.isFinite(Number(v))?String(v):null;
+ if(canonical?.known)return canonical.values.filter(row=>row.kind===`cell_${kind}`||row.kind===kind).flatMap(row=>{
+  if(!Array.isArray(row.value))return [];
+  const slots=Array.isArray(row.bmuSlots)?row.bmuSlots:[];
+  return row.value.flatMap((values,index)=>Array.isArray(values)?[{slot:String(slots[index]??index+1),name:'',source:'canonical' as const,cells:values.map((v,i)=>({index:i+1,value:row.quality==='valid'?number(v):null,sourceTime:time(row.sourceTime),stale:Boolean(row.staleReason)}))}]:[]);
+ });
+ const packs=new Map<string,BatteryCellPack>(),byPoint=new Map(observations.map(row=>[String(row.pointId),row]));
+ for(const point of points){
+  const match=/^电池包 (\S+) · (电压|温度) #([1-9]\d*)$/.exec(String(point.name??''));
+  if(!match||match[2]!== (kind==='voltage'?'电压':'温度'))continue;
+  const index=Number(match[3]);if(!Number.isSafeInteger(index))continue;
+  const name=match[1],pack=packs.get(name)??{slot:/Package\d+_(\d+)$/.exec(name)?.[1]??'',name,source:'stored' as const,cells:[]};
+  const row=byPoint.get(String(point.id)),valid=row?.sourceType==='stored_device'&&row.quality==='valid'&&row.valueType==='number';
+  const existing=pack.cells.find(cell=>cell.index===index);
+  if(existing){existing.value=null;existing.pointId=undefined;existing.sourceTime=null;existing.stale=false;}
+  else pack.cells.push({index,value:valid?number(row?.value):null,pointId:String(point.id),sourceTime:time(row?.sourceTime),stale:Boolean(row?.staleReason)});
+  packs.set(name,pack);
+ }
+ return [...packs.values()].map(pack=>({...pack,cells:pack.cells.sort((a,b)=>a.index-b.index)})).sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+}
+
+/** Compare finite decimal samples without rounding their mantissas to JS doubles. */
+export function batteryCellExtremes(packs:Pick<BatteryCellPack,'cells'>[]):{min:string|null;max:string|null}{
+ const decimal=(text:string)=>{const match=/^([+-]?)(\d+)(?:\.(\d*))?(?:e([+-]?\d+))?$/i.exec(text);if(!match)return null;const exponent=Number(match[4]??0);if(!Number.isSafeInteger(exponent)||Math.abs(exponent)>1000)return null;return {coefficient:BigInt((match[1]==='-'?'-':'')+match[2]+(match[3]??'')),scale:(match[3]?.length??0)-exponent}};
+ const compare=(a:NonNullable<ReturnType<typeof decimal>>,b:NonNullable<ReturnType<typeof decimal>>)=>{const scale=Math.max(a.scale,b.scale),left=a.coefficient*BigInt(10)**BigInt(scale-a.scale),right=b.coefficient*BigInt(10)**BigInt(scale-b.scale);return left<right?-1:left>right?1:0};
+ let min:string|null=null,max:string|null=null,low:ReturnType<typeof decimal>=null,high:ReturnType<typeof decimal>=null;
+ for(const pack of packs)for(const cell of pack.cells){if(cell.value===null)continue;const value=decimal(cell.value);if(!value)continue;if(!low||compare(value,low)<0){low=value;min=cell.value}if(!high||compare(value,high)>0){high=value;max=cell.value}}
+ return {min,max};
 }

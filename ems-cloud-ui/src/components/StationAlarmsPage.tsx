@@ -59,7 +59,7 @@ type AlarmView = Omit<StationAlarm, "metric" | "severity" | "category"> & {
   category: string
 }
 
-const levelLabel = { critical: "严重", warning: "重要", info: "一般" }
+const levelLabel = { critical: "严重", warning: "重要", minor: "次要", info: "一般" }
 
 const statusLabel = { active: "活动", recovered: "已恢复", closed: "人工关闭" }
 
@@ -481,6 +481,7 @@ function DemoStationAlarmsPage({
     date: string
     critical: number
     warning: number
+    minor: number
     info: number
   }>()
   filtered.forEach((alarm) => {
@@ -489,6 +490,7 @@ function DemoStationAlarmsPage({
       date,
       critical: 0,
       warning: 0,
+      minor: 0,
       info: 0,
     }
     item[alarm.severity]++
@@ -682,6 +684,7 @@ function DemoStationAlarmsPage({
           <option value="all">全部级别</option>
           <option value="critical">严重告警</option>
           <option value="warning">重要告警</option>
+          <option value="minor">次要告警</option>
           <option value="info">一般告警</option>
         </select>
         <select
@@ -1031,6 +1034,7 @@ function DemoStationAlarmsPage({
                 重要{" "}
                 {filtered.filter((item) => item.severity === "warning").length}
               </span>
+              <span>次要 {filtered.filter((item)=>item.severity==="minor").length}</span>
               <span>
                 一般{" "}
                 {filtered.filter((item) => item.severity === "info").length}
@@ -1074,6 +1078,7 @@ function DemoStationAlarmsPage({
                   fill="#e3b36a"
                   maxBarSize={24}
                 />
+                <Bar dataKey="minor" name="次要" stackId="alarms" isAnimationActive={false} fill="#d4bc65" maxBarSize={24}/>
                 <Bar
                   dataKey="info"
                   name="一般"

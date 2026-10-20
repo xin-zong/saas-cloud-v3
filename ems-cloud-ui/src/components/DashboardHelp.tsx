@@ -1,0 +1,8 @@
+import {useEffect,useId,useRef,useState,type ReactNode} from 'react'
+import {CircleHelp} from 'lucide-react'
+import './dashboard-help.css'
+export default function DashboardHelp({label,children}:{label:string;children:ReactNode}){
+ const id=`dashboard-help-${useId().replace(/:/g,'')}`,trigger=useRef<HTMLButtonElement>(null),popover=useRef<HTMLSpanElement>(null),[open,setOpen]=useState(false),[position,setPosition]=useState({left:16,top:16,width:330})
+ useEffect(()=>{if(!open)return;const place=()=>{const anchor=trigger.current?.getBoundingClientRect(),content=popover.current;if(!anchor||!content)return;const width=Math.min(330,window.innerWidth-32),height=content.offsetHeight;setPosition({width,left:Math.max(16,Math.min(anchor.left,window.innerWidth-width-16)),top:anchor.bottom+8+height<=window.innerHeight-12?anchor.bottom+8:Math.max(12,anchor.top-height-8)})};place();window.addEventListener('resize',place);window.addEventListener('scroll',place,true);return()=>{window.removeEventListener('resize',place);window.removeEventListener('scroll',place,true)}},[open])
+ return <span className="dashboard-help"><button ref={trigger} type="button" className="dashboard-help-trigger" aria-label={label} aria-expanded={open} aria-controls={id} popoverTarget={id}><CircleHelp size={14} strokeWidth={1.6} aria-hidden="true"/></button><span ref={popover} id={id} popover="auto" role="dialog" tabIndex={-1} aria-label={label} className="dashboard-help-popover" style={position} onToggle={event=>{const visible=(event.nativeEvent as ToggleEvent).newState==='open';setOpen(visible);if(visible)popover.current?.focus({preventScroll:true})}}><strong className="dashboard-help-title">{label}</strong>{children}</span></span>
+}

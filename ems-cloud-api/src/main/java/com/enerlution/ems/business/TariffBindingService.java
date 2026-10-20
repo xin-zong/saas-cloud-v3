@@ -37,13 +37,14 @@ public class TariffBindingService {
       if(stationTenant!=source.tenant())throw new BusinessException(403,"模板与站点须属于同一企业");
       // Either the station lock or the template lock may have waited across Shanghai midnight.
       dates(request.validFrom(),request.validUntil(),clock);
+      TariffLibraryService.bindingDates(s,station,source.templateId(),source.version(),request.validFrom(),request.validUntil());
       long id=s.db.queryForObject("INSERT INTO station_tariff(station_id,tariff_id,template_id,template_version,valid_from,valid_until) VALUES(?,?,?,?,?,?) RETURNING id",Long.class,station,source.tariffId(),source.templateId(),source.version(),request.validFrom(),request.validUntil());
       audit("create",station,id,1);return one(station,id);
     });
   }
   public Binding update(long station,long id,UpdateRequest request){
     permission(station);if(request==null)throw TariffTemplateService.invalid("缺少日期配置");long expected=TariffTemplateService.version(request.expectedVersion());dates(request.validFrom(),request.validUntil(),clock);
-    return write(station,()->{locked(station,id,expected);dates(request.validFrom(),request.validUntil(),clock);s.db.update("UPDATE station_tariff SET valid_from=?,valid_until=?,version=version+1 WHERE id=? AND station_id=?",request.validFrom(),request.validUntil(),id,station);audit("dates",station,id,expected+1);return one(station,id);});
+    return write(station,()->{locked(station,id,expected);dates(request.validFrom(),request.validUntil(),clock);var source=s.one("SELECT template_id,template_version FROM station_tariff WHERE id=? AND station_id=?",id,station);TariffLibraryService.bindingDates(s,station,source.get("template_id"),source.get("template_version"),request.validFrom(),request.validUntil());s.db.update("UPDATE station_tariff SET valid_from=?,valid_until=?,version=version+1 WHERE id=? AND station_id=?",request.validFrom(),request.validUntil(),id,station);audit("dates",station,id,expected+1);return one(station,id);});
   }
   public void unbind(long station,long id,Long expectedVersion){
     permission(station);long expected=TariffTemplateService.version(expectedVersion);
@@ -65,3 +66,5 @@ public class TariffBindingService {
   private <T>T write(long station,Supplier<T> action){return TariffTemplateService.transaction(s,()->{s.db.queryForObject("SELECT pg_advisory_xact_lock(hashtextextended(?,0))",Object.class,"tariff-binding:"+station);return action.get();});}
   private void audit(String action,long station,long id,long version){s.auditStation("tariff-binding."+action,station,Map.of("bindingId",Long.toString(id),"version",version));}
 }
+
+

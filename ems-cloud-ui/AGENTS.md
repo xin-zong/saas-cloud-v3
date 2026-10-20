@@ -1,5 +1,7 @@
 # figma-make-app
 
+最新纠正优先：场站页面布局、信息密度、字段、按钮和交互按 QUDEOX 已核验实屏复刻，Tabler/shadcn 仅用于控件皮肤。mock 落新库并由 API 读取；保留权限及 main 原流图/3D 图。按根目录 OpenSpec 场站重做计划逐项验收。不参考 Figma。下方旧视觉约定不得用于重新设计布局。
+
 本分支以根 AGENTS.md 的 2026-10-18 用户最新指令为准：业务参考 QUDEOX 网站和核实清单，视觉以 Tabler（preview.tabler.io）和 shadcn blocks（ui.shadcn.com/blocks）为基础，不再照搬 QUDEOX UI，也不读取或参考 Figma。下方 Figma 规则保留为历史说明，不适用于本分支后续页面改造。
 
 ## Figma Design Source

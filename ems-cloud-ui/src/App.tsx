@@ -5,15 +5,22 @@ import { mergePresence, type Presence } from "@/api/presence"
 import { loadStationSnapshot, mergeStationSnapshot, type StationSnapshot } from "@/api/stationRealtime"
 
 import { adaptStation } from "@/api/adapters"
-import { loadStations } from "@/api/stations"
+import { loadStations, type StationLoadMode } from "@/api/stations"
 import { apiRoleConfig, hasStationPermission, stationRoleConfig } from "@/auth/apiPermissions"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import Sidebar from "@/components/Sidebar"
 import ReferenceWorkspace from '@/components/ReferenceWorkspace'
+import MessagesPage from '@/components/MessagesPage'
+import ReferenceManagementWorkspace from '@/components/ReferenceManagementWorkspace'
+import {isReferenceManagementPage} from '@/tenant/referenceManagement'
 import ReferenceAssetWorkspace from '@/components/ReferenceAssetWorkspace'
 import {ReferenceDevicesPage} from '@/components/ReferenceDevicesPage'
 import MonitorOverviewPage from '@/components/MonitorOverviewPage'
+import ReferenceTagsPage from '@/components/ReferenceTagsPage'
+import ReferenceTariffsPage from '@/components/ReferenceTariffsPage'
+import MonitorReportsWorkspace from '@/components/MonitorReportsWorkspace'
+import AlarmWorkspacePage from '@/components/AlarmWorkspacePage'
 import {referencePages,canOpenReferencePage} from '@/navigation/referenceNavigation'
 import StationGlobalHeader from "@/components/StationGlobalHeader"
 import "@/styles/stations-figma.css"
@@ -47,6 +54,7 @@ import WorkOrdersApprovalPage from "@/components/WorkOrdersApprovalPage"
 
 import AnalyticsAiPage from "@/components/AnalyticsAiPage"
 
+import EmsAgentHost from "@/components/EmsAgentHost"
 import GlobalAiDrawer from "@/components/GlobalAiDrawer"
 
 import PlatformManagementPage from "@/components/PlatformManagementPage"
@@ -312,6 +320,8 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
   const devicesLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
   const registerDevicesLeaveGuard = useCallback((guard: null | (() => Promise<boolean>)) => { devicesLeaveGuard.current = guard }, [])
   const overviewLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
+  const referenceModuleLeaveGuard = useRef<null | (() => Promise<boolean>)>(null)
+  const registerReferenceModuleLeaveGuard = useCallback((guard: null | (() => Promise<boolean>)) => { referenceModuleLeaveGuard.current = guard }, [])
   const registerOverviewLeaveGuard = useCallback((guard: null | (() => Promise<boolean>)) => { overviewLeaveGuard.current = guard }, [])
   const [logoutConfirm, setLogoutConfirm] = useState(false)
   const logoutPending = useRef(false)
@@ -351,6 +361,10 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
 
   const refreshApi = useCallback(() => setRevision((value) => value + 1), [])
 
+  // API sessions render ReferenceWorkspace below; its pages fetch their own
+  // business data. Keep the full aggregate available for the legacy workspace.
+  const stationLoadMode: StationLoadMode = DEMO_MODE ? 'full' : 'directory'
+
   useEffect(() => {
     if (DEMO_MODE) return
 
@@ -360,7 +374,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
 
     setApiError("")
 
-    loadStations(user, controller.signal)
+    loadStations(user, controller.signal, stationLoadMode)
       .then((next) => {
         if (!controller.signal.aborted) setStations(next)
       })
@@ -375,11 +389,11 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
       })
 
     return () => controller.abort()
-  }, [user, revision])
+  }, [user, revision, stationLoadMode])
 
   const presenceIds = stations.filter(station => hasStationPermission(user, station.id, "asset.read") || hasStationPermission(user, station.id, "telemetry.read")).map(station => station.id).join(",")
   useEffect(() => {
-    if (DEMO_MODE || !presenceIds) return
+    if (DEMO_MODE || stationLoadMode !== 'full' || !presenceIds) return
     const controller = new AbortController()
     let timer: ReturnType<typeof setTimeout>
     const refreshPresence = async () => {
@@ -403,7 +417,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
     }
     void refreshPresence()
     return () => { controller.abort(); clearTimeout(timer) }
-  }, [user, presenceIds])
+  }, [user, presenceIds, stationLoadMode])
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
@@ -503,6 +517,8 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
       if(referencePage==='sites') return activeDetailId ? requestStationLeave() : assetsLeaveGuard.current?.() ?? Promise.resolve(true)
       if(referencePage==='devices') return devicesLeaveGuard.current?.() ?? Promise.resolve(true)
       if(referencePage==='dashboard') return overviewLeaveGuard.current?.() ?? Promise.resolve(true)
+      if(referencePage.startsWith('settings-')) return settingsLeaveGuard.current?.() ?? Promise.resolve(true)
+      if(['tags','tariffs','report-common','report-operation','alarm-rules'].includes(referencePage)) return referenceModuleLeaveGuard.current?.() ?? Promise.resolve(true)
       return Promise.resolve(true)
     }
     if (activeNav === "总览") return overviewLeaveGuard.current?.() ?? Promise.resolve(true)
@@ -900,11 +916,13 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
   }, [stations, user])
 
   if (!DEMO_MODE) {
-    const referenceEntry = referencePages.find(p => p.id === referencePage)!
-    const permitted = canOpenReferencePage(referenceEntry,user)
+    const personalPages:Record<string,string>={'settings-personal':'个人中心','settings-notifications':'通知设置','settings-display':'语言与显示','settings-security':'账户安全'}
+    const accountPages:Record<string,string>={...personalPages,messages:'消息列表'}
+    const referenceEntry = referencePages.find(p => p.id === referencePage) ?? {id:referencePage,label:accountPages[referencePage]??'页面不存在'}
+    const permitted = Object.prototype.hasOwnProperty.call(accountPages,referencePage) || (referencePages.some(p=>p.id===referencePage)&&canOpenReferencePage(referenceEntry,user))
     const navigateReference = async (id:string) => {
       const target=referencePages.find(p=>p.id===id)
-      if(!target || !(await requestActiveEditorLeave())) return false
+      if((!target&&!Object.prototype.hasOwnProperty.call(accountPages,id)) || !(await requestActiveEditorLeave())) return false
       setReferencePage(id)
       setActiveNav(id==='sites'?'资产与站点':'总览')
       setElectricView('stations')
@@ -916,7 +934,15 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
       {!permitted ? <section className="reference-placeholder"><h2>当前账户无访问权限</h2><p>请联系管理员分配菜单和业务权限。</p></section> : referencePage==='dashboard' ?
         <MonitorOverviewPage user={user} registerLeaveGuard={registerOverviewLeaveGuard} onOpenAlarms={()=>void navigateReference('alarm-live')} onOpenStation={handleOpenStation} onOpenSites={async filters=>{if(await requestActiveEditorLeave()){setMonitorSiteFilter(filters);await navigateReference('sites')}}}/>
       : referencePage==='devices'||referencePage==='sites' ? <ReferenceAssetWorkspace user={user} mode={referencePage==='devices'?'devices':activeDetailId?'detail':'sites'} stationId={activeDetailId??undefined} initialDeviceId={focusedDevice} initialTab={detailSubNav} initialFilter={monitorSiteFilter} onOpenStation={handleOpenStation} onBack={handleBackFromDetail} registerLeaveGuard={referencePage==='devices'?registerDevicesLeaveGuard:activeDetailId?registerStationLeaveGuard:registerAssetsLeaveGuard} onChanged={refreshApi}/>
+      : referencePage==='tags' ? <ReferenceTagsPage key={JSON.stringify([user.id,user.tenant?.tenantId,user.permissions])} canEdit={user.permissions.includes('asset.edit')} registerLeaveGuard={registerReferenceModuleLeaveGuard}/>
+      : referencePage==='tariffs' ? <ReferenceTariffsPage registerLeaveGuard={registerReferenceModuleLeaveGuard}/>
+      : ['alarm-live','alarm-history','alarm-rules'].includes(referencePage) ? <AlarmWorkspacePage key={referencePage} view={referencePage==='alarm-live'?'live':referencePage==='alarm-history'?'history':'rules'} stations={stations} onRefresh={refreshApi} registerLeaveGuard={registerReferenceModuleLeaveGuard}/>
+      : ['report-common','report-operation'].includes(referencePage) ? <MonitorReportsWorkspace key={referencePage} stations={stations} production={referencePage==='report-operation'} registerLeaveGuard={registerReferenceModuleLeaveGuard}/>
+      : isReferenceManagementPage(referencePage) ? <ReferenceManagementWorkspace key={`${user.id}:${referencePage}`} page={referencePage}/>
+      : referencePage==='messages' ? <MessagesPage onNotificationSettings={()=>void navigateReference('settings-notifications')}/>
+      : Object.prototype.hasOwnProperty.call(personalPages,referencePage) ? <SystemSettingsPage key={`${user.id}:${referencePage}`} user={user} onLogout={requestLogout} stations={stations} initialCategory={referencePage.slice('settings-'.length) as 'personal'|'notifications'|'display'|'security'} registerLeaveGuard={registerSettingsLeaveGuard}/>
       : <section className="reference-placeholder"><h2>{referenceEntry.label}</h2><p>菜单入口已按参考平台建立，该页面尚未完成复刻。</p><p>原有页面已从此入口屏蔽，不以旧页面替代参考页面。</p></section>}
+      <EmsAgentHost key={`${user.tenant?.tenantId??'local'}:${user.id}`} user={user} stations={scopedStations} activeNav={referenceEntry.label} stationId={activeDetailId}/>
     </ReferenceWorkspace>
   }
 

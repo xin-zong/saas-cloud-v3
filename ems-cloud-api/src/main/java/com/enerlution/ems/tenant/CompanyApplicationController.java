@@ -14,15 +14,18 @@ import org.springframework.web.bind.annotation.*;
 public class CompanyApplicationController {
   private final EmailChallengeService email;
   private final CompanyApplicationService service;
+  private final MailDeliveryService mail;
   private final String datacenter, publicUrl;
 
   public CompanyApplicationController(
       EmailChallengeService email,
       CompanyApplicationService service,
+      MailDeliveryService mail,
       @Value("${ems.tenant.datacenter:apac}") String datacenter,
       @Value("${ems.tenant.public-url:}") String publicUrl) {
     this.email = email;
     this.service = service;
+    this.mail = mail;
     this.datacenter = datacenter;
     this.publicUrl = publicUrl;
   }
@@ -33,6 +36,9 @@ public class CompanyApplicationController {
 
   public record Verify(
       @NotNull UUID challengeId, @NotBlank @Pattern(regexp = "[0-9]{6}") String code) {}
+
+  public record ChallengeStatus(
+      @NotNull UUID challengeId, @NotBlank @Email @Size(max = 254) String email) {}
 
   public record Submit(
       @NotNull @Valid CompanyForm company,
@@ -48,7 +54,18 @@ public class CompanyApplicationController {
   @GetMapping("/public/environments")
   public ApiResponse<?> environments() {
     return ApiResponse.ok(
-        List.of(Map.of("code", datacenter, "url", publicUrl, "available", !publicUrl.isBlank())));
+        List.of(
+            Map.of(
+                "code",
+                datacenter,
+                "url",
+                publicUrl,
+                "available",
+                !publicUrl.isBlank(),
+                "mailAvailable",
+                mail.available(),
+                "registrationAvailable",
+                !publicUrl.isBlank() && mail.available())));
   }
 
   @PostMapping("/public/registration/email-challenges")
@@ -58,7 +75,16 @@ public class CompanyApplicationController {
             "challengeId",
             email.request(body.email(), body.language(), request.getRemoteAddr()),
             "mailStatus",
-            "pending"));
+            "pending",
+            "expiresInSeconds",
+            600,
+            "resendAfterSeconds",
+            60));
+  }
+
+  @PostMapping("/public/registration/email-challenges/status")
+  public ApiResponse<?> challengeStatus(@Valid @RequestBody ChallengeStatus body) {
+    return ApiResponse.ok(email.status(body.challengeId(), body.email()));
   }
 
   @PostMapping("/public/registration/email-challenges/verify")

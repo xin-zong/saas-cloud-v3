@@ -20,6 +20,7 @@ class MailDeliveryServiceTest {
     var provider = (ObjectProvider<JavaMailSender>) mock(ObjectProvider.class);
     var sender = mock(JavaMailSender.class);
     when(provider.getIfAvailable()).thenReturn(sender);
+    when(db.queryForObject(anyString(), eq(Boolean.class), any(Object[].class))).thenReturn(true);
     when(codec.decrypt("encrypted")).thenReturn("{\"code\":\"123456\"}");
     when(db.queryForList(startsWith("UPDATE mail_delivery")))
         .thenReturn(
@@ -27,6 +28,8 @@ class MailDeliveryServiceTest {
                 Map.of(
                     "id",
                     1L,
+                    "event_key",
+                    "email-code:" + UUID.randomUUID(),
                     "recipient",
                     "a@test.invalid",
                     "language",
@@ -61,7 +64,9 @@ class MailDeliveryServiceTest {
     var provider = (ObjectProvider<JavaMailSender>) mock(ObjectProvider.class);
     var sender = mock(JavaMailSender.class);
     when(provider.getIfAvailable()).thenReturn(sender);
-    when(codec.decrypt("encrypted")).thenReturn("{\"url\":\"http://localhost/#activate=private\"}");
+    when(db.queryForObject(anyString(), eq(Boolean.class), any(Object[].class))).thenReturn(true);
+    when(codec.decrypt("encrypted"))
+        .thenReturn("{\"url\":\"http://localhost:8447/#activate=" + "a".repeat(43) + "\"}");
     when(codec.encrypt("{}")).thenReturn("redacted");
     when(db.queryForList(startsWith("UPDATE mail_delivery")))
         .thenReturn(
@@ -69,6 +74,8 @@ class MailDeliveryServiceTest {
                 Map.of(
                     "id",
                     1L,
+                    "event_key",
+                    "activation:7:" + UUID.randomUUID(),
                     "recipient",
                     "a@test.invalid",
                     "language",

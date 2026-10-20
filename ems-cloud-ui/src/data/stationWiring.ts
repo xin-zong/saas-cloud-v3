@@ -1,7 +1,7 @@
 export type WiringElement = { id: string; kind: 'device'|'text'|'junction'|'breaker'; x:number; y:number; width:number; height:number; rotation:number; text:string; color:string; fontSize:number; align:'left'|'center'|'right'; deviceId:string|null; pointId:string|null }
 export type WiringEdge = {id:string;source:string;target:string}
-export type WiringGraph = {elements:WiringElement[];edges:WiringEdge[]}
-export type WiringBinding = {deviceId:string;deviceName:string;pointId:string|null;pointName:string|null;unit:string|null}
+export type WiringGraph = {elements:WiringElement[];edges:WiringEdge[];editorDocument?:unknown}
+export type WiringBinding = {deviceType?:string;deviceId:string;deviceName:string;pointId:string|null;pointName:string|null;unit:string|null}
 export type WiringDiagram = {stationId:string;version:number;graph:WiringGraph|null}
 export type WiringValue = {pointId?:string;value?:unknown;unit?:string;sourceTime?:number;receivedAt?:number;staleReason?:string|null;quality?:string}
 export function fromTopology(bindings:WiringBinding[],links:Record<string,unknown>[]):WiringGraph {
@@ -15,5 +15,6 @@ export function removeElement(graph:WiringGraph,id:string):WiringGraph {return {
 export function valueLabel(value:WiringValue|undefined):string {
  if(!value)return '暂无遥测'
  const display=value.value===null||value.value===undefined?'暂无值':typeof value.value==='object'?'数组值请查看设备':String(value.value)
- return `${display}${value.unit?' '+value.unit:''} · ${value.staleReason?'最后采样 · 已过期或无效':'质量 '+({valid:'有效',invalid:'无效'}[value.quality??'']??'未知')} · 源时间 ${value.sourceTime?new Date(value.sourceTime).toLocaleString():'未知'} · 接收时间 ${value.receivedAt?new Date(value.receivedAt).toLocaleString():'未知'}`
+ return `${display}${value.unit?' '+value.unit:''} · ${value.staleReason?'最后采样':'质量 '+({valid:'有效',invalid:'无效'}[value.quality??'']??'未知')} · 源时间 ${value.sourceTime?new Date(value.sourceTime).toLocaleString():'未知'} · 接收时间 ${value.receivedAt?new Date(value.receivedAt).toLocaleString():'未知'}`
 }
+

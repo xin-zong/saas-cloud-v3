@@ -25,10 +25,25 @@ public class EmailChallengeService {
     email = normalize(email);
     limit("ip:" + remote, 20);
     limit("email:" + email, 5);
+    // Serialize requests for this address across API instances, not just this JVM.
+    db.queryForList(
+        "SELECT pg_advisory_xact_lock(hashtextextended(?,73591))", "email-challenge:" + email);
+    if (Boolean.TRUE.equals(
+        db.queryForObject(
+            "SELECT EXISTS(SELECT 1 FROM email_challenge WHERE email=? AND"
+                + " created_at>now()-interval '60 seconds')",
+            Boolean.class,
+            email))) throw new BusinessException(429, "请等待60秒后重发验证码");
+    // Already verified contexts remain usable for their original lifetime.
+    db.update(
+        "UPDATE email_challenge SET expires_at=now() WHERE email=? AND context_hash IS NULL AND"
+            + " created_at<now() AND expires_at>now()",
+        email);
     UUID id = UUID.randomUUID();
     String code = String.format(Locale.ROOT, "%06d", new SecureRandom().nextInt(1000000));
     db.update(
-        "INSERT INTO email_challenge(id,email,code_hash,expires_at) VALUES(?,?,?,now()+interval '10 minutes')",
+        "INSERT INTO email_challenge(id,email,code_hash,expires_at) VALUES(?,?,?,now()+interval '10"
+            + " minutes')",
         id,
         email,
         SecureTokens.hash(id + ":" + code));
@@ -36,11 +51,37 @@ public class EmailChallengeService {
     return id;
   }
 
+  public Map<String, Object> status(UUID id, String email) {
+    email = normalize(email);
+    var rows =
+        db.queryForList(
+            "SELECT m.status,c.expires_at AS \"expiresAt\",c.expires_at<=now() AS expired FROM"
+                + " email_challenge c LEFT JOIN mail_delivery m ON"
+                + " m.event_key='email-code:'||c.id::text WHERE c.id=? AND c.email=?",
+            id,
+            email);
+    if (rows.isEmpty()) throw new BusinessException(404, "验证码请求不存在");
+    var row = rows.getFirst();
+    Object expires = row.get("expiresAt");
+    String expiresAt =
+        expires instanceof java.sql.Timestamp timestamp
+            ? timestamp.toInstant().toString()
+            : expires.toString();
+    return Map.of(
+        "mailStatus",
+        Boolean.TRUE.equals(row.get("expired"))
+            ? "expired"
+            : Objects.toString(row.get("status"), "pending"),
+        "expiresAt",
+        expiresAt);
+  }
+
   @Transactional(noRollbackFor = BusinessException.class)
   public Map<String, String> verify(UUID id, String code) {
     var rows =
         db.queryForList(
-            "SELECT email,code_hash FROM email_challenge WHERE id=? AND expires_at>now() AND attempts<5 AND context_hash IS NULL FOR UPDATE",
+            "SELECT email,code_hash FROM email_challenge WHERE id=? AND expires_at>now() AND"
+                + " attempts<5 AND context_hash IS NULL FOR UPDATE",
             id);
     if (rows.isEmpty()) throw new BusinessException(400, "验证码无效或已过期");
     db.update("UPDATE email_challenge SET attempts=attempts+1 WHERE id=?", id);

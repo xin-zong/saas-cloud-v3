@@ -7,7 +7,8 @@ import { ROLE_CONFIG, type AuthUser } from "@/auth/roles"
 import { Button, Select, Switch } from "./ui/Workspace"
 import "./system-settings.css"
 import SettingsDialog from "./SettingsDialog"
-import { applyPreferences } from '@/preferences/store'
+import { applyPreferences, getPreferences, subscribePreferences } from '@/preferences/store'
+import { reconcileSavedLanguage } from '@/preferences/language'
 import PersonalCenterPage,{PersonalSecurity} from '@/tenant/PersonalCenterPage'
 import { useEditorLeaveGuard, type RegisterLeaveGuard } from "./useEditorLeaveGuard"
 
@@ -50,7 +51,8 @@ type SettingsState = {
   mapLabels: boolean
 }
 
-type CategoryKey = "personal" | "notifications" | "display" | "security"
+export type SettingsCategory = "personal" | "notifications" | "display" | "security"
+type CategoryKey = SettingsCategory
 
 type Category = {
   key: CategoryKey
@@ -396,7 +398,9 @@ function PersonalPreferences({
         </div>
       </SettingsCard>
       <ScopeNote title="设置范围">
-        个人偏好仅影响当前账户，不改变其他用户、站点或租户配置。默认页面等偏好的全局应用尚未接入；演示账户资料仅保存在本机。
+        {DEMO_MODE
+          ? "个人偏好仅影响当前账户。演示账户资料及偏好保存在本机。"
+          : "个人偏好仅影响当前账户，不改变其他用户、站点或租户配置。账户资料及已保存的偏好存储于服务器。语言、时区和显示设置按已保存值应用；默认入口、默认时间范围及站点标签记忆目前仅保存偏好。"}
       </ScopeNote>
     </>
   )
@@ -731,18 +735,31 @@ export default function SystemSettingsPage({
   user,
   onLogout,
   registerLeaveGuard,
+  initialCategory = "personal",
 }: {
   stations?: Station[]
   user: AuthUser
   onLogout: () => void
   registerLeaveGuard?: RegisterLeaveGuard
+  initialCategory?: SettingsCategory
 }) {
   const storageKey = `enerlution:settings:${DEMO_MODE ? "demo" : "api"}:${user.id}`
   const seed = { displayName: user.name || "", email: user.account || "", phone: "" }
   const [initial] = useState(() => readSettings(storageKey, seed))
   const [settings, setSettings] = useState(initial.settings)
   const [baseline, setBaseline] = useState(initial.settings)
-  const [activeCategory, setActiveCategory] = useState<CategoryKey>("personal")
+  const languageDraft = useRef({ settings, baseline })
+  languageDraft.current = { settings, baseline }
+  const savedLanguage = useRef(getPreferences().language)
+  useEffect(() => subscribePreferences(() => {
+    const language = getPreferences().language
+    if (savedLanguage.current === language) return
+    savedLanguage.current = language
+    const currentBaseline = languageDraft.current.baseline
+    setSettings(current => reconcileSavedLanguage(current, currentBaseline, language).draft)
+    setBaseline(current => ({ ...current, language }))
+  }), [])
+  const [activeCategory, setActiveCategory] = useState<CategoryKey>(initialCategory)
   const [stored, setStored] = useState(initial.stored)
   const [error, setError] = useState(initial.error)
   const [serverReady, setServerReady] = useState(DEMO_MODE)
@@ -778,11 +795,13 @@ export default function SystemSettingsPage({
   useEffect(() => {
     if (DEMO_MODE) return
     const controller = new AbortController()
+    const languageAtLoad = getPreferences().language
     setServerReady(false)
     api<Record<string, string>>("/settings", {signal: controller.signal}).then(values => {
       if (controller.signal.aborted) return
       const next = {...initial.settings}
       for (const key of preferenceKeys) if (values[key] != null) Object.assign(next, {[key]: typeof next[key] === "boolean" ? values[key] === "true" : values[key]})
+      if (getPreferences().language !== languageAtLoad) next.language = getPreferences().language
       setSettings(next); setBaseline(next); applyPreferences(next); setServerReady(true); setError("")
     }).catch(error => {if (!controller.signal.aborted) setError(error.message)})
     return () => controller.abort()
@@ -802,11 +821,14 @@ export default function SystemSettingsPage({
           if (!alive.current) return
           confirmed = {...confirmed, [key]: snapshot[key]}
           setBaseline(confirmed)
-          applyPreferences(confirmed)
+          applyPreferences({...confirmed, language: key === "language" ? confirmed.language : getPreferences().language})
         }
       }
       if (!alive.current) return
-      setBaseline(snapshot); applyPreferences(snapshot); setStored(true); setError("")
+      const finalLanguage = DEMO_MODE ? snapshot.language : getPreferences().language
+      setBaseline({...snapshot, language: finalLanguage})
+      setSettings(current => ({...current, language: current.language === snapshot.language ? finalLanguage : current.language}))
+      applyPreferences({...snapshot, language: finalLanguage}); setStored(true); setError("")
     } catch (error) {
       if (alive.current) setError(DEMO_MODE ? "保存失败：本地存储不可用，请检查浏览器存储权限后重试。" : `部分偏好可能已保存；其余输入已保留，请重试。${error instanceof Error ? error.message : "保存失败"}`)
     } finally {busyRef.current = false; if (alive.current) setBusy(false)}
@@ -838,7 +860,7 @@ export default function SystemSettingsPage({
           <div className="settings-rail-explanation">
             <strong>说明</strong>
             <p>
-              当前身份：{ROLE_CONFIG[user.role].label}。此处仅管理当前登录账户。
+              当前身份：{user.roleNames?.filter(name => name.trim()).join("、") || (DEMO_MODE ? ROLE_CONFIG[user.role].label : "未分配角色")}。此处仅管理当前登录账户。
             </p>
           </div>
           <div className="settings-rail-footer">
@@ -887,7 +909,7 @@ export default function SystemSettingsPage({
               <DisplaySettings settings={settings} set={set} />
             )}
             {activeCategory === "security" && (
-              DEMO_MODE?<SecuritySettings settings={settings} set={set} account={user.account} busy={busy} registerLeaveGuard={registerSecurityLeaveGuard} />:<PersonalSecurity/>
+              DEMO_MODE?<SecuritySettings settings={settings} set={set} account={user.account} busy={busy} registerLeaveGuard={registerSecurityLeaveGuard} />:<PersonalSecurity registerLeaveGuard={registerSecurityLeaveGuard}/>
             )}
           </div>
 

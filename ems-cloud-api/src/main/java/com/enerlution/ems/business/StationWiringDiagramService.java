@@ -2,6 +2,8 @@ package com.enerlution.ems.business;
 
 import com.enerlution.ems.common.BusinessException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.*;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -15,7 +17,9 @@ public class StationWiringDiagramService {
  public StationWiringDiagramService(DomainSupport s,StationTelemetryService telemetry){this.s=s;this.telemetry=telemetry;}
  public record Element(String id,String kind,double x,double y,double width,double height,double rotation,String text,String color,@JsonDeserialize(using=StationSpaceService.StrictInteger.class) int fontSize,String align,@JsonDeserialize(using=StationSpaceService.StrictDeviceId.class) String deviceId,@JsonDeserialize(using=StationSpaceService.StrictDeviceId.class) String pointId){}
  public record Edge(String id,String source,String target){}
- public record Graph(List<Element> elements,List<Edge> edges){}
+ public record Graph(List<Element> elements,List<Edge> edges,@JsonInclude(JsonInclude.Include.NON_NULL) JsonNode editorDocument){
+  public Graph(List<Element> elements,List<Edge> edges){this(elements,edges,null);}
+ }
  public record Diagram(String stationId,long version,Graph graph){}
  public record SaveRequest(@JsonDeserialize(using=StationSpaceService.StrictVersion.class) Long expectedVersion,Graph graph){}
  public Diagram read(long station){s.access.requireStationPermission(station,"asset.read");var result=current(station);s.access.requireStationPermission(station,"asset.read");return result;}
@@ -34,7 +38,7 @@ public class StationWiringDiagramService {
  public Map<String,Object> values(long station){
   s.access.requireStationPermission(station,"telemetry.read");var diagram=read(station);
   validateBindings(station,diagram.graph(),false);
-  var ids=diagram.graph()==null?List.<Long>of():diagram.graph().elements().stream().map(Element::pointId).filter(Objects::nonNull).map(Long::valueOf).distinct().sorted().toList();
+  var ids=diagram.graph()==null?List.<Long>of():bindingElements(diagram.graph()).stream().map(Element::pointId).filter(Objects::nonNull).map(Long::valueOf).distinct().sorted().toList();
   var result=ids.isEmpty()?Map.<String,Object>of("items",List.of(),"serverTime",System.currentTimeMillis()):telemetry.snapshot(station,ids,false);
   s.access.requireStationPermission(station,"telemetry.read");var after=read(station);
   if(after.version()!=diagram.version())throw new BusinessException(409,"接线图已变化，请刷新");validateBindings(station,diagram.graph(),false);return result;
@@ -53,7 +57,7 @@ public class StationWiringDiagramService {
  }
  private void validateBindings(long station,Graph graph,boolean lock){
   if(graph==null)return;
-  for(var e:graph.elements())if(e.deviceId()!=null){
+  for(var e:bindingElements(graph))if(e.deviceId()!=null){
    var owned=s.db.queryForList("SELECT id FROM device WHERE id=? AND station_id=?"+(lock?" FOR SHARE":""),Long.class,id(e.deviceId()),station);
    if(owned.isEmpty())throw new BusinessException(403,"绑定设备不属于当前站点，请重新编辑接线图");
    if(e.pointId()!=null&&s.db.queryForList("SELECT id FROM measurement_point WHERE id=? AND device_id=?"+(lock?" FOR SHARE":""),Long.class,id(e.pointId()),id(e.deviceId())).isEmpty())throw new BusinessException(403,"绑定测点不属于所选设备，请重新编辑接线图");
@@ -62,6 +66,7 @@ public class StationWiringDiagramService {
  private void edit(long station){s.access.requireStationPermission(station,"asset.read");s.access.requireStationPermission(station,"asset.edit");}
  static void validate(Graph graph){
   if(graph==null||graph.elements()==null||graph.edges()==null||graph.elements().size()>500||graph.edges().size()>1000)throw invalid("画布最多500个元件、1000条连线");
+  validateEditorDocument(graph.editorDocument());
   var ids=new HashSet<String>();
   for(var e:graph.elements()){
    if(e==null||!validKey(e.id())||!ids.add(e.id())||e.kind()==null||!Set.of("device","text","junction","breaker").contains(e.kind()))throw invalid("元件标识或类型无效");
@@ -70,6 +75,34 @@ public class StationWiringDiagramService {
    if(e.pointId()!=null&&e.deviceId()==null)throw invalid("测点必须绑定设备");if(e.deviceId()!=null)id(e.deviceId());if(e.pointId()!=null)id(e.pointId());
   }
   var edges=new HashSet<String>();for(var e:graph.edges())if(e==null||!validKey(e.id())||!edges.add(e.id())||!ids.contains(e.source())||!ids.contains(e.target())||e.source().equals(e.target()))throw invalid("连线标识或端点无效");
+ }
+ private static List<Element> bindingElements(Graph graph){
+  var result=new ArrayList<Element>(graph.elements());
+  if(graph.editorDocument()!=null&&!graph.editorDocument().isNull()){
+   validateEditorDocument(graph.editorDocument());
+   for(var n:graph.editorDocument().get("nodes"))if(n.hasNonNull("deviceId"))result.add(new Element(n.get("id").asText(),"device",0,0,20,20,0,"","#000000",12,"left",n.get("deviceId").asText(),n.hasNonNull("pointId")?n.get("pointId").asText():null));
+  }
+  return result.stream().distinct().toList();
+ }
+ static void validateEditorDocument(JsonNode doc){
+  if(doc==null||doc.isNull())return;
+  try{if(JSON.writeValueAsBytes(doc).length>512*1024)throw invalid("编辑文档超过512KiB");}catch(java.io.IOException e){throw invalid("编辑文档无效");}
+  if(!doc.isObject()||!doc.path("schema").isIntegralNumber()||!doc.path("schema").canConvertToInt()||doc.path("schema").intValue()!=1||!doc.path("nodes").isArray()||!doc.path("edges").isArray()||doc.path("nodes").size()>500||doc.path("edges").size()>1000)throw invalid("编辑文档结构或版本无效");
+  metadataDepth(doc,0);
+  var ids=new HashSet<String>();
+  for(var n:doc.get("nodes")){
+   if(!n.isObject()||!n.path("id").isTextual()||!validKey(n.path("id").asText())||!ids.add(n.path("id").asText())||!n.path("type").isTextual()||!Set.of("grid","meter","transformer","bus","breaker","pcs","battery","pv","load","ems","charger","gateway").contains(n.path("type").asText())||!n.path("name").isTextual()||n.path("name").asText().length()>200||!n.path("x").isNumber()||!n.path("y").isNumber()||!bounded(n.path("x").doubleValue(),0,10000)||!bounded(n.path("y").doubleValue(),0,10000))throw invalid("编辑元件无效");
+   for(String key:List.of("deviceId","pointId"))if(n.hasNonNull(key)){if(!n.get(key).isTextual())throw invalid("绑定标识必须为字符串");id(n.get(key).asText());}
+   if(n.hasNonNull("pointId")&&!n.hasNonNull("deviceId"))throw invalid("测点必须绑定设备");
+  }
+  var edges=new HashSet<String>();
+  for(var e:doc.get("edges"))if(!e.isObject()||!e.path("id").isTextual()||!validKey(e.path("id").asText())||!edges.add(e.path("id").asText())||!e.path("from").isTextual()||!e.path("to").isTextual()||!ids.contains(e.path("from").asText())||!ids.contains(e.path("to").asText())||e.path("from").asText().equals(e.path("to").asText())||!Set.of("ac","dc").contains(e.path("kind").asText()))throw invalid("编辑连线无效");
+ }
+ private static void metadataDepth(JsonNode node,int depth){
+  if(depth>30)throw invalid("编辑文档嵌套过深");
+  if(node.isObject()){
+   var fields=node.fields();while(fields.hasNext()){var field=fields.next();if(Set.of("__proto__","prototype","constructor","script","onload","onerror","srcdoc","innerHTML").contains(field.getKey()))throw invalid("编辑文档包含不支持的执行字段");metadataDepth(field.getValue(),depth+1);}
+  }else if(node.isArray())for(var child:node)metadataDepth(child,depth+1);
  }
  private static boolean validKey(String value){return value!=null&&value.matches("[A-Za-z0-9_-]{1,80}");}
  private static boolean bounded(double n,double min,double max){return Double.isFinite(n)&&n>=min&&n<=max;}

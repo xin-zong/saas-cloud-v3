@@ -36,7 +36,16 @@ public class DeviceDetailController {
       """,station,device);
   }
   private List<Map<String,Object>> points(long device) {
-    return s.db.queryForList("SELECT p.id,p.code,p.kind_code,k.name,k.unit FROM measurement_point p JOIN measurement_kind k ON k.code=p.kind_code WHERE p.device_id=? ORDER BY p.id",device);
+    var rows=s.db.queryForList("""
+      SELECT p.id,p.code,p.kind_code,k.name,k.unit,
+       CASE WHEN EXISTS(SELECT 1 FROM stored_device_point_binding b
+        JOIN device d ON d.id=p.device_id AND b.station_id=d.station_id
+        JOIN reference_device_point rp ON rp.id=b.reference_point_id AND rp.device_id=p.device_id
+        WHERE b.measurement_point_id=p.id) THEN 'stored_device' END AS "sourceType"
+      FROM measurement_point p JOIN measurement_kind k ON k.code=p.kind_code WHERE p.device_id=? ORDER BY p.id
+      """,device);
+    for(var row:rows)if(row.containsKey("sourceType")&&row.get("sourceType")==null)row.remove("sourceType");
+    return rows;
   }
   private Map<String,Object> configuration(long device) {
     var rows=s.db.queryForList("SELECT version,selected_point_ids::text,theory_values::text,updated_at FROM device_detail_configuration WHERE device_id=?",device);
@@ -59,23 +68,28 @@ public class DeviceDetailController {
     result.put("points",points(device));result.put("configuration",configuration(device));
     result.put("theoryFields",DeviceDetailRules.theoryFields(type));
     // Only return peers in this same authorized station. Imported raw evidence is never exposed.
-    result.put("connections",s.db.queryForList("""
+    var connections=s.db.queryForList("""
       SELECT peer.id,peer.name,peer.code,peer.serial_number,
-        CASE WHEN c.source_device_id=? THEN 'downstream' ELSE 'upstream' END AS direction,'topology' AS source
+        CASE WHEN c.source_device_id=? THEN 'downstream' ELSE 'upstream' END AS direction,'topology' AS source,coalesce(profile.source_type,'') AS source_type,coalesce(model.category,profile.category,'OTHER') AS category
       FROM topology_connection c JOIN device peer ON peer.id=CASE WHEN c.source_device_id=? THEN c.target_device_id ELSE c.source_device_id END
+      LEFT JOIN device_reference_profile profile ON profile.device_id=peer.id LEFT JOIN device_model model ON model.id=peer.model_id
       WHERE (c.source_device_id=? OR c.target_device_id=?) AND peer.station_id=?
       UNION ALL
-      SELECT parent.id,parent.name,parent.code,parent.serial_number,'upstream','imported_inventory'
+      SELECT parent.id,parent.name,parent.code,parent.serial_number,'upstream','imported_inventory',coalesce(profile.source_type,''),coalesce(model.category,profile.category,'OTHER')
       FROM device_reference_import r JOIN device parent ON parent.serial_number=r.provenance->'device'->'raw'->>'parentSerialNumber'
+      LEFT JOIN device_reference_profile profile ON profile.device_id=parent.id LEFT JOIN device_model model ON model.id=parent.model_id
       WHERE r.device_id=? AND parent.station_id=? AND parent.id<>?
         AND NOT EXISTS(SELECT 1 FROM topology_connection c WHERE c.source_device_id=parent.id AND c.target_device_id=?)
       UNION ALL
-      SELECT child.id,child.name,child.code,child.serial_number,'downstream','imported_inventory'
+      SELECT child.id,child.name,child.code,child.serial_number,'downstream','imported_inventory',coalesce(profile.source_type,''),coalesce(model.category,profile.category,'OTHER')
       FROM device_reference_import r JOIN device child ON child.id=r.device_id
       JOIN device parent ON parent.serial_number=r.provenance->'device'->'raw'->>'parentSerialNumber'
+      LEFT JOIN device_reference_profile profile ON profile.device_id=child.id LEFT JOIN device_model model ON model.id=child.model_id
       WHERE parent.id=? AND child.station_id=? AND parent.station_id=? AND child.id<>?
         AND NOT EXISTS(SELECT 1 FROM topology_connection c WHERE c.source_device_id=parent.id AND c.target_device_id=child.id)
-      """,device,device,device,device,station,device,station,device,device,device,station,station,device));
+      """,device,device,device,device,station,device,station,device,device,device,station,station,device);
+    for(var connection:connections)connection.put("type",DeviceDetailRules.type(Objects.toString(connection.get("source_type"),""),Objects.toString(connection.get("category"),"")));
+    result.put("connections",connections);
     result.put("logs",s.db.queryForList("""
       SELECT e.id,e.version,e.occurred_at,e.actor_id,'本地设备配置保存' AS action,'已保存' AS result
       FROM device_detail_configuration_event e WHERE e.device_id=? AND e.station_id=? ORDER BY e.occurred_at DESC,e.id DESC LIMIT 100
