@@ -3,17 +3,94 @@
   "readAt": "2026-10-20",
   "scope": "风格化版页面的独有系统入口；重复状态保留既有交互；不恢复旧客户/组织菜单或隐藏运维工具",
   "screens": [
-    {"entry":"总览","node":"3678:956","implementation":"src/components/StylizedEnergyOverview.tsx","structure":"三指标、地图与告警双列、充放趋势、底部三栏；原沉浸和经营看板保留","evidence":"stylized-overview-1440.png"},
-    {"entry":"登录","node":"3668:1046","implementation":"src/components/LoginPage.tsx","structure":"白色双列、平台介绍和能力清单、独立登录表单、注册及进度入口","evidence":"stylized-login.png"},
-    {"entry":"电站管理/列表查询","node":"3672:18858","implementation":"src/components/AssetsPage.tsx","structure":"持久页签、搜索与区域过滤、站点列表；地图、收藏和规则交互保留","evidence":"stylized-assets.png"},
-    {"entry":"运营总览","node":"3666:102664","implementation":"src/components/OperationsOverviewPage.tsx","structure":"范围工具栏、四指标、运行分布与待办双列、站点经营表现列表；匹配既有核心布局并更新共享控件","evidence":"stylized-operations.png"},
-    {"entry":"运维总览","node":"3666:104851","implementation":"src/components/maintenance/StylizedMaintenanceOverview.tsx","structure":"三指标、近7天新增/恢复双柱图、站点运维概况；原过滤和六指标/24h趋势/队列/巡检入口折叠保留","evidence":"stylized-maintenance.png"},
-    {"entry":"工单中心","node":"3672:40417","implementation":"src/components/WorkOrdersApprovalPage.tsx","structure":"二级页签、状态筛选、搜索和添加条件、队列表格；审批与待办交互保留","evidence":"stylized-workorders.png"},
-    {"entry":"分析与报告/数据分析","node":"3666:118912","implementation":"src/components/AnalyticsAiPage.tsx","structure":"实时/历史切换、左侧信号浏览、右侧多信号图、底部监测通道；匹配既有核心结构","evidence":"stylized-analytics.png"},
-    {"entry":"企业管理/企业资料","node":"3666:3283","implementation":"src/tenant/CompaniesPage.tsx","structure":"企业标题和编辑操作、企业资料与联系人注册资料双列、锁定字段说明；权限包详情折叠保留","evidence":"stylized-enterprise-profile.png"},
-    {"entry":"平台管理/企业审批","node":"3666:23057","implementation":"src/tenant/CompanyApprovalsPage.tsx","structure":"持久页签、带标签的关键词/状态/类型筛选、审批列表；扩展过滤、冲突处理及审批权限保留","evidence":"stylized-platform-approvals.png"},
-    {"entry":"设置/个人偏好","node":"3666:120963","implementation":"src/components/SystemSettingsPage.tsx + src/tenant/PersonalCenterPage.tsx","structure":"设置分类侧栏、三列账户资料、常用偏好、设置范围说明；账户资料单独保存入口保留","evidence":"stylized-settings-enterprise.png"}
+    {
+      "entry": "总览/经营看板（默认）",
+      "node": "3666:5742",
+      "implementation": "src/components/CompactOverviewDashboard.tsx + OverviewDashboard.tsx",
+      "structure": "dashboard-optimized：四张KPI、健康/区域负荷、充放趋势/真实Google地图、工单/审批三排双列。105/186/234/256px行高，24px行距，16px列距。原角色指标折叠保留。",
+      "evidence": "overview-exact/dashboard-1440.png"
+    },
+    {
+      "entry": "总览/地图总览/沉浸",
+      "node": "3666:5395 / 3666:6004",
+      "implementation": "src/components/OverviewPage.tsx + overview-exact-layout.css",
+      "structure": "完整地图与左右浮动卡片；保留实时状态条、全屏和站点下钻。切换入口固定位置。",
+      "evidence": "overview-exact/map-1440.png"
+    },
+    {
+      "entry": "登录",
+      "node": "3668:1046",
+      "implementation": "src/components/LoginPage.tsx",
+      "structure": "白色双列、平台介绍和能力清单、独立登录表单、注册及进度入口",
+      "evidence": "stylized-login.png"
+    },
+    {
+      "entry": "电站管理/列表查询",
+      "node": "3672:18858",
+      "implementation": "src/components/AssetsPage.tsx",
+      "structure": "持久页签、搜索与区域过滤、站点列表；地图、收藏和规则交互保留",
+      "evidence": "stylized-assets.png"
+    },
+    {
+      "entry": "运营总览",
+      "node": "3666:102664",
+      "implementation": "src/components/OperationsOverviewPage.tsx",
+      "structure": "范围工具栏、四指标、运行分布与待办双列、站点经营表现列表；匹配既有核心布局并更新共享控件",
+      "evidence": "stylized-operations.png"
+    },
+    {
+      "entry": "运维总览",
+      "node": "3666:104851",
+      "implementation": "src/components/maintenance/StylizedMaintenanceOverview.tsx",
+      "structure": "三指标、近7天新增/恢复双柱图、站点运维概况；原过滤和六指标/24h趋势/队列/巡检入口折叠保留",
+      "evidence": "stylized-maintenance.png"
+    },
+    {
+      "entry": "工单中心",
+      "node": "3672:40417",
+      "implementation": "src/components/WorkOrdersApprovalPage.tsx",
+      "structure": "二级页签、状态筛选、搜索和添加条件、队列表格；审批与待办交互保留",
+      "evidence": "stylized-workorders.png"
+    },
+    {
+      "entry": "分析与报告/数据分析",
+      "node": "3666:118912",
+      "implementation": "src/components/AnalyticsAiPage.tsx",
+      "structure": "实时/历史切换、左侧信号浏览、右侧多信号图、底部监测通道；匹配既有核心结构",
+      "evidence": "stylized-analytics.png"
+    },
+    {
+      "entry": "企业管理/企业资料",
+      "node": "3666:3283",
+      "implementation": "src/tenant/CompaniesPage.tsx",
+      "structure": "企业标题和编辑操作、企业资料与联系人注册资料双列、锁定字段说明；权限包详情折叠保留",
+      "evidence": "stylized-enterprise-profile.png"
+    },
+    {
+      "entry": "平台管理/企业审批",
+      "node": "3666:23057",
+      "implementation": "src/tenant/CompanyApprovalsPage.tsx",
+      "structure": "持久页签、带标签的关键词/状态/类型筛选、审批列表；扩展过滤、冲突处理及审批权限保留",
+      "evidence": "stylized-platform-approvals.png"
+    },
+    {
+      "entry": "设置/个人偏好",
+      "node": "3666:120963",
+      "implementation": "src/components/SystemSettingsPage.tsx + src/tenant/PersonalCenterPage.tsx",
+      "structure": "设置分类侧栏、三列账户资料、常用偏好、设置范围说明；账户资料单独保存入口保留",
+      "evidence": "stylized-settings-enterprise.png"
+    }
   ],
-  "dataRules": ["未接入趋势/环保统计保持真实空态", "未知聚合保持—，不将设计示例数据写入线上", "可见导航和操作继续由现有业务权限控制", "截图中的企业与站点均为浏览器API mock验收数据"],
-  "limits": ["Google地图视觉状态取决于密钥和外部网络，沿用真实地图实现", "权限隐藏的导航不为了复刻设计而显示", "账户资料与偏好保留各自API保存入口"]
+  "dataRules": [
+    "未接入趋势/环保统计保持真实空态",
+    "未知聚合保持—，不将设计示例数据写入线上",
+    "可见导航和操作继续由现有业务权限控制",
+    "截图中的企业与站点均为浏览器API mock验收数据"
+  ],
+  "limits": [
+    "Google地图视觉状态取决于密钥和外部网络，沿用真实地图实现",
+    "权限隐藏的导航不为了复刻设计而显示",
+    "账户资料与偏好保留各自API保存入口"
+  ],
+  "correction": "撤销此前默认采用3678:956能源总览v7的选版。该画板与用户指定dashboard-optimized不同，旧默认比例验收不适用于此页。"
 }

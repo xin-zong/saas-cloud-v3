@@ -1,0 +1,72 @@
+/* Figma dashboard-optimized 3666:5742. Fixed card geometry, fluid equal columns. */
+.overview-dashboard .compact-dashboard-content{display:flex;flex-direction:column;gap:24px;min-width:0;color:var(--ui-text)}
+.overview-dashboard .compact-kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.overview-dashboard .compact-kpi{height:105px;border:1px solid var(--ui-border);border-radius:12px;padding:20px;box-sizing:border-box;min-width:0;background:var(--ui-surface)}
+.overview-dashboard .compact-kpi>span{font-size:12px;color:var(--ui-muted)}
+.overview-dashboard .compact-kpi>div{display:flex;align-items:baseline;gap:6px;margin-top:12px}
+.overview-dashboard .compact-kpi strong{font-size:28px;font-weight:700;line-height:32px;font-variant-numeric:tabular-nums}
+.overview-dashboard .compact-kpi small{font-size:11px;color:var(--ui-muted)}
+.overview-dashboard .compact-dual-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.overview-dashboard .compact-health-row{height:186px}
+.overview-dashboard .compact-trend-row{height:234px}
+.overview-dashboard .compact-work-row{min-height:256px}
+.overview-dashboard .compact-panel{border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-surface);padding:20px;min-width:0;box-sizing:border-box;overflow:hidden}
+.overview-dashboard .compact-work-row>.compact-panel{padding:24px}
+.overview-dashboard .compact-panel h2{font-size:15px;font-weight:700;line-height:21px;margin:0;color:var(--ui-text)}
+.overview-dashboard .compact-panel header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px}
+.overview-dashboard .compact-panel header button{font-size:12px;color:#0066cc;border:0;background:none;padding:0;cursor:pointer}
+.overview-dashboard .compact-health-body{display:flex;align-items:center;gap:32px;height:120px}
+.overview-dashboard .compact-health-ring{width:104px;height:104px;border-radius:50%;padding:18px;flex-shrink:0;box-sizing:border-box}
+.overview-dashboard .compact-health-ring>div{height:100%;border-radius:50%;background:var(--ui-surface);display:flex;flex-direction:column;justify-content:center;align-items:center}
+.overview-dashboard .compact-health-ring strong{font-size:24px;line-height:28px}
+.overview-dashboard .compact-health-ring small{font-size:10px;color:var(--ui-muted)}
+.overview-dashboard .compact-health-legend{flex:1;min-width:0;font-size:12px;display:grid;gap:8px}
+.overview-dashboard .compact-health-legend>div{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.overview-dashboard .compact-health-legend span{display:flex;align-items:center;gap:8px;color:var(--ui-muted)}
+.overview-dashboard .compact-health-legend i,.overview-dashboard .compact-chart-legend i{width:7px;height:7px;border-radius:50%;display:inline-block}
+.overview-dashboard .compact-health-legend b{font-size:11px;font-weight:500;white-space:nowrap}
+.overview-dashboard .compact-region-load{display:grid;gap:16px;padding-top:18px;font-size:12px}
+.overview-dashboard .compact-region-load>div>div:first-child{display:flex;justify-content:space-between;gap:12px}
+.overview-dashboard .compact-region-load span,.overview-dashboard .compact-region-load>small{color:var(--ui-muted);font-size:11px}
+.overview-dashboard .compact-region-load b{font-size:11px;font-weight:500}
+.overview-dashboard .compact-load-track{height:10px;background:var(--ui-subtle);border-radius:6px;margin-top:8px}
+.overview-dashboard .compact-region-load>small{font-size:10px}
+.overview-dashboard .compact-chart-legend{display:flex;gap:12px;font-size:10px;color:var(--ui-muted);flex-wrap:wrap}
+.overview-dashboard .compact-chart-legend span{display:flex;align-items:center;gap:5px}
+.overview-dashboard .compact-chart-legend i{background:#008684}
+.overview-dashboard .compact-chart-legend span+span i{background:#0071e3}
+.overview-dashboard .compact-chart-empty{height:154px;position:relative;display:grid;place-items:center;color:var(--ui-muted);font-size:12px}
+.overview-dashboard .compact-chart-grid{position:absolute;inset:12px 0 18px 24px;background:repeating-linear-gradient(to bottom,transparent 0,transparent 29px,var(--ui-border) 30px);border-left:1px solid var(--ui-border);border-bottom:1px solid var(--ui-border)}
+.overview-dashboard .compact-chart-empty>span{position:relative;background:var(--ui-surface);padding:8px}
+.overview-dashboard .compact-map-panel h2{margin-bottom:16px}
+.overview-dashboard .compact-region-map{height:160px;border-radius:14px;overflow:hidden;position:relative;isolation:isolate}
+.overview-dashboard .compact-region-map>.map-view{height:100%;min-height:0}
+.overview-dashboard .compact-panel table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px}
+.overview-dashboard .compact-panel thead{background:var(--ui-subtle);color:var(--ui-muted);font-size:11px;text-align:left}
+.overview-dashboard .compact-panel th{padding:8px;font-weight:600}
+.overview-dashboard .compact-panel td{padding:12px 8px;border-bottom:1px solid var(--ui-border);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.overview-dashboard .compact-panel th:first-child{width:25%}
+.overview-dashboard .compact-panel th:last-child{width:18%}
+.overview-dashboard .compact-status{padding:3px 8px;border-radius:6px;background:var(--ui-subtle);color:#0071e3;font-size:11px}
+.overview-dashboard .compact-status.pending{color:#9a5700}.overview-dashboard .compact-status.completed{color:#1a6b4c}
+.overview-dashboard .compact-approvals>button{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;border:0;border-bottom:1px solid var(--ui-border);background:none;padding:10px 0;text-align:left;cursor:pointer}
+.overview-dashboard .compact-approvals strong{display:block;font-size:12px;font-weight:500}.overview-dashboard .compact-approvals small{display:block;font-size:11px;color:var(--ui-muted);margin-top:4px}.overview-dashboard .compact-approvals time{font-size:10px;color:var(--ui-muted);white-space:nowrap}
+.overview-dashboard .compact-empty{display:grid;place-items:center;min-height:110px;font-size:12px;color:var(--ui-muted);text-align:center}
+.overview-dashboard .compact-role-extras{margin-top:24px;font-size:12px;color:var(--ui-muted)}.overview-dashboard .compact-role-extras summary{cursor:pointer;margin-bottom:16px}
+@media(max-width:900px){.overview-dashboard .compact-kpi-row{grid-template-columns:repeat(2,minmax(0,1fr))}.overview-dashboard .compact-dual-row{grid-template-columns:minmax(0,1fr);height:auto}.overview-dashboard .compact-health-row>.compact-panel{min-height:186px}.overview-dashboard .compact-trend-row>.compact-panel{height:234px}.overview-dashboard .compact-work-row>.compact-panel{min-height:256px}}
+@media(max-width:500px){.overview-dashboard .compact-health-body{gap:14px}.overview-dashboard .compact-health-ring{width:84px;height:84px;padding:14px}.overview-dashboard .compact-panel{padding:16px}.overview-dashboard .compact-panel h2{font-size:13px}.overview-dashboard .compact-chart-legend{gap:6px;font-size:9px}}
+.overview-dashboard.exact-figma-dashboard{padding:24px;display:flex;flex-direction:column;gap:24px;background:var(--ui-surface);min-width:0}
+.overview-dashboard.exact-figma-dashboard .overview-dashboard-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0;min-height:46px}
+.overview-dashboard.exact-figma-dashboard .overview-dashboard-heading h1{font-size:20px;line-height:26px;font-weight:700;margin:0;color:var(--ui-text)}
+.overview-dashboard.exact-figma-dashboard .overview-dashboard-heading p{font-size:12px;line-height:16px;margin:4px 0 0;color:var(--ui-muted)}
+.overview-dashboard.exact-figma-dashboard .overview-dashboard-actions{display:flex;align-items:center;gap:16px;flex-wrap:nowrap}
+.overview-dashboard.exact-figma-dashboard .overview-dashboard-actions .ui-segmented{padding:3px;border:0;background:var(--ui-subtle);border-radius:6px;gap:0}
+.overview-dashboard.exact-figma-dashboard .overview-dashboard-actions .ui-segmented button{height:26px;padding:0 12px;min-height:0;font-size:11px;border:0;border-radius:4px;white-space:nowrap}
+.overview-dashboard.exact-figma-dashboard .overview-dashboard-actions .ui-segmented button[aria-pressed=true]{background:var(--ui-surface);color:var(--ui-text);box-shadow:none}
+.overview-dashboard.exact-figma-dashboard .overview-dashboard-actions>.ui-button{height:32px;min-height:0;padding:0 12px;font-size:12px;border-radius:6px;border-color:var(--ui-muted);gap:6px;color:var(--ui-muted)}
+.overview-dashboard.exact-figma-dashboard .overview-dashboard-actions>.ui-button img{width:14px;height:14px}
+.overview-dashboard.exact-figma-dashboard .compact-role-extras{margin-top:0}
+@media(max-width:1100px){.overview-dashboard.exact-figma-dashboard .overview-dashboard-heading{align-items:flex-start;flex-wrap:wrap}.overview-dashboard.exact-figma-dashboard .overview-dashboard-actions{flex-wrap:wrap;gap:8px}}
+@media(max-width:600px){.overview-dashboard.exact-figma-dashboard{padding:16px}}
+
+.overview-dashboard .compact-live-chart{height:154px;min-width:0}.overview-dashboard .compact-live-chart>small{display:block;text-align:right;font-size:9px;color:var(--ui-muted)}

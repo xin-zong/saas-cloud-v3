@@ -32,7 +32,7 @@ export default function Header({
   }, [])
   return (
     <header className="workspace-topbar global-platform-header">
-      <div className="global-platform-brand"><img src="/figma/overview/map/imgBrandMark.svg" alt="" /><strong>Enerlution</strong><span className="workspace-topbar-context">{DEMO_MODE ? "演示环境" : "测试环境"} · {DEMO_MODE ? "华东集群" : "授权站点数据"}</span></div>
+      <div className="global-platform-brand"><span className="overview-brand-mark"><img src="/figma/overview/exact-dashboard/brand-bolt.svg" alt="" /></span><strong>Enerlution</strong><span className="workspace-topbar-context">{DEMO_MODE ? "演示环境" : "测试环境"} · {DEMO_MODE ? "华东集群" : "授权站点数据"}</span></div>
       <div className="workspace-topbar-actions">
         <MachineTranslationStatus />
         {onSettings&&<Button iconOnly variant="ghost" aria-label="设置" title="设置" onClick={onSettings}><img src="/figma/overview/navigation/imgIcon6.svg" alt="" width="20" height="20"/></Button>}

@@ -905,7 +905,7 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
 
       <div className="workspace-content flex flex-col flex-1 min-w-0 overflow-hidden">
         {!DEMO_MODE&&activeNav==='资产与站点'&&activeDetailId===null&&!assetEditorOpen&&<nav className="ui-tabs electric-management-tabs" aria-label="电站管理分类">{([['stations','电站列表',hasAssets],['operations','运营总览',hasOperations],['maintenance','运维总览',hasMaintenance]] as const).filter(([, ,allowed])=>allowed).map(([key,name])=><button key={key} aria-current={electricView===key?'page':undefined} onClick={()=>void(async()=>{if(electricView!==key&&await requestActiveEditorLeave())setElectricView(key)})()}>{name}</button>)}</nav>}
-        {!DEMO_MODE && activeNav === "总览" && (!immersive || apiError || apiLoading) && (
+        {!DEMO_MODE && activeNav === "总览" && (apiError || apiLoading) && (
           <div
             role={apiError ? "alert" : "status"}
             style={{

@@ -1,0 +1,48 @@
+/* Selected artboards: dashboard 3666:5742, map 3666:5395, fullscreen 3666:6004.
+   Keep design pixels as CSS pixels. Do not scale the page with the viewport. */
+.overview-workspace.overview-exact { background:var(--ui-surface); color:var(--ui-text); }
+.overview-exact[data-overview-view="dashboard"] > .overview-content { padding:0; margin-left:44px; }
+.overview-workspace.overview-exact:not([data-immersive="true"]) > .overview-header { position:absolute; top:24px; left:258px; right:auto; width:auto; min-height:28px; height:28px; margin:0; padding:0; gap:8px; border:0; background:transparent; z-index:1300; }
+.overview-workspace.overview-exact:not([data-immersive="true"]) .overview-view-switch { height:28px; gap:0; padding:2px; border:1px solid var(--ui-border); border-radius:6px; background:var(--ui-surface-soft); }
+.overview-workspace.overview-exact:not([data-immersive="true"]) .overview-view-switch button { height:22px; padding:0 8px; border:0; font-size:11px; line-height:22px; border-radius:4px; }
+.overview-workspace.overview-exact:not([data-immersive="true"]) .overview-view-switch button[aria-pressed="true"] { background:var(--ui-surface)!important; color:var(--ui-text); box-shadow:0 1px 2px #0000000a; }
+.overview-scope-filter { position:relative; font-size:11px; color:var(--ui-muted); }
+.overview-scope-filter summary { cursor:pointer; padding:5px 7px; list-style:none; border:1px solid var(--ui-border); border-radius:6px; background:var(--ui-surface); }
+.overview-scope-filter > .overview-map-toolbar { position:absolute!important; top:34px; left:0; width:260px; display:grid; gap:8px; padding:12px; border:1px solid var(--ui-border); border-radius:8px; background:var(--ui-surface); box-shadow:0 6px 20px #00000012; }
+.overview-scope-filter .overview-map-toolbar :is(input,select) { width:100%; max-width:none; min-width:0; height:32px; color:var(--ui-text); background-color:var(--ui-surface); border:1px solid var(--ui-border); padding-inline:10px; font-size:12px; }
+.overview-exact[data-overview-view="map"] > .overview-content { padding:0; overflow:auto; }
+.overview-workspace.overview-exact[data-overview-view="map"] .overview-map { height:100%; min-height:660px; padding:56px 16px 16px; grid-template-columns:260px minmax(0,1fr) 240px; grid-template-rows:32px minmax(0,1fr) 28px 94px; gap:12px 16px; }
+.overview-workspace.overview-exact[data-overview-view="map"] .overview-left,
+.overview-workspace.overview-exact[data-overview-view="map"] .overview-right { height:100%; min-height:0; overflow-y:auto; scrollbar-width:thin; }
+.overview-workspace.overview-exact .overview-left [data-overview-card],
+.overview-workspace.overview-exact .overview-right [data-overview-card] { border:1px solid var(--ui-border)!important; background:var(--ui-surface)!important; box-shadow:none!important; border-radius:12px!important; }
+.overview-exact[data-overview-view="map"] .overview-ticker { grid-row:1; height:32px; align-self:start; }
+.overview-exact[data-overview-view="map"] .overview-bottom { grid-row:4; }
+
+.workspace-shell:has(.overview-exact) .global-platform-brand { gap:12px; }
+.workspace-shell:has(.overview-exact) .global-platform-brand strong { font-size:16px; }
+.overview-brand-mark { display:flex; align-items:center; justify-content:center; width:16px; height:16px; flex:none; border-radius:4px; background:#1d1d1f; }
+@media(max-width:1100px) {
+ .overview-exact[data-overview-view="dashboard"] > .overview-content { margin-left:0; }
+ .overview-workspace.overview-exact:not([data-immersive="true"]) > .overview-header { left:216px; }
+ .overview-workspace.overview-exact[data-overview-view="map"] .overview-map { grid-template-columns:230px minmax(0,1fr) 220px; }
+}
+@media(max-width:760px) {
+ .overview-workspace.overview-exact:not([data-immersive="true"]) > .overview-header { left:12px; top:0; position:relative; flex:none; padding-block:6px; height:40px; }
+ .overview-workspace.overview-exact[data-overview-view="map"] .overview-map { grid-template-columns:minmax(0,1fr) minmax(0,1fr); min-height:720px; }
+ .overview-workspace.overview-exact[data-overview-view="map"] .overview-right { display:block; grid-column:2; }
+ .overview-scope-filter > .overview-map-toolbar { left:auto; right:0; }
+}
+
+.overview-dashboard.exact-figma-dashboard .overview-dashboard-heading { min-height:48px; }
+.overview-dashboard .compact-panel h2 { font-size:14px; line-height:18px; }
+.overview-dashboard .compact-health-row > .compact-panel { padding:24px; }
+.overview-dashboard .compact-health-ring { width:100px; height:100px; }
+
+html[lang="en"] .overview-workspace.overview-exact:not([data-immersive="true"]) > .overview-header { left:390px; }
+@media(max-width:760px) { html[lang="en"] .overview-workspace.overview-exact:not([data-immersive="true"]) > .overview-header { left:12px; } }
+@media(max-width:500px) { .overview-dashboard .compact-health-ring { width:84px; height:84px; } }
+
+.overview-workspace.overview-exact[data-immersive="true"] .overview-map { padding-top:16px; }
+
+.overview-dashboard .compact-kpi > span { font-size:13px; }

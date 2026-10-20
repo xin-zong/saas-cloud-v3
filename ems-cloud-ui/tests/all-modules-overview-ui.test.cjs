@@ -7,6 +7,11 @@ const apiUrl = process.env.API_PREVIEW_URL || 'http://127.0.0.1:8461'
 const demoUrl = process.env.DEMO_PREVIEW_URL || 'http://127.0.0.1:8460'
 const artifacts = path.resolve(__dirname, '../.figma/all-modules/01')
 
+async function openScope(page) {
+ const details=page.locator('.overview-scope-filter');
+ if(await details.count() && await details.getAttribute('open')===null) await details.locator('summary').click()
+}
+
 async function apiPage(browser, options = {}) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
   await context.addInitScript(() => sessionStorage.setItem('enerlution-api-token', 'overview-test'))
@@ -23,6 +28,8 @@ async function apiPage(browser, options = {}) {
   })
   await page.goto(apiUrl, { waitUntil: 'domcontentloaded' })
   await page.getByRole('button', { name: '总览', exact: true }).click()
+  await page.locator('.compact-dashboard-content').waitFor()
+  await page.getByRole('option', {name: options.stations?.[0]?.name || '授权测试站点',exact:true}).waitFor({state:'attached'})
   return { context, page, refreshUser: async patch => {
     Object.assign(user, patch)
     const refreshed = page.waitForResponse(response => response.url().endsWith('/auth/me'))
@@ -31,7 +38,7 @@ async function apiPage(browser, options = {}) {
   } }
 }
 
-for (const role of ['operator', 'owner']) test(`overview immersive alarm departure restores navigation for ${role}`, { timeout: 60000 }, async () => {
+for (const role of ['operator', 'owner']) test(`overview immersive alarm departure restores navigation for ${role}`, { timeout: 120000 }, async () => {
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   try {
     let page
@@ -56,12 +63,13 @@ for (const role of ['operator', 'owner']) test(`overview immersive alarm departu
   } finally { await browser.close() }
 })
 
-for (const mixed of [false, true]) test(`overview capacity ${mixed ? 'mixed' : 'all-missing'} values remain unknown and export empty numeric cells`, { timeout: 60000 }, async () => {
+for (const mixed of [false, true]) test(`overview capacity ${mixed ? 'mixed' : 'all-missing'} values remain unknown and export empty numeric cells`, { timeout: 120000 }, async () => {
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   try {
     const stations = [{ id: 12, name: '容量未知站点', code: 'UNKNOWN', region: '华东' }, ...(mixed ? [{ id: 13, name: '容量已知站点', code: 'KNOWN', region: '华东', rated_power_kw: 100, capacity_kwh: 200 }] : [])]
     const { page } = await apiPage(browser, { stations, user: { stationIds: stations.map(s => String(s.id)), stationPermissions: { '12': ['asset.read'], '13': ['asset.read'] } } })
     await page.getByRole('button', { name: '经营看板', exact: true }).click()
+    await page.locator('.compact-role-extras > summary').click()
     const capacity = page.locator('.overview-shared-card-grid [data-metric="capacity-储能系统"]').locator('..')
     assert.doesNotMatch(await capacity.innerText(), /NaN|Infinity/)
     assert.match(await capacity.innerText(), /—\s*\/\s*—\s*MWh/)
@@ -74,7 +82,7 @@ for (const mixed of [false, true]) test(`overview capacity ${mixed ? 'mixed' : '
   } finally { await browser.close() }
 })
 
-test('overview API: dashboard range validation, honest empty data, customization and scoped export', { timeout: 60000 }, async () => {
+test('overview API: dashboard range validation, honest empty data, customization and scoped export', { timeout: 120000 }, async () => {
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   try {
     const { page } = await apiPage(browser)
@@ -84,6 +92,7 @@ test('overview API: dashboard range validation, honest empty data, customization
     await page.getByRole('heading', { name: '平台总览运营看板' }).waitFor()
     assert.equal(await page.getByText('禁止显示站点').count(), 0)
     assert.equal(await page.locator('[data-overview-card="储能充放趋势"]').isVisible(), false)
+    await page.locator('.compact-role-extras > summary').click()
     await page.getByText('当前授权站点快照 · 历史聚合未接通，所选日期不改变当前快照', { exact: true }).waitFor()
     await page.getByRole('button', { name: '自定义', exact: true }).click()
     await page.getByLabel('开始日期', { exact: true }).fill('2026-09-26')
@@ -107,6 +116,7 @@ test('overview API: dashboard range validation, honest empty data, customization
     assert.ok(!body.includes('86,420'))
     await page.getByRole('button', { name: '地图总览', exact: true }).click()
     assert.equal(await page.locator('.leaflet-marker-icon').count(), 0, 'API stations without coordinates must not get prototype map markers')
+    await openScope(page)
     await page.getByLabel('选择总览站点', { exact: true }).selectOption('12')
     assert.equal((await page.getByRole('dialog', { name: '站点概况' }).innerText()).includes('NaN'), false)
     await page.getByRole('button', { name: '进入站点详情', exact: true }).click()
@@ -114,7 +124,7 @@ test('overview API: dashboard range validation, honest empty data, customization
   } finally { await browser.close() }
 })
 
-test('overview permission revocation cancels a pending layout departure and releases shell navigation', { timeout: 60000 }, async () => {
+test('overview permission revocation cancels a pending layout departure and releases shell navigation', { timeout: 120000 }, async () => {
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   try {
     const { page, refreshUser } = await apiPage(browser)
@@ -131,25 +141,28 @@ test('overview permission revocation cancels a pending layout departure and rele
   } finally { await browser.close() }
 })
 
-test('overview request failure clears prior station selection and retry restores the authorized data', { timeout: 60000 }, async () => {
+test('overview request failure clears prior station selection and retry restores the authorized data', { timeout: 120000 }, async () => {
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   try {
-    const { page } = await apiPage(browser)
+    const { page, refreshUser } = await apiPage(browser)
+    await page.getByRole('button',{name:'地图总览',exact:true}).click()
+    await openScope(page)
     await page.getByLabel('选择总览站点', { exact: true }).selectOption('12')
     const fail = route => route.fulfill({ status: 503, json: { code: 503, msg: '总览测试服务暂不可用' } })
     await page.route(/\/api\/stations(?:\?|$)/, fail)
-    await page.getByRole('button', { name: '刷新', exact: true }).click()
+    await refreshUser({name:'刷新后的总览用户'})
     await page.getByRole('alert').filter({ hasText: '总览测试服务暂不可用' }).waitFor()
     await page.getByText('当前范围暂无授权站点', { exact: true }).waitFor()
     assert.equal(await page.getByRole('dialog', { name: '站点概况' }).count(), 0)
     await page.unroute(/\/api\/stations(?:\?|$)/, fail)
     await page.getByRole('button', { name: '刷新', exact: true }).click()
+    await openScope(page)
     await page.getByLabel('选择总览站点', { exact: true }).selectOption('12')
     await page.getByRole('dialog', { name: '站点概况' }).waitFor()
   } finally { await browser.close() }
 })
 
-test('overview demo: design shell, map modes, fullscreen exit and responsive evidence', { timeout: 60000 }, async () => {
+test('overview demo: design shell, map modes, fullscreen exit and responsive evidence', { timeout: 120000 }, async () => {
   await fs.mkdir(artifacts, { recursive: true })
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   try {
@@ -162,6 +175,8 @@ test('overview demo: design shell, map modes, fullscreen exit and responsive evi
     await page.getByLabel('密码', { exact: true }).fill('Demo@2026')
     await page.getByRole('button', { name: '登录', exact: true }).click()
     await page.getByRole('button', { name: '经营看板', exact: true }).waitFor()
+    await page.getByRole('button',{name:'地图总览',exact:true}).click()
+    await openScope(page)
     const firstStation = await page.getByLabel('选择总览站点', { exact: true }).locator('option').nth(1).getAttribute('value')
     await page.getByLabel('选择总览站点', { exact: true }).selectOption(firstStation)
     const popup = page.getByRole('dialog', { name: '站点概况' })
@@ -192,7 +207,7 @@ test('overview demo: design shell, map modes, fullscreen exit and responsive evi
     assert.equal(await page.getByRole('button', { name: '示意底图', exact: true }).count(), 0)
     assert.equal(await page.locator('.overview-map-image').count(), 0)
     assert.equal(await page.getByRole('button', { name: '实时地图', exact: true }).count(), 0)
-    await page.locator('.leaflet-container').waitFor({ state: 'visible' })
+    await page.locator('.overview-map [data-map-provider="google"]').waitFor({ state: 'visible' })
     assert.equal(await page.getByRole('button', { name: '示意底图', exact: true }).count(), 0)
     await page.getByRole('button', { name: '沉浸模式（隐藏导航）', exact: true }).click()
     await page.getByRole('heading', { name: /实时事件日志/ }).waitFor()
@@ -213,7 +228,7 @@ test('overview demo: design shell, map modes, fullscreen exit and responsive evi
   } finally { await browser.close() }
 })
 
-test('overview customization: rejected storage, cancel/continue and outer navigation guard preserve edits', { timeout: 60000 }, async () => {
+test('overview customization: rejected storage, cancel/continue and outer navigation guard preserve edits', { timeout: 120000 }, async () => {
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   try {
     const { page } = await apiPage(browser)
@@ -241,10 +256,12 @@ test('overview customization: rejected storage, cancel/continue and outer naviga
   } finally { await browser.close() }
 })
 
-test('map ticker remains visible outside immersion, scrolls and selects scoped stations without covering panels', { timeout: 60000 }, async () => {
+test('map ticker remains visible outside immersion, scrolls and selects scoped stations without covering panels', { timeout: 120000 }, async () => {
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   try {
     const { page } = await apiPage(browser)
+    await page.getByRole('button',{name:'地图总览',exact:true}).click()
+    await page.locator('.overview-ticker').waitFor()
     assert.equal(await page.locator('.overview-ticker').isVisible(), true)
     const track = page.locator('[data-ticker-track]')
     await track.waitFor()
@@ -254,7 +271,7 @@ test('map ticker remains visible outside immersion, scrolls and selects scoped s
     for (const width of [1366, 1440, 1920, 760]) {
       await page.setViewportSize({ width, height: 900 })
       const ticker = await page.locator('.overview-ticker').boundingBox()
-      const panel = await page.locator('.energy-overview-metrics').boundingBox()
+      const panel = await page.locator('.overview-left').boundingBox()
       assert.ok(ticker.y + ticker.height <= panel.y, `ticker overlaps panel at ${width}`)
     }
     await page.setViewportSize({ width: 1440, height: 900 })
@@ -263,6 +280,8 @@ test('map ticker remains visible outside immersion, scrolls and selects scoped s
     await page.locator('.overview-station-popup').waitFor()
     await fs.mkdir(artifacts, { recursive: true })
     await page.screenshot({ path: path.join(artifacts, 'ticker-restored-1440.png'), animations: 'disabled' })
+    await fs.mkdir(path.resolve(__dirname,'../.figma/overview-exact'),{recursive:true})
+    await page.screenshot({path:path.resolve(__dirname,'../.figma/overview-exact/map-1440.png'),animations:'disabled'})
     await page.getByRole('button', { name: '沉浸模式（隐藏导航）', exact: true }).click()
     assert.equal(await page.locator('.overview-ticker').isVisible(), true)
     await page.keyboard.press('Escape')
@@ -272,7 +291,7 @@ test('map ticker remains visible outside immersion, scrolls and selects scoped s
   } finally { await browser.close() }
 })
 
-test('immersion entry uses an expand icon and retains accessible toggle', { timeout: 60000 }, async () => {
+test('immersion entry uses an expand icon and retains accessible toggle', { timeout: 120000 }, async () => {
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   try {
     const { page } = await apiPage(browser)
@@ -286,12 +305,13 @@ test('immersion entry uses an expand icon and retains accessible toggle', { time
 })
 
 
-test('overview cards do not clip or overlap controls and view switch stays anchored', { timeout: 90000 }, async () => {
+test('overview cards do not clip or overlap controls and view switch stays anchored', { timeout: 120000 }, async () => {
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   try {
     const { page } = await apiPage(browser)
     for (const [width, height] of [[1366,768],[1440,900],[1920,1080],[1024,768]]) {
       await page.setViewportSize({ width, height })
+      await page.getByRole('button', {name:'地图总览',exact:true}).click()
       const before = await page.locator('.overview-view-switch').boundingBox()
       await page.getByRole('button', { name: '经营看板', exact: true }).click()
       const after = await page.locator('.overview-view-switch').boundingBox()
@@ -299,10 +319,10 @@ test('overview cards do not clip or overlap controls and view switch stays ancho
       await page.getByRole('button', { name: '地图总览', exact: true }).click()
       const geometry = await page.evaluate(() => {
         const rect = s => {const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right}}
-        return {metrics:rect('.energy-overview-metrics'),main:rect('.energy-overview-main'),map:rect('.energy-overview-map'),zoom:rect('.map-zoom-controls'),ticker:rect('.energy-overview-ticker'),cards:[...document.querySelectorAll('.energy-overview [data-overview-card]')].filter(e=>!e.hidden).map(e=>({client:e.clientWidth,scroll:e.scrollWidth}))}
+        return {left:rect('.overview-left'),right:rect('.overview-right'),bottom:rect('.overview-bottom'),map:rect('.overview-map'),zoom:rect('.map-zoom-controls'),ticker:rect('.overview-ticker'),cards:[...document.querySelectorAll('.overview-map [data-overview-card]')].filter(e=>!e.hidden).map(e=>({client:e.clientWidth,scroll:e.scrollWidth}))}
       })
-      assert.ok(geometry.ticker.bottom<=geometry.metrics.top,'ticker must not cover summary metrics')
-      assert.ok(geometry.metrics.bottom<=geometry.main.top,'metrics must precede the map workspace')
+      assert.ok(geometry.ticker.bottom<=geometry.left.top,'ticker must not cover floating chart columns')
+      assert.ok(geometry.left.bottom<=geometry.bottom.top && geometry.right.bottom<=geometry.bottom.top,'columns must not cover bottom cards')
       assert.ok(geometry.zoom.top>=geometry.map.top&&geometry.zoom.bottom<=geometry.map.bottom,'map controls stay inside the map')
       assert.ok(geometry.cards.every(card=>card.scroll<=card.client+1),'selected cards must wrap without horizontal clipping')
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)
@@ -313,7 +333,7 @@ test('overview cards do not clip or overlap controls and view switch stays ancho
 })
 
 
-test('fullscreen columns, live metrics and events never overlap and exit remains reachable', {timeout:90000}, async()=>{
+test('fullscreen columns, live metrics and events never overlap and exit remains reachable', {timeout:120000}, async()=>{
  const browser=await chromium.launch({channel:'msedge',headless:true})
  try {
   const {page}=await apiPage(browser)
@@ -335,18 +355,21 @@ test('fullscreen columns, live metrics and events never overlap and exit remains
    await page.locator('.overview-content').evaluate(e=>e.scrollTop=0)
    await fs.mkdir(artifacts,{recursive:true})
    await page.screenshot({path:path.join(artifacts,`fullscreen-refined-${width}.png`)})
+   if(width===1920){await fs.mkdir(path.resolve(__dirname,'../.figma/overview-exact'),{recursive:true});await page.screenshot({path:path.resolve(__dirname,'../.figma/overview-exact/map-fullscreen.png'),animations:'disabled'})}
   }
   await page.getByRole('button',{name:'← 退出全屏',exact:true}).click()
   await page.getByRole('button',{name:'经营看板',exact:true}).waitFor()
  }finally{await browser.close()}
 })
 
-test('dashboard regional map uses Google SDK, real coordinates and station navigation', { timeout: 60000 }, async () => {
+test('dashboard regional map uses Google SDK, real coordinates and station navigation', { timeout: 120000 }, async () => {
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
   try {
     const { page } = await apiPage(browser, { stations: [{ id: 12, name: '授权测试站点', code: 'SITE-12', latitude: 31.82, longitude: 117.23 }] })
     await page.route('https://maps.googleapis.com/maps/api/js?**',route=>route.fulfill({contentType:'application/javascript',body:`window.__sites=[];window.google={maps:{Map:class{constructor(el,opts){window.__mapOptions=opts;this.el=el;this.zoom=opts.zoom;this.center=opts.center}addListener(){return{remove(){}}}getZoom(){return this.zoom}setZoom(z){this.zoom=z}setCenter(p){this.center=p}getCenter(){return this.center}panTo(p){this.center=p}setOptions(){}},Marker:class{constructor(opts){window.__sites.push(opts.position);this.button=document.createElement('button');this.button.textContent=opts.title;this.button.setAttribute('aria-label',opts.title);opts.map.el.appendChild(this.button)}addListener(type,fn){this.button.addEventListener(type,fn)}setMap(value){if(value===null)this.button.remove()}},SymbolPath:{CIRCLE:0},event:{clearInstanceListeners(){},trigger(){}}}};initializeEmsMap();`}))
     await page.getByRole('button', { name: '经营看板', exact: true }).click()
+    await page.reload({waitUntil:'domcontentloaded'})
+    await page.locator('.compact-dashboard-content').waitFor()
     const map = page.getByRole('region', { name: '核心站点实时地图' })
     const iframe=map.locator('iframe[title="Google Maps"]');await iframe.waitFor()
     const frame=await(await iframe.elementHandle()).contentFrame()

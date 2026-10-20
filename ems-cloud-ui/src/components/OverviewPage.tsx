@@ -10,14 +10,14 @@ import BottomBar from "./BottomBar"
 import StationPopup from "./StationPopup"
 import TickerBar from "./TickerBar"
 import OverviewDashboard from "./OverviewDashboard"
-import StylizedEnergyOverview from './StylizedEnergyOverview'
+import './overview-exact-layout.css'
 import {overviewCardNames,overviewPresentationRole} from './overviewCards'
 import {useDisplayPreferences} from '@/preferences/PreferencesProvider'
 import {useInterfaceTranslation} from '@/i18n/useInterfaceTranslation'
 
 type Props = { stations: Station[]; user: AuthUser; nav: NavLabel[]; immersive: boolean; onExitImmersive: () => void; onOpenStation: (id: string, subNav?: string) => void; onNavigate: (nav: NavLabel) => void; registerLeaveGuard: (guard: null | (() => Promise<boolean>)) => void; requestLeave: () => Promise<boolean> }
 export default function OverviewPage({ stations, user, nav, immersive, onExitImmersive, onOpenStation, onNavigate, registerLeaveGuard, requestLeave }: Props) {
-  const [view, setView] = useState<"map" | "dashboard">("map")
+  const [view, setView] = useState<"map" | "dashboard">("dashboard")
   const [region, setRegion] = useState("global")
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [search,setSearch]=useState('')
@@ -46,10 +46,10 @@ export default function OverviewPage({ stations, user, nav, immersive, onExitImm
   const eventsPanel = <section className="overview-events"><h2>实时事件日志 <small>{events.length} 条</small></h2>{!DEMO_MODE && <p>当前告警快照 · 实时事件流未接通</p>}{events.length ? events.map((e, i) => <button key={i} onClick={() => setSelectedId(e.station.id)}><i className={e.level} /><span>{e.station.name} · {e.msg}</span><time>{e.time}</time></button>) : <p>暂无活动事件</p>}</section>
   const livePanel = <div className="overview-live-data"><div><span>电网频率</span><b>—</b></div><div><span>总有功功率</span><b>{visibleStations.length && visibleStations.every(s => Number.isFinite(s.activePower)) ? visibleStations.reduce((n, s) => n + s.activePower, 0).toFixed(1) + " kW" : "—"}</b></div><div><span>碳减排速率</span><b>—</b></div></div>
   const mapToolbar = <div className="overview-map-toolbar"><input type="search" aria-label="模糊搜索总览电站" placeholder="搜索电站名称 / 编码" value={search} onChange={e=>{setSearch(e.target.value);setSelectedId(null)}}/><select aria-label="总览区域" value={region} onChange={e => { setRegion(e.target.value); setSelectedId(null) }}>{MAP_REGIONS.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}{[...new Set(stations.map(s => s.region).filter(Boolean))].map(r => <option key={r}>{r}</option>)}</select><select aria-label="选择总览站点" value={selected?.id ?? ""} onChange={e => setSelectedId(e.target.value || null)}><option value="">选择站点</option>{visibleStations.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
-  return <section className="overview-workspace" data-overview-view={view} data-immersive={immersive}>
-    {!immersive && <div className="energy-overview-heading"><h1>能源总览</h1><p>站点运行与能源表现</p></div>}<header className="overview-header">{immersive ? <div className="overview-fullscreen-title"><strong>站点实时总览</strong><span>{visibleStations.length} 个授权站点</span></div> : <div className="overview-view-switch" role="group" aria-label="总览视图"><button aria-label="地图总览" aria-pressed={view === "map"} onClick={async () => { if (await requestLeave()) setView("map") }}>运行总览</button><button aria-pressed={view === "dashboard"} onClick={() => setView("dashboard")}>经营看板</button></div>}{mapToolbar}{immersive && <button className="overview-exit" onClick={onExitImmersive}>← 退出全屏</button>}</header>
+  return <section className="overview-workspace overview-exact" data-design-node={view === "dashboard" ? "3666:5742" : immersive ? "3666:6004" : "3666:5395"} data-overview-view={view} data-immersive={immersive}>
+    <header className="overview-header">{immersive ? <div className="overview-fullscreen-title"><strong>站点实时总览</strong><span>{visibleStations.length} 个授权站点</span></div> : <div className="overview-view-switch" role="group" aria-label="总览视图"><button aria-pressed={view === "dashboard"} onClick={() => setView("dashboard")}>经营看板</button><button aria-label="地图总览" aria-pressed={view === "map"} onClick={async () => { if (await requestLeave()) setView("map") }}>地图总览</button></div>}{immersive ? mapToolbar : <details className="overview-scope-filter"><summary>筛选</summary>{mapToolbar}</details>}{immersive && <button className="overview-exit" onClick={onExitImmersive}>← 退出全屏</button>}</header>
     <div className="overview-content" key={view}>
-    {view === "dashboard" ? <OverviewDashboard cards={cards} availableCards={availableCards} onUpdateCards={updateCards} region={region} stations={visibleStations} user={user} nav={nav} onNavigate={onNavigate} onOpenStation={onOpenStation} registerLeaveGuard={registerLeaveGuard} /> : !immersive ? <StylizedEnergyOverview role={role} onViewAll={allAlarms} onViewStations={nav.includes("资产与站点") ? () => onNavigate("资产与站点") : undefined} stations={visibleStations} cards={cards} region={region} selected={selected} onSelect={setSelectedId} onOpenStation={onOpenStation} /> : <div className="overview-map">
+    {view === "dashboard" ? <OverviewDashboard cards={cards} availableCards={availableCards} onUpdateCards={updateCards} region={region} stations={visibleStations} user={user} nav={nav} onNavigate={onNavigate} onOpenStation={onOpenStation} registerLeaveGuard={registerLeaveGuard} /> : <div className="overview-map">
       <MapView stations={visibleStations} selectedStation={selected} onSelectStation={s => setSelectedId(s.id)} region={region} />
       <div className="overview-ticker"><TickerBar stations={visibleStations} onSelectStation={s => setSelectedId(s.id)} role={role} /></div>
       <div className="overview-left"><LeftPanel visibleCards={cards} stations={visibleStations} role={role} onViewStations={nav.includes("资产与站点") ? () => { onExitImmersive(); onNavigate("资产与站点") } : undefined} />{immersive && livePanel}</div>
