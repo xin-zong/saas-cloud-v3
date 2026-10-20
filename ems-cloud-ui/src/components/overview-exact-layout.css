@@ -39,10 +39,15 @@
 .overview-dashboard .compact-health-row > .compact-panel { padding:24px; }
 .overview-dashboard .compact-health-ring { width:100px; height:100px; }
 
-html[lang="en"] .overview-workspace.overview-exact:not([data-immersive="true"]) > .overview-header { left:390px; }
+html[lang="en"] .overview-workspace.overview-exact:not([data-immersive="true"]) > .overview-header { left:374px; }
 @media(max-width:760px) { html[lang="en"] .overview-workspace.overview-exact:not([data-immersive="true"]) > .overview-header { left:12px; } }
 @media(max-width:500px) { .overview-dashboard .compact-health-ring { width:84px; height:84px; } }
 
 .overview-workspace.overview-exact[data-immersive="true"] .overview-map { padding-top:16px; }
 
 .overview-dashboard .compact-kpi > span { font-size:13px; }
+
+@media (min-width:761px) and (max-width:1440px) {
+ html[lang="en"] .overview-dashboard.exact-figma-dashboard .overview-dashboard-heading { flex-wrap:wrap; align-items:flex-start; }
+ html[lang="en"] .overview-dashboard.exact-figma-dashboard .overview-dashboard-actions { flex-basis:100%; }
+}

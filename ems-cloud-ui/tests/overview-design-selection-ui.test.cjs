@@ -30,3 +30,28 @@ test('overview defaults to the requested compact dashboard and switches to the m
   assert.deepEqual(errors,[])
  }finally{await browser.close()}
 })
+
+test('English overview controls do not overlap the title or date actions', {timeout:90000},async()=>{
+ const browser=await chromium.launch({channel:'msedge',headless:true})
+ try {
+  const page=await browser.newPage({viewport:{width:1440,height:900}});page.setDefaultTimeout(15000);page.setDefaultNavigationTimeout(60000)
+  await page.addInitScript(()=>sessionStorage.setItem('enerlution-api-token','english-geometry'))
+  await page.route(/127\.0\.0\.1:(18090|18092)\/api\//,async route=>{
+   const p=new URL(route.request().url()).pathname
+   await route.fulfill({json:{code:200,data:p==='/api/auth/me'?{id:'7',name:'Review',role:'owner',permissions:['asset.read'],stationIds:[],stationPermissions:{}}:p==='/api/settings'?{language:'English',theme:'浅色'}:[]}})
+  })
+  await page.route(/mymemory|fonts\.google/,r=>r.abort())
+  await page.goto(process.env.API_PREVIEW_URL||'http://127.0.0.1:8461/',{waitUntil:'domcontentloaded'})
+  await page.locator('.compact-kpi').first().waitFor();await page.waitForFunction(()=>document.documentElement.lang==='en')
+  for(const width of [1440,1366,1280,1024]){
+   await page.setViewportSize({width,height:900})
+   const bounds=await page.evaluate(()=>{
+    const rect=selector=>{const r=document.querySelector(selector).getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom}}
+    const range=document.createRange();range.selectNodeContents(document.querySelector('.overview-dashboard-heading h1'));const r=range.getBoundingClientRect()
+    return {title:{x:r.x,y:r.y,right:r.right,bottom:r.bottom},nav:rect('.overview-header'),actions:rect('.overview-dashboard-actions')}
+   })
+   const intersects=(a,b)=>a.x<b.right&&a.right>b.x&&a.y<b.bottom&&a.bottom>b.y
+   assert.equal(intersects(bounds.nav,bounds.title),false,`title at ${width}`);assert.equal(intersects(bounds.nav,bounds.actions),false,`actions at ${width}`)
+  }
+ }finally{await browser.close()}
+})
