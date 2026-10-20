@@ -1,4 +1,5 @@
 export const shellEnglish:Record<string,string>={
+ '打开 EMSAgent 小助手':'Open EMSAgent assistant','关闭 EMSAgent 小助手':'Close EMSAgent assistant','EMSAgent 小助手面板':'EMSAgent assistant panel','EMSAgent 小助手':'EMSAgent assistant',
  '搜索通信节点':'Search communication nodes','通信节点':'Communication nodes','新增 EMS':'Add EMS',
 
  '未找到匹配节点':'No matching nodes','未找到匹配设备':'No matching devices','重置为 100%':'Reset to 100%','画布操作':'Canvas controls','已取消连线':'Connection cancelled','已取消操作':'Operation cancelled',

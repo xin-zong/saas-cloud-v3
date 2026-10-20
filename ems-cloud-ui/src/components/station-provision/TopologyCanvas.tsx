@@ -1,11 +1,12 @@
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react"
 import { hasDcPv } from "./deviceConfiguration"
-import { isStructure } from "./topologyModel"
+import { electricalNodeSize, isStructure } from "./topologyModel"
 import { type Device, type DeviceType, type ProvisionDraft } from "./model"
 import {
   canvasPosition,
@@ -16,6 +17,7 @@ import {
   communicationPorts,
   connectPorts,
   electricalPorts,
+  electricalWirePoints,
   resolveElectricalPort,
   moveCanvasNode,
   screenToWorld,
@@ -94,6 +96,13 @@ export default function TopologyCanvas({
       mode === "communication" ? persistCanvasPatch(original, patch) : patch,
     )
   const model = preview ?? draft
+  const electricalRoutes = useMemo(() => {
+    if (mode !== "electrical") return new Map<string, Point[]>()
+    return new Map((model.connections ?? []).map(e => [e.id, electricalWirePoints(model, {
+      id: e.id, from: {node:e.from,port:e.fromPort??e.kind},
+      to: {node:e.to,port:e.toPort??e.kind}, kind:e.kind,
+    })]))
+  }, [model.devices, model.connections, mode])
   const visible = model.devices.filter((n) =>
     mode === "communication"
       ? n.type !== "标准柜" && !isStructure(n)
@@ -186,23 +195,11 @@ export default function TopologyCanvas({
       x:
         mode === "communication"
           ? (fields.commWidth ?? (d.type === "EMS" ? 570 : 138))
-          : (fields.width ??
-            (d.type === "标准柜"
-              ? 340
-              : ["交流母线", "直流母线"].includes(d.type)
-                ? d.cabinetId
-                  ? 300
-                  : 720
-                : d.type==='ATS'?342:138)),
+          : electricalNodeSize(d).x,
       y:
         mode === "communication"
           ? (fields.commHeight ?? (d.type === "EMS" ? 80 : 62))
-          : (fields.height ??
-            (d.type === "标准柜"
-              ? 270
-              : ["交流母线", "直流母线"].includes(d.type)
-                ? 4
-                : 58)),
+          : electricalNodeSize(d).y,
     }
   }
   function point(d: Device) {
@@ -478,27 +475,12 @@ export default function TopologyCanvas({
             const a = endpoint(e.from.node, e.from.port),
               b = endpoint(e.to.node, e.to.port)
             if (!a || !b) return null
-            if (mode === "electrical") {
-              const from = model.devices.find((n) => n.id === e.from.node),
-                to = model.devices.find((n) => n.id === e.to.node)
-              if (from?.type.includes("母线")) {
-                const c = point(from),
-                  w = size(from).x
-                a.x = Math.max(c.x - w / 2, Math.min(c.x + w / 2, b.x))
-                a.y = c.y
-              }
-              if (to?.type.includes("母线")) {
-                const c = point(to),
-                  w = size(to).x
-                b.x = Math.max(c.x - w / 2, Math.min(c.x + w / 2, a.x))
-                b.y = c.y
-              }
-            }
             const mid = (a.y + b.y) / 2
+            const points = electricalRoutes.get(e.id) ?? []
             return (
               <path
                 key={e.id}
-                d={`M${a.x} ${a.y}V${mid}H${b.x}V${b.y}`}
+                d={mode === "electrical" ? points.map((p,i)=>`${i?'L':'M'}${p.x} ${p.y}`).join(' ') : `M${a.x} ${a.y}V${mid}H${b.x}V${b.y}`}
                 stroke={colors[e.kind] ?? colors.ETH}
                 strokeWidth={2}
                 strokeDasharray={e.kind === "FORWARD" ? "6 5" : undefined}

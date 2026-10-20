@@ -40,7 +40,7 @@ import WorkOrdersApprovalPage from "@/components/WorkOrdersApprovalPage"
 
 import AnalyticsAiPage from "@/components/AnalyticsAiPage"
 
-import GlobalAiDrawer from "@/components/GlobalAiDrawer"
+import EmsAgent from "@/components/EmsAgent"
 
 import PlatformManagementPage from "@/components/PlatformManagementPage"
 import PublicEntry from '@/tenant/PublicEntry'
@@ -1063,11 +1063,13 @@ function AuthenticatedApp({ user }: { user: AuthUser }) {
       {DEMO_MODE && (
         <LivePreview onSimulateDataChange={handleSimulateDataChange} />
       )}
-      {DEMO_MODE && roleConfig.showGlobalAi && (
-        <GlobalAiDrawer
+      {(
+        <EmsAgent
+          key={`${DEMO_MODE?'demo':'api'}:${user.tenant?.tenantId??''}:${user.id}`}
+          user={user}
           stations={scopedStations}
           activeNav={activeNav}
-          role={user.role}
+          activeStationId={activeDetailId}
         />
       )}
     </div>

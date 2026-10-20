@@ -1,5 +1,6 @@
 import { defineConfig, type HtmlTagDescriptor, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
+import vue2 from '@vitejs/plugin-vue2'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
 
@@ -13,10 +14,12 @@ export default defineConfig(({ mode }) => {
   return {
     base: process.env.FIGMA_PUBLIC_URL ? `${process.env.FIGMA_PUBLIC_URL}/` : '/',
     build: {
+      rollupOptions: {input:{main:path.resolve(__dirname,'index.html'),emsAgent:path.resolve(__dirname,'ems-agent.html')}},
       sourcemap: emitSourcemaps ? 'inline' : false,
       minify: !emitSourcemaps,
     },
     plugins: [
+      vue2(),
       react({jsxImportSource:'@/i18n'}),
       {
         name:'app-local-jsx-runtime',

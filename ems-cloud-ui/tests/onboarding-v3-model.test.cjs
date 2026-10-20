@@ -110,13 +110,25 @@ test('copying a cabinet preserves child offsets, EMU references and internal wir
  const pcs=children.find(x=>x.type==='PCS');assert.equal(n.nodePosition({...d,...result},pcs,0).x,copy.x)
  assert.equal(result.connections.filter(x=>children.some(c=>c.id===x.from)&&children.some(c=>c.id===x.to)).length,3)
 })
-test('moving and arranging a cabinet translates customized children without flattening the group',()=>{
+test('manual cabinet movement translates customized children and preserves implicit member offsets',()=>{
  const m=load('model'),n=load('topologyModel'),d={...m.emptyProvision(),...n.buildSiteTemplate('光储协同')},cab=d.devices.find(x=>x.type==='标准柜'),pcs=d.devices.find(x=>x.type==='PCS'),battery=d.devices.find(x=>x.type==='电池 / BMS')
  pcs.x=cab.x-3;pcs.y=cab.y-5
  const result=n.moveNode(d,cab.id,{x:cab.x+10,y:cab.y-10}),moved=result.devices.find(x=>x.id===pcs.id)
  assert.equal(moved.x,pcs.x+10);assert.equal(moved.y,pcs.y-10);assert.equal(result.devices.find(x=>x.id===battery.id).x,undefined)
- const arranged=n.arrangeNodes(d),newCab=arranged.devices.find(x=>x.id===cab.id),newPcs=arranged.devices.find(x=>x.id===pcs.id)
- assert.equal(newPcs.x-newCab.x,-3);assert.equal(newPcs.y-newCab.y,-5);assert.equal(arranged.devices.find(x=>x.id===battery.id).x,undefined)
+ const newCab=result.devices.find(x=>x.id===cab.id),before=n.nodePosition(d,battery,d.devices.indexOf(battery)),after=n.nodePosition({...d,...result},result.devices.find(x=>x.id===battery.id),d.devices.indexOf(battery))
+ assert.equal(moved.x-newCab.x,-3);assert.equal(moved.y-newCab.y,-5);assert.equal(after.x-before.x,10);assert.equal(after.y-before.y,-10)
+ assert.equal(pcs.x,cab.x-3);assert.equal(pcs.y,cab.y-5)
+})
+
+test('auto arrangement normalizes cabinet electrical layers while preserving identities and configuration',()=>{
+ const m=load('model'),n=load('topologyModel'),d={...m.emptyProvision(),...n.buildSiteTemplate('光储协同')},cab=d.devices.find(x=>x.type==='标准柜'),pcs=d.devices.find(x=>x.type==='PCS')
+ pcs.x=cab.x-3;pcs.y=cab.y-5;pcs.nodeId='PCS_STABLE';pcs.ip='192.168.1.8';pcs.rating='125';pcs.commX=74;pcs.commY=38
+ const before=structuredClone(d),arranged=n.arrangeNodes(d),newCab=arranged.devices.find(x=>x.id===cab.id),newPcs=arranged.devices.find(x=>x.id===pcs.id),bus=arranged.devices.find(x=>x.type==='直流母线'),leaves=arranged.devices.filter(x=>x.cabinetId===cab.id&&['电池 / BMS','光伏 DC/DC'].includes(x.type))
+ assert.equal(newPcs.x,newCab.x);assert.equal(bus.x,newCab.x);assert.ok(newPcs.y<bus.y);assert.ok(leaves.every(x=>x.y>bus.y));assert.equal(leaves[0].y,leaves[1].y)
+ const size=n.electricalNodeSize(newCab),top=newCab.y*7.4-65
+ for(const member of arranged.devices.filter(x=>x.cabinetId===cab.id)){const s=n.electricalNodeSize(member);assert.ok(member.x*10-s.x/2>=newCab.x*10-size.x/2);assert.ok(member.x*10+s.x/2<=newCab.x*10+size.x/2);assert.ok(member.y*7.4-s.y/2>=top+30);assert.ok(member.y*7.4+s.y/2<=top+size.y)}
+ const config=({x,y,width,height,...device})=>device
+ assert.deepEqual(arranged.devices.map(config),before.devices.map(config));assert.deepEqual(d,before);assert.deepEqual({...d,...n.arrangeNodes({...d,...arranged})},{...d,...arranged})
 })
 test('deleting a cabinet removes children, electrical and communication references',()=>{
   const m=load('model'), n=load('topologyModel'), d={...m.emptyProvision(),...n.buildSiteTemplate('工商业储能')}

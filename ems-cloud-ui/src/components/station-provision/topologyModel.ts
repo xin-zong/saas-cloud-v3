@@ -262,36 +262,368 @@ export function cloneNode(draft: ProvisionDraft, id: string) {
     return {devices:[...draft.devices,...copied],selectedId:copied[0].id,
         connections:[...(draft.connections??[]),...internal.map(e=>({...structuredClone(e),id:wireIds.get(e.id)!,from:mapping.get(e.from)!,to:mapping.get(e.to)!}))]};
 }
-export function arrangeNodes(draft: ProvisionDraft) {
-    let arranged = draft;
-    const roots = draft.devices.filter((n) => !n.cabinetId);
-    const cabinets = roots.filter((n) => n.type === "标准柜");
-    const standalone = roots.filter((n) => n.type !== "标准柜");
-    for (const [i, n] of standalone.entries()) {
-        const rows = Math.ceil(standalone.length / 3);
-        const position = {
-            x: 20 + (i % 3) * 30,
-            y: 14 + Math.floor(i / 3) * (36 / Math.max(1, rows - 1)),
-        };
-        arranged = {
-            ...arranged, ...moveNode(arranged, n.id, position)
-        };
-    }
-    for (const [i, n] of cabinets.entries()) {
-        // Keep the group intact and within the canvas when arranging several cabinets.
-        const rows = Math.ceil(cabinets.length / 3);
-        const position = {
-            x: 18 + (i % 3) * 32,
-            y: 60 + Math.floor(i / 3) * (20 / Math.max(1, rows - 1)),
-        };
-        arranged = {
-            ...arranged, ...moveNode(arranged, n.id, position)
-        };
-    }
-    return {
-        devices: arranged.devices
-    };
+/** Shared electrical geometry in canvas pixels; positions remain percentages. */
+
+export function electricalNodeSize(d: Device) {
+  return {
+    x:
+      d.width ??
+      (d.type === "标准柜"
+        ? 340
+        : d.type.includes("母线")
+          ? d.cabinetId
+            ? 300
+            : 720
+          : d.type === "ATS"
+            ? 342
+            : 138),
+
+    y:
+      d.height ??
+      (d.type === "标准柜" ? 270 : d.type.includes("母线") ? 4 : 58),
+  }
 }
+
+export function arrangeNodes(draft: ProvisionDraft) {
+  // One immutable patch keeps automatic arrangement a single undo operation.
+
+  const devices = draft.devices.map((n) => ({ ...n }))
+
+  const roots = devices.filter(
+    (n) =>
+      !n.cabinetId ||
+      !devices.some((c) => c.id === n.cabinetId && c.type === "标准柜"),
+  )
+
+  const cabinets = roots.filter((n) => n.type === "标准柜")
+
+  const put = (n: Device, x: number, y: number) => {
+    n.x = x / 10
+    n.y = y / 7.4
+  }
+
+  const rowWidth = (nodes: Device[]) =>
+    nodes.reduce((w, n) => w + electricalNodeSize(n).x + 28, -28)
+
+  const row = (nodes: Device[], center: number, y: number) => {
+    let left = center - Math.max(0, rowWidth(nodes)) / 2
+
+    for (const n of nodes) {
+      const size = electricalNodeSize(n)
+      put(n, left + size.x / 2, y)
+      left += size.x + 28
+    }
+  }
+
+  // Rebuild member layers instead of translating their stale, explicit offsets.
+
+  // Preserve custom symbol sizes and expand enclosing groups only when needed.
+
+  for (const cabinet of cabinets) {
+    const members = devices.filter((n) => n.cabinetId === cabinet.id)
+
+    const pcs = members.filter((n) => n.type === "PCS")
+
+    const buses = members.filter((n) => n.type.includes("母线"))
+
+    const leaves = members.filter((n) => !pcs.includes(n) && !buses.includes(n))
+
+    cabinet.width = Math.max(
+      electricalNodeSize(cabinet).x,
+      rowWidth(pcs) + 40,
+      rowWidth(leaves) + 40,
+      ...buses.map((n) => electricalNodeSize(n).x + 40),
+    )
+
+    const topHeight = Math.max(58, ...pcs.map((n) => electricalNodeSize(n).y))
+
+    const busHeight = buses.reduce(
+      (h, n) => h + electricalNodeSize(n).y + 32,
+      0,
+    )
+
+    const leafHeight = Math.max(
+      58,
+      ...leaves.map((n) => electricalNodeSize(n).y),
+    )
+
+    cabinet.height = Math.max(
+      electricalNodeSize(cabinet).y,
+      42 + topHeight + 36 + busHeight + leafHeight + 20,
+    )
+  }
+
+  const upstreamTypes = [
+    "电网",
+    "柴油发电机",
+    "光伏",
+    "ATS",
+    "变压器",
+    "断路器",
+  ]
+
+  const upstream = roots.filter((n) => upstreamTypes.includes(n.type))
+
+  const acBuses = roots.filter((n) => n.type === "交流母线")
+
+  const depth = new Map<string, number>(acBuses.map((n) => [n.id, 0]))
+
+  const allowed = new Set([...upstream, ...acBuses].map((n) => n.id))
+
+  const queue = acBuses.map((n) => n.id)
+
+  // Undirected breadth-first traversal accepts arbitrary wire directions and cycles.
+
+  for (let i = 0; i < queue.length; i++) {
+    const id = queue[i]
+
+    for (const edge of draft.connections ?? []) {
+      if (edge.kind !== "AC") continue
+
+      const next =
+        edge.from === id ? edge.to : edge.to === id ? edge.from : undefined
+
+      if (next && allowed.has(next) && !depth.has(next)) {
+        depth.set(next, depth.get(id)! + 1)
+        queue.push(next)
+      }
+    }
+  }
+
+  for (const n of upstream)
+    if (!depth.has(n.id)) depth.set(n.id, n.type === "ATS" ? 1 : 2)
+
+  const maxDepth = Math.max(1, ...upstream.map((n) => depth.get(n.id)!))
+
+  const layerY = new Map<number, number>()
+
+  let layerTop = 40
+
+  for (let level = maxDepth; level >= 1; level--) {
+    const height = Math.max(
+      58,
+      ...upstream
+        .filter((n) => depth.get(n.id) === level)
+        .map((n) => electricalNodeSize(n).y),
+    )
+
+    layerY.set(level, layerTop + height / 2)
+    layerTop += height + 62
+  }
+
+  const trunkY = layerTop
+
+  const busY = trunkY + Math.max(0, acBuses.length - 1) * 32
+
+  const lower = roots.filter(
+    (n) =>
+      !cabinets.includes(n) &&
+      !upstream.includes(n) &&
+      !acBuses.includes(n) &&
+      n.type !== "EMS",
+  )
+
+  const dcBuses = lower.filter((n) => n.type === "直流母线")
+
+  const dcLeaves = lower.filter((n) =>
+    ["电池 / BMS", "光伏 DC/DC", "DC充电桩"].includes(n.type),
+  )
+
+  const other = lower.filter(
+    (n) => !dcBuses.includes(n) && !dcLeaves.includes(n),
+  )
+
+  const cabinetWidth = Math.max(
+    0,
+    cabinets.reduce((w, n) => w + electricalNodeSize(n).x + 64, -64),
+  )
+
+  const lowerWidth = cabinetWidth + (other.length ? rowWidth(other) + 64 : 0)
+
+  const contentWidth = Math.max(
+    920,
+    lowerWidth + 80,
+    rowWidth(dcLeaves) + 80,
+    ...[...dcBuses, ...acBuses].map((n) => electricalNodeSize(n).x + 80),
+    ...Array.from(
+      { length: maxDepth },
+      (_, i) =>
+        rowWidth(upstream.filter((n) => depth.get(n.id) === i + 1)) + 80,
+    ),
+  )
+
+  const center = contentWidth / 2
+
+  for (let level = 1; level <= maxDepth; level++)
+    row(
+      upstream.filter((n) => depth.get(n.id) === level),
+      center,
+      layerY.get(level)!,
+    )
+
+  // ATS source identities determine the source-card alignment.
+
+  const fixed = new Set<string>()
+
+  for (const ats of upstream.filter((n) => n.type === "ATS"))
+    for (const edge of draft.connections ?? []) {
+      const port =
+        edge.from === ats.id
+          ? edge.fromPort
+          : edge.to === ats.id
+            ? edge.toPort
+            : undefined
+
+      if (port !== "sourceA" && port !== "sourceB") continue
+
+      const source = upstream.find(
+        (n) => n.id === (edge.from === ats.id ? edge.to : edge.from),
+      )
+
+      if (!source || source.type === "ATS") continue
+
+      const targetX =
+        ats.x! * 10 +
+        electricalNodeSize(ats).x * (port === "sourceA" ? -0.25 : 0.25)
+
+      // Wider sources need clear card spacing more than exact terminal alignment.
+
+      if (
+        upstream.some(
+          (n) =>
+            fixed.has(n.id) &&
+            n.id !== source.id &&
+            Math.abs(source.y! * 7.4 - n.y! * 7.4) <
+              (electricalNodeSize(source).y + electricalNodeSize(n).y) / 2 +
+                28 &&
+            Math.abs(targetX - n.x! * 10) <
+              (electricalNodeSize(source).x + electricalNodeSize(n).x) / 2 + 28,
+        )
+      )
+        continue
+
+      put(
+        source,
+        targetX,
+
+        source.y! * 7.4,
+      )
+      fixed.add(source.id)
+    }
+
+  // Keep independent upstream branches clear of the reserved ATS source slots.
+
+  for (let level = 1; level <= maxDepth; level++) {
+    const nodes = upstream.filter((n) => depth.get(n.id) === level),
+      placed = nodes.filter((n) => fixed.has(n.id))
+
+    for (const n of nodes.filter((n) => !fixed.has(n.id))) {
+      let x = n.x! * 10
+      const w = electricalNodeSize(n).x
+
+      while (
+        placed.some(
+          (p) =>
+            Math.abs(x - p.x! * 10) < (w + electricalNodeSize(p).x) / 2 + 28,
+        )
+      )
+        x =
+          Math.max(
+            ...placed.map((p) => p.x! * 10 + electricalNodeSize(p).x / 2),
+          ) +
+          28 +
+          w / 2
+
+      put(n, x, n.y! * 7.4)
+      placed.push(n)
+    }
+  }
+
+  let left = Math.max(40, center - lowerWidth / 2)
+
+  for (const cabinet of cabinets) {
+    const size = electricalNodeSize(cabinet),
+      x = left + size.x / 2,
+      top = busY + 70
+
+    put(cabinet, x, top + 65)
+
+    const members = devices.filter((n) => n.cabinetId === cabinet.id),
+      pcs = members.filter((n) => n.type === "PCS"),
+      buses = members.filter((n) => n.type.includes("母线")),
+      leaves = members.filter((n) => !pcs.includes(n) && !buses.includes(n))
+
+    const topHeight = Math.max(58, ...pcs.map((n) => electricalNodeSize(n).y))
+
+    row(pcs, x, top + 42 + topHeight / 2)
+
+    let y = top + 42 + topHeight + 36
+
+    for (const bus of buses) {
+      put(bus, x, y)
+      y += electricalNodeSize(bus).y + 32
+    }
+
+    const leafHeight = Math.max(
+      58,
+      ...leaves.map((n) => electricalNodeSize(n).y),
+    )
+
+    row(leaves, x, y + leafHeight / 2)
+
+    left += size.x + 64
+  }
+
+  const otherHeight = Math.max(58, ...other.map((n) => electricalNodeSize(n).y))
+
+  row(
+    other,
+    cabinets.length ? left + Math.max(0, rowWidth(other)) / 2 : center,
+    busY + 119 + otherHeight / 2,
+  )
+
+  let dcY = Math.max(
+    busY + 280,
+    busY + 119 + otherHeight + 70,
+    ...cabinets.map((n) => n.y! * 7.4 - 65 + electricalNodeSize(n).y + 70),
+  )
+
+  for (const bus of dcBuses) {
+    put(bus, center, dcY)
+    dcY += electricalNodeSize(bus).y + 48
+  }
+
+  row(
+    dcLeaves,
+    center,
+    dcY +
+      Math.max(58, ...dcLeaves.map((n) => electricalNodeSize(n).y)) / 2 +
+      24,
+  )
+
+  const allBranches = devices.filter(
+    (n) => !acBuses.includes(n) && n.type !== "EMS",
+  )
+
+  const right = Math.max(
+    contentWidth - 40,
+    ...allBranches.map((n) => n.x! * 10 + electricalNodeSize(n).x / 2),
+  )
+
+  for (const [i, bus] of acBuses.entries()) {
+    bus.width = Math.max(electricalNodeSize(bus).x, right - 40)
+    put(bus, 40 + bus.width / 2, trunkY + i * 32)
+  }
+
+  row(
+    roots.filter((n) => n.type === "EMS"),
+    right + 120,
+    48,
+  )
+
+  return { devices }
+}
+
 export function removeNode(draft: ProvisionDraft, id: string) {
     const ids = new Set([
         id,

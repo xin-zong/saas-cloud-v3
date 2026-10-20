@@ -1,6 +1,6 @@
 import { newNodeId, type Device, type ProvisionDraft } from "./model"
-import { canWire, isStructure, moveNode, nodePosition } from "./topologyModel"
-import { embeddedCommunicationDevices, portKind } from "./deviceConfiguration"
+import { canWire, electricalNodeSize, isStructure, moveNode, nodePosition } from "./topologyModel"
+import { embeddedCommunicationDevices, hasDcPv, portKind } from "./deviceConfiguration"
 
 export type CanvasMode = "electrical" | "communication"
 export type Point = { x: number; y: number }
@@ -96,6 +96,268 @@ export function resolveElectricalPort(d:Device, ref:string):CanvasPort|undefined
  const ports=electricalPorts(d)
  return ports.find(p=>p.id===ref)|| (d.type!=='ATS'?ports.find(p=>p.id.toLowerCase()===ref.toLowerCase()||p.kind===ref):undefined)
 }
+/** Route terminal-to-terminal on a rectilinear visibility grid, avoiding cards.
+ * Cabinet outlines are containers, so wires may enter their actual member ports.
+ * The graph is bounded by node geometry and never follows topology recursively.
+ */
+
+export function electricalWirePoints(
+  draft: ProvisionDraft,
+  edge: CanvasEdge,
+): Point[] {
+  const from = draft.devices.find((n) => n.id === edge.from.node),
+    to = draft.devices.find((n) => n.id === edge.to.node)
+
+  if (!from || !to) return []
+
+  const endpoint = (d: Device, ref: string) => {
+    const p = nodePosition(draft, d, draft.devices.indexOf(d)),
+      s = electricalNodeSize(d),
+      port = resolveElectricalPort(d, ref)
+
+    return {
+      x: p.x * 10 - s.x / 2 + s.x * (port?.ratio ?? 0.5),
+      y: p.y * 7.4 + (port?.side === "bottom" ? s.y / 2 : -s.y / 2),
+      side: port?.side ?? "top",
+    }
+  }
+
+  const a = endpoint(from, edge.from.port),
+    b = endpoint(to, edge.to.port)
+
+  for (const [d, p, other] of [
+    [from, a, b],
+    [to, b, a],
+  ] as const)
+    if (d.type.includes("母线")) {
+      const center = nodePosition(draft, d, draft.devices.indexOf(d)),
+        w = electricalNodeSize(d).x
+
+      p.x = Math.max(
+        center.x * 10 - w / 2,
+        Math.min(center.x * 10 + w / 2, other.x),
+      )
+      p.y = center.y * 7.4
+      p.side = other.y < p.y ? "top" : "bottom"
+    }
+
+  const cards = draft.devices
+
+    .filter(
+      (n) =>
+        !n.type.includes("母线") &&
+        n.type !== "标准柜" &&
+        n.type !== "EMS" &&
+        !(n.type === "光伏 DC/DC" && !hasDcPv(n)),
+    )
+    .map((n) => {
+      const p = nodePosition(draft, n, draft.devices.indexOf(n)),
+        s = electricalNodeSize(n)
+
+      return {
+        id: n.id,
+
+        left: p.x * 10 - s.x / 2,
+
+        right: p.x * 10 + s.x / 2,
+
+        top: p.y * 7.4 - s.y / 2,
+
+        bottom: p.y * 7.4 + s.y / 2,
+      }
+    })
+  // Saved drafts may leave less than the usual clearance between cards.
+
+  // Shrink the routing margin and terminal stubs to fit the actual free gap.
+
+  let margin = 8
+
+  for (let i = 0; i < cards.length; i++)
+    for (let j = i + 1; j < cards.length; j++) {
+      const p = cards[i],
+        q = cards[j]
+
+      if (p.left < q.right && p.right > q.left) {
+        const gap = Math.max(p.top, q.top) - Math.min(p.bottom, q.bottom)
+
+        if (gap >= 0) margin = Math.min(margin, gap / 4)
+      }
+
+      if (p.top < q.bottom && p.bottom > q.top) {
+        const gap = Math.max(p.left, q.left) - Math.min(p.right, q.right)
+
+        if (gap >= 0) margin = Math.min(margin, gap / 4)
+      }
+    }
+
+  const obstacles = cards.map((r) => ({
+    left: r.left - margin,
+    right: r.right + margin,
+    top: r.top - margin,
+    bottom: r.bottom + margin,
+  }))
+
+  const stub = (p: typeof a, id: string): Point => {
+    const direction = p.side === "top" ? -1 : 1
+
+    const gaps = cards
+      .filter((r) => r.id !== id && p.x > r.left && p.x < r.right)
+
+      .map((r) => (direction < 0 ? p.y - r.bottom : r.top - p.y))
+      .filter((gap) => gap >= 0)
+
+    const length = Math.min(16, ...gaps.map((gap) => gap / 2))
+
+    return { x: p.x, y: p.y + direction * length }
+  }
+
+  const start = stub(a, from.id),
+    end = stub(b, to.id)
+
+  const clear = (p: Point, q: Point) =>
+    !obstacles.some((r) =>
+      p.x === q.x
+        ? p.x > r.left &&
+          p.x < r.right &&
+          Math.max(p.y, q.y) > r.top &&
+          Math.min(p.y, q.y) < r.bottom
+        : p.y > r.top &&
+          p.y < r.bottom &&
+          Math.max(p.x, q.x) > r.left &&
+          Math.min(p.x, q.x) < r.right,
+    )
+
+  const simplify = (points: Point[]) =>
+    points.reduce<Point[]>((result, p) => {
+      const last = result.at(-1),
+        before = result.at(-2)
+
+      if (last && last.x === p.x && last.y === p.y) return result
+
+      if (
+        before &&
+        last &&
+        ((before.x === last.x && last.x === p.x) ||
+          (before.y === last.y && last.y === p.y))
+      )
+        result.pop()
+
+      result.push({ x: p.x, y: p.y })
+      return result
+    }, [])
+
+  if ((start.x === end.x || start.y === end.y) && clear(start, end))
+    return simplify([a, start, end, b])
+
+  const xs = [
+    ...new Set([
+      start.x,
+      end.x,
+      ...obstacles.flatMap((r) => [r.left, r.right]),
+    ]),
+  ].sort((a, b) => a - b)
+
+  const ys = [
+    ...new Set([
+      start.y,
+      end.y,
+      ...obstacles.flatMap((r) => [r.top, r.bottom]),
+    ]),
+  ].sort((a, b) => a - b)
+
+  const key = (x: number, y: number, dir: number) =>
+    (y * xs.length + x) * 3 + dir
+
+  const sx = xs.indexOf(start.x),
+    sy = ys.indexOf(start.y),
+    tx = xs.indexOf(end.x),
+    ty = ys.indexOf(end.y)
+
+  const initial = key(sx, sy, 0),
+    cost = new Map([[initial, 0]]),
+    previous = new Map<number, number>()
+
+  const pending = [{ x: sx, y: sy, dir: 0, key: initial, score: 0 }],
+    visited = new Set<number>()
+
+  let finish: number | undefined
+
+  while (pending.length) {
+    pending.sort((a, b) => b.score - a.score)
+
+    const current = pending.pop()!
+
+    if (visited.has(current.key)) continue
+
+    visited.add(current.key)
+
+    if (current.x === tx && current.y === ty) {
+      finish = current.key
+      break
+    }
+
+    for (const [dx, dy] of [
+      [0, -1],
+      [0, 1],
+      [-1, 0],
+      [1, 0],
+    ]) {
+      const x = current.x + dx,
+        y = current.y + dy,
+        dir = dx ? 1 : 2
+
+      if (x < 0 || y < 0 || x >= xs.length || y >= ys.length) continue
+
+      const p = { x: xs[current.x], y: ys[current.y] },
+        q = { x: xs[x], y: ys[y] },
+        next = key(x, y, dir)
+
+      if (visited.has(next) || !clear(p, q)) continue
+
+      const value =
+        cost.get(current.key)! +
+        Math.abs(p.x - q.x) +
+        Math.abs(p.y - q.y) +
+        (current.dir && current.dir !== dir ? 16 : 0)
+
+      if (value >= (cost.get(next) ?? Infinity)) continue
+
+      cost.set(next, value)
+      previous.set(next, current.key)
+
+      pending.push({
+        x,
+        y,
+        dir,
+        key: next,
+        score: value + Math.abs(q.x - end.x) + Math.abs(q.y - end.y),
+      })
+    }
+  }
+
+  // Overlapping cards may make a safe route impossible. Never fabricate a
+
+  // fallback segment through a card's interior.
+
+  if (finish === undefined) return []
+
+  const middle: Point[] = []
+
+  for (
+    let id: number | undefined = finish;
+    id !== undefined;
+    id = previous.get(id)
+  ) {
+    const index = Math.floor(id / 3)
+    middle.push({
+      x: xs[index % xs.length],
+      y: ys[Math.floor(index / xs.length)],
+    })
+  }
+
+  return simplify([a, ...middle.reverse(), b])
+}
+
 export function communicationPorts(d: Device): CanvasPort[] {
   if (d.type === "EMS")
     return (d.ports ?? []).map((p, i, all) => ({
